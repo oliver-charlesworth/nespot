@@ -25,7 +25,9 @@ class Alu {
   fun brk(state: State): State = TODO()
   fun bvc(state: State): State = TODO()
   fun bvs(state: State): State = TODO()
-  fun clc(state: State): State = TODO()
+
+  fun clc(state: State) = state.copy(C = false)
+
   fun cld(state: State): State = TODO()
   fun cli(state: State): State = TODO()
   fun clv(state: State): State = TODO()

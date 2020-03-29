@@ -3,41 +3,42 @@ package choliver.sixfiveohtwo.alu
 import choliver.sixfiveohtwo.State
 import org.junit.jupiter.api.Assertions.assertEquals
 
-internal fun assertEqualsID(expected: State, original: State, fn: (State) -> State) {
-  (0 until 4).forEach {
-    fun State.withFlags() = copy(
-      I = (it and 0x01) != 0x00,
-      D = (it and 0x02) != 0x00
-    )
-
-    assertEquals(expected.withFlags(), fn(original.withFlags()))
-  }
+internal enum class Flag {
+  C, Z, I, D, V, N
 }
 
-internal fun assertEqualsIDCV(expected: State, original: State, fn: (State) -> State) {
-  (0 until 16).forEach {
-    fun State.withFlags() = copy(
-      I = (it and 0x01) != 0x00,
-      D = (it and 0x02) != 0x00,
-      C = (it and 0x04) != 0x00,
-      V = (it and 0x08) != 0x00
-    )
+internal interface WithInvariant {
+  val alu: Alu
 
-    assertEquals(expected.withFlags(), fn(original.withFlags()))
-  }
+  fun assertEquals(expected: State, original: State, fn: (State) -> State)
 }
 
-internal fun assertEqualsIDCVZN(expected: State, original: State, fn: (State) -> State) {
-  (0 until 64).forEach {
-    fun State.withFlags() = copy(
-      C = (it and 0x01) != 0x00,
-      I = (it and 0x02) != 0x00,
-      D = (it and 0x04) != 0x00,
-      V = (it and 0x08) != 0x00,
-      Z = (it and 0x10) != 0x00,
-      N = (it and 0x20) != 0x00
-    )
+internal fun withInvariants(vararg invariants: Flag, block: WithInvariant.() -> Unit) {
+  val scope = object : WithInvariant {
+    override val alu = Alu()
 
-    assertEquals(expected.withFlags(), fn(original.withFlags()))
+    override fun assertEquals(expected: State, original: State, fn: (State) -> State) {
+      assertEquals(invariants.asList(), expected, original, fn)
+    }
+  }
+
+  scope.block()
+}
+
+private fun assertEquals(invariants: List<Flag>, expected: State, original: State, fn: (State) -> State) {
+  if (invariants.isEmpty()) {
+    assertEquals(expected, fn(original))
+  } else {
+    fun State.withFlag(b: Boolean) = when (invariants.last()) {
+      Flag.C -> copy(C = b)
+      Flag.Z -> copy(Z = b)
+      Flag.I -> copy(I = b)
+      Flag.D -> copy(D = b)
+      Flag.V -> copy(V = b)
+      Flag.N -> copy(N = b)
+    }
+
+    assertEquals(invariants.dropLast(1), expected.withFlag(false), original.withFlag(false), fn)
+    assertEquals(invariants.dropLast(1), expected.withFlag(true), original.withFlag(true), fn)
   }
 }

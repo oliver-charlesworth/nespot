@@ -28,9 +28,12 @@ class Alu {
 
   fun clc(state: State) = state.copy(C = false)
 
-  fun cld(state: State): State = TODO()
-  fun cli(state: State): State = TODO()
-  fun clv(state: State): State = TODO()
+  fun cld(state: State) = state.copy(D = false)
+
+  fun cli(state: State) = state.copy(I = false)
+
+  fun clv(state: State) = state.copy(V = false)
+
   fun cmp(state: State, operand: UByte): State = TODO()
   fun cpx(state: State, operand: UByte): State = TODO()
   fun cpy(state: State, operand: UByte): State = TODO()
@@ -67,9 +70,13 @@ class Alu {
   fun rti(state: State): State = TODO()
   fun rts(state: State): State = TODO()
   fun sbc(state: State, operand: UByte): State = TODO()
-  fun sec(state: State): State = TODO()
-  fun sed(state: State): State = TODO()
-  fun sei(state: State): State = TODO()
+
+  fun sec(state: State) = state.copy(C = true)
+
+  fun sed(state: State) = state.copy(D = true)
+
+  fun sei(state: State) = state.copy(I = true)
+
   fun sta(state: State): State = TODO()
   fun stx(state: State): State = TODO()
   fun sty(state: State): State = TODO()

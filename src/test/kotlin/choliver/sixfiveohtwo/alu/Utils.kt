@@ -7,22 +7,36 @@ internal enum class Flag {
   C, Z, I, D, V, N
 }
 
-internal interface WithInvariant {
-  val alu: Alu
-
-  fun assertEquals(expected: State, original: State, fn: (State) -> State)
+internal interface ContextNoOperand {
+  fun assertEquals(expected: State, original: State)
 }
 
-internal fun withInvariants(vararg invariants: Flag, block: WithInvariant.() -> Unit) {
-  val scope = object : WithInvariant {
-    override val alu = Alu()
+internal interface ContextOneOperand {
+  fun assertEquals(expected: State, original: State, operand: UByte)
+}
 
-    override fun assertEquals(expected: State, original: State, fn: (State) -> State) {
-      assertEquals(invariants.asList(), expected, original, fn)
+internal fun forOpcode(op: Alu.(State) -> State, vararg invariants: Flag, block: ContextNoOperand.() -> Unit) {
+  val alu = Alu()
+
+  val context = object : ContextNoOperand {
+    override fun assertEquals(expected: State, original: State) {
+      assertEquals(invariants.asList(), expected, original) { alu.op(it) }
     }
   }
 
-  scope.block()
+  context.block()
+}
+
+internal fun forOpcode(op: Alu.(State, UByte) -> State, vararg invariants: Flag, block: ContextOneOperand.() -> Unit) {
+  val alu = Alu()
+
+  val context = object : ContextOneOperand {
+    override fun assertEquals(expected: State, original: State, operand: UByte) {
+      assertEquals(invariants.asList(), expected, original) { alu.op(it, operand) }
+    }
+  }
+
+  context.block()
 }
 
 private fun assertEquals(invariants: List<Flag>, expected: State, original: State, fn: (State) -> State) {

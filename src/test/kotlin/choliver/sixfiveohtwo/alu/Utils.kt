@@ -40,10 +40,8 @@ internal fun forOpcode(op: Alu.(State, UByte) -> State, vararg invariants: Flag,
 }
 
 private fun assertEquals(invariants: List<Flag>, expected: State, original: State, fn: (State) -> State) {
-  if (invariants.isEmpty()) {
-    assertEquals(expected, fn(original))
-  } else {
-    fun State.withFlag(b: Boolean) = when (invariants.last()) {
+  invariants.forEach { invariant ->
+    fun State.withFlag(b: Boolean) = when (invariant) {
       Flag.C -> copy(C = b)
       Flag.Z -> copy(Z = b)
       Flag.I -> copy(I = b)
@@ -52,7 +50,7 @@ private fun assertEquals(invariants: List<Flag>, expected: State, original: Stat
       Flag.N -> copy(N = b)
     }
 
-    assertEquals(invariants.dropLast(1), expected.withFlag(false), original.withFlag(false), fn)
-    assertEquals(invariants.dropLast(1), expected.withFlag(true), original.withFlag(true), fn)
+    assertEquals(expected.withFlag(false), fn(original.withFlag(false)))
+    assertEquals(expected.withFlag(true), fn(original.withFlag(true)))
   }
 }

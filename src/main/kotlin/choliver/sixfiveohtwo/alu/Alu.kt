@@ -6,16 +6,13 @@ class Alu {
   fun adc(state: State, operand: UByte): State {
     val raw = state.A + operand
     val result = raw.toUByte()
-    return state.copy(
-      A = result,
+    return state.withA(result).copy(
       C = (raw and 0x100u) != 0u,
       V = (state.A.isNegative() == operand.isNegative()) && (state.A.isNegative() != result.isNegative())
-    ).withZNFromA()
+    )
   }
 
-  fun and(state: State, operand: UByte) = state.copy(
-    A = state.A and operand
-  ).withZNFromA()
+  fun and(state: State, operand: UByte) = state.withA(state.A and operand)
 
   fun asl(state: State, operand: UByte): State = TODO()
   fun bcc(state: State): State = TODO()
@@ -37,27 +34,17 @@ class Alu {
   fun cpy(state: State, operand: UByte): State = TODO()
   fun dec(state: State, operand: UByte): State = TODO()
 
-  fun dex(state: State) = state.copy(
-    X = (state.X - 1u).toUByte()
-  ).withZNFromX()
+  fun dex(state: State) = state.withX((state.X - 1u).toUByte())
 
-  fun dey(state: State) = state.copy(
-    Y = (state.Y - 1u).toUByte()
-  ).withZNFromY()
+  fun dey(state: State) = state.withY((state.Y - 1u).toUByte())
 
-  fun eor(state: State, operand: UByte) = state.copy(
-    A = state.A xor operand
-  ).withZNFromA()
+  fun eor(state: State, operand: UByte) = state.withA(state.A xor operand)
 
   fun inc(state: State, operand: UByte): State = TODO()
 
-  fun inx(state: State) = state.copy(
-    X = (state.X + 1u).toUByte()
-  ).withZNFromX()
+  fun inx(state: State) = state.withX((state.X + 1u).toUByte())
 
-  fun iny(state: State) = state.copy(
-    Y = (state.Y + 1u).toUByte()
-  ).withZNFromY()
+  fun iny(state: State) = state.withY((state.Y + 1u).toUByte())
 
   fun jmp(state: State, operand: UByte): State = TODO()
   fun jsr(state: State, operand: UByte): State = TODO()
@@ -67,9 +54,7 @@ class Alu {
   fun lsr(state: State, operand: UByte): State = TODO()
   fun nop(state: State): State = TODO()
 
-  fun ora(state: State, operand: UByte) = state.copy(
-    A = state.A or operand
-  ).withZNFromA()
+  fun ora(state: State, operand: UByte) = state.withA(state.A or operand)
 
   fun pha(state: State): State = TODO()
   fun php(state: State): State = TODO()
@@ -87,33 +72,23 @@ class Alu {
   fun stx(state: State): State = TODO()
   fun sty(state: State): State = TODO()
 
-  fun tax(state: State) = state.copy(
-    X = state.A
-  ).withZNFromX()
+  fun tax(state: State) = state.withX(state.A)
 
-  fun tay(state: State) = state.copy(
-    Y = state.A
-  ).withZNFromY()
+  fun tay(state: State) = state.withY(state.A)
 
-  fun tsx(state: State) = state.copy(
-    X = state.S
-  )
+  fun tsx(state: State) = state.withX(state.S)
 
-  fun txa(state: State) = state.copy(
-    A = state.X
-  ).withZNFromA()
+  fun txa(state: State) = state.withA(state.X)
 
-  fun txs(state: State) = state.copy(
-    S = state.X
-  )
+  fun txs(state: State) = state.withS(state.X)
 
-  fun tya(state: State) = state.copy(
-    A = state.Y
-  ).withZNFromA()
+  fun tya(state: State) = state.withA(state.Y)
 
-  private fun State.withZNFromA() = withZNFrom(A)
-  private fun State.withZNFromX() = withZNFrom(X)
-  private fun State.withZNFromY() = withZNFrom(Y)
+  private fun State.withA(A: UByte) = copy(A = A).withZNFrom(A)
+  private fun State.withX(X: UByte) = copy(X = X).withZNFrom(X)
+  private fun State.withY(Y: UByte) = copy(Y = Y).withZNFrom(Y)
+  private fun State.withS(S: UByte) = copy(S = S)
+
   private fun State.withZNFrom(s: UByte) = copy(Z = s.isZero(), N = s.isNegative())
 
   private fun UByte.isZero() = this == 0.toUByte()

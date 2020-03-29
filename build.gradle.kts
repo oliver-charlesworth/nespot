@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   id("nebula.kotlin") version "1.3.61"
@@ -13,6 +14,10 @@ dependencies {
 
   testImplementation("org.junit.jupiter:junit-jupiter:5.5.2")
   testImplementation("org.hamcrest:hamcrest-library:2.2")
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+  kotlinOptions.freeCompilerArgs += listOf("-Xuse-experimental=kotlin.ExperimentalUnsignedTypes")
 }
 
 tasks.test {

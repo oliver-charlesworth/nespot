@@ -8,15 +8,17 @@ class Alu {
 
   // TODO - decimal mode
   fun adc(state: State, operand: UByte): State {
-    val raw = state.A + operand
+    val raw = state.A + operand + if (state.C) 1u else 0u
     val result = raw.toUByte()
+    val sameOperandSigns = (state.A.isNegative() == operand.isNegative())
+    val differentResultSign = (state.A.isNegative() != result.isNegative())
     return state.withA(result).copy(
       C = (raw and 0x100u) != 0u,
-      V = (state.A.isNegative() == operand.isNegative()) && (state.A.isNegative() != result.isNegative())
+      V = sameOperandSigns && differentResultSign
     )
   }
 
-  fun sbc(state: State, operand: UByte): State = TODO()
+  fun sbc(state: State, operand: UByte) = adc(state, operand.inv())
 
   fun dec(state: State, operand: UByte): State = TODO()
   fun dex(state: State) = state.withX((state.X - 1u).toUByte())

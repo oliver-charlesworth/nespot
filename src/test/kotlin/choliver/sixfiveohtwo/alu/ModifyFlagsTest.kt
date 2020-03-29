@@ -6,56 +6,56 @@ class ModifyFlagsTest {
   @Test
   fun clc() {
     forOpcode(Alu::clc) {
-      assertEquals(s.copy(C = false), s.copy(C = false))
-      assertEquals(s.copy(C = false), s.copy(C = true))
+      assertEquals(s.copy(C = _0), s.copy(C = _0))
+      assertEquals(s.copy(C = _0), s.copy(C = _1))
     }
   }
 
   @Test
   fun cld() {
     forOpcode(Alu::cld) {
-      assertEquals(s.copy(D = false), s.copy(D = false))
-      assertEquals(s.copy(D = false), s.copy(D = true))
+      assertEquals(s.copy(D = _0), s.copy(D = _0))
+      assertEquals(s.copy(D = _0), s.copy(D = _1))
     }
   }
 
   @Test
   fun cli() {
     forOpcode(Alu::cli) {
-      assertEquals(s.copy(I = false), s.copy(I = false))
-      assertEquals(s.copy(I = false), s.copy(I = true))
+      assertEquals(s.copy(I = _0), s.copy(I = _0))
+      assertEquals(s.copy(I = _0), s.copy(I = _1))
     }
   }
 
   @Test
   fun clv() {
     forOpcode(Alu::clv) {
-      assertEquals(s.copy(V = false), s.copy(V = false))
-      assertEquals(s.copy(V = false), s.copy(V = true))
+      assertEquals(s.copy(V = _0), s.copy(V = _0))
+      assertEquals(s.copy(V = _0), s.copy(V = _1))
     }
   }
 
   @Test
   fun sec() {
     forOpcode(Alu::sec) {
-      assertEquals(s.copy(C = true), s.copy(C = false))
-      assertEquals(s.copy(C = true), s.copy(C = true))
+      assertEquals(s.copy(C = _1), s.copy(C = _0))
+      assertEquals(s.copy(C = _1), s.copy(C = _1))
     }
   }
 
   @Test
   fun sed() {
     forOpcode(Alu::sed) {
-      assertEquals(s.copy(D = true), s.copy(D = false))
-      assertEquals(s.copy(D = true), s.copy(D = true))
+      assertEquals(s.copy(D = _1), s.copy(D = _0))
+      assertEquals(s.copy(D = _1), s.copy(D = _1))
     }
   }
 
   @Test
   fun sei() {
     forOpcode(Alu::sei) {
-      assertEquals(s.copy(I = true), s.copy(I = false))
-      assertEquals(s.copy(I = true), s.copy(I = true))
+      assertEquals(s.copy(I = _1), s.copy(I = _0))
+      assertEquals(s.copy(I = _1), s.copy(I = _1))
     }
   }
 }

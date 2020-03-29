@@ -4,6 +4,11 @@ import choliver.sixfiveohtwo.State
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 
+@Suppress("ObjectPropertyName")
+internal const val _0 = false
+@Suppress("ObjectPropertyName")
+internal const val _1 = true
+
 private val PROTO_STATES = listOf(
   State(),
   State(C = true),

@@ -1,6 +1,4 @@
-package choliver.sixfiveohtwo.cpu
-
-import choliver.sixfiveohtwo.State
+package choliver.sixfiveohtwo
 
 class Cpu {
 

@@ -1,8 +1,6 @@
 import choliver.sixfiveohtwo.Alu
 import choliver.sixfiveohtwo.Alu.Input
 import choliver.sixfiveohtwo.Alu.Output
-import choliver.sixfiveohtwo.alu._0
-import choliver.sixfiveohtwo.alu._1
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest

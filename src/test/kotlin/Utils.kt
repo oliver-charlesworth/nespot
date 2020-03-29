@@ -1,5 +1,3 @@
-package choliver.sixfiveohtwo.alu
-
 import choliver.sixfiveohtwo.Alu
 import choliver.sixfiveohtwo.Flags
 import choliver.sixfiveohtwo.State

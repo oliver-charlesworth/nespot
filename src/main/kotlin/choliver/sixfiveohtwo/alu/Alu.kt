@@ -53,10 +53,15 @@ class Alu {
 
   fun jmp(state: State, operand: UByte): State = TODO()
   fun jsr(state: State, operand: UByte): State = TODO()
-  fun lda(state: State, operand: UByte): State = TODO()
-  fun ldx(state: State, operand: UByte): State = TODO()
-  fun ldy(state: State, operand: UByte): State = TODO()
+
+  fun lda(state: State, operand: UByte) = state.withA(operand)
+
+  fun ldx(state: State, operand: UByte) = state.withX(operand)
+
+  fun ldy(state: State, operand: UByte) = state.withY(operand)
+
   fun lsr(state: State, operand: UByte): State = TODO()
+
   fun nop(state: State): State = TODO()
 
   fun ora(state: State, operand: UByte) = state.withA(state.A or operand)

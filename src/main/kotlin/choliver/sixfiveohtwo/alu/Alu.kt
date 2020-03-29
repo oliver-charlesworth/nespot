@@ -3,6 +3,7 @@ package choliver.sixfiveohtwo.alu
 import choliver.sixfiveohtwo.State
 
 class Alu {
+  // TODO - decimal mode
   fun adc(state: State, operand: UByte): State {
     val raw = state.A + operand
     val result = raw.toUByte()
@@ -14,7 +15,13 @@ class Alu {
 
   fun and(state: State, operand: UByte) = state.withA(state.A and operand)
 
-  fun asl(state: State, operand: UByte): State = TODO()
+  // TODO - implement M version
+  fun asl(state: State) = state
+    .withA((state.A * 2u).toUByte())
+    .copy(
+      C = !(state.A and 0x80u).isZero()
+    )
+
   fun bcc(state: State): State = TODO()
   fun bcs(state: State): State = TODO()
   fun beq(state: State): State = TODO()
@@ -60,7 +67,12 @@ class Alu {
 
   fun ldy(state: State, operand: UByte) = state.withY(operand)
 
-  fun lsr(state: State, operand: UByte): State = TODO()
+  // TODO - implement M version
+  fun lsr(state: State) = state
+    .withA((state.A / 2u).toUByte())
+    .copy(
+      C = !(state.A and 0x01u).isZero()
+    )
 
   fun nop(state: State): State = TODO()
 
@@ -70,8 +82,22 @@ class Alu {
   fun php(state: State): State = TODO()
   fun pla(state: State): State = TODO()
   fun plp(state: State): State = TODO()
-  fun rol(state: State, operand: UByte): State = TODO()
-  fun ror(state: State, operand: UByte): State = TODO()
+
+  // TODO - implement M version
+  fun rol(state: State) = state
+    .withA((state.A * 2u or if (state.C) 0x01u else 0x00u).toUByte())
+    .copy(
+      C = !(state.A and 0x80u).isZero()
+    )
+
+  // TODO - implement M version
+  fun ror(state: State) = state
+    .withA((state.A / 2u or if (state.C) 0x80u else 0x00u).toUByte())
+    .copy(
+      C = !(state.A and 0x01u).isZero()
+    )
+
+
   fun rti(state: State): State = TODO()
   fun rts(state: State): State = TODO()
   fun sbc(state: State, operand: UByte): State = TODO()

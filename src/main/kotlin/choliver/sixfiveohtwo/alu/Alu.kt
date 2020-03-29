@@ -36,16 +36,29 @@ class Alu {
   fun cpx(state: State, operand: UByte): State = TODO()
   fun cpy(state: State, operand: UByte): State = TODO()
   fun dec(state: State, operand: UByte): State = TODO()
-  fun dex(state: State): State = TODO()
-  fun dey(state: State): State = TODO()
+
+  fun dex(state: State) = state.copy(
+    X = (state.X - 1u).toUByte()
+  ).withZNFromX()
+
+  fun dey(state: State) = state.copy(
+    Y = (state.Y - 1u).toUByte()
+  ).withZNFromY()
 
   fun eor(state: State, operand: UByte) = state.copy(
     A = state.A xor operand
   ).withZNFromA()
 
   fun inc(state: State, operand: UByte): State = TODO()
-  fun inx(state: State): State = TODO()
-  fun iny(state: State): State = TODO()
+
+  fun inx(state: State) = state.copy(
+    X = (state.X + 1u).toUByte()
+  ).withZNFromX()
+
+  fun iny(state: State) = state.copy(
+    Y = (state.Y + 1u).toUByte()
+  ).withZNFromY()
+
   fun jmp(state: State, operand: UByte): State = TODO()
   fun jsr(state: State, operand: UByte): State = TODO()
   fun lda(state: State, operand: UByte): State = TODO()

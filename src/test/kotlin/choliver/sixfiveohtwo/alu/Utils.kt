@@ -1,39 +1,41 @@
 package choliver.sixfiveohtwo.alu
 
+import choliver.sixfiveohtwo.Alu
+import choliver.sixfiveohtwo.Flags
 import choliver.sixfiveohtwo.State
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 
 @Suppress("ObjectPropertyName")
-internal const val _0 = false
+const val _0 = false
 @Suppress("ObjectPropertyName")
-internal const val _1 = true
+const val _1 = true
 
 private val PROTO_STATES = listOf(
   State(),
-  State(C = true),
-  State(Z = true),
-  State(I = true),
-  State(D = true),
-  State(V = true),
-  State(N = true),
+  State(flags = Flags(C = true)),
+  State(flags = Flags(Z = true)),
+  State(flags = Flags(I = true)),
+  State(flags = Flags(D = true)),
+  State(flags = Flags(V = true)),
+  State(flags = Flags(N = true)),
   State(A = 0x69u),
   State(X = 0x69u),
   State(Y = 0x69u),
   State(S = 0x69u)
 )
 
-internal interface ContextNoOperand {
+interface ContextNoOperand {
   val s: State
   fun assertEquals(expected: State, original: State)
 }
 
-internal interface ContextOneOperand {
+interface ContextOneOperand {
   val s: State
   fun assertEquals(expected: State, original: State, operand: UByte)
 }
 
-internal fun forOpcode(op: Alu.(State) -> State, block: ContextNoOperand.() -> Unit) {
+fun forOpcode(op: Alu.(State) -> State, block: ContextNoOperand.() -> Unit) {
   val alu = Alu()
 
   PROTO_STATES.forEach {
@@ -48,7 +50,7 @@ internal fun forOpcode(op: Alu.(State) -> State, block: ContextNoOperand.() -> U
   }
 }
 
-internal fun forOpcode(op: Alu.(State, UByte) -> State, block: ContextOneOperand.() -> Unit) {
+fun forOpcode(op: Alu.(State, UByte) -> State, block: ContextOneOperand.() -> Unit) {
   val alu = Alu()
 
   PROTO_STATES.forEach {

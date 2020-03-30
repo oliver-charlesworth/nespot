@@ -21,18 +21,20 @@ class Cpu(
 
     val out = selectOut(inst.op.out, reg = reg, mem = mem, alu = alu)
 
-    val stateOut = state
-      .withUpdatedFlags(inst.op.flag, out, alu)
-      .withUpdatedReg(inst.op.regOut, out)
-
     if (inst.op.memOut) {
       // TODO
     }
 
-    // TODO - S arithmetic
     // TODO - update PC
+    // - regular increment
+    // - jump
+    // - return
+    // - branch
 
-    return stateOut
+    return state
+      .withNewP(inst.op.flag, out, alu)
+      .withNewS(inst.op.stack)
+      .withNewReg(inst.op.regOut, out)
   }
 
   private fun selectInputReg(reg: Reg, state: State) = when (reg) {
@@ -60,7 +62,7 @@ class Cpu(
     OutSrc.ZZZ -> TODO()
   }
 
-  private fun State.withUpdatedFlags(flag: Flag, out: UInt8, alu: Alu.Output) = copy(P = with(P) {
+  private fun State.withNewP(flag: Flag, out: UInt8, alu: Alu.Output) = copy(P = with(P) {
     val c = alu.c
     val z = out.isZero()
     val v = alu.v
@@ -82,7 +84,15 @@ class Cpu(
     }
   })
 
-  private fun State.withUpdatedReg(reg: Reg, out: UInt8) = when (reg) {
+  private fun State.withNewS(stack: Stack) = copy(S = with(S) {
+    when (stack) {
+      Stack.PUSH -> (this - 1u).toUInt8()
+      Stack.POP_ -> (this + 1u).toUInt8()
+      Stack.NONE -> this
+    }
+  })
+
+  private fun State.withNewReg(reg: Reg, out: UInt8) = when (reg) {
     Reg.A -> copy(A = out)
     Reg.X -> copy(X = out)
     Reg.Y -> copy(Y = out)

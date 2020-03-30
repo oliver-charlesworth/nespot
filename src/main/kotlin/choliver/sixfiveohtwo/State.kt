@@ -43,15 +43,13 @@ data class Flags(
     (if (Z) 0x02 else 0) or
     (if (C) 0x01 else 0)
   ).toUInt8()
-
-  companion object {
-    fun UInt8.toFlags() = Flags(
-      N = !(this and 0x80u).isZero(),
-      V = !(this and 0x40u).isZero(),
-      D = !(this and 0x08u).isZero(),
-      I = !(this and 0x84u).isZero(),
-      Z = !(this and 0x82u).isZero(),
-      C = !(this and 0x81u).isZero()
-    )
-  }
 }
+
+fun UInt8.toFlags() = Flags(
+  N = !(this and 0x80u).isZero(),
+  V = !(this and 0x40u).isZero(),
+  D = !(this and 0x08u).isZero(),
+  I = !(this and 0x84u).isZero(),
+  Z = !(this and 0x82u).isZero(),
+  C = !(this and 0x81u).isZero()
+)

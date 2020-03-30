@@ -4,19 +4,14 @@ import choliver.sixfiveohtwo.State
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 
-@Suppress("ObjectPropertyName")
-const val _0 = false
-@Suppress("ObjectPropertyName")
-const val _1 = true
-
 private val PROTO_STATES = listOf(
   State(),
-  State(flags = Flags(C = true)),
-  State(flags = Flags(Z = true)),
-  State(flags = Flags(I = true)),
-  State(flags = Flags(D = true)),
-  State(flags = Flags(V = true)),
-  State(flags = Flags(N = true)),
+  State(P = Flags(C = true)),
+  State(P = Flags(Z = true)),
+  State(P = Flags(I = true)),
+  State(P = Flags(D = true)),
+  State(P = Flags(V = true)),
+  State(P = Flags(N = true)),
   State(A = 0x69u),
   State(X = 0x69u),
   State(Y = 0x69u),

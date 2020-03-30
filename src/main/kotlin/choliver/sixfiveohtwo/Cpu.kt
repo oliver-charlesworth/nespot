@@ -1,79 +1,64 @@
 package choliver.sixfiveohtwo
 
-class Cpu {
+class Cpu(
+  memory: Memory
+) {
+  private val alu = Alu()
+  private val operandCalculator = OperandCalculator(memory)
 
-  // --- Comparison --- //
+  // TODO - homogenise State and Memory paradigm
+  fun process(inst: Instruction, state: State): State {
+    val regIn: UInt8 = when (inst.op.RegIn) {
+      Reg.A -> state.A
+      Reg.X -> state.X
+      Reg.Y -> state.Y
+      Reg.S -> state.S
+      Reg.P -> state.P.toUInt8()
+      Reg.N -> 0.toUInt8()
+      Reg.Z -> TODO()
+    }
 
-  fun bit(state: State, operand: UByte): State = TODO()
-  fun cmp(state: State, operand: UByte): State = TODO()
-  fun cpx(state: State, operand: UByte): State = TODO()
-  fun cpy(state: State, operand: UByte): State = TODO()
+    val memIn: UInt16 = operandCalculator.calculate(inst.addressMode, state)
 
-  // --- Branch --- //
+    fun selectAluSrc(src: AluSrc): UInt8 = when (src) {
+      AluSrc.REG -> regIn
+      AluSrc.MEM -> memIn.toUInt8()
+      AluSrc.NON -> 0.toUInt8()
+      AluSrc.ZZZ -> TODO()
+    }
 
-  fun bcc(state: State): State = TODO()
-  fun bcs(state: State): State = TODO()
-  fun beq(state: State): State = TODO()
-  fun bmi(state: State): State = TODO()
-  fun bne(state: State): State = TODO()
-  fun bpl(state: State): State = TODO()
-  fun bvc(state: State): State = TODO()
-  fun bvs(state: State): State = TODO()
-  fun jmp(state: State, operand: UByte): State = TODO()
-  fun jsr(state: State, operand: UByte): State = TODO()
-  fun rti(state: State): State = TODO()
-  fun rts(state: State): State = TODO()
+    val aluOut = inst.op.aluMode(alu, Alu.Input(
+      a = selectAluSrc(inst.op.aluA),
+      b = selectAluSrc(inst.op.aluB),
+      c = state.P.C,
+      d = state.P.D
+    ))
 
-  // --- Modify flags --- //
+    val out: UInt8 = when (inst.op.out) {
+      OutSrc.MEM -> memIn.toUInt8()
+      OutSrc.REG -> regIn
+      OutSrc.ALU -> aluOut.z
+      OutSrc.NON -> 0.toUInt8()
+      OutSrc.ZZZ -> TODO()
+    }
 
-  fun clc(state: State) = state.copy(flags = state.flags.copy(C = false))
-  fun cld(state: State) = state.copy(flags = state.flags.copy(D = false))
-  fun cli(state: State) = state.copy(flags = state.flags.copy(I = false))
-  fun clv(state: State) = state.copy(flags = state.flags.copy(V = false))
-  fun sec(state: State) = state.copy(flags = state.flags.copy(C = true))
-  fun sed(state: State) = state.copy(flags = state.flags.copy(D = true))
-  fun sei(state: State) = state.copy(flags = state.flags.copy(I = true))
+    val stateOut = when (inst.op.regOut) {
+      Reg.A -> state.copy(A = aluOut.z)
+      Reg.X -> state.copy(X = aluOut.z)
+      Reg.Y -> state.copy(Y = aluOut.z)
+      Reg.S -> state.copy(S = aluOut.z)
+      Reg.P -> TODO()
+      Reg.N -> state
+      Reg.Z -> TODO()
+    }
 
-  // --- Load / store --- //
+    if (inst.op.memOut) {
+      // TODO
+    }
 
-  fun lda(state: State, operand: UByte) = state.withA(operand)
-  fun ldx(state: State, operand: UByte) = state.withX(operand)
-  fun ldy(state: State, operand: UByte) = state.withY(operand)
+    // TODO - update flags
+    // TODO - update PC
 
-  fun sta(state: State): State = TODO()
-  fun stx(state: State): State = TODO()
-  fun sty(state: State): State = TODO()
-
-  // --- Register transfer --- //
-
-  fun tax(state: State) = state.withX(state.A)
-  fun tay(state: State) = state.withY(state.A)
-  fun tsx(state: State) = state.withX(state.S)
-  fun txa(state: State) = state.withA(state.X)
-  fun txs(state: State) = state.withS(state.X)
-  fun tya(state: State) = state.withA(state.Y)
-
-  // --- Push / pull --- //
-
-  fun pha(state: State): State = TODO()
-  fun php(state: State): State = TODO()
-  fun pla(state: State): State = TODO()
-  fun plp(state: State): State = TODO()
-
-  // --- Uncategorised --- //
-
-  fun brk(state: State): State = TODO()
-  fun nop(state: State): State = TODO()
-
-  // --- Helpers --- //
-
-  private fun State.withA(A: UByte) = copy(A = A).withZNFrom(A)
-  private fun State.withX(X: UByte) = copy(X = X).withZNFrom(X)
-  private fun State.withY(Y: UByte) = copy(Y = Y).withZNFrom(Y)
-  private fun State.withS(S: UByte) = copy(S = S)
-
-  private fun State.withZNFrom(s: UByte) = copy(flags = flags.copy(Z = s.isZero(), N = s.isNegative()))
-
-  private fun UByte.isZero() = this == 0.toUByte()
-  private fun UByte.isNegative() = this >= 0x80u
+    return stateOut
+  }
 }

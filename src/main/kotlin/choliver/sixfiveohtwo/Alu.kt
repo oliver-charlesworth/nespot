@@ -3,26 +3,28 @@ package choliver.sixfiveohtwo
 class Alu {
 
   data class Input(
-    val a: UByte = 0u,
-    val b: UByte = 0u,
+    val a: UInt8 = 0u,
+    val b: UInt8 = 0u,
     val c: Boolean = false,
     val d: Boolean = false
   )
 
   data class Output(
-    val x: UByte = 0u,
+    val z: UInt8 = 0u,
     val c: Boolean = false,
     val v: Boolean = false
   )
 
+  fun nop(inp: Input) = Output()
+
   // TODO - decimal mode
   fun adc(inp: Input): Output {
     val raw = inp.a + inp.b + if (inp.c) 1u else 0u
-    val result = raw.toUByte()
+    val result = raw.toUInt8()
     val sameOperandSigns = (inp.a.isNegative() == inp.b.isNegative())
     val differentResultSign = (inp.a.isNegative() != result.isNegative())
     return Output(
-      x = result,
+      z = result,
       c = (raw and 0x100u) != 0u,
       v = sameOperandSigns && differentResultSign
     )
@@ -30,36 +32,33 @@ class Alu {
 
   fun sbc(inp: Input) = adc(inp.copy(b = inp.b.inv()))
 
-  fun dec(inp: Input) = Output(x = (inp.a - 1u).toUByte())
+  fun dec(inp: Input) = Output(z = (inp.a - 1u).toUInt8())
 
-  fun inc(inp: Input) = Output(x = (inp.a + 1u).toUByte())
+  fun inc(inp: Input) = Output(z = (inp.a + 1u).toUInt8())
 
-  fun and(inp: Input) = Output(x = (inp.a and inp.b).toUByte())
+  fun and(inp: Input) = Output(z = (inp.a and inp.b))
 
-  fun eor(inp: Input) = Output(x = (inp.a xor inp.b).toUByte())
+  fun eor(inp: Input) = Output(z = (inp.a xor inp.b))
 
-  fun ora(inp: Input) = Output(x = (inp.a or inp.b).toUByte())
+  fun ora(inp: Input) = Output(z = (inp.a or inp.b))
 
   fun asl(inp: Input) = Output(
-    x = (inp.a * 2u).toUByte(),
+    z = (inp.a * 2u).toUInt8(),
     c = !(inp.a and 0x80u).isZero()
   )
 
   fun lsr(inp: Input) = Output(
-    x = (inp.a / 2u).toUByte(),
+    z = (inp.a / 2u).toUInt8(),
     c = !(inp.a and 0x01u).isZero()
   )
 
   fun rol(inp: Input) = Output(
-    x = (inp.a * 2u or if (inp.c) 1u else 0u).toUByte(),
+    z = (inp.a * 2u or if (inp.c) 1u else 0u).toUInt8(),
     c = !(inp.a and 0x80u).isZero()
   )
 
   fun ror(inp: Input) = Output(
-    x = (inp.a / 2u or if (inp.c) 0x80u else 0u).toUByte(),
+    z = (inp.a / 2u or if (inp.c) 0x80u else 0u).toUInt8(),
     c = !(inp.a and 0x01u).isZero()
   )
-
-  private fun UByte.isZero() = this == 0.toUByte()
-  private fun UByte.isNegative() = this >= 0x80u
 }

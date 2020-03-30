@@ -14,6 +14,7 @@ dependencies {
 
   testImplementation("org.junit.jupiter:junit-jupiter:5.5.2")
   testImplementation("org.hamcrest:hamcrest-library:2.2")
+  testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
 }
 
 tasks.withType<KotlinCompile>().configureEach {

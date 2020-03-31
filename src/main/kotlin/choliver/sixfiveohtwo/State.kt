@@ -17,14 +17,25 @@ data class State(
     P.toString()
   )
 
-  fun withFlags(
+  /** Like [copy], but allows us to also set individual status flags. */
+  fun with(
+    A: UInt8 = this.A,
+    X: UInt8 = this.X,
+    Y: UInt8 = this.Y,
+    S: UInt8 = this.S,
     N: Boolean = P.N,
     V: Boolean = P.V,
     D: Boolean = P.D,
     I: Boolean = P.I,
     Z: Boolean = P.Z,
     C: Boolean = P.C
-  ) = copy(P = Flags(N = N, V = V, D = D, I = I, Z = Z, C = C))
+  ) = copy(
+    A = A,
+    X = X,
+    Y = Y,
+    S = S,
+    P = Flags(N = N, V = V, D = D, I = I, Z = Z, C = C)
+  )
 }
 
 data class Flags(

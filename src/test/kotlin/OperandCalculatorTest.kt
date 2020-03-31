@@ -1,21 +1,10 @@
 import choliver.sixfiveohtwo.*
 import choliver.sixfiveohtwo.AddressMode.*
-import com.nhaarman.mockitokotlin2.doAnswer
-import com.nhaarman.mockitokotlin2.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class OperandCalculatorTest {
-  private val memory = object : Memory {
-    val map = mutableMapOf<UInt16, UInt8>()
-
-    override fun load(address: UInt16) = map[address] ?: 0u
-
-    override fun store(address: UInt16, data: UInt8) {
-      map[address] = data
-    }
-  }
-
+  private val memory = FakeMemory()
   private val calculator = OperandCalculator(memory)
 
   @Test
@@ -76,3 +65,4 @@ class OperandCalculatorTest {
     )
   }
 }
+

@@ -32,9 +32,9 @@ class Alu {
 
   fun sbc(inp: Input) = adc(inp.copy(b = inp.b.inv()))
 
-  fun dec(inp: Input) = Output(z = (inp.a - 1u).toUInt8())
+  fun dec(inp: Input) = Output(z = (inp.b - 1u).toUInt8())
 
-  fun inc(inp: Input) = Output(z = (inp.a + 1u).toUInt8())
+  fun inc(inp: Input) = Output(z = (inp.b + 1u).toUInt8())
 
   fun and(inp: Input) = Output(z = (inp.a and inp.b))
 

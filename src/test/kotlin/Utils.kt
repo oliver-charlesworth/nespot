@@ -1,8 +1,6 @@
-import choliver.sixfiveohtwo.Alu
-import choliver.sixfiveohtwo.Flags
-import choliver.sixfiveohtwo.State
+import choliver.sixfiveohtwo.*
+import choliver.sixfiveohtwo.AddressMode.*
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.assertEquals
 
 private val PROTO_STATES = listOf(
   State(),
@@ -18,39 +16,21 @@ private val PROTO_STATES = listOf(
   State(S = 0x69u)
 )
 
-interface ContextNoOperand {
+interface OpcodeContext {
   val s: State
-  fun assertEquals(expected: State, original: State)
+  fun assertEquals(expected: State, original: State, addressMode: AddressMode = Implied)
 }
 
-interface ContextOneOperand {
-  val s: State
-  fun assertEquals(expected: State, original: State, operand: UByte)
-}
-
-fun forOpcode(op: Alu.(State) -> State, block: ContextNoOperand.() -> Unit) {
-  val alu = Alu()
+fun forOpcode(op: Opcode, block: OpcodeContext.() -> Unit) {
+  val memory = FakeMemory()
+  val cpu = Cpu(memory)
 
   PROTO_STATES.forEach {
-    val context = object : ContextNoOperand {
+    val context = object : OpcodeContext {
       override val s = it
-      override fun assertEquals(expected: State, original: State) {
-        Assertions.assertEquals(expected, alu.op(original))
-      }
-    }
-
-    context.block()
-  }
-}
-
-fun forOpcode(op: Alu.(State, UByte) -> State, block: ContextOneOperand.() -> Unit) {
-  val alu = Alu()
-
-  PROTO_STATES.forEach {
-    val context = object : ContextOneOperand {
-      override val s = it
-      override fun assertEquals(expected: State, original: State, operand: UByte) {
-        assertEquals(expected, alu.op(original, operand))
+      override fun assertEquals(expected: State, original: State, addressMode: AddressMode) {
+        Assertions.assertEquals(expected, cpu.execute(Instruction(op, addressMode), original))
+        Assertions.assertEquals(emptyList<Pair<UInt16, UInt8>>(), memory.stores)
       }
     }
 

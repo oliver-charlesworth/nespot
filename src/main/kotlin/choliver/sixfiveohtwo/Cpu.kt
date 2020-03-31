@@ -7,7 +7,7 @@ class Cpu(
   private val operandCalculator = OperandCalculator(memory)
 
   // TODO - homogenise State and Memory paradigm
-  fun process(inst: Instruction, state: State): State {
+  fun execute(inst: Instruction, state: State): State {
     val reg = selectInputReg(inst.op.RegIn, state)
 
     val mem = operandCalculator.calculate(inst.addressMode, state)

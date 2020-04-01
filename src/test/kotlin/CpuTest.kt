@@ -429,4 +429,108 @@ class CpuTest {
       )
     }
   }
+
+  @Nested
+  inner class Sta {
+    // TODO - flag sweep
+
+    @Test
+    fun zeroPage() {
+      assertStores(target = 0x0030u, addrMode = ZeroPage(0x30u))
+    }
+
+    @Test
+    fun zeroPageX() {
+      assertStores(target = 0x0030u, addrMode = ZeroPageIndexed(0x10u, X), state = State(X = 0x20u))
+    }
+
+    @Test
+    fun absolute() {
+      assertStores(target = 0x1230u, addrMode = Absolute(0x1230u))
+    }
+
+    @Test
+    fun absoluteX() {
+      assertStores(target = 0x1230u, addrMode = AbsoluteIndexed(0x1210u, X), state = State(X = 0x20u))
+    }
+
+    @Test
+    fun absoluteY() {
+      assertStores(target = 0x1230u, addrMode = AbsoluteIndexed(0x1210u, Y), state = State(Y = 0x20u))
+    }
+
+    @Test
+    fun indexedIndirect() {
+      memory.store(0x40u, 0x30u)
+      memory.store(0x41u, 0x12u)
+
+      assertStores(target = 0x1230u, addrMode = IndexedIndirect(0x30u), state = State(X = 0x10u))
+    }
+
+    @Test
+    fun indirectIndexed() {
+      memory.store(0x30u, 0x20u)
+      memory.store(0x31u, 0x12u)
+
+      assertStores(target = 0x1230u, addrMode = IndirectIndexed(0x30u), state = State(Y = 0x10u))
+    }
+
+    private fun assertStores(target: UInt16, addrMode: AddressMode, state: State = State()) {
+      cpu.execute(Instruction(STA, addrMode), state.with(A = 0x69u))
+
+      assertEquals(0x69u.toUInt8(), memory.load(target))
+    }
+  }
+
+  @Nested
+  inner class Stx {
+    // TODO - flag sweep
+
+    @Test
+    fun zeroPage() {
+      assertStores(target = 0x0030u, addrMode = ZeroPage(0x30u))
+    }
+
+    @Test
+    fun zeroPageY() {
+      assertStores(target = 0x0030u, addrMode = ZeroPageIndexed(0x10u, Y), state = State(Y = 0x20u))
+    }
+
+    @Test
+    fun absolute() {
+      assertStores(target = 0x1230u, addrMode = Absolute(0x1230u))
+    }
+
+    private fun assertStores(target: UInt16, addrMode: AddressMode, state: State = State()) {
+      cpu.execute(Instruction(STX, addrMode), state.with(X = 0x69u))
+
+      assertEquals(0x69u.toUInt8(), memory.load(target))
+    }
+  }
+
+  @Nested
+  inner class Sty {
+    // TODO - flag sweep
+
+    @Test
+    fun zeroPage() {
+      assertStores(target = 0x0030u, addrMode = ZeroPage(0x30u))
+    }
+
+    @Test
+    fun zeroPageX() {
+      assertStores(target = 0x0030u, addrMode = ZeroPageIndexed(0x10u, X), state = State(X = 0x20u))
+    }
+
+    @Test
+    fun absolute() {
+      assertStores(target = 0x1230u, addrMode = Absolute(0x1230u))
+    }
+
+    private fun assertStores(target: UInt16, addrMode: AddressMode, state: State = State()) {
+      cpu.execute(Instruction(STY, addrMode), state.with(Y = 0x69u))
+
+      assertEquals(0x69u.toUInt8(), memory.load(target))
+    }
+  }
 }

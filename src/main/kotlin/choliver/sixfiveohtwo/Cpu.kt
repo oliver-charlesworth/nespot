@@ -1,7 +1,7 @@
 package choliver.sixfiveohtwo
 
 class Cpu(
-  memory: Memory
+  private val memory: Memory
 ) {
   private val alu = Alu()
   private val addrCalc = AddressCalculator(memory)
@@ -22,7 +22,7 @@ class Cpu(
     val out = selectOut(inst.op.out, reg = reg, mem = addr, alu = alu)
 
     if (inst.op.memOut) {
-      // TODO
+      memory.store(addr, out)
     }
 
     // TODO - update PC

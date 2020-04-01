@@ -37,3 +37,5 @@ fun forOpcode(op: Opcode, block: OpcodeContext.() -> Unit) {
     context.block()
   }
 }
+
+fun enc(vararg bytes: Int) = bytes.map { it.u8() }.toTypedArray()

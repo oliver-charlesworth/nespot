@@ -14,7 +14,7 @@ class AddressCalculatorTest {
     @Test
     fun positiveOffset() {
       assertEquals(
-        0x1320.toUInt16(),
+        0x1320.u16(),
         calc.calculate(Relative(0x30), State(PC = 0x12F0u))
       )
     }
@@ -22,7 +22,7 @@ class AddressCalculatorTest {
     @Test
     fun negativeOffset() {
       assertEquals(
-        0x12C0.toUInt16(),
+        0x12C0.u16(),
         calc.calculate(Relative(-0x30), State(PC = 0x12F0u))
       )
     }
@@ -31,7 +31,7 @@ class AddressCalculatorTest {
   @Test
   fun absolute() {
     assertEquals(
-      0x1230u.toUInt16(),
+      0x1230u.u16(),
       calc.calculate(Absolute(0x1230u), State())
     )
   }
@@ -39,7 +39,7 @@ class AddressCalculatorTest {
   @Test
   fun zeroPage() {
     assertEquals(
-      0x0030u.toUInt16(),
+      0x0030u.u16(),
       calc.calculate(ZeroPage(0x30u), State())
     )
   }
@@ -47,7 +47,7 @@ class AddressCalculatorTest {
   @Test
   fun indirect() {
     assertEquals(
-      0x1230u.toUInt16(),
+      0x1230u.u16(),
       calc.calculate(Indirect(0x1230u), State())
     )
   }
@@ -57,7 +57,7 @@ class AddressCalculatorTest {
     @Test
     fun basicX() {
       assertEquals(
-        0x1230u.toUInt16(),
+        0x1230u.u16(),
         calc.calculate(AbsoluteIndexed(0x1220u, X), State(X = 0x10u))
       )
     }
@@ -65,7 +65,7 @@ class AddressCalculatorTest {
     @Test
     fun basicY() {
       assertEquals(
-        0x1230u.toUInt16(),
+        0x1230u.u16(),
         calc.calculate(AbsoluteIndexed(0x1220u, Y), State(Y = 0x10u))
       )
     }
@@ -76,7 +76,7 @@ class AddressCalculatorTest {
     @Test
     fun basicX() {
       assertEquals(
-        0x0030u.toUInt16(),
+        0x0030u.u16(),
         calc.calculate(ZeroPageIndexed(0x20u, X), State(X = 0x10u))
       )
     }
@@ -84,7 +84,7 @@ class AddressCalculatorTest {
     @Test
     fun basicY() {
       assertEquals(
-        0x0030u.toUInt16(),
+        0x0030u.u16(),
         calc.calculate(ZeroPageIndexed(0x20u, Y), State(Y = 0x10u))
       )
     }
@@ -92,7 +92,7 @@ class AddressCalculatorTest {
     @Test
     fun zeroPageWraparound() {
       assertEquals(
-        0x0030u.toUInt16(),
+        0x0030u.u16(),
         calc.calculate(ZeroPageIndexed(0xF0u, X), State(X = 0x40u))
       )
     }
@@ -106,7 +106,7 @@ class AddressCalculatorTest {
       memory.store(0x0031u, 0x12u)
 
       assertEquals(
-        0x1230u.toUInt16(),
+        0x1230u.u16(),
         calc.calculate(IndexedIndirect(0x20u), State(X = 0x10u))
       )
     }
@@ -117,7 +117,7 @@ class AddressCalculatorTest {
       memory.store(0x0031u, 0x12u)
 
       assertEquals(
-        0x1230u.toUInt16(),
+        0x1230u.u16(),
         calc.calculate(IndexedIndirect(0xF0u), State(X = 0x40u))
       )
     }
@@ -128,7 +128,7 @@ class AddressCalculatorTest {
       memory.store(0x0000u, 0x12u)
 
       assertEquals(
-        0x1230u.toUInt16(),
+        0x1230u.u16(),
         calc.calculate(IndexedIndirect(0xFFu), State(X = 0x00u))
       )
     }
@@ -143,7 +143,7 @@ class AddressCalculatorTest {
       memory.store(0x0031u, 0x12u)
 
       assertEquals(
-        0x1240u.toUInt16(),
+        0x1240u.u16(),
         calc.calculate(IndirectIndexed(0x30u), State(Y = 0x10u))
       )
     }
@@ -154,7 +154,7 @@ class AddressCalculatorTest {
       memory.store(0x0000u, 0x12u)
 
       assertEquals(
-        0x1240u.toUInt16(),
+        0x1240u.u16(),
         calc.calculate(IndirectIndexed(0xFFu), State(Y = 0x10u))
       )
     }

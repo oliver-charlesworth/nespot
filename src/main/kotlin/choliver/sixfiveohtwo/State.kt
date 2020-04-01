@@ -55,14 +55,14 @@ data class Flags(
     if (C) 'C' else '-'
   )
 
-  fun toUInt8() = (
+  fun u8() = (
     (if (N) 0x80 else 0) or
     (if (V) 0x40 else 0) or
     (if (D) 0x08 else 0) or
     (if (I) 0x04 else 0) or
     (if (Z) 0x02 else 0) or
     (if (C) 0x01 else 0)
-  ).toUInt8()
+  ).u8()
 }
 
 fun UInt8.toFlags() = Flags(

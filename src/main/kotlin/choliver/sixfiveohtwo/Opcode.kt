@@ -1,5 +1,10 @@
 package choliver.sixfiveohtwo
 
+import choliver.sixfiveohtwo.AddrMode.*
+import choliver.sixfiveohtwo.AddressMode.Implied
+import choliver.sixfiveohtwo.AddressMode.IndexedIndirect
+import choliver.sixfiveohtwo.Opcode.*
+
 enum class Reg {
   A,
   X,
@@ -116,4 +121,84 @@ enum class Opcode(
   TXS(Reg.X, AluSrc.NON, AluSrc.NON, OutSrc.REG, Reg.S, _0, Flag.NON_, Stack.NONE, Alu::nop),
   TYA(Reg.Y, AluSrc.NON, AluSrc.NON, OutSrc.REG, Reg.A, _0, Flag._Z_N, Stack.NONE, Alu::nop)
 }
+
+enum class AddrMode {
+  IMMEDIATE,
+  IMPLIED,
+  ABSOLUTE,
+  ABSOLUTE_X,
+  ABSOLUTE_Y,
+  ZERO_PAGE,
+  ZERO_PAGE_X,
+  ZERO_PAGE_Y,
+  INDEXED_INDIRECT,
+  INDIRECT_INDEXED
+}
+
+enum class MemSrc {
+  A,
+  X,
+  Y,
+  S,
+  P,
+  R,  // TODO - rename - represents ALU out
+  N
+}
+
+data class Yeah(
+  val op: Opcode,
+  val memSrc: MemSrc,
+  val regSink: Reg,
+  val addrMode: AddrMode
+)
+
+val ENCODINGS = mapOf<UInt8, Yeah>(
+  0x00.u8() to Yeah(BRK, MemSrc.N, Reg.N, IMPLIED),
+
+  0x81.u8() to Yeah(STA, MemSrc.A, Reg.N, INDEXED_INDIRECT),
+  0x84.u8() to Yeah(STY, MemSrc.Y, Reg.N, ZERO_PAGE),
+  0x85.u8() to Yeah(STA, MemSrc.A, Reg.N, ZERO_PAGE),
+  0x86.u8() to Yeah(STX, MemSrc.X, Reg.N, ZERO_PAGE),
+  // TODO - 0x88 -> DEY
+  // TODO - 0x8A -> TXA
+  0x8C.u8() to Yeah(STY, MemSrc.Y, Reg.N, ABSOLUTE),
+  0x8D.u8() to Yeah(STA, MemSrc.A, Reg.N, ABSOLUTE),
+  0x8E.u8() to Yeah(STX, MemSrc.X, Reg.N, ABSOLUTE),
+
+  // TODO - 0x90 -> BCC
+  0x91.u8() to Yeah(STA, MemSrc.A, Reg.N, INDIRECT_INDEXED),
+  0x94.u8() to Yeah(STY, MemSrc.Y, Reg.N, ZERO_PAGE_X),
+  0x95.u8() to Yeah(STA, MemSrc.A, Reg.N, ZERO_PAGE_X),
+  0x96.u8() to Yeah(STX, MemSrc.X, Reg.N, ZERO_PAGE_Y),
+  // TODO - 0x98 -> TYA
+  0x99.u8() to Yeah(STA, MemSrc.A, Reg.N, ABSOLUTE_Y),
+  // TODO - 0x9A -> TXS
+  0x9D.u8() to Yeah(STA, MemSrc.A, Reg.N, ABSOLUTE_X),
+
+  0xA0.u8() to Yeah(LDY, MemSrc.N, Reg.Y, IMMEDIATE),
+  0xA1.u8() to Yeah(LDA, MemSrc.N, Reg.A, INDEXED_INDIRECT),
+  0xA2.u8() to Yeah(LDX, MemSrc.N, Reg.X, IMMEDIATE),
+  0xA4.u8() to Yeah(LDY, MemSrc.N, Reg.Y, ZERO_PAGE),
+  0xA5.u8() to Yeah(LDA, MemSrc.N, Reg.A, ZERO_PAGE),
+  0xA6.u8() to Yeah(LDX, MemSrc.N, Reg.X, ZERO_PAGE),
+  // TODO - 0xA8 -> TAY
+  0xA9.u8() to Yeah(LDA, MemSrc.N, Reg.A, IMMEDIATE),
+  // TODO - 0xAA -> TAX
+  0xAC.u8() to Yeah(LDY, MemSrc.N, Reg.Y, ABSOLUTE),
+  0xAD.u8() to Yeah(LDA, MemSrc.N, Reg.A, ABSOLUTE),
+  0xAE.u8() to Yeah(LDX, MemSrc.N, Reg.X, ABSOLUTE),
+
+  // TODO - 0xB0 -> BCS
+  0xB1.u8() to Yeah(LDA, MemSrc.N, Reg.A, INDIRECT_INDEXED),
+  0xB4.u8() to Yeah(LDY, MemSrc.N, Reg.Y, ZERO_PAGE_X),
+  0xB5.u8() to Yeah(LDA, MemSrc.N, Reg.A, ZERO_PAGE_X),
+  0xB6.u8() to Yeah(LDX, MemSrc.N, Reg.X, ZERO_PAGE_Y),
+  // TODO - 0xB8 -> CLV
+  0xB9.u8() to Yeah(LDA, MemSrc.N, Reg.A, ABSOLUTE_Y),
+  // TODO - 0xBA -> TSX
+  0xBC.u8() to Yeah(LDY, MemSrc.N, Reg.Y, ABSOLUTE_X),
+  0xBD.u8() to Yeah(LDA, MemSrc.N, Reg.A, ABSOLUTE_X),
+  0xBE.u8() to Yeah(LDX, MemSrc.N, Reg.X, ABSOLUTE_Y)
+
+)
 

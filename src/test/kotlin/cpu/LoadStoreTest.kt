@@ -5,6 +5,7 @@ import choliver.sixfiveohtwo.*
 import choliver.sixfiveohtwo.AddressMode.*
 import choliver.sixfiveohtwo.AddressMode.IndexSource.*
 import choliver.sixfiveohtwo.Opcode.*
+import enc
 import forOpcode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
@@ -30,7 +31,7 @@ class LoadStoreTest {
       memory.store(0x0030u, 0x69u)
       assertEquals(
         State(A = 0x69u),
-        cpu.execute(Instruction(LDA, ZeroPage(0x30u)), State())
+        cpu.execute(enc(0xA5, 0x30), State())
       )
     }
 
@@ -39,7 +40,7 @@ class LoadStoreTest {
       memory.store(0x0050u, 0x69u)
       assertEquals(
         State(A = 0x69u, X = 0x20u),
-        cpu.execute(Instruction(LDA, ZeroPageIndexed(0x30u, X)), State(X = 0x20u))
+        cpu.execute(enc(0xB5, 0x30), State(X = 0x20u))
       )
     }
 
@@ -48,7 +49,7 @@ class LoadStoreTest {
       memory.store(0x1230u, 0x69u)
       assertEquals(
         State(A = 0x69u),
-        cpu.execute(Instruction(LDA, Absolute(0x1230u)), State())
+        cpu.execute(enc(0xAD, 0x30, 0x12), State())
       )
     }
 
@@ -57,7 +58,7 @@ class LoadStoreTest {
       memory.store(0x1250u, 0x69u)
       assertEquals(
         State(A = 0x69u, X = 0x20u),
-        cpu.execute(Instruction(LDA, AbsoluteIndexed(0x1230u, X)), State(X = 0x20u))
+        cpu.execute(enc(0xBD, 0x30, 0x12), State(X = 0x20u))
       )
     }
 
@@ -66,18 +67,33 @@ class LoadStoreTest {
       memory.store(0x1250u, 0x69u)
       assertEquals(
         State(A = 0x69u, Y = 0x20u),
-        cpu.execute(Instruction(LDA, AbsoluteIndexed(0x1230u, Y)), State(Y = 0x20u))
+        cpu.execute(enc(0xB9, 0x30, 0x12), State(Y = 0x20u))
       )
     }
 
-//    @Test
-//    fun indexedIndirect() {
-//      memory.store(0x1250u, 0x69u)
-//      assertEquals(
-//        State(A = 0x69u, Y = 0x20u),
-//        cpu.execute(Instruction(LDA, IndexedIndirect(0x1230u)), State(Y = 0x20u))
-//      )
-//    }
+    @Test
+    fun indexedIndirect() {
+      memory.store(0x1230u, 0x69u)
+      memory.store(0x0040u, 0x30u)
+      memory.store(0x0041u, 0x12u)
+
+      assertEquals(
+        State(A = 0x69u, X = 0x10u),
+        cpu.execute(enc(0xA1, 0x30), State(X = 0x10u))
+      )
+    }
+
+    @Test
+    fun indirectIndexed() {
+      memory.store(0x1230u, 0x69u)
+      memory.store(0x0030u, 0x20u)
+      memory.store(0x0031u, 0x12u)
+
+      assertEquals(
+        State(A = 0x69u, Y = 0x10u),
+        cpu.execute(enc(0xB1, 0x30), State(Y = 0x10u))
+      )
+    }
   }
 
   @Nested
@@ -96,7 +112,7 @@ class LoadStoreTest {
       memory.store(0x0030u, 0x69u)
       assertEquals(
         State(X = 0x69u),
-        cpu.execute(Instruction(LDX, ZeroPage(0x30u)), State())
+        cpu.execute(enc(0xA6, 0x30), State())
       )
     }
 
@@ -105,7 +121,7 @@ class LoadStoreTest {
       memory.store(0x0050u, 0x69u)
       assertEquals(
         State(X = 0x69u, Y = 0x20u),
-        cpu.execute(Instruction(LDX, ZeroPageIndexed(0x30u, Y)), State(Y = 0x20u))
+        cpu.execute(enc(0xB6, 0x30), State(Y = 0x20u))
       )
     }
 
@@ -114,7 +130,7 @@ class LoadStoreTest {
       memory.store(0x1230u, 0x69u)
       assertEquals(
         State(X = 0x69u),
-        cpu.execute(Instruction(LDX, Absolute(0x1230u)), State())
+        cpu.execute(enc(0xAE, 0x30, 0x12), State())
       )
     }
 
@@ -123,7 +139,7 @@ class LoadStoreTest {
       memory.store(0x1250u, 0x69u)
       assertEquals(
         State(X = 0x69u, Y = 0x20u),
-        cpu.execute(Instruction(LDX, AbsoluteIndexed(0x1230u, Y)), State(Y = 0x20u))
+        cpu.execute(enc(0xBE, 0x30, 0x12), State(Y = 0x20u))
       )
     }
   }
@@ -144,7 +160,7 @@ class LoadStoreTest {
       memory.store(0x0030u, 0x69u)
       assertEquals(
         State(Y = 0x69u),
-        cpu.execute(Instruction(LDY, ZeroPage(0x30u)), State())
+        cpu.execute(enc(0xA4, 0x30), State())
       )
     }
 
@@ -153,7 +169,7 @@ class LoadStoreTest {
       memory.store(0x0050u, 0x69u)
       assertEquals(
         State(Y = 0x69u, X = 0x20u),
-        cpu.execute(Instruction(LDY, ZeroPageIndexed(0x30u, X)), State(X = 0x20u))
+        cpu.execute(enc(0xB4, 0x30), State(X = 0x20u))
       )
     }
 
@@ -162,7 +178,7 @@ class LoadStoreTest {
       memory.store(0x1230u, 0x69u)
       assertEquals(
         State(Y = 0x69u),
-        cpu.execute(Instruction(LDY, Absolute(0x1230u)), State())
+        cpu.execute(enc(0xAC, 0x30, 0x12), State())
       )
     }
 
@@ -171,7 +187,7 @@ class LoadStoreTest {
       memory.store(0x1250u, 0x69u)
       assertEquals(
         State(Y = 0x69u, X = 0x20u),
-        cpu.execute(Instruction(LDY, AbsoluteIndexed(0x1230u, X)), State(X = 0x20u))
+        cpu.execute(enc(0xBC, 0x30, 0x12), State(X = 0x20u))
       )
     }
   }
@@ -182,49 +198,49 @@ class LoadStoreTest {
 
     @Test
     fun zeroPage() {
-      assertStores(target = 0x0030u, addrMode = ZeroPage(0x30u))
+      assertStores(target = 0x0030u, encoding = enc(0x85, 0x30))
     }
 
     @Test
     fun zeroPageX() {
-      assertStores(target = 0x0030u, addrMode = ZeroPageIndexed(0x10u, X), state = State(X = 0x20u))
+      assertStores(target = 0x0030u, encoding = enc(0x95, 0x10), state = State(X = 0x20u))
     }
 
     @Test
     fun absolute() {
-      assertStores(target = 0x1230u, addrMode = Absolute(0x1230u))
+      assertStores(target = 0x1230u, encoding = enc(0x8D, 0x30, 0x12))
     }
 
     @Test
     fun absoluteX() {
-      assertStores(target = 0x1230u, addrMode = AbsoluteIndexed(0x1210u, X), state = State(X = 0x20u))
+      assertStores(target = 0x1230u, encoding = enc(0x9D, 0x10, 0x12), state = State(X = 0x20u))
     }
 
     @Test
     fun absoluteY() {
-      assertStores(target = 0x1230u, addrMode = AbsoluteIndexed(0x1210u, Y), state = State(Y = 0x20u))
+      assertStores(target = 0x1230u, encoding = enc(0x99, 0x10, 0x12), state = State(Y = 0x20u))
     }
 
     @Test
     fun indexedIndirect() {
-      memory.store(0x40u, 0x30u)
-      memory.store(0x41u, 0x12u)
+      memory.store(0x0040u, 0x30u)
+      memory.store(0x0041u, 0x12u)
 
-      assertStores(target = 0x1230u, addrMode = IndexedIndirect(0x30u), state = State(X = 0x10u))
+      assertStores(target = 0x1230u, encoding = enc(0x81, 0x30), state = State(X = 0x10u))
     }
 
     @Test
     fun indirectIndexed() {
-      memory.store(0x30u, 0x20u)
-      memory.store(0x31u, 0x12u)
+      memory.store(0x0030u, 0x20u)
+      memory.store(0x0031u, 0x12u)
 
-      assertStores(target = 0x1230u, addrMode = IndirectIndexed(0x30u), state = State(Y = 0x10u))
+      assertStores(target = 0x1230u, encoding = enc(0x91, 0x30), state = State(Y = 0x10u))
     }
 
-    private fun assertStores(target: UInt16, addrMode: AddressMode, state: State = State()) {
-      cpu.execute(Instruction(STA, addrMode), state.with(A = 0x69u))
+    private fun assertStores(target: UInt16, encoding: Array<UInt8>, state: State = State()) {
+      cpu.execute(encoding, state.with(A = 0x69u))
 
-      assertEquals(0x69u.toUInt8(), memory.load(target))
+      assertEquals(0x69u.u8(), memory.load(target))
     }
   }
 
@@ -234,23 +250,23 @@ class LoadStoreTest {
 
     @Test
     fun zeroPage() {
-      assertStores(target = 0x0030u, addrMode = ZeroPage(0x30u))
+      assertStores(target = 0x0030u, encoding = enc(0x86, 0x30))
     }
 
     @Test
     fun zeroPageY() {
-      assertStores(target = 0x0030u, addrMode = ZeroPageIndexed(0x10u, Y), state = State(Y = 0x20u))
+      assertStores(target = 0x0030u, encoding = enc(0x96, 0x10), state = State(Y = 0x20u))
     }
 
     @Test
     fun absolute() {
-      assertStores(target = 0x1230u, addrMode = Absolute(0x1230u))
+      assertStores(target = 0x1230u, encoding = enc(0x8E, 0x30, 0x12))
     }
 
-    private fun assertStores(target: UInt16, addrMode: AddressMode, state: State = State()) {
-      cpu.execute(Instruction(STX, addrMode), state.with(X = 0x69u))
+    private fun assertStores(target: UInt16, encoding: Array<UInt8>, state: State = State()) {
+      cpu.execute(encoding, state.with(X = 0x69u))
 
-      assertEquals(0x69u.toUInt8(), memory.load(target))
+      assertEquals(0x69u.u8(), memory.load(target))
     }
   }
 
@@ -260,23 +276,23 @@ class LoadStoreTest {
 
     @Test
     fun zeroPage() {
-      assertStores(target = 0x0030u, addrMode = ZeroPage(0x30u))
+      assertStores(target = 0x0030u, encoding = enc(0x84, 0x30))
     }
 
     @Test
     fun zeroPageX() {
-      assertStores(target = 0x0030u, addrMode = ZeroPageIndexed(0x10u, X), state = State(X = 0x20u))
+      assertStores(target = 0x0030u, encoding = enc(0x94, 0x10), state = State(X = 0x20u))
     }
 
     @Test
     fun absolute() {
-      assertStores(target = 0x1230u, addrMode = Absolute(0x1230u))
+      assertStores(target = 0x1230u, encoding = enc(0x8C, 0x30, 0x12))
     }
 
-    private fun assertStores(target: UInt16, addrMode: AddressMode, state: State = State()) {
-      cpu.execute(Instruction(STY, addrMode), state.with(Y = 0x69u))
+    private fun assertStores(target: UInt16, encoding: Array<UInt8>, state: State = State()) {
+      cpu.execute(encoding, state.with(Y = 0x69u))
 
-      assertEquals(0x69u.toUInt8(), memory.load(target))
+      assertEquals(0x69u.u8(), memory.load(target))
     }
   }
 }

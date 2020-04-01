@@ -39,10 +39,12 @@ sealed class AddressMode {
     val source: IndexSource
   ) : AddressMode()
 
+  // Always uses X as the source
   data class IndexedIndirect(
     val address: UInt8
   ) : AddressMode()
 
+  // Always uses Y as the source
   data class IndirectIndexed(
     val address: UInt8
   ) : AddressMode()

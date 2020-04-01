@@ -268,14 +268,70 @@ class CpuTest {
     }
   }
 
-  // TODO - address modes
-  @Test
-  fun lda() {
-    forOpcode(LDA) {
-      assertEquals(s.with(A = 0x69u, Z = _0, N = _0), s, Immediate(0x69u))
-      assertEquals(s.with(A = 0x00u, Z = _1, N = _0), s, Immediate(0x00u))
-      assertEquals(s.with(A = 0x96u, Z = _0, N = _1), s, Immediate(0x96u))
+  @Nested
+  inner class Lda {
+    @Test
+    fun immediateAndFlags() {
+      forOpcode(LDA) {
+        assertEquals(s.with(A = 0x69u, Z = _0, N = _0), s, Immediate(0x69u))
+        assertEquals(s.with(A = 0x00u, Z = _1, N = _0), s, Immediate(0x00u))
+        assertEquals(s.with(A = 0x96u, Z = _0, N = _1), s, Immediate(0x96u))
+      }
     }
+
+    @Test
+    fun zeroPage() {
+      memory.store(0x0030u, 0x69u)
+      assertEquals(
+        State(A = 0x69u),
+        cpu.execute(Instruction(LDA, ZeroPage(0x30u)), State())
+      )
+    }
+
+    @Test
+    fun zeroPageX() {
+      memory.store(0x0050u, 0x69u)
+      assertEquals(
+        State(A = 0x69u, X = 0x20u),
+        cpu.execute(Instruction(LDA, ZeroPageIndexed(0x30u, X)), State(X = 0x20u))
+      )
+    }
+
+    @Test
+    fun absolute() {
+      memory.store(0x1230u, 0x69u)
+      assertEquals(
+        State(A = 0x69u),
+        cpu.execute(Instruction(LDA, Absolute(0x1230u)), State())
+      )
+    }
+
+    @Test
+    fun absoluteX() {
+      memory.store(0x1250u, 0x69u)
+      assertEquals(
+        State(A = 0x69u, X = 0x20u),
+        cpu.execute(Instruction(LDA, AbsoluteIndexed(0x1230u, X)), State(X = 0x20u))
+      )
+    }
+
+    @Test
+    fun absoluteY() {
+      memory.store(0x1250u, 0x69u)
+      assertEquals(
+        State(A = 0x69u, Y = 0x20u),
+        cpu.execute(Instruction(LDA, AbsoluteIndexed(0x1230u, Y)), State(Y = 0x20u))
+      )
+    }
+
+//    @Test
+//    fun indexedIndirect() {
+//      memory.store(0x1250u, 0x69u)
+//      assertEquals(
+//        State(A = 0x69u, Y = 0x20u),
+//        cpu.execute(Instruction(LDA, IndexedIndirect(0x1230u)), State(Y = 0x20u))
+//      )
+//    }
   }
 
   @Nested

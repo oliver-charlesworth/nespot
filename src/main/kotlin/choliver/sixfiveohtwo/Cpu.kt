@@ -4,22 +4,22 @@ class Cpu(
   memory: Memory
 ) {
   private val alu = Alu()
-  private val operandCalculator = OperandCalculator(memory)
+  private val addrCalc = AddressCalculator(memory)
 
   // TODO - homogenise State and Memory paradigm
   fun execute(inst: Instruction, state: State): State {
     val reg = selectInputReg(inst.op.RegIn, state)
 
-    val mem = operandCalculator.calculate(inst.addressMode, state)
+    val addr = addrCalc.calculate(inst.addressMode, state)
 
     val alu = inst.op.aluMode(alu, Alu.Input(
-      a = selectAluSrc(inst.op.aluA, reg = reg, mem = mem),
-      b = selectAluSrc(inst.op.aluB, reg = reg, mem = mem),
+      a = selectAluSrc(inst.op.aluA, reg = reg, mem = addr),
+      b = selectAluSrc(inst.op.aluB, reg = reg, mem = addr),
       c = state.P.C,
       d = state.P.D
     ))
 
-    val out = selectOut(inst.op.out, reg = reg, mem = mem, alu = alu)
+    val out = selectOut(inst.op.out, reg = reg, mem = addr, alu = alu)
 
     if (inst.op.memOut) {
       // TODO

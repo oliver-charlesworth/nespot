@@ -31,6 +31,7 @@ class Cpu(
     }
 
     return state
+      .withNewP(decoded.yeah.op.flag, out, Alu.Output())
       .withNewReg(decoded.yeah.regSink, out)
   }
 

@@ -10,6 +10,7 @@ import forOpcode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import sweepStates
 
 class LoadStoreTest {
   private val memory = FakeMemory()
@@ -18,12 +19,11 @@ class LoadStoreTest {
   @Nested
   inner class Lda {
     @Test
-    fun immediateAndFlags() {
-      forOpcode(LDA) {
-        assertEquals(s.with(A = 0x69u, Z = _0, N = _0), s, Immediate(0x69u))
-        assertEquals(s.with(A = 0x00u, Z = _1, N = _0), s, Immediate(0x00u))
-        assertEquals(s.with(A = 0x96u, Z = _0, N = _1), s, Immediate(0x96u))
-      }
+    fun immediate() {
+      assertEquals(
+        State(A = 0x69u),
+        cpu.execute(enc(0xA9, 0x69), State())
+      )
     }
 
     @Test
@@ -94,17 +94,25 @@ class LoadStoreTest {
         cpu.execute(enc(0xB1, 0x30), State(Y = 0x10u))
       )
     }
+
+    @Test
+    fun immediateAndStates() {
+      sweepStates {
+        assertEquals(s.with(A = 0x69u, Z = _0, N = _0), s, enc(0xA9, 0x69))
+        assertEquals(s.with(A = 0x00u, Z = _1, N = _0), s, enc(0xA9, 0x00))
+        assertEquals(s.with(A = 0x96u, Z = _0, N = _1), s, enc(0xA9, 0x96))
+      }
+    }
   }
 
   @Nested
   inner class Ldx {
     @Test
-    fun immediateAndFlags() {
-      forOpcode(LDX) {
-        assertEquals(s.with(X = 0x69u, Z = _0, N = _0), s, Immediate(0x69u))
-        assertEquals(s.with(X = 0x00u, Z = _1, N = _0), s, Immediate(0x00u))
-        assertEquals(s.with(X = 0x96u, Z = _0, N = _1), s, Immediate(0x96u))
-      }
+    fun immediate() {
+      assertEquals(
+        State(X = 0x69u),
+        cpu.execute(enc(0xA2, 0x69), State())
+      )
     }
 
     @Test
@@ -142,17 +150,25 @@ class LoadStoreTest {
         cpu.execute(enc(0xBE, 0x30, 0x12), State(Y = 0x20u))
       )
     }
+
+    @Test
+    fun immediateAndStates() {
+      sweepStates {
+        assertEquals(s.with(X = 0x69u, Z = _0, N = _0), s, enc(0xA2, 0x69))
+        assertEquals(s.with(X = 0x00u, Z = _1, N = _0), s, enc(0xA2, 0x00))
+        assertEquals(s.with(X = 0x96u, Z = _0, N = _1), s, enc(0xA2, 0x96))
+      }
+    }
   }
 
   @Nested
   inner class Ldy {
     @Test
-    fun immediateAndFlags() {
-      forOpcode(LDY) {
-        assertEquals(s.with(Y = 0x69u, Z = _0, N = _0), s, Immediate(0x69u))
-        assertEquals(s.with(Y = 0x00u, Z = _1, N = _0), s, Immediate(0x00u))
-        assertEquals(s.with(Y = 0x96u, Z = _0, N = _1), s, Immediate(0x96u))
-      }
+    fun immediate() {
+      assertEquals(
+        State(Y = 0x69u),
+        cpu.execute(enc(0xA0, 0x69), State())
+      )
     }
 
     @Test
@@ -190,12 +206,19 @@ class LoadStoreTest {
         cpu.execute(enc(0xBC, 0x30, 0x12), State(X = 0x20u))
       )
     }
+
+    @Test
+    fun immediateAndStates() {
+      sweepStates {
+        assertEquals(s.with(Y = 0x69u, Z = _0, N = _0), s, enc(0xA0, 0x69))
+        assertEquals(s.with(Y = 0x00u, Z = _1, N = _0), s, enc(0xA0, 0x00))
+        assertEquals(s.with(Y = 0x96u, Z = _0, N = _1), s, enc(0xA0, 0x96))
+      }
+    }
   }
 
   @Nested
   inner class Sta {
-    // TODO - flag sweep
-
     @Test
     fun zeroPage() {
       assertStores(target = 0x0030u, encoding = enc(0x85, 0x30))
@@ -237,6 +260,13 @@ class LoadStoreTest {
       assertStores(target = 0x1230u, encoding = enc(0x91, 0x30), state = State(Y = 0x10u))
     }
 
+    @Test
+    fun stateInvariants() {
+      sweepStates {
+        assertEquals(s, s, enc(0x85, 0x30))
+      }
+    }
+
     private fun assertStores(target: UInt16, encoding: Array<UInt8>, state: State = State()) {
       cpu.execute(encoding, state.with(A = 0x69u))
 
@@ -263,6 +293,13 @@ class LoadStoreTest {
       assertStores(target = 0x1230u, encoding = enc(0x8E, 0x30, 0x12))
     }
 
+    @Test
+    fun stateInvariants() {
+      sweepStates {
+        assertEquals(s, s, enc(0x86, 0x30))
+      }
+    }
+
     private fun assertStores(target: UInt16, encoding: Array<UInt8>, state: State = State()) {
       cpu.execute(encoding, state.with(X = 0x69u))
 
@@ -287,6 +324,13 @@ class LoadStoreTest {
     @Test
     fun absolute() {
       assertStores(target = 0x1230u, encoding = enc(0x8C, 0x30, 0x12))
+    }
+
+    @Test
+    fun stateInvariants() {
+      sweepStates {
+        assertEquals(s, s, enc(0x84, 0x30))
+      }
     }
 
     private fun assertStores(target: UInt16, encoding: Array<UInt8>, state: State = State()) {

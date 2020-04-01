@@ -199,6 +199,5 @@ val ENCODINGS = mapOf<UInt8, Yeah>(
   0xBC.u8() to Yeah(LDY, MemSrc.N, Reg.Y, ABSOLUTE_X),
   0xBD.u8() to Yeah(LDA, MemSrc.N, Reg.A, ABSOLUTE_X),
   0xBE.u8() to Yeah(LDX, MemSrc.N, Reg.X, ABSOLUTE_Y)
-
 )
 

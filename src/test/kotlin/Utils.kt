@@ -21,6 +21,28 @@ interface OpcodeContext {
   fun assertEquals(expected: State, original: State, addressMode: AddressMode = Implied)
 }
 
+interface SweepStatesContext {
+  val s: State
+  fun assertEquals(expected: State, original: State, encoding: Array<UInt8>)
+}
+
+fun sweepStates(block: SweepStatesContext.() -> Unit) {
+  val memory = FakeMemory()
+  val cpu = Cpu(memory)
+
+  PROTO_STATES.forEach {
+    val context = object : SweepStatesContext {
+      override val s = it
+      override fun assertEquals(expected: State, original: State, encoding: Array<UInt8>) {
+        Assertions.assertEquals(expected, cpu.execute(encoding, original))
+//        Assertions.assertEquals(emptyList<Pair<UInt16, UInt8>>(), memory.stores)
+      }
+    }
+
+    context.block()
+  }
+}
+
 fun forOpcode(op: Opcode, block: OpcodeContext.() -> Unit) {
   val memory = FakeMemory()
   val cpu = Cpu(memory)

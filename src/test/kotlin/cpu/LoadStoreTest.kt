@@ -1,12 +1,10 @@
 package cpu
 
 import FakeMemory
+import assertForAddressModes
 import choliver.sixfiveohtwo.*
-import choliver.sixfiveohtwo.AddressMode.*
-import choliver.sixfiveohtwo.AddressMode.IndexSource.*
-import choliver.sixfiveohtwo.Opcode.*
+import choliver.sixfiveohtwo.AddrMode.*
 import enc
-import forOpcode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -19,80 +17,17 @@ class LoadStoreTest {
   @Nested
   inner class Lda {
     @Test
-    fun immediate() {
-      assertEquals(
-        State(A = 0x69u),
-        cpu.execute(enc(0xA9, 0x69), State())
-      )
-    }
-
-    @Test
-    fun zeroPage() {
-      memory.store(0x0030u, 0x69u)
-      assertEquals(
-        State(A = 0x69u),
-        cpu.execute(enc(0xA5, 0x30), State())
-      )
-    }
-
-    @Test
-    fun zeroPageX() {
-      memory.store(0x0050u, 0x69u)
-      assertEquals(
-        State(A = 0x69u, X = 0x20u),
-        cpu.execute(enc(0xB5, 0x30), State(X = 0x20u))
-      )
-    }
-
-    @Test
-    fun absolute() {
-      memory.store(0x1230u, 0x69u)
-      assertEquals(
-        State(A = 0x69u),
-        cpu.execute(enc(0xAD, 0x30, 0x12), State())
-      )
-    }
-
-    @Test
-    fun absoluteX() {
-      memory.store(0x1250u, 0x69u)
-      assertEquals(
-        State(A = 0x69u, X = 0x20u),
-        cpu.execute(enc(0xBD, 0x30, 0x12), State(X = 0x20u))
-      )
-    }
-
-    @Test
-    fun absoluteY() {
-      memory.store(0x1250u, 0x69u)
-      assertEquals(
-        State(A = 0x69u, Y = 0x20u),
-        cpu.execute(enc(0xB9, 0x30, 0x12), State(Y = 0x20u))
-      )
-    }
-
-    @Test
-    fun indexedIndirect() {
-      memory.store(0x1230u, 0x69u)
-      memory.store(0x0040u, 0x30u)
-      memory.store(0x0041u, 0x12u)
-
-      assertEquals(
-        State(A = 0x69u, X = 0x10u),
-        cpu.execute(enc(0xA1, 0x30), State(X = 0x10u))
-      )
-    }
-
-    @Test
-    fun indirectIndexed() {
-      memory.store(0x1230u, 0x69u)
-      memory.store(0x0030u, 0x20u)
-      memory.store(0x0031u, 0x12u)
-
-      assertEquals(
-        State(A = 0x69u, Y = 0x10u),
-        cpu.execute(enc(0xB1, 0x30), State(Y = 0x10u))
-      )
+    fun addressModes() {
+      assertForAddressModes(
+        IMMEDIATE to 0xA9,
+        ZERO_PAGE to 0XA5,
+        ZERO_PAGE_X to 0xB5,
+        ABSOLUTE to 0xAD,
+        ABSOLUTE_X to 0xBD,
+        ABSOLUTE_Y to 0xB9,
+        INDEXED_INDIRECT to 0xA1,
+        INDIRECT_INDEXED to 0xB1
+      ) { with(A = 0x69u) }
     }
 
     @Test
@@ -108,47 +43,14 @@ class LoadStoreTest {
   @Nested
   inner class Ldx {
     @Test
-    fun immediate() {
-      assertEquals(
-        State(X = 0x69u),
-        cpu.execute(enc(0xA2, 0x69), State())
-      )
-    }
-
-    @Test
-    fun zeroPage() {
-      memory.store(0x0030u, 0x69u)
-      assertEquals(
-        State(X = 0x69u),
-        cpu.execute(enc(0xA6, 0x30), State())
-      )
-    }
-
-    @Test
-    fun zeroPageY() {
-      memory.store(0x0050u, 0x69u)
-      assertEquals(
-        State(X = 0x69u, Y = 0x20u),
-        cpu.execute(enc(0xB6, 0x30), State(Y = 0x20u))
-      )
-    }
-
-    @Test
-    fun absolute() {
-      memory.store(0x1230u, 0x69u)
-      assertEquals(
-        State(X = 0x69u),
-        cpu.execute(enc(0xAE, 0x30, 0x12), State())
-      )
-    }
-
-    @Test
-    fun absoluteY() {
-      memory.store(0x1250u, 0x69u)
-      assertEquals(
-        State(X = 0x69u, Y = 0x20u),
-        cpu.execute(enc(0xBE, 0x30, 0x12), State(Y = 0x20u))
-      )
+    fun addressModes() {
+      assertForAddressModes(
+        IMMEDIATE to 0xA2,
+        ZERO_PAGE to 0xA6,
+        ZERO_PAGE_Y to 0xB6,
+        ABSOLUTE to 0xAE,
+        ABSOLUTE_Y to 0xBE
+      ) { with(X = 0x69u) }
     }
 
     @Test
@@ -164,47 +66,14 @@ class LoadStoreTest {
   @Nested
   inner class Ldy {
     @Test
-    fun immediate() {
-      assertEquals(
-        State(Y = 0x69u),
-        cpu.execute(enc(0xA0, 0x69), State())
-      )
-    }
-
-    @Test
-    fun zeroPage() {
-      memory.store(0x0030u, 0x69u)
-      assertEquals(
-        State(Y = 0x69u),
-        cpu.execute(enc(0xA4, 0x30), State())
-      )
-    }
-
-    @Test
-    fun zeroPageX() {
-      memory.store(0x0050u, 0x69u)
-      assertEquals(
-        State(Y = 0x69u, X = 0x20u),
-        cpu.execute(enc(0xB4, 0x30), State(X = 0x20u))
-      )
-    }
-
-    @Test
-    fun absolute() {
-      memory.store(0x1230u, 0x69u)
-      assertEquals(
-        State(Y = 0x69u),
-        cpu.execute(enc(0xAC, 0x30, 0x12), State())
-      )
-    }
-
-    @Test
-    fun absoluteX() {
-      memory.store(0x1250u, 0x69u)
-      assertEquals(
-        State(Y = 0x69u, X = 0x20u),
-        cpu.execute(enc(0xBC, 0x30, 0x12), State(X = 0x20u))
-      )
+    fun addressModes() {
+      assertForAddressModes(
+        IMMEDIATE to 0xA0,
+        ZERO_PAGE to 0xB4,
+        ZERO_PAGE_X to 0xB4,
+        ABSOLUTE to 0xAC,
+        ABSOLUTE_X to 0xBC
+      ) { with(Y = 0x69u) }
     }
 
     @Test

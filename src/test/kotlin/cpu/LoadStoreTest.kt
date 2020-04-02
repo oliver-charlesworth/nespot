@@ -276,8 +276,6 @@ class LoadStoreTest {
 
   @Nested
   inner class Stx {
-    // TODO - flag sweep
-
     @Test
     fun zeroPage() {
       assertStores(target = 0x0030u, encoding = enc(0x86, 0x30))
@@ -309,8 +307,6 @@ class LoadStoreTest {
 
   @Nested
   inner class Sty {
-    // TODO - flag sweep
-
     @Test
     fun zeroPage() {
       assertStores(target = 0x0030u, encoding = enc(0x84, 0x30))

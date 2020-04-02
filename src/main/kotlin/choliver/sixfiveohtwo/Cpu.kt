@@ -18,7 +18,14 @@ class Cpu(
 
     val addr = addrCalc.calculate(decoded.addrMode, state)
 
-    val out = resolveOperand(decoded.addrMode, state, addr)
+    val operand = resolveOperand(decoded.addrMode, state, addr)
+
+    val alu = decoded.yeah.op.aluMode(alu, Alu.Input(
+      a = state.A,
+      b = operand,
+      c = state.P.C,
+      d = state.P.D
+    ))
 
     when (decoded.yeah.memSrc) {
       MemSrc.A -> memory.store(addr, state.A)
@@ -27,12 +34,12 @@ class Cpu(
       MemSrc.S -> memory.store(addr, state.S)
       MemSrc.P -> memory.store(addr, state.P.u8())
       MemSrc.R -> TODO()
-      MemSrc.N -> {} // Do nothing
+      MemSrc.N -> {} // Do nothing  // TODO - is this necessary?  (Could most opcodes write back to their source register?)
     }
 
     return state
-      .withNewP(decoded.yeah.op.flag, out, Alu.Output())
-      .withNewReg(decoded.yeah.regSink, out)
+      .withNewP(decoded.yeah.op.flag, alu.z, alu) // TODO - simplify args
+      .withNewReg(decoded.yeah.regSink, alu.z)
   }
 
   private fun resolveOperand(mode: AddressMode, state: State, addr: UInt16): UInt8 = when (mode) {

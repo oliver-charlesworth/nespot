@@ -15,7 +15,7 @@ class Alu {
     val v: Boolean = false
   )
 
-  fun nop(inp: Input) = Output()
+  fun nop(inp: Input) = Output(z = inp.b)
 
   // TODO - decimal mode
   fun adc(inp: Input): Output {

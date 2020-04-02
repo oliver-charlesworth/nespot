@@ -124,6 +124,7 @@ enum class AddrMode {
   ACCUMULATOR,
   IMMEDIATE,
   IMPLIED,
+  INDIRECT,
   ABSOLUTE,
   ABSOLUTE_X,
   ABSOLUTE_Y,
@@ -176,14 +177,13 @@ private val LAYOUT_SHIFT = LAYOUT_INC_DEC + listOf(
 
 val ENCODINGS =
   emptyMap<UInt8, Yeah>() +
-    // TODO - note the pattern here - could be MemSrc.A and Reg.A for all!
     LAYOUT_STD.encodings(0x00) { Yeah(ORA, MemSrc.N, Reg.A, it) } +
     LAYOUT_STD.encodings(0x20) { Yeah(AND, MemSrc.N, Reg.A, it) } +
     LAYOUT_STD.encodings(0x40) { Yeah(EOR, MemSrc.N, Reg.A, it) } +
     LAYOUT_STD.encodings(0x60) { Yeah(ADC, MemSrc.N, Reg.A, it) } +
     LAYOUT_STD.encodings(0x80) { Yeah(STA, MemSrc.A, Reg.N, it) } +  // TODO - no IMMEDIATE
     LAYOUT_STD.encodings(0xA0) { Yeah(LDA, MemSrc.N, Reg.A, it) } +
-    LAYOUT_STD.encodings(0xC0) { Yeah(CMP, MemSrc.N, Reg.A, it) } +
+    LAYOUT_STD.encodings(0xC0) { Yeah(CMP, MemSrc.N, Reg.N, it) } +
     LAYOUT_STD.encodings(0xE0) { Yeah(SBC, MemSrc.N, Reg.A, it) } +
 
     LAYOUT_SHIFT.encodings(0x00) { Yeah(ASL, MemSrc.Z, Reg.Z, it) } +   // TODO
@@ -195,8 +195,25 @@ val ENCODINGS =
     LAYOUT_INC_DEC.encodings(0xE0) { Yeah(INC, MemSrc.R, Reg.N, it) } +
 
     mapOf(
-      0x8E to Yeah(STX, MemSrc.X, Reg.N, ABSOLUTE),
+      0x24 to Yeah(BIT, MemSrc.N, Reg.N, ZERO_PAGE),
+      0x2C to Yeah(BIT, MemSrc.N, Reg.N, ABSOLUTE),
+
+      0xCA to Yeah(DEX, MemSrc.N, Reg.X, IMPLIED),  // TODO
+      0x88 to Yeah(DEY, MemSrc.N, Reg.Y, IMPLIED),  // TODO
+
+      0xE8 to Yeah(INX, MemSrc.N, Reg.X, IMPLIED),  // TODO
+      0xC8 to Yeah(INY, MemSrc.N, Reg.Y, IMPLIED),  // TODO
+
+      0xE0 to Yeah(CPX, MemSrc.N, Reg.N, IMMEDIATE),
+      0xE4 to Yeah(CPX, MemSrc.N, Reg.N, ZERO_PAGE),
+      0xEC to Yeah(CPX, MemSrc.N, Reg.N, ABSOLUTE),
+
+      0xC0 to Yeah(CPY, MemSrc.N, Reg.N, IMMEDIATE),
+      0xC4 to Yeah(CPY, MemSrc.N, Reg.N, ZERO_PAGE),
+      0xCC to Yeah(CPY, MemSrc.N, Reg.N, ABSOLUTE),
+
       0x86 to Yeah(STX, MemSrc.X, Reg.N, ZERO_PAGE),
+      0x8E to Yeah(STX, MemSrc.X, Reg.N, ABSOLUTE),
       0x96 to Yeah(STX, MemSrc.X, Reg.N, ZERO_PAGE_Y),
 
       0x84 to Yeah(STY, MemSrc.Y, Reg.N, ZERO_PAGE),
@@ -229,42 +246,30 @@ val ENCODINGS =
       0xF8 to Yeah(SED, MemSrc.N, Reg.N, IMPLIED),
       0x78 to Yeah(SEI, MemSrc.N, Reg.N, IMPLIED),
 
-      0x00 to Yeah(BRK, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0x10 to Yeah(BPL, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0x20 to Yeah(JSR, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0x30 to Yeah(BMI, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0x40 to Yeah(RTI, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0x50 to Yeah(BVC, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0x60 to Yeah(RTS, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0x70 to Yeah(BVS, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0x90 to Yeah(BCC, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0xB0 to Yeah(BCS, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0xD0 to Yeah(BNE, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0xF0 to Yeah(BEQ, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
+      0x10 to Yeah(BPL, MemSrc.N, Reg.N, IMPLIED),
+      0x30 to Yeah(BMI, MemSrc.N, Reg.N, IMPLIED),
+      0x50 to Yeah(BVC, MemSrc.N, Reg.N, IMPLIED),
+      0x70 to Yeah(BVS, MemSrc.N, Reg.N, IMPLIED),
+      0x90 to Yeah(BCC, MemSrc.N, Reg.N, IMPLIED),
+      0xB0 to Yeah(BCS, MemSrc.N, Reg.N, IMPLIED),
+      0xD0 to Yeah(BNE, MemSrc.N, Reg.N, IMPLIED),
+      0xF0 to Yeah(BEQ, MemSrc.N, Reg.N, IMPLIED),
 
-      0x24 to Yeah(BIT, MemSrc.Z, Reg.Z, ZERO_PAGE),  // TODO
-      0xC4 to Yeah(CPY, MemSrc.Z, Reg.Z, ZERO_PAGE),  // TODO
-      0xE4 to Yeah(CPX, MemSrc.Z, Reg.Z, ZERO_PAGE),  // TODO
+      0x4C to Yeah(JMP, MemSrc.N, Reg.Z, ABSOLUTE),  // TODO
+      0x6C to Yeah(JMP, MemSrc.N, Reg.Z, INDIRECT),  // TODO
+      0x20 to Yeah(JSR, MemSrc.N, Reg.Z, ABSOLUTE),  // TODO
+      0x40 to Yeah(RTI, MemSrc.N, Reg.Z, IMPLIED),  // TODO
+      0x60 to Yeah(RTS, MemSrc.N, Reg.Z, IMPLIED),  // TODO
 
-      0x88 to Yeah(DEY, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0x98 to Yeah(TYA, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0xA8 to Yeah(TAY, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0xC8 to Yeah(INY, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0xE8 to Yeah(INX, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
+      0x98 to Yeah(TYA, MemSrc.N, Reg.A, IMPLIED),  // TODO
+      0xA8 to Yeah(TAY, MemSrc.N, Reg.Y, IMPLIED),  // TODO
+      0x8A to Yeah(TXA, MemSrc.N, Reg.A, IMPLIED),  // TODO
+      0x9A to Yeah(TXS, MemSrc.N, Reg.S, IMPLIED),  // TODO
+      0xAA to Yeah(TAX, MemSrc.N, Reg.X, IMPLIED),  // TODO
+      0xBA to Yeah(TSX, MemSrc.N, Reg.X, IMPLIED),  // TODO
 
-      0x8A to Yeah(TXA, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0x9A to Yeah(TXS, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0xAA to Yeah(TAX, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0xBA to Yeah(TSX, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0xCA to Yeah(DEX, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-      0xEA to Yeah(NOP, MemSrc.Z, Reg.Z, IMPLIED),  // TODO
-
-
-      0x2C to Yeah(BEQ, MemSrc.Z, Reg.Z, ABSOLUTE),  // TODO
-      0x4C to Yeah(JMP, MemSrc.Z, Reg.Z, ABSOLUTE),  // TODO
-      0x6C to Yeah(JMP, MemSrc.Z, Reg.Z, ABSOLUTE),  // TODO
-      0xCC to Yeah(CPY, MemSrc.Z, Reg.Z, ABSOLUTE),  // TODO
-      0xEC to Yeah(CPX, MemSrc.Z, Reg.Z, ABSOLUTE)  // TODO
+      0x00 to Yeah(BRK, MemSrc.N, Reg.N, IMPLIED),
+      0xEA to Yeah(NOP, MemSrc.N, Reg.N, IMPLIED)
     ).mapKeys { (k, _) -> k.u8() }
 
 

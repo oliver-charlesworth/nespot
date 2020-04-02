@@ -18,10 +18,10 @@ private val PROTO_STATES = listOf(
   State(P = Flags(D = true)),
   State(P = Flags(V = true)),
   State(P = Flags(N = true)),
-  State(A = 0x69u),
-  State(X = 0x69u),
-  State(Y = 0x69u),
-  State(S = 0x69u)
+  State(A = 0xCCu),
+  State(X = 0xCCu),
+  State(Y = 0xCCu),
+  State(S = 0xCCu)
 )
 
 private val CASES = mapOf(
@@ -78,38 +78,20 @@ private val CASES = mapOf(
 
 fun assertForAddressModes(ops: Map<AddrMode, Int>, operand: Int, expected: State.() -> State) {
   ops.forEach { (mode, enc) ->
-    val memory = FakeMemory()
-    val cpu = Cpu(memory)
+    PROTO_STATES.forEach { proto ->
+      val memory = FakeMemory()
+      val cpu = Cpu(memory)
 
-    val case = CASES[mode]!!
+      val case = CASES[mode]!!
 
-    case.mem(memory, operand.u8())
+      case.mem(memory, operand.u8())
 
-    val protoState = case.state(State())
-
-    assertEquals(
-      protoState.expected(),
-      cpu.execute(enc(enc) + case.enc(operand), protoState),
-      "[${mode.name}]"
-    )
-  }
-
-  val (mode, enc) = ops.entries.first() // TODO - is this deterministic?
-  val case = CASES[mode]!!
-
-  PROTO_STATES.forEach {
-    val memory = FakeMemory()
-    val cpu = Cpu(memory)
-
-    case.mem(memory, operand.u8())
-
-    val protoState = case.state(it)
-
-    assertEquals(
-      protoState.expected(),
-      cpu.execute(enc(enc) + case.enc(operand), protoState),
-      "[${mode.name}]"
-    )
+      assertEquals(
+        case.state(proto).expected(),
+        cpu.execute(enc(enc) + case.enc(operand), case.state(proto)),
+        "[${mode.name}]"
+      )
+    }
   }
 }
 

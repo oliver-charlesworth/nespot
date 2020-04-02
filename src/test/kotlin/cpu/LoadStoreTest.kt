@@ -73,7 +73,7 @@ class LoadStoreTest {
   inner class Ldy {
     private val ops = mapOf(
       IMMEDIATE to 0xA0,
-      ZERO_PAGE to 0xB4,
+      ZERO_PAGE to 0xA4,
       ZERO_PAGE_X to 0xB4,
       ABSOLUTE to 0xAC,
       ABSOLUTE_X to 0xBC

@@ -2,61 +2,13 @@ import choliver.sixfiveohtwo.*
 import choliver.sixfiveohtwo.AddrMode.*
 import choliver.sixfiveohtwo.AddressMode.*
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.*
 
 private data class Case(
-  val encOperand: Array<UInt8>,
-  val state: State = State(),
-  val setup: (Memory) -> Unit
+  val enc: (operand: Int) -> Array<UInt8>,
+  val state: State.() -> State = { this },
+  val mem: (Memory, UInt8) -> Unit = { _: Memory, _: UInt8 -> }
 )
-
-private val CASES = mapOf(
-  IMMEDIATE to Case(enc(0x69)) {},
-  ZERO_PAGE to Case(enc(0x30)) {
-    it.store(0x0030u, 0x69u)
-  },
-  ZERO_PAGE_X to Case(enc(0x30), State(X = 0x20u)) {
-    it.store(0x0050u, 0x69u)
-  },
-  ZERO_PAGE_Y to Case(enc(0x30), State(Y = 0x20u)) {
-    it.store(0x0050u, 0x69u)
-  },
-  ABSOLUTE to Case(enc(0x30, 0x12)) {
-    it.store(0x1230u, 0x69u)
-  },
-  ABSOLUTE_X to Case(enc(0x30, 0x12), State(X = 0x20u)) {
-    it.store(0x1250u, 0x69u)
-  },
-  ABSOLUTE_Y to Case(enc(0x30, 0x12), State(Y = 0x20u)) {
-    it.store(0x1250u, 0x69u)
-  },
-  INDEXED_INDIRECT to Case(enc(0x30), State(X = 0x10u)) {
-    it.store(0x1230u, 0x69u)
-    it.store(0x0040u, 0x30u)
-    it.store(0x0041u, 0x12u)
-  },
-  INDIRECT_INDEXED to Case(enc(0x30), State(Y = 0x10u)) {
-    it.store(0x1230u, 0x69u)
-    it.store(0x0030u, 0x20u)
-    it.store(0x0031u, 0x12u)
-  }
-)
-
-fun assertForAddressModes(vararg ops: Pair<AddrMode, Int>, expected: State.() -> State) {
-  ops.forEach { (mode, enc) ->
-    val memory = FakeMemory()
-    val cpu = Cpu(memory)
-
-    val case = CASES[mode]!!
-
-    case.setup(memory)
-
-    Assertions.assertEquals(
-      case.state.expected(),
-      cpu.execute(enc(enc) + case.encOperand, case.state)
-    )
-  }
-}
-
 
 private val PROTO_STATES = listOf(
   State(),
@@ -71,6 +23,97 @@ private val PROTO_STATES = listOf(
   State(Y = 0x69u),
   State(S = 0x69u)
 )
+
+private val CASES = mapOf(
+  IMMEDIATE to Case(
+    enc = { enc(it) }
+  ),
+  ZERO_PAGE to Case(
+    enc = { enc(0x30) },
+    mem = { m, operand -> m.store(0x0030u, operand) }
+  ),
+  ZERO_PAGE_X to Case(
+    enc = { enc(0x30) },
+    state = { with(X = 0x20u) },
+    mem = { m, operand -> m.store(0x0050u, operand) }
+  ),
+  ZERO_PAGE_Y to Case(
+    enc = { enc(0x30) },
+    state = { with(Y = 0x20u) },
+    mem = { m, operand -> m.store(0x0050u, operand) }
+  ),
+  ABSOLUTE to Case(
+    enc = { enc(0x30, 0x12) },
+    mem = { m, operand -> m.store(0x1230u, operand) }
+  ),
+  ABSOLUTE_X to Case(
+    enc = { enc(0x30, 0x12) },
+    state = { with(X = 0x20u) },
+    mem = { m, operand -> m.store(0x1250u, operand) }
+  ),
+  ABSOLUTE_Y to Case(
+    enc = { enc(0x30, 0x12) },
+    state = { with(Y = 0x20u) },
+    mem = { m, operand -> m.store(0x1250u, operand) }
+  ),
+  INDEXED_INDIRECT to Case(
+    enc = { enc(0x30) },
+    state = { with(X = 0x10u) },
+    mem = { m, operand ->
+      m.store(0x1230u, operand)
+      m.store(0x0040u, 0x30u)
+      m.store(0x0041u, 0x12u)
+    }
+  ),
+  INDIRECT_INDEXED to Case(
+    enc = { enc(0x30) },
+    state = { with(Y = 0x10u) },
+    mem = { m, operand ->
+      m.store(0x1230u, operand)
+      m.store(0x0030u, 0x20u)
+      m.store(0x0031u, 0x12u)
+    }
+  )
+)
+
+fun assertForAddressModes(ops: Map<AddrMode, Int>, operand: Int, expected: State.() -> State) {
+  ops.forEach { (mode, enc) ->
+    val memory = FakeMemory()
+    val cpu = Cpu(memory)
+
+    val case = CASES[mode]!!
+
+    case.mem(memory, operand.u8())
+
+    val protoState = case.state(State())
+
+    assertEquals(
+      protoState.expected(),
+      cpu.execute(enc(enc) + case.enc(operand), protoState),
+      "[${mode.name}]"
+    )
+  }
+
+  val (mode, enc) = ops.entries.first() // TODO - is this deterministic?
+  val case = CASES[mode]!!
+
+  PROTO_STATES.forEach {
+    val memory = FakeMemory()
+    val cpu = Cpu(memory)
+
+    case.mem(memory, operand.u8())
+
+    val protoState = case.state(it)
+
+    assertEquals(
+      protoState.expected(),
+      cpu.execute(enc(enc) + case.enc(operand), protoState),
+      "[${mode.name}]"
+    )
+  }
+}
+
+
 
 interface OpcodeContext {
   val s: State
@@ -90,7 +133,7 @@ fun sweepStates(block: SweepStatesContext.() -> Unit) {
     val context = object : SweepStatesContext {
       override val s = it
       override fun assertEquals(expected: State, original: State, encoding: Array<UInt8>) {
-        Assertions.assertEquals(expected, cpu.execute(encoding, original))
+        assertEquals(expected, cpu.execute(encoding, original))
 //        Assertions.assertEquals(emptyList<Pair<UInt16, UInt8>>(), memory.stores)
       }
     }
@@ -108,7 +151,7 @@ fun forOpcode(op: Opcode, block: OpcodeContext.() -> Unit) {
       override val s = it
       override fun assertEquals(expected: State, original: State, addressMode: AddressMode) {
         Assertions.assertEquals(expected, cpu.execute(Instruction(op, addressMode), original))
-        Assertions.assertEquals(emptyList<Pair<UInt16, UInt8>>(), memory.stores)
+        assertEquals(emptyList<Pair<UInt16, UInt8>>(), memory.stores)
       }
     }
 

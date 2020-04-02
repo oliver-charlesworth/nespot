@@ -16,73 +16,82 @@ class LoadStoreTest {
 
   @Nested
   inner class Lda {
+    private val ops = mapOf(
+      IMMEDIATE to 0xA9,
+      ZERO_PAGE to 0XA5,
+      ZERO_PAGE_X to 0xB5,
+      ABSOLUTE to 0xAD,
+      ABSOLUTE_X to 0xBD,
+      ABSOLUTE_Y to 0xB9,
+      INDEXED_INDIRECT to 0xA1,
+      INDIRECT_INDEXED to 0xB1
+    )
+
     @Test
-    fun addressModes() {
-      assertForAddressModes(
-        IMMEDIATE to 0xA9,
-        ZERO_PAGE to 0XA5,
-        ZERO_PAGE_X to 0xB5,
-        ABSOLUTE to 0xAD,
-        ABSOLUTE_X to 0xBD,
-        ABSOLUTE_Y to 0xB9,
-        INDEXED_INDIRECT to 0xA1,
-        INDIRECT_INDEXED to 0xB1
-      ) { with(A = 0x69u) }
+    fun positive() {
+      assertForAddressModes(ops, 0x69) { with(A = 0x69u, Z = _0, N = _0) }
     }
 
     @Test
-    fun immediateAndStates() {
-      sweepStates {
-        assertEquals(s.with(A = 0x69u, Z = _0, N = _0), s, enc(0xA9, 0x69))
-        assertEquals(s.with(A = 0x00u, Z = _1, N = _0), s, enc(0xA9, 0x00))
-        assertEquals(s.with(A = 0x96u, Z = _0, N = _1), s, enc(0xA9, 0x96))
-      }
+    fun negative() {
+      assertForAddressModes(ops, 0x96) { with(A = 0x96u, Z = _0, N = _1) }
+    }
+
+    @Test
+    fun zero() {
+      assertForAddressModes(ops, 0x00) { with(A = 0x00u, Z = _1, N = _0) }
     }
   }
 
   @Nested
   inner class Ldx {
+    private val ops = mapOf(
+      IMMEDIATE to 0xA2,
+      ZERO_PAGE to 0xA6,
+      ZERO_PAGE_Y to 0xB6,
+      ABSOLUTE to 0xAE,
+      ABSOLUTE_Y to 0xBE
+    )
+
     @Test
-    fun addressModes() {
-      assertForAddressModes(
-        IMMEDIATE to 0xA2,
-        ZERO_PAGE to 0xA6,
-        ZERO_PAGE_Y to 0xB6,
-        ABSOLUTE to 0xAE,
-        ABSOLUTE_Y to 0xBE
-      ) { with(X = 0x69u) }
+    fun positive() {
+      assertForAddressModes(ops, 0x69) { with(X = 0x69u, Z = _0, N = _0) }
     }
 
     @Test
-    fun immediateAndStates() {
-      sweepStates {
-        assertEquals(s.with(X = 0x69u, Z = _0, N = _0), s, enc(0xA2, 0x69))
-        assertEquals(s.with(X = 0x00u, Z = _1, N = _0), s, enc(0xA2, 0x00))
-        assertEquals(s.with(X = 0x96u, Z = _0, N = _1), s, enc(0xA2, 0x96))
-      }
+    fun negative() {
+      assertForAddressModes(ops, 0x96) { with(X = 0x96u, Z = _0, N = _1) }
+    }
+
+    @Test
+    fun zero() {
+      assertForAddressModes(ops, 0x00) { with(X = 0x00u, Z = _1, N = _0) }
     }
   }
 
   @Nested
   inner class Ldy {
+    private val ops = mapOf(
+      IMMEDIATE to 0xA0,
+      ZERO_PAGE to 0xB4,
+      ZERO_PAGE_X to 0xB4,
+      ABSOLUTE to 0xAC,
+      ABSOLUTE_X to 0xBC
+    )
+
     @Test
-    fun addressModes() {
-      assertForAddressModes(
-        IMMEDIATE to 0xA0,
-        ZERO_PAGE to 0xB4,
-        ZERO_PAGE_X to 0xB4,
-        ABSOLUTE to 0xAC,
-        ABSOLUTE_X to 0xBC
-      ) { with(Y = 0x69u) }
+    fun positive() {
+      assertForAddressModes(ops, 0x69) { with(Y = 0x69u, Z = _0, N = _0) }
     }
 
     @Test
-    fun immediateAndStates() {
-      sweepStates {
-        assertEquals(s.with(Y = 0x69u, Z = _0, N = _0), s, enc(0xA0, 0x69))
-        assertEquals(s.with(Y = 0x00u, Z = _1, N = _0), s, enc(0xA0, 0x00))
-        assertEquals(s.with(Y = 0x96u, Z = _0, N = _1), s, enc(0xA0, 0x96))
-      }
+    fun negative() {
+      assertForAddressModes(ops, 0x96) { with(Y = 0x96u, Z = _0, N = _1) }
+    }
+
+    @Test
+    fun zero() {
+      assertForAddressModes(ops, 0x00) { with(Y = 0x00u, Z = _1, N = _0) }
     }
   }
 

@@ -1,65 +1,50 @@
 package cpu
 
-import choliver.sixfiveohtwo.Opcode
+import assertForAddressModes
+import choliver.sixfiveohtwo.AddrMode.IMPLIED
+import choliver.sixfiveohtwo.State
 import choliver.sixfiveohtwo._0
 import choliver.sixfiveohtwo._1
-import forOpcode
 import org.junit.jupiter.api.Test
 
 class FlagsTest {
   @Test
   fun clc() {
-    forOpcode(Opcode.CLC) {
-      assertEquals(s.with(C = _0), s.with(C = _1))
-      assertEquals(s.with(C = _0), s.with(C = _0))
-    }
+    assertFlagModified(0x18, _0) { with(C = it) }
   }
 
   @Test
   fun cld() {
-    forOpcode(Opcode.CLD) {
-      assertEquals(s.with(D = _0), s.with(D = _1))
-      assertEquals(s.with(D = _0), s.with(D = _0))
-    }
+    assertFlagModified(0xD8, _0) { with(D = it) }
   }
 
   @Test
   fun cli() {
-    forOpcode(Opcode.CLI) {
-      assertEquals(s.with(I = _0), s.with(I = _1))
-      assertEquals(s.with(I = _0), s.with(I = _0))
-    }
+    assertFlagModified(0x58, _0) { with(I = it) }
   }
 
   @Test
   fun clv() {
-    forOpcode(Opcode.CLV) {
-      assertEquals(s.with(V = _0), s.with(V = _1))
-      assertEquals(s.with(V = _0), s.with(V = _0))
-    }
+    assertFlagModified(0xB8, _0) { with(V = it) }
   }
 
   @Test
   fun sec() {
-    forOpcode(Opcode.SEC) {
-      assertEquals(s.with(C = _1), s.with(C = _1))
-      assertEquals(s.with(C = _1), s.with(C = _0))
-    }
+    assertFlagModified(0x38, _1) { with(C = it) }
   }
 
   @Test
   fun sed() {
-    forOpcode(Opcode.SED) {
-      assertEquals(s.with(D = _1), s.with(D = _1))
-      assertEquals(s.with(D = _1), s.with(D = _0))
-    }
+    assertFlagModified(0xF8, _1) { with(D = it) }
   }
 
   @Test
   fun sei() {
-    forOpcode(Opcode.SEI) {
-      assertEquals(s.with(I = _1), s.with(I = _1))
-      assertEquals(s.with(I = _1), s.with(I = _0))
-    }
+    assertFlagModified(0x78, _1) { with(I = it) }
+  }
+
+  private fun assertFlagModified(opcode: Int, expected: Boolean, state: State.(b: Boolean) -> State) {
+    assertForAddressModes(mapOf(IMPLIED to opcode), originalState = { state(_1) }, expectedState = { state(expected) })
+    assertForAddressModes(mapOf(IMPLIED to opcode), originalState = { state(_0) }, expectedState = { state(expected) })
   }
 }

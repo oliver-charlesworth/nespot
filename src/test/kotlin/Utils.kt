@@ -7,7 +7,8 @@ import org.junit.jupiter.api.Assertions.*
 private data class Case(
   val enc: (operand: Int) -> Array<UInt8>,
   val state: State.() -> State = { this },
-  val mem: (Memory, UInt8) -> Unit = { _: Memory, _: UInt8 -> }
+  val mem: Map<Int, Int> = emptyMap(),
+  val operandAddr: Int = 0x0000
 )
 
 private val PROTO_STATES = listOf(
@@ -25,71 +26,74 @@ private val PROTO_STATES = listOf(
 )
 
 private val CASES = mapOf(
-  IMMEDIATE to Case(
-    enc = { enc(it) }
-  ),
+  IMMEDIATE to Case(enc = { enc(it) }),
+  IMPLIED to Case(enc = { emptyArray() }),
   ZERO_PAGE to Case(
     enc = { enc(0x30) },
-    mem = { m, operand -> m.store(0x0030u, operand) }
+    operandAddr = 0x0030
   ),
   ZERO_PAGE_X to Case(
     enc = { enc(0x30) },
     state = { with(X = 0x20u) },
-    mem = { m, operand -> m.store(0x0050u, operand) }
+    operandAddr = 0x0050
   ),
   ZERO_PAGE_Y to Case(
     enc = { enc(0x30) },
     state = { with(Y = 0x20u) },
-    mem = { m, operand -> m.store(0x0050u, operand) }
+    operandAddr = 0x0050
   ),
   ABSOLUTE to Case(
     enc = { enc(0x30, 0x12) },
-    mem = { m, operand -> m.store(0x1230u, operand) }
+    operandAddr = 0x1230
   ),
   ABSOLUTE_X to Case(
     enc = { enc(0x30, 0x12) },
     state = { with(X = 0x20u) },
-    mem = { m, operand -> m.store(0x1250u, operand) }
+    operandAddr = 0x1250
   ),
   ABSOLUTE_Y to Case(
     enc = { enc(0x30, 0x12) },
     state = { with(Y = 0x20u) },
-    mem = { m, operand -> m.store(0x1250u, operand) }
+    operandAddr = 0x1250
   ),
   INDEXED_INDIRECT to Case(
     enc = { enc(0x30) },
     state = { with(X = 0x10u) },
-    mem = { m, operand ->
-      m.store(0x1230u, operand)
-      m.store(0x0040u, 0x30u)
-      m.store(0x0041u, 0x12u)
-    }
+    mem = mapOf(0x0040 to 0x30, 0x0041 to 0x12),
+    operandAddr = 0x1230
   ),
   INDIRECT_INDEXED to Case(
     enc = { enc(0x30) },
     state = { with(Y = 0x10u) },
-    mem = { m, operand ->
-      m.store(0x1230u, operand)
-      m.store(0x0030u, 0x20u)
-      m.store(0x0031u, 0x12u)
-    }
+    mem = mapOf(0x0030 to 0x20, 0x0031 to 0x12),
+    operandAddr = 0x1230
   )
 )
 
-fun assertForAddressModes(ops: Map<AddrMode, Int>, operand: Int, expected: State.() -> State) {
+fun assertForAddressModes(
+  ops: Map<AddrMode, Int>,
+  operand: Int = 0x00,
+  originalState: State.() -> State = { this },
+  expectedStores: (operandAddr: Int) -> Map<Int, Int> = { emptyMap() },
+  expectedState: State.() -> State
+) {
   ops.forEach { (mode, enc) ->
     PROTO_STATES.forEach { proto ->
-      val memory = FakeMemory()
-      val cpu = Cpu(memory)
-
       val case = CASES[mode]!!
 
-      case.mem(memory, operand.u8())
+      val memory = FakeMemory(case.mem + (case.operandAddr to operand))
+      val cpu = Cpu(memory)
 
       assertEquals(
-        case.state(proto).expected(),
-        cpu.execute(enc(enc) + case.enc(operand), case.state(proto)),
-        "[${mode.name}]"
+        case.state(proto).expectedState(),
+        cpu.execute(enc(enc) + case.enc(operand), case.state(proto).originalState()),
+        "Unexpected state for [${mode.name}]"
+      )
+
+      assertEquals(
+        expectedStores(case.operandAddr).entries.associate { (k, v) -> k.u16() to v.u8() },
+        memory.stores,
+        "Unexpected store for [${mode.name}]"
       )
     }
   }
@@ -116,7 +120,6 @@ fun sweepStates(block: SweepStatesContext.() -> Unit) {
       override val s = it
       override fun assertEquals(expected: State, original: State, encoding: Array<UInt8>) {
         assertEquals(expected, cpu.execute(encoding, original))
-//        Assertions.assertEquals(emptyList<Pair<UInt16, UInt8>>(), memory.stores)
       }
     }
 
@@ -133,7 +136,6 @@ fun forOpcode(op: Opcode, block: OpcodeContext.() -> Unit) {
       override val s = it
       override fun assertEquals(expected: State, original: State, addressMode: AddressMode) {
         Assertions.assertEquals(expected, cpu.execute(Instruction(op, addressMode), original))
-        assertEquals(emptyList<Pair<UInt16, UInt8>>(), memory.stores)
       }
     }
 

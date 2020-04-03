@@ -78,7 +78,6 @@ class Cpu(
       AddrMode.ZERO_PAGE_Y -> ZeroPageIndexed(operand8(), IndexSource.Y)
       AddrMode.INDEXED_INDIRECT -> IndexedIndirect(operand8())
       AddrMode.INDIRECT_INDEXED -> IndirectIndexed(operand8())
-
     }
 
     return Decoded(yeah, mode)

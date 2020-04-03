@@ -13,12 +13,13 @@ class Cpu(
     val addrMode: AddressMode
   )
 
+  // TODO - homogenise State and Memory paradigm
   fun execute(encoding: Array<UInt8>, state: State): State {
     val decoded = decode(encoding)
 
     val addr = addrCalc.calculate(decoded.addrMode, state)
 
-    val operand = resolveOperand(decoded.addrMode, state, addr)
+    val operand = resolveOperand(decoded, state, addr)
 
     val alu = decoded.yeah.op.aluMode(alu, Alu.Input(
       a = state.A,
@@ -35,6 +36,7 @@ class Cpu(
       MemSrc.P -> memory.store(addr, state.P.u8())
       MemSrc.R -> TODO()
       MemSrc.N -> {} // Do nothing  // TODO - is this necessary?  (Could most opcodes write back to their source register?)
+      MemSrc.Z -> TODO()
     }
 
     return state
@@ -42,9 +44,11 @@ class Cpu(
       .withNewReg(decoded.yeah.regSink, alu.z)
   }
 
-  private fun resolveOperand(mode: AddressMode, state: State, addr: UInt16): UInt8 = when (mode) {
+  private fun resolveOperand(decoded: Decoded, state: State, addr: UInt16): UInt8 = when (decoded.addrMode) {
     is Accumulator -> state.A
-    is Immediate -> mode.literal
+    is Immediate -> decoded.addrMode.literal
+    is Implied -> selectInputReg(decoded.yeah.regSrc, state)
+    is Relative -> 0.u8()  // Don't care
     is Absolute,
     is ZeroPage,
     is Indirect,
@@ -53,9 +57,6 @@ class Cpu(
     is IndexedIndirect,
     is IndirectIndexed
     -> memory.load(addr)
-    is Implied,
-    is Relative
-    -> 0.u8()  // Don't care
   }
 
   private fun decode(encoding: Array<UInt8>): Decoded {
@@ -81,37 +82,6 @@ class Cpu(
     }
 
     return Decoded(yeah, mode)
-  }
-
-  // TODO - homogenise State and Memory paradigm
-  fun execute(inst: Instruction, state: State): State {
-    val reg = selectInputReg(inst.op.RegIn, state)
-
-    val addr = addrCalc.calculate(inst.addressMode, state)
-
-    val alu = inst.op.aluMode(alu, Alu.Input(
-      a = selectAluSrc(inst.op.aluA, reg = reg, mem = addr),
-      b = selectAluSrc(inst.op.aluB, reg = reg, mem = addr),
-      c = state.P.C,
-      d = state.P.D
-    ))
-
-    val out = selectOut(inst.op.out, reg = reg, mem = addr, alu = alu)
-
-    if (inst.op.memOut) {
-      memory.store(addr, out)
-    }
-
-    // TODO - update PC
-    // - regular increment
-    // - jump
-    // - return
-    // - branch
-
-    return state
-      .withNewP(inst.op.flag, out, alu)
-      .withNewS(inst.op.stack)
-      .withNewReg(inst.op.regOut, out)
   }
 
   private fun selectInputReg(reg: Reg, state: State) = when (reg) {

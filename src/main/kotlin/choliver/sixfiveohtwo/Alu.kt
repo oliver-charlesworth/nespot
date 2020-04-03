@@ -10,7 +10,7 @@ class Alu {
   )
 
   data class Output(
-    val z: UInt8 = 0u,
+    val z: UInt8 = 0u,  // TODO - rename
     val c: Boolean = false,
     val v: Boolean = false
   )

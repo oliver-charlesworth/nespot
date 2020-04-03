@@ -1,8 +1,6 @@
 import choliver.sixfiveohtwo.*
 import choliver.sixfiveohtwo.AddrMode.*
-import choliver.sixfiveohtwo.AddressMode.*
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 
 private data class Case(
   val enc: (operand: Int) -> Array<UInt8>,
@@ -96,50 +94,6 @@ fun assertForAddressModes(
         "Unexpected store for [${mode.name}]"
       )
     }
-  }
-}
-
-
-
-interface OpcodeContext {
-  val s: State
-  fun assertEquals(expected: State, original: State, addressMode: AddressMode = Implied)
-}
-
-interface SweepStatesContext {
-  val s: State
-  fun assertEquals(expected: State, original: State, encoding: Array<UInt8>)
-}
-
-fun sweepStates(block: SweepStatesContext.() -> Unit) {
-  val memory = FakeMemory()
-  val cpu = Cpu(memory)
-
-  PROTO_STATES.forEach {
-    val context = object : SweepStatesContext {
-      override val s = it
-      override fun assertEquals(expected: State, original: State, encoding: Array<UInt8>) {
-        assertEquals(expected, cpu.execute(encoding, original))
-      }
-    }
-
-    context.block()
-  }
-}
-
-fun forOpcode(op: Opcode, block: OpcodeContext.() -> Unit) {
-  val memory = FakeMemory()
-  val cpu = Cpu(memory)
-
-  PROTO_STATES.forEach {
-    val context = object : OpcodeContext {
-      override val s = it
-      override fun assertEquals(expected: State, original: State, addressMode: AddressMode) {
-        Assertions.assertEquals(expected, cpu.execute(Instruction(op, addressMode), original))
-      }
-    }
-
-    context.block()
   }
 }
 

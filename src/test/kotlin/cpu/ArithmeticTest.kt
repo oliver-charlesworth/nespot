@@ -1,183 +1,248 @@
 package cpu
 
-import choliver.sixfiveohtwo.AddressMode.Immediate
-import choliver.sixfiveohtwo.Opcode.*
-import choliver.sixfiveohtwo.State
+import assertForAddressModes
+import choliver.sixfiveohtwo.AddrMode.*
 import choliver.sixfiveohtwo._0
 import choliver.sixfiveohtwo._1
-import enc
-import forOpcode
+import choliver.sixfiveohtwo.u8
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
-import sweepStates
 
 class ArithmeticTest {
-  // TODO - address modes
   // TODO - correct PC change
-  // TODO - no memory writes
   // TODO - DEC, INC
 
   @Nested
   inner class Adc {
-    // Each case implemented twice to demonstrate flag setting respects carry in:
-    // (1) basic, (2) carry-in set with (operand + 1)
-    @ParameterizedTest(name = "carry = {0}")
-    @ValueSource(booleans = [_0, _1])
-    fun sweepStates(carry: Boolean) {
-      fun State.adjust() = if (carry) with(A = (A - 1u).toUByte(), C = _1) else with(C = _0)
+    private val ops = mapOf(
+      IMMEDIATE to 0x69,
+      ZERO_PAGE to 0X65,
+      ZERO_PAGE_X to 0x75,
+      ABSOLUTE to 0x6D,
+      ABSOLUTE_X to 0x7D,
+      ABSOLUTE_Y to 0x79,
+      INDEXED_INDIRECT to 0x61,
+      INDIRECT_INDEXED to 0x71
+    )
 
-      sweepStates {
-        // +ve + +ve -> +ve
-        assertEquals(
-          s.with(A = 0x60u, V = _0, C = _0, N = _0, Z = _0),
-          s.with(A = 0x50u).adjust(),
-          enc(0x69, 0x10)
-        )
-
-        // -ve + -ve => -ve
-        assertEquals(
-          s.with(A = 0xE0u, V = _0, C = _0, N = _1, Z = _0),
-          s.with(A = 0x50u).adjust(),
-          enc(0x69, 0x90)
-        )
-
-        // Unsigned carry out
-        assertEquals(
-          s.with(A = 0x20u, V = _0, C = _1, N = _0, Z = _0),
-          s.with(A = 0x50u).adjust(),
-          enc(0x69, 0xD0)
-        )
-
-        // Unsigned carry out, result is -ve
-        assertEquals(
-          s.with(A = 0xA0u, V = _0, C = _1, N = _1, Z = _0),
-          s.with(A = 0xD0u).adjust(),
-          enc(0x69, 0xD0)
-        )
-
-        // +ve + +ve -> -ve (overflow)
-        assertEquals(
-          s.with(A = 0xA0u, V = _1, C = _0, N = _1, Z = _0),
-          s.with(A = 0x50u).adjust(),
-          enc(0x69, 0x50)
-        )
-
-        // -ve + -ve -> +ve (overflow)
-        assertEquals(
-          s.with(A = 0x60u, V = _1, C = _1, N = _0, Z = _0),
-          s.with(A = 0xD0u).adjust(),
-          enc(0x69, 0x90)
-        )
-
-        // Result is zero
-        assertEquals(
-          s.with(A = 0x00u, V = _0, C = _1, N = _0, Z = _1),
-          s.with(A = 0x01u).adjust(),
-          enc(0x69, 0xFF)
-        )
-      }
+    @Test
+    fun resultIsPositive() {
+      assertForAddressModesAndCarry(operand = 0x10, originalA = 0x20, A = 0x30, V = _0, C = _0, N = _0, Z = _0)
     }
 
-    // TODO - address modes
+    @Test
+    fun resultIsNegative() {
+      assertForAddressModesAndCarry(operand = 0xD0, originalA = 0x20, A = 0xF0, V = _0, C = _0, N = _1, Z = _0)
+    }
+
+    @Test
+    fun unsignedCarryOutAndPositive() {
+      assertForAddressModesAndCarry(operand = 0xD0, originalA = 0x50, A = 0x20, V = _0, C = _1, N = _0, Z = _0)
+    }
+
+    @Test
+    fun unsignedCarryOutAndNegative() {
+      assertForAddressModesAndCarry(operand = 0xD0, originalA = 0xD0, A = 0xA0, V = _0, C = _1, N = _1, Z = _0)
+    }
+
+    @Test
+    fun overflowToNegative() {
+      assertForAddressModesAndCarry(operand = 0x70, originalA = 0x20, A = 0x90, V = _1, C = _0, N = _1, Z = _0)
+    }
+
+    @Test
+    fun overflowToPositive() {
+      assertForAddressModesAndCarry(operand = 0x90, originalA = 0xE0, A = 0x70, V = _1, C = _1, N = _0, Z = _0)
+    }
+
+    @Test
+    fun resultIsZero() {
+      assertForAddressModesAndCarry(operand = 0xF0, originalA = 0x10, A = 0x00, V = _0, C = _1, N = _0, Z = _1)
+    }
+
+    // Each case implemented twice to demonstrate flag setting respects carry in:
+    // (1) basic, (2) carry-in set with (operand + 1)
+    private fun assertForAddressModesAndCarry(
+      operand: Int,
+      originalA: Int,
+      A: Int,
+      V: Boolean,
+      C: Boolean,
+      N: Boolean,
+      Z: Boolean
+    ) {
+      assertForAddressModes(
+        ops,
+        operand = operand,
+        originalState = { with(A = originalA.u8(), C = _0) },
+        expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
+      )
+
+      assertForAddressModes(
+        ops,
+        operand = operand,
+        originalState = { with(A = (originalA - 1).u8(), C = _1) },
+        expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
+      )
+    }
   }
 
   @Nested
   inner class Sbc {
+    private val ops = mapOf(
+      IMMEDIATE to 0xE9,
+      ZERO_PAGE to 0XE5,
+      ZERO_PAGE_X to 0xF5,
+      ABSOLUTE to 0xED,
+      ABSOLUTE_X to 0xFD,
+      ABSOLUTE_Y to 0xF9,
+      INDEXED_INDIRECT to 0xE1,
+      INDIRECT_INDEXED to 0xF1
+    )
+
+    @Test
+    fun resultIsPositive() {
+      assertForAddressModesAndCarry(operand = 0xF0, originalA = 0x20, A = 0x30, V = _0, C = _0, N = _0, Z = _0)
+    }
+
+    @Test
+    fun resultIsNegative() {
+      assertForAddressModesAndCarry(operand = 0x30, originalA = 0x20, A = 0xF0, V = _0, C = _0, N = _1, Z = _0)
+    }
+
+    @Test
+    fun unsignedCarryOutAndPositive() {
+      assertForAddressModesAndCarry(operand = 0x30, originalA = 0x50, A = 0x20, V = _0, C = _1, N = _0, Z = _0)
+    }
+
+    @Test
+    fun unsignedCarryOutAndNegative() {
+      assertForAddressModesAndCarry(operand = 0x30, originalA = 0xD0, A = 0xA0, V = _0, C = _1, N = _1, Z = _0)
+    }
+
+    @Test
+    fun overflowToNegative() {
+      assertForAddressModesAndCarry(operand = 0x90, originalA = 0x20, A = 0x90, V = _1, C = _0, N = _1, Z = _0)
+    }
+
+    @Test
+    fun overflowToPositive() {
+      assertForAddressModesAndCarry(operand = 0x70, originalA = 0xE0, A = 0x70, V = _1, C = _1, N = _0, Z = _0)
+    }
+
+    @Test
+    fun resultIsZero() {
+      assertForAddressModesAndCarry(operand = 0x10, originalA = 0x10, A = 0x00, V = _0, C = _1, N = _0, Z = _1)
+    }
+
     // Each case implemented twice to demonstrate flag setting respects borrow in:
     // (1) basic, (2) borrow-in set with (operand + 1)
-    @ParameterizedTest(name = "borrow = {0}")
-    @ValueSource(booleans = [_0, _1])
-    fun sweepStates(borrow: Boolean) {
-      fun State.adjust() = if (borrow) with(A = (A + 1u).toUByte(), C = _0) else with(C = _1)
+    private fun assertForAddressModesAndCarry(
+      operand: Int,
+      originalA: Int,
+      A: Int,
+      V: Boolean,
+      C: Boolean,
+      N: Boolean,
+      Z: Boolean
+    ) {
+      assertForAddressModes(
+        ops,
+        operand = operand,
+        originalState = { with(A = originalA.u8(), C = _1) },
+        expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
+      )
 
-      sweepStates {
-        // +ve - -ve -> +ve
-        assertEquals(
-          s.with(A = 0x60u, V = _0, C = _0, N = _0, Z = _0),
-          s.with(A = 0x50u).adjust(),
-          enc(0xE9, 0xF0)
-        )
-
-        // -ve - +ve => -ve
-        assertEquals(
-          s.with(A = 0xE0u, V = _0, C = _0, N = _1, Z = _0),
-          s.with(A = 0x50u).adjust(),
-          enc(0xE9, 0x70)
-        )
-
-        // Unsigned carry out
-        assertEquals(
-          s.with(A = 0x20u, V = _0, C = _1, N = _0, Z = _0),
-          s.with(A = 0x50u).adjust(),
-          enc(0xE9, 0x30)
-        )
-
-        // Unsigned carry out, result is -ve
-        assertEquals(
-          s.with(A = 0xA0u, V = _0, C = _1, N = _1, Z = _0),
-          s.with(A = 0xD0u).adjust(),
-          enc(0xE9, 0x30)
-        )
-
-        // +ve - -ve -> -ve (overflow)
-        assertEquals(
-          s.with(A = 0xA0u, V = _1, C = _0, N = _1, Z = _0),
-          s.with(A = 0x50u).adjust(),
-          enc(0xE9, 0xB0)
-        )
-
-        // -ve - +ve -> +ve (overflow)
-        assertEquals(
-          s.with(A = 0x60u, V = _1, C = _1, N = _0, Z = _0),
-          s.with(A = 0xD0u).adjust(),
-          enc(0xE9, 0x70)
-        )
-
-        // Result is zero
-        assertEquals(
-          s.with(A = 0x00u, V = _0, C = _1, N = _0, Z = _1),
-          s.with(A = 0x01u).adjust(),
-          enc(0xE9, 0x01)
-        )
-      }
+      assertForAddressModes(
+        ops,
+        operand = operand,
+        originalState = { with(A = (originalA + 1).u8(), C = _0) },
+        expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
+      )
     }
   }
 
   @Test
   fun dex() {
-    forOpcode(DEX) {
-      assertEquals(s.with(X = 0x01u, Z = _0, N = _0), s.with(X = 0x02u))
-      assertEquals(s.with(X = 0x00u, Z = _1, N = _0), s.with(X = 0x01u))
-      assertEquals(s.with(X = 0xFEu, Z = _0, N = _1), s.with(X = 0xFFu))
-    }
+    val ops = mapOf(IMPLIED to 0xCA)
+
+    assertForAddressModes(
+      ops,
+      originalState = { with(X = 0x02u) },
+      expectedState = { with(X = 0x01u, Z = _0, N = _0) }
+    )
+    assertForAddressModes(
+      ops,
+      originalState = { with(X = 0x01u) },
+      expectedState = { with(X = 0x00u, Z = _1, N = _0) }
+    )
+    assertForAddressModes(
+      ops,
+      originalState = { with(X = 0xFFu) },
+      expectedState = { with(X = 0xFEu, Z = _0, N = _1) }
+    )
   }
 
   @Test
   fun dey() {
-    forOpcode(DEY) {
-      assertEquals(s.with(Y = 0x01u, Z = _0, N = _0), s.with(Y = 0x02u))
-      assertEquals(s.with(Y = 0x00u, Z = _1, N = _0), s.with(Y = 0x01u))
-      assertEquals(s.with(Y = 0xFEu, Z = _0, N = _1), s.with(Y = 0xFFu))
-    }
+    val ops = mapOf(IMPLIED to 0x88)
+
+    assertForAddressModes(
+      ops,
+      originalState = { with(Y = 0x02u) },
+      expectedState = { with(Y = 0x01u, Z = _0, N = _0) }
+    )
+    assertForAddressModes(
+      ops,
+      originalState = { with(Y = 0x01u) },
+      expectedState = { with(Y = 0x00u, Z = _1, N = _0) }
+    )
+    assertForAddressModes(
+      ops,
+      originalState = { with(Y = 0xFFu) },
+      expectedState = { with(Y = 0xFEu, Z = _0, N = _1) }
+    )
   }
 
   @Test
   fun inx() {
-    forOpcode(INX) {
-      assertEquals(s.with(X = 0x02u, Z = _0, N = _0), s.with(X = 0x01u))
-      assertEquals(s.with(X = 0x00u, Z = _1, N = _0), s.with(X = 0xFFu))
-      assertEquals(s.with(X = 0xFFu, Z = _0, N = _1), s.with(X = 0xFEu))
-    }
+    val ops = mapOf(IMPLIED to 0xE8)
+
+    assertForAddressModes(
+      ops,
+      originalState = { with(X = 0x01u) },
+      expectedState = { with(X = 0x02u, Z = _0, N = _0) }
+    )
+    assertForAddressModes(
+      ops,
+      originalState = { with(X = 0xFFu) },
+      expectedState = { with(X = 0x00u, Z = _1, N = _0) }
+    )
+    assertForAddressModes(
+      ops,
+      originalState = { with(X = 0xFEu) },
+      expectedState = { with(X = 0xFFu, Z = _0, N = _1) }
+    )
   }
 
   @Test
   fun iny() {
-    forOpcode(INY) {
-      assertEquals(s.with(Y = 0x02u, Z = _0, N = _0), s.with(Y = 0x01u))
-      assertEquals(s.with(Y = 0x00u, Z = _1, N = _0), s.with(Y = 0xFFu))
-      assertEquals(s.with(Y = 0xFFu, Z = _0, N = _1), s.with(Y = 0xFEu))
-    }
+    val ops = mapOf(IMPLIED to 0xC8)
+
+    assertForAddressModes(
+      ops,
+      originalState = { with(Y = 0x01u) },
+      expectedState = { with(Y = 0x02u, Z = _0, N = _0) }
+    )
+    assertForAddressModes(
+      ops,
+      originalState = { with(Y = 0xFFu) },
+      expectedState = { with(Y = 0x00u, Z = _1, N = _0) }
+    )
+    assertForAddressModes(
+      ops,
+      originalState = { with(Y = 0xFEu) },
+      expectedState = { with(Y = 0xFFu, Z = _0, N = _1) }
+    )
   }
 }

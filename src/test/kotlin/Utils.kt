@@ -73,7 +73,7 @@ fun assertForAddressModes(
   operand: Int = 0x00,
   originalState: State.() -> State = { this },
   expectedStores: (operandAddr: Int) -> Map<Int, Int> = { emptyMap() },
-  expectedState: State.() -> State
+  expectedState: State.() -> State = { this }
 ) {
   ops.forEach { (mode, enc) ->
     PROTO_STATES.forEach { proto ->

@@ -262,10 +262,10 @@ val ENCODINGS =
       0x40 to Yeah(RTI, Reg.Z, MemSrc.N, Reg.Z, IMPLIED),  // TODO
       0x60 to Yeah(RTS, Reg.Z, MemSrc.N, Reg.Z, IMPLIED),  // TODO
 
-      0x98 to Yeah(TYA, Reg.Y, MemSrc.N, Reg.A, IMPLIED),  // TODO
-      0xA8 to Yeah(TAY, Reg.A, MemSrc.N, Reg.Y, IMPLIED),  // TODO
       0x8A to Yeah(TXA, Reg.X, MemSrc.N, Reg.A, IMPLIED),  // TODO
+      0x98 to Yeah(TYA, Reg.Y, MemSrc.N, Reg.A, IMPLIED),  // TODO
       0x9A to Yeah(TXS, Reg.X, MemSrc.N, Reg.S, IMPLIED),  // TODO
+      0xA8 to Yeah(TAY, Reg.A, MemSrc.N, Reg.Y, IMPLIED),  // TODO
       0xAA to Yeah(TAX, Reg.A, MemSrc.N, Reg.X, IMPLIED),  // TODO
       0xBA to Yeah(TSX, Reg.S, MemSrc.N, Reg.X, IMPLIED),  // TODO
 

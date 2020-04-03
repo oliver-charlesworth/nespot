@@ -5,6 +5,7 @@ import choliver.sixfiveohtwo.AddrMode.*
 import choliver.sixfiveohtwo._0
 import choliver.sixfiveohtwo._1
 import choliver.sixfiveohtwo.u8
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -59,6 +60,8 @@ class ArithmeticTest {
     fun resultIsZero() {
       assertForAddressModesAndCarry(operand = 0xF0, originalA = 0x10, A = 0x00, V = _0, C = _1, N = _0, Z = _1)
     }
+
+    // TODO - demonstrate multi-byte addition
 
     // Each case implemented twice to demonstrate flag setting respects carry in:
     // (1) basic, (2) carry-in set with (operand + 1)
@@ -135,6 +138,8 @@ class ArithmeticTest {
       assertForAddressModesAndCarry(operand = 0x10, originalA = 0x10, A = 0x00, V = _0, C = _1, N = _0, Z = _1)
     }
 
+    // TODO - demonstrate multi-byte subtraction
+
     // Each case implemented twice to demonstrate flag setting respects borrow in:
     // (1) basic, (2) borrow-in set with (operand + 1)
     private fun assertForAddressModesAndCarry(
@@ -161,6 +166,65 @@ class ArithmeticTest {
       )
     }
   }
+
+  @Nested
+  @Disabled // TODO
+  inner class Cmp {
+    private val ops = mapOf(
+      IMMEDIATE to 0xC9,
+      ZERO_PAGE to 0XC5,
+      ZERO_PAGE_X to 0xD5,
+      ABSOLUTE to 0xCD,
+      ABSOLUTE_X to 0xDD,
+      ABSOLUTE_Y to 0xD9,
+      INDEXED_INDIRECT to 0xC1,
+      INDIRECT_INDEXED to 0xD1
+    )
+
+    // TODO - demonstrate that we ignore carry-in
+
+    @Test
+    fun lessThan() {
+      assertForAddressModes(
+        ops,
+        operand = 0x30,
+        originalState = { with(A = 0x20u) },
+        expectedState = { with(A = 0x20u, C = _0, N = _0, Z = _0) }
+      )
+    }
+
+//    @Test
+//    fun resultIsNegative() {
+//      assertForAddressModesAndCarry(operand = 0x30, originalA = 0x20, A = 0xF0, V = _0, C = _0, N = _1, Z = _0)
+//    }
+//
+//    @Test
+//    fun unsignedCarryOutAndPositive() {
+//      assertForAddressModesAndCarry(operand = 0x30, originalA = 0x50, A = 0x20, V = _0, C = _1, N = _0, Z = _0)
+//    }
+//
+//    @Test
+//    fun unsignedCarryOutAndNegative() {
+//      assertForAddressModesAndCarry(operand = 0x30, originalA = 0xD0, A = 0xA0, V = _0, C = _1, N = _1, Z = _0)
+//    }
+//
+//    @Test
+//    fun overflowToNegative() {
+//      assertForAddressModesAndCarry(operand = 0x90, originalA = 0x20, A = 0x90, V = _1, C = _0, N = _1, Z = _0)
+//    }
+//
+//    @Test
+//    fun overflowToPositive() {
+//      assertForAddressModesAndCarry(operand = 0x70, originalA = 0xE0, A = 0x70, V = _1, C = _1, N = _0, Z = _0)
+//    }
+//
+//    @Test
+//    fun resultIsZero() {
+//      assertForAddressModesAndCarry(operand = 0x10, originalA = 0x10, A = 0x00, V = _0, C = _1, N = _0, Z = _1)
+//    }
+  }
+
+  // TODO - CPX, CPY
 
   @Test
   fun dex() {

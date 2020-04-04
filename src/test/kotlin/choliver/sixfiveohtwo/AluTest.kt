@@ -3,6 +3,8 @@ package choliver.sixfiveohtwo
 import choliver.sixfiveohtwo.Alu.Input
 import choliver.sixfiveohtwo.Alu.Output
 import choliver.sixfiveohtwo.AluMode.*
+import choliver.sixfiveohtwo.utils._0
+import choliver.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

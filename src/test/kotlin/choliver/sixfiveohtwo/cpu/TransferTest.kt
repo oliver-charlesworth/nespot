@@ -4,8 +4,8 @@ import choliver.sixfiveohtwo.assertForAddressModes
 import choliver.sixfiveohtwo.AddrMode.IMPLIED
 import choliver.sixfiveohtwo.State
 import choliver.sixfiveohtwo.UInt8
-import choliver.sixfiveohtwo._0
-import choliver.sixfiveohtwo._1
+import choliver.sixfiveohtwo.utils._0
+import choliver.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
 
 class TransferTest {

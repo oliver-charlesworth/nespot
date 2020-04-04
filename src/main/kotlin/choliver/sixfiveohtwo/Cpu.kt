@@ -1,6 +1,8 @@
 package choliver.sixfiveohtwo
 
 import choliver.sixfiveohtwo.AddressMode.*
+import choliver.sixfiveohtwo.utils._0
+import choliver.sixfiveohtwo.utils._1
 
 class Cpu(
   private val memory: Memory

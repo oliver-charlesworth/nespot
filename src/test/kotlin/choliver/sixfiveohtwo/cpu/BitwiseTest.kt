@@ -1,8 +1,8 @@
 package choliver.sixfiveohtwo.cpu
 
 import choliver.sixfiveohtwo.AddrMode.*
-import choliver.sixfiveohtwo._0
-import choliver.sixfiveohtwo._1
+import choliver.sixfiveohtwo.utils._0
+import choliver.sixfiveohtwo.utils._1
 import choliver.sixfiveohtwo.assertForAddressModes
 import org.junit.jupiter.api.Test
 

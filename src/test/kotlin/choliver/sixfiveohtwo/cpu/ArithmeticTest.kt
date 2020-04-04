@@ -1,10 +1,10 @@
 package choliver.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.assertForAddressModes
+import choliver.sixfiveohtwo.*
 import choliver.sixfiveohtwo.AddrMode.*
-import choliver.sixfiveohtwo._0
-import choliver.sixfiveohtwo._1
-import choliver.sixfiveohtwo.u8
+import choliver.sixfiveohtwo.utils._0
+import choliver.sixfiveohtwo.utils._1
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -61,7 +61,26 @@ class ArithmeticTest {
       assertForAddressModesAndCarry(operand = 0xF0, originalA = 0x10, A = 0x00, V = _0, C = _1, N = _0, Z = _1)
     }
 
-    // TODO - demonstrate multi-byte addition
+    @Test
+    fun multiByteNoCarry() {
+      assertMultiByte(0xCCCC, 0x3333, 0xFFFF)
+    }
+
+    @Test
+    fun multiByteCarry() {
+      assertMultiByte(0xCCCC, 0xAAAA, 0x7776)
+    }
+
+    private fun assertMultiByte(a: Int, b: Int, expected: Int) {
+      assertMultiByte(expected, listOf(
+        enc(0xA9, a and 0xFF),  // LDA lo(a)
+        enc(0x69, b and 0xFF),  // ADC lo(b)
+        enc(0x85, 0x00),        // STA #$00
+        enc(0xA9, a / 256),     // LDA hi(a)
+        enc(0x69, b / 256),     // ADC #$AA
+        enc(0x85, 0x01)         // STA #$00
+      ))
+    }
 
     // Each case implemented twice to demonstrate flag setting respects carry in:
     // (1) basic, (2) carry-in set with (operand + 1)
@@ -138,7 +157,27 @@ class ArithmeticTest {
       assertForAddressModesAndCarry(operand = 0x10, originalA = 0x10, A = 0x00, V = _0, C = _1, N = _0, Z = _1)
     }
 
-    // TODO - demonstrate multi-byte subtraction
+    @Test
+    fun multiByteNoBorrow() {
+      assertMultiByte(0xAAAA, 0x3333, 0x7777)
+    }
+
+    @Test
+    fun multiByteBorrow() {
+      assertMultiByte(0xAAAA, 0xCCCC, 0xDDDE)
+    }
+
+    private fun assertMultiByte(a: Int, b: Int, expected: Int) {
+      assertMultiByte(expected, listOf(
+        enc(0x38),              // SEC
+        enc(0xA9, a and 0xFF),  // LDA lo(a)
+        enc(0xE9, b and 0xFF),  // SBC lo(b)
+        enc(0x85, 0x00),        // STA #$00
+        enc(0xA9, a / 256),     // LDA hi(a)
+        enc(0xE9, b / 256),     // SBC lo(b)
+        enc(0x85, 0x01)         // STA #$00
+      ))
+    }
 
     // Each case implemented twice to demonstrate flag setting respects borrow in:
     // (1) basic, (2) borrow-in set with (operand + 1)
@@ -307,6 +346,18 @@ class ArithmeticTest {
       ops,
       originalState = { with(Y = 0xFEu) },
       expectedState = { with(Y = 0xFFu, Z = _0, N = _1) }
+    )
+  }
+
+  private fun assertMultiByte(expected: Int, instructions: List<Array<UInt8>>) {
+    val mem = FakeMemory()
+    val cpu = Cpu(mem)
+
+    instructions.fold(State()) { state, enc -> cpu.execute(enc, state) }
+
+    assertEquals(
+      mapOf(0x0000 to (expected and 0xFF), 0x0001 to (expected / 256)).toMemTypes(),
+      mem.stores
     )
   }
 }

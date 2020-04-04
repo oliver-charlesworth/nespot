@@ -1,4 +1,4 @@
-package choliver.sixfiveohtwo
+package choliver.sixfiveohtwo.utils
 
 @Suppress("ObjectPropertyName")
 const val _0 = false

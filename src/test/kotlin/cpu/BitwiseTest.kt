@@ -107,4 +107,37 @@ class BitwiseTest {
       expectedState = { with(A = 0x82u, Z = _0, N = _1) }
     )
   }
+
+  @Test
+  fun bit() {
+    val ops = mapOf(
+      ZERO_PAGE to 0x24,
+      ABSOLUTE to 0x2C
+    )
+
+    assertForAddressModes(
+      ops,
+      operand = 0x23,
+      originalState = { with(A = 0x11u) },
+      expectedState = { with(A = 0x11u, Z = _0, N = _0, V = _0) }
+    )
+    assertForAddressModes(
+      ops,
+      operand = 0x22,
+      originalState = { with(A = 0x11u) },
+      expectedState = { with(A = 0x11u, Z = _1, N = _0, V = _0) }
+    )
+    assertForAddressModes(
+      ops,
+      operand = 0x83,
+      originalState = { with(A = 0x81u) },
+      expectedState = { with(A = 0x81u, Z = _0, N = _1, V = _0) }
+    )
+    assertForAddressModes(
+      ops,
+      operand = 0x43,
+      originalState = { with(A = 0x41u) },
+      expectedState = { with(A = 0x41u, Z = _0, N = _0, V = _1) }
+    )
+  }
 }

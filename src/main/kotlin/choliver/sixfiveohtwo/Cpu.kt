@@ -21,7 +21,7 @@ class Cpu(
 
     val operand = resolveOperand(decoded, state, addr)
 
-    val alu = decoded.yeah.op.aluMode(alu, Alu.Input(
+    val alu = alu.execute(decoded.yeah.op.aluMode, Alu.Input(
       a = state.A,
       b = operand,
       c = state.P.C,
@@ -94,21 +94,6 @@ class Cpu(
     Reg.Z -> TODO()
   }
 
-  private fun selectAluSrc(src: AluSrc, reg: UInt8, mem: UInt16): UInt8 = when (src) {
-    AluSrc.REG -> reg
-    AluSrc.MEM -> mem.u8()
-    AluSrc.NON -> 0.u8()
-    AluSrc.ZZZ -> TODO()
-  }
-
-  private fun selectOut(out: OutSrc, reg: UInt8, mem: UInt16, alu: Alu.Output) = when (out) {
-    OutSrc.MEM -> mem.u8()
-    OutSrc.REG -> reg
-    OutSrc.ALU -> alu.z
-    OutSrc.NON -> 0.u8()
-    OutSrc.ZZZ -> TODO()
-  }
-
   private fun State.withNewP(flag: Flag, out: UInt8, alu: Alu.Output) = copy(P = with(P) {
     val c = alu.c
     val z = out.isZero()
@@ -128,14 +113,6 @@ class Cpu(
       Flag.D0__ -> copy(D = _0)
       Flag.D1__ -> copy(D = _1)
       Flag.V0__ -> copy(V = _0)
-    }
-  })
-
-  private fun State.withNewS(stack: Stack) = copy(S = with(S) {
-    when (stack) {
-      Stack.PUSH -> (this - 1u).u8()
-      Stack.POP_ -> (this + 1u).u8()
-      Stack.NONE -> this
     }
   })
 

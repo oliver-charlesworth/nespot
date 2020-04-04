@@ -1,5 +1,7 @@
 package choliver.sixfiveohtwo
 
+import choliver.sixfiveohtwo.AluMode.*
+
 class Alu {
 
   data class Input(
@@ -14,6 +16,24 @@ class Alu {
     val c: Boolean = false,
     val v: Boolean = false
   )
+
+  fun execute(mode: AluMode, inp: Input): Output {
+    val ret = when (mode) {
+      NOP -> nop(inp)
+      ADC -> adc(inp)
+      SBC -> sbc(inp)
+      DEC -> dec(inp)
+      INC -> inc(inp)
+      AND -> and(inp)
+      EOR -> eor(inp)
+      ORA -> ora(inp)
+      ASL -> asl(inp)
+      LSR -> lsr(inp)
+      ROL -> rol(inp)
+      ROR -> ror(inp)
+    }
+    return ret
+  }
 
   fun nop(inp: Input) = Output(z = inp.b)
 

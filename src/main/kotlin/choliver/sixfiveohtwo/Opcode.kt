@@ -55,7 +55,7 @@ enum class Opcode(
   BCC(Flag.NON_, AluMode.NOP),
   BCS(Flag.NON_, AluMode.NOP),
   BEQ(Flag.NON_, AluMode.NOP),
-  BIT(Flag._ZVN, AluMode.AND),
+  BIT(Flag._ZVN, AluMode.BIT),
   BMI(Flag.NON_, AluMode.NOP),
   BNE(Flag.NON_, AluMode.NOP),
   BPL(Flag.NON_, AluMode.NOP),
@@ -183,8 +183,8 @@ val ENCODINGS =
     LAYOUT_INC_DEC.encodings(0xE0) { Yeah(INC, Reg.Z, MemSrc.R, Reg.N, it) } +  // TODO - test
 
     mapOf(
-      0x24 to Yeah(BIT, Reg.Z, MemSrc.N, Reg.N, ZERO_PAGE), // TODO - test
-      0x2C to Yeah(BIT, Reg.Z, MemSrc.N, Reg.N, ABSOLUTE),  // TODO - test
+      0x24 to Yeah(BIT, Reg.Z, MemSrc.N, Reg.N, ZERO_PAGE),
+      0x2C to Yeah(BIT, Reg.Z, MemSrc.N, Reg.N, ABSOLUTE),
 
       0xCA to Yeah(DEX, Reg.X, MemSrc.N, Reg.X),
       0x88 to Yeah(DEY, Reg.Y, MemSrc.N, Reg.Y),

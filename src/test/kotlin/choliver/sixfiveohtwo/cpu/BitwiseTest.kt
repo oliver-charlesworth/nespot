@@ -1,10 +1,9 @@
 package choliver.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.assertForAddressModes
 import choliver.sixfiveohtwo.AddrMode.*
 import choliver.sixfiveohtwo._0
 import choliver.sixfiveohtwo._1
-import org.junit.jupiter.api.Disabled
+import choliver.sixfiveohtwo.assertForAddressModes
 import org.junit.jupiter.api.Test
 
 class BitwiseTest {
@@ -110,7 +109,6 @@ class BitwiseTest {
   }
 
   @Test
-  @Disabled
   fun bit() {
     val ops = mapOf(
       ZERO_PAGE to 0x24,

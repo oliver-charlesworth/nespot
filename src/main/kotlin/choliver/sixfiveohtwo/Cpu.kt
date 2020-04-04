@@ -37,7 +37,7 @@ class Cpu(
       MemSrc.S -> memory.store(addr, state.S)
       MemSrc.P -> memory.store(addr, state.P.u8())
       MemSrc.R -> TODO()
-      MemSrc.N -> {} // Do nothing  // TODO - is this necessary?  (Could most opcodes write back to their source register?)
+      MemSrc.N -> {} // Do nothing
       MemSrc.Z -> TODO()
     }
 
@@ -52,7 +52,6 @@ class Cpu(
     is Immediate -> decoded.addrMode.literal
     is Implied -> selectInputReg(decoded.yeah.regSrc, state)
     is Relative -> 0.u8()  // Don't care
-    is Stack,
     is Absolute,
     is ZeroPage,
     is Indirect,
@@ -61,6 +60,7 @@ class Cpu(
     is IndexedIndirect,
     is IndirectIndexed
     -> memory.load(addr)
+    is Stack -> memory.load((addr + 1u).u16())  // TODO - this is cheating, and doesn't wrap correctly
   }
 
   private fun decode(encoding: Array<UInt8>): Decoded {

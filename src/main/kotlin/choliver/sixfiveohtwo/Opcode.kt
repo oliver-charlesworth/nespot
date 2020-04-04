@@ -222,9 +222,9 @@ val ENCODINGS =
       0xBC to Yeah(LDY, Reg.N, MemSrc.N, Reg.Y, ABSOLUTE_X),
 
       0x08 to Yeah(PHP, Reg.N, MemSrc.P, Reg.N, STACK),
-      0x28 to Yeah(PLP, Reg.Z, MemSrc.Z, Reg.Z, STACK),  // TODO - test
+      0x28 to Yeah(PLP, Reg.N, MemSrc.N, Reg.P, STACK),
       0x48 to Yeah(PHA, Reg.N, MemSrc.A, Reg.N, STACK),
-      0x68 to Yeah(PLA, Reg.N, MemSrc.N, Reg.A, STACK),  // TODO - test
+      0x68 to Yeah(PLA, Reg.N, MemSrc.N, Reg.A, STACK),
 
       0x18 to Yeah(CLC, Reg.N, MemSrc.N, Reg.N),
       0xD8 to Yeah(CLD, Reg.N, MemSrc.N, Reg.N),

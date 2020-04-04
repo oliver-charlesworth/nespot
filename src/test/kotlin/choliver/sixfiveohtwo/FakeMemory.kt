@@ -10,7 +10,7 @@ class FakeMemory(
     .associate { (k, v) -> k.u16() to v.u8() }
     .toMutableMap()
 
-  override fun load(address: UInt16) = map[address] ?: 0u
+  override fun load(address: UInt16) = map[address] ?: 0xCCu  // Easier to spot during debugging than 0x00
 
   override fun store(address: UInt16, data: UInt8) {
     map[address] = data

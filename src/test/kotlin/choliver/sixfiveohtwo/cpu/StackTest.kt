@@ -35,16 +35,28 @@ class StackTest {
   }
 
   @Test
-  @Disabled
   fun pla() {
     val memory = FakeMemory(mapOf(0x123 to 0x30))
     val cpu = Cpu(memory)
 
     assertEquals(
-      State(A = 0x30u, S = 0x23u),
+      State(S = 0x23u, A = 0x30u),
       cpu.execute(enc(0x68), State(S = 0x22u))
     )
 
-    // TODO - assert no stores
+    memory.assertStores(emptyMap())
+  }
+
+  @Test
+  fun plp() {
+    val memory = FakeMemory(mapOf(0x123 to 0xCF))
+    val cpu = Cpu(memory)
+
+    assertEquals(
+      State(S = 0x23u, P = 0xCF.u8().toFlags()),
+      cpu.execute(enc(0x28), State(S = 0x22u))
+    )
+
+    memory.assertStores(emptyMap())
   }
 }

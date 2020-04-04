@@ -1,6 +1,6 @@
-package cpu
+package choliver.sixfiveohtwo.cpu
 
-import assertForAddressModes
+import choliver.sixfiveohtwo.assertForAddressModes
 import choliver.sixfiveohtwo.AddrMode.*
 import choliver.sixfiveohtwo._0
 import choliver.sixfiveohtwo._1

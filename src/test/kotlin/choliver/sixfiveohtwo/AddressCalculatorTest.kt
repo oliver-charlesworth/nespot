@@ -1,4 +1,5 @@
-import choliver.sixfiveohtwo.*
+package choliver.sixfiveohtwo
+
 import choliver.sixfiveohtwo.AddressMode.*
 import choliver.sixfiveohtwo.AddressMode.IndexSource.*
 import org.junit.jupiter.api.Assertions.assertEquals

@@ -1,4 +1,4 @@
-import choliver.sixfiveohtwo.*
+package choliver.sixfiveohtwo
 
 class FakeMemory(
   initial: Map<Int, Int> = emptyMap()

@@ -12,73 +12,52 @@ class Alu {
   )
 
   data class Output(
-    val z: UInt8 = 0u,  // TODO - rename
+    val q: UInt8 = 0u,
     val c: Boolean = false,
     val v: Boolean = false
   )
 
-  fun execute(mode: AluMode, inp: Input): Output {
-    val ret = when (mode) {
-      NOP -> nop(inp)
-      ADC -> adc(inp)
-      SBC -> sbc(inp)
-      DEC -> dec(inp)
-      INC -> inc(inp)
-      AND -> and(inp)
-      EOR -> eor(inp)
-      ORA -> ora(inp)
-      ASL -> asl(inp)
-      LSR -> lsr(inp)
-      ROL -> rol(inp)
-      ROR -> ror(inp)
-    }
-    return ret
+  fun execute(mode: AluMode, inp: Input) = when (mode) {
+    NOP -> Output(q = inp.b)
+    ADC -> adc(inp)
+    SBC -> adc(inp.copy(b = inp.b.inv()))
+    DEC -> Output(q = (inp.b - 1u).u8())
+    INC -> Output(q = (inp.b + 1u).u8())
+    AND -> Output(q = (inp.a and inp.b))
+    EOR -> Output(q = (inp.a xor inp.b))
+    ORA -> Output(q = (inp.a or inp.b))
+    ASL -> Output(
+      q = (inp.a * 2u).u8(),
+      c = !(inp.a and 0x80u).isZero()
+    )
+    LSR -> Output(
+      q = (inp.a / 2u).u8(),
+      c = !(inp.a and 0x01u).isZero()
+    )
+    ROL -> Output(
+      q = (inp.a * 2u or if (inp.c) 1u else 0u).u8(),
+      c = !(inp.a and 0x80u).isZero()
+    )
+    ROR -> Output(
+      q = (inp.a / 2u or if (inp.c) 0x80u else 0u).u8(),
+      c = !(inp.a and 0x01u).isZero()
+    )
+    BIT -> Output(
+      q = (inp.a and inp.b),
+      v = (inp.b and 0x40u) != 0.u8()
+    )
   }
 
-  fun nop(inp: Input) = Output(z = inp.b)
-
   // TODO - decimal mode
-  fun adc(inp: Input): Output {
+  private fun adc(inp: Input): Output {
     val raw = inp.a + inp.b + if (inp.c) 1u else 0u
     val result = raw.u8()
     val sameOperandSigns = (inp.a.isNegative() == inp.b.isNegative())
     val differentResultSign = (inp.a.isNegative() != result.isNegative())
     return Output(
-      z = result,
+      q = result,
       c = (raw and 0x100u) != 0u,
       v = sameOperandSigns && differentResultSign
     )
   }
-
-  fun sbc(inp: Input) = adc(inp.copy(b = inp.b.inv()))
-
-  fun dec(inp: Input) = Output(z = (inp.b - 1u).u8())
-
-  fun inc(inp: Input) = Output(z = (inp.b + 1u).u8())
-
-  fun and(inp: Input) = Output(z = (inp.a and inp.b))
-
-  fun eor(inp: Input) = Output(z = (inp.a xor inp.b))
-
-  fun ora(inp: Input) = Output(z = (inp.a or inp.b))
-
-  fun asl(inp: Input) = Output(
-    z = (inp.a * 2u).u8(),
-    c = !(inp.a and 0x80u).isZero()
-  )
-
-  fun lsr(inp: Input) = Output(
-    z = (inp.a / 2u).u8(),
-    c = !(inp.a and 0x01u).isZero()
-  )
-
-  fun rol(inp: Input) = Output(
-    z = (inp.a * 2u or if (inp.c) 1u else 0u).u8(),
-    c = !(inp.a and 0x80u).isZero()
-  )
-
-  fun ror(inp: Input) = Output(
-    z = (inp.a / 2u or if (inp.c) 0x80u else 0u).u8(),
-    c = !(inp.a and 0x01u).isZero()
-  )
 }

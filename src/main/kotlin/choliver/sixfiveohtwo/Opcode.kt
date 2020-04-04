@@ -25,7 +25,8 @@ enum class AluMode {
   ASL,
   LSR,
   ROL,
-  ROR
+  ROR,
+  BIT
 }
 
 enum class Flag {

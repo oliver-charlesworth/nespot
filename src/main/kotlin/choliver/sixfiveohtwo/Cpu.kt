@@ -40,8 +40,8 @@ class Cpu(
     }
 
     return state
-      .withNewP(decoded.yeah.op.flag, alu.z, alu) // TODO - simplify args
-      .withNewReg(decoded.yeah.regSink, alu.z)
+      .withNewP(decoded.yeah.op.flag, alu.q, alu) // TODO - simplify args
+      .withNewReg(decoded.yeah.regSink, alu.q)
   }
 
   private fun resolveOperand(decoded: Decoded, state: State, addr: UInt16): UInt8 = when (decoded.addrMode) {

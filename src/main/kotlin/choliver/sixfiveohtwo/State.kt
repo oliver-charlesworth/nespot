@@ -19,6 +19,7 @@ data class State(
 
   /** Like [copy], but allows us to also set individual status flags. */
   fun with(
+    PC: UInt16 = this.PC,
     A: UInt8 = this.A,
     X: UInt8 = this.X,
     Y: UInt8 = this.Y,
@@ -30,6 +31,7 @@ data class State(
     Z: Boolean = P.Z,
     C: Boolean = P.C
   ) = copy(
+    PC = PC,
     A = A,
     X = X,
     Y = Y,

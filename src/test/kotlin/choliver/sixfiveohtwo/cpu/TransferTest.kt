@@ -38,7 +38,7 @@ class TransferTest {
   fun txs() {
     assertForAddressModes(
       mapOf(IMPLIED to 0x9A),
-      originalState = { with(X = 0x10u) },
+      initState = { with(X = 0x10u) },
       expectedState = { with(X = 0x10u, S = 0x10u) }
     )
   }
@@ -50,17 +50,17 @@ class TransferTest {
   ) {
     assertForAddressModes(
       mapOf(IMPLIED to opcode),
-      originalState = { source(0x10u) },
+      initState = { source(0x10u) },
       expectedState = { source(0x10u).dest(0x10u).with(Z = _0, N = _0) }
     )
     assertForAddressModes(
       mapOf(IMPLIED to opcode),
-      originalState = { source(0xF0u) },
+      initState = { source(0xF0u) },
       expectedState = { source(0xF0u).dest(0xF0u).with(Z = _0, N = _1) }
     )
     assertForAddressModes(
       mapOf(IMPLIED to opcode),
-      originalState = { source(0x00u) },
+      initState = { source(0x00u) },
       expectedState = { source(0x00u).dest(0x00u).with(Z = _1, N = _0) }
     )
   }

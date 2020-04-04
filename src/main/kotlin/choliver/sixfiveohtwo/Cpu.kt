@@ -12,7 +12,8 @@ class Cpu(
 
   private data class Decoded(
     val yeah: Yeah,
-    val addrMode: AddressMode
+    val addrMode: AddressMode,
+    val pcInc: UInt8
   )
 
   // TODO - homogenise State and Memory paradigm
@@ -42,6 +43,7 @@ class Cpu(
     }
 
     return state
+      .withNewPC(decoded.pcInc)
       .withNewP(decoded.yeah.op.flag, alu.q, alu) // TODO - simplify args
       .withNewS(decoded.yeah.op)
       .withNewReg(decoded.yeah.regSink, alu.q)
@@ -64,11 +66,19 @@ class Cpu(
   }
 
   private fun decode(encoding: Array<UInt8>): Decoded {
+    var pcInc = 1
+
     // TODO - error handling
     val yeah = ENCODINGS[encoding[0]]!!
 
-    fun operand8() = encoding[1]
-    fun operand16() = combine(encoding[1], encoding[2])
+    fun operand8(): UInt8 {
+      pcInc = 2
+      return encoding[1]
+    }
+    fun operand16(): UInt16 {
+      pcInc = 3
+      return combine(encoding[1], encoding[2])
+    }
 
     val mode = when (yeah.addrMode) {
       AddrMode.ACCUMULATOR -> Accumulator
@@ -86,7 +96,11 @@ class Cpu(
       AddrMode.INDIRECT_INDEXED -> IndirectIndexed(operand8())
     }
 
-    return Decoded(yeah, mode)
+    return Decoded(
+      yeah,
+      mode,
+      pcInc.u8()
+    )
   }
 
   private fun selectInputReg(reg: Reg, state: State) = when (reg) {
@@ -98,6 +112,8 @@ class Cpu(
     Reg.N -> 0.u8()
     Reg.Z -> TODO()
   }
+
+  private fun State.withNewPC(pcInc: UInt8) = copy(PC = (PC + pcInc).u16())
 
   private fun State.withNewP(flag: Flag, out: UInt8, alu: Alu.Output) = copy(P = with(P) {
     val c = alu.c

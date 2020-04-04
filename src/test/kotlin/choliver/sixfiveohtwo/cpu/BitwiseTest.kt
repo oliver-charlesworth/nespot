@@ -25,19 +25,19 @@ class BitwiseTest {
     assertForAddressModes(
       ops,
       operand = 0x23,
-      originalState = { with(A = 0x11u) },
+      initState = { with(A = 0x11u) },
       expectedState = { with(A = 0x01u, Z = _0, N = _0) }
     )
     assertForAddressModes(
       ops,
       operand = 0x22,
-      originalState = { with(A = 0x11u) },
+      initState = { with(A = 0x11u) },
       expectedState = { with(A = 0x00u, Z = _1, N = _0) }
     )
     assertForAddressModes(
       ops,
       operand = 0x83,
-      originalState = { with(A = 0x81u) },
+      initState = { with(A = 0x81u) },
       expectedState = { with(A = 0x81u, Z = _0, N = _1) }
     )
   }
@@ -58,19 +58,19 @@ class BitwiseTest {
     assertForAddressModes(
       ops,
       operand = 0x23,
-      originalState = { with(A = 0x11u) },
+      initState = { with(A = 0x11u) },
       expectedState = { with(A = 0x33u, Z = _0, N = _0) }
     )
     assertForAddressModes(
       ops,
       operand = 0x00,
-      originalState = { with(A = 0x00u) },
+      initState = { with(A = 0x00u) },
       expectedState = { with(A = 0x00u, Z = _1, N = _0) }
     )
     assertForAddressModes(
       ops,
       operand = 0x83,
-      originalState = { with(A = 0x81u) },
+      initState = { with(A = 0x81u) },
       expectedState = { with(A = 0x83u, Z = _0, N = _1) }
     )
   }
@@ -91,19 +91,19 @@ class BitwiseTest {
     assertForAddressModes(
       ops,
       operand = 0x23,
-      originalState = { with(A = 0x11u) },
+      initState = { with(A = 0x11u) },
       expectedState = { with(A = 0x32u, Z = _0, N = _0) }
     )
     assertForAddressModes(
       ops,
       operand = 0x11,
-      originalState = { with(A = 0x11u) },
+      initState = { with(A = 0x11u) },
       expectedState = { with(A = 0x00u, Z = _1, N = _0) }
     )
     assertForAddressModes(
       ops,
       operand = 0x03,
-      originalState = { with(A = 0x81u) },
+      initState = { with(A = 0x81u) },
       expectedState = { with(A = 0x82u, Z = _0, N = _1) }
     )
   }
@@ -118,25 +118,25 @@ class BitwiseTest {
     assertForAddressModes(
       ops,
       operand = 0x23,
-      originalState = { with(A = 0x11u) },
+      initState = { with(A = 0x11u) },
       expectedState = { with(A = 0x11u, Z = _0, N = _0, V = _0) }
     )
     assertForAddressModes(
       ops,
       operand = 0x22,
-      originalState = { with(A = 0x11u) },
+      initState = { with(A = 0x11u) },
       expectedState = { with(A = 0x11u, Z = _1, N = _0, V = _0) }
     )
     assertForAddressModes(
       ops,
       operand = 0x83,
-      originalState = { with(A = 0x81u) },
+      initState = { with(A = 0x81u) },
       expectedState = { with(A = 0x81u, Z = _0, N = _1, V = _0) }
     )
     assertForAddressModes(
       ops,
       operand = 0x43,
-      originalState = { with(A = 0x41u) },
+      initState = { with(A = 0x41u) },
       expectedState = { with(A = 0x41u, Z = _0, N = _0, V = _1) }
     )
   }

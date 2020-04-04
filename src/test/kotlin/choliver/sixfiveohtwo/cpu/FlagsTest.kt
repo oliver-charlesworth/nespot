@@ -44,7 +44,7 @@ class FlagsTest {
   }
 
   private fun assertFlagModified(opcode: Int, expected: Boolean, state: State.(b: Boolean) -> State) {
-    assertForAddressModes(mapOf(IMPLIED to opcode), originalState = { state(_1) }, expectedState = { state(expected) })
-    assertForAddressModes(mapOf(IMPLIED to opcode), originalState = { state(_0) }, expectedState = { state(expected) })
+    assertForAddressModes(mapOf(IMPLIED to opcode), initState = { state(_1) }, expectedState = { state(expected) })
+    assertForAddressModes(mapOf(IMPLIED to opcode), initState = { state(_0) }, expectedState = { state(expected) })
   }
 }

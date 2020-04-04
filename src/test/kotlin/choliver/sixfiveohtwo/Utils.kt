@@ -72,7 +72,8 @@ private val CASES = mapOf(
 fun assertForAddressModes(
   ops: Map<AddrMode, Int>,
   operand: Int = 0x00,
-  originalState: State.() -> State = { this },
+  initState: State.() -> State = { this },
+  initStores: Map<Int, Int> = emptyMap(),
   expectedStores: (operandAddr: Int) -> Map<Int, Int> = { emptyMap() },
   expectedState: State.() -> State = { this }
 ) {
@@ -80,15 +81,14 @@ fun assertForAddressModes(
     PROTO_STATES.forEach { proto ->
       val case = CASES[mode]!!
 
-      val memory = FakeMemory(case.mem + (case.operandAddr to operand))
+      val memory = FakeMemory(case.mem + (case.operandAddr to operand) + initStores)
       val cpu = Cpu(memory)
 
-      assertEquals(
-        case.state(proto).expectedState(),
-        cpu.execute(enc(enc) + case.enc(operand), case.state(proto).originalState()),
-        "Unexpected state for [${mode.name}]"
-      )
+      val encoding = enc(enc) + case.enc(operand)
+      val init = case.state(proto).with(PC = 0x5678u).initState()
+      val expected = case.state(proto).with(PC = (0x5678u + encoding.size.u8()).u16()).expectedState()
 
+      assertEquals(expected, cpu.execute(encoding, init), "Unexpected state for [${mode.name}]")
       memory.assertStores(expectedStores(case.operandAddr), "Unexpected store for [${mode.name}]")
     }
   }

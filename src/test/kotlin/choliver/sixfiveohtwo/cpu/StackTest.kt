@@ -1,8 +1,10 @@
 package choliver.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.*
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Disabled
+import choliver.sixfiveohtwo.AddrMode.IMPLIED
+import choliver.sixfiveohtwo.assertForAddressModes
+import choliver.sixfiveohtwo.u8
+import choliver.sixfiveohtwo.utils._0
+import choliver.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
 
 class StackTest {
@@ -10,53 +12,47 @@ class StackTest {
 
   @Test
   fun pha() {
-    val memory = FakeMemory()
-    val cpu = Cpu(memory)
-
-    assertEquals(
-      State(S = 0x2Fu, A = 0x20u),
-      cpu.execute(enc(0x48), State(S = 0x30u, A = 0x20u))
+    assertForAddressModes(
+      ops = mapOf(IMPLIED to 0x48),
+      initState = { with(S = 0x30u, A = 0x20u) },
+      expectedState = { with(S = 0x2Fu, A = 0x20u) },
+      expectedStores = { mapOf(0x0130 to 0x20) }
     )
-
-    memory.assertStores(mapOf(0x0130 to 0x20))
   }
 
   @Test
   fun php() {
-    val memory = FakeMemory()
-    val cpu = Cpu(memory)
-
-    assertEquals(
-      State(S = 0x2Fu, P = 0xCF.u8().toFlags()),
-      cpu.execute(enc(0x08), State(S = 0x30u, P = 0xCF.u8().toFlags()))
+    assertForAddressModes(
+      ops = mapOf(IMPLIED to 0x08),
+      initState = { with(S = 0x30u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
+      expectedState = { with(S = 0x2Fu, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
+      expectedStores = { mapOf(0x0130 to 0xCF) }
     )
-
-    memory.assertStores(mapOf(0x0130 to 0xCF))
   }
 
   @Test
   fun pla() {
-    val memory = FakeMemory(mapOf(0x123 to 0x30))
-    val cpu = Cpu(memory)
+    fun assertBehaviour(data: Int, Z: Boolean, N: Boolean) {
+      assertForAddressModes(
+        ops = mapOf(IMPLIED to 0x68),
+        initStores = mapOf(0x123 to data),
+        initState = { with(S = 0x22u) },
+        expectedState = { with(S = 0x23u, A = data.u8(), Z = Z, N = N) }
+      )
+    }
 
-    assertEquals(
-      State(S = 0x23u, A = 0x30u),
-      cpu.execute(enc(0x68), State(S = 0x22u))
-    )
-
-    memory.assertStores(emptyMap())
+    assertBehaviour(0x30, Z = _0, N = _0)
+    assertBehaviour(0xD0, Z = _0, N = _1)
+    assertBehaviour(0x00, Z = _1, N = _0)
   }
 
   @Test
   fun plp() {
-    val memory = FakeMemory(mapOf(0x123 to 0xCF))
-    val cpu = Cpu(memory)
-
-    assertEquals(
-      State(S = 0x23u, P = 0xCF.u8().toFlags()),
-      cpu.execute(enc(0x28), State(S = 0x22u))
+    assertForAddressModes(
+      ops = mapOf(IMPLIED to 0x28),
+      initStores = mapOf(0x123 to 0xCF),
+      initState = { with(S = 0x22u) },
+      expectedState = { with(S = 0x23u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) }
     )
-
-    memory.assertStores(emptyMap())
   }
 }

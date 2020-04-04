@@ -64,7 +64,7 @@ class LoadStoreTest {
         INDEXED_INDIRECT to 0x81,
         INDIRECT_INDEXED to 0x91
       ),
-      originalState = { with(A = 0x69u) },
+      initState = { with(A = 0x69u) },
       expectedState = { with(A = 0x69u) },
       expectedStores = { mapOf(it to 0x69) }
     )
@@ -78,7 +78,7 @@ class LoadStoreTest {
         ZERO_PAGE_Y to 0x96,
         ABSOLUTE to 0x8E
       ),
-      originalState = { with(X = 0x69u) },
+      initState = { with(X = 0x69u) },
       expectedState = { with(X = 0x69u) },
       expectedStores = { mapOf(it to 0x69) }
     )
@@ -92,7 +92,7 @@ class LoadStoreTest {
         ZERO_PAGE_X to 0x94,
         ABSOLUTE to 0x8C
       ),
-      originalState = { with(Y = 0x69u) },
+      initState = { with(Y = 0x69u) },
       expectedState = { with(Y = 0x69u) },
       expectedStores = { mapOf(it to 0x69) }
     )

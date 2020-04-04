@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class ArithmeticTest {
-  // TODO - correct PC change
   // TODO - DEC, INC
 
   @Nested
@@ -96,14 +95,14 @@ class ArithmeticTest {
       assertForAddressModes(
         ops,
         operand = operand,
-        originalState = { with(A = originalA.u8(), C = _0) },
+        initState = { with(A = originalA.u8(), C = _0) },
         expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
       )
 
       assertForAddressModes(
         ops,
         operand = operand,
-        originalState = { with(A = (originalA - 1).u8(), C = _1) },
+        initState = { with(A = (originalA - 1).u8(), C = _1) },
         expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
       )
     }
@@ -193,14 +192,14 @@ class ArithmeticTest {
       assertForAddressModes(
         ops,
         operand = operand,
-        originalState = { with(A = originalA.u8(), C = _1) },
+        initState = { with(A = originalA.u8(), C = _1) },
         expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
       )
 
       assertForAddressModes(
         ops,
         operand = operand,
-        originalState = { with(A = (originalA + 1).u8(), C = _0) },
+        initState = { with(A = (originalA + 1).u8(), C = _0) },
         expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
       )
     }
@@ -227,7 +226,7 @@ class ArithmeticTest {
       assertForAddressModes(
         ops,
         operand = 0x30,
-        originalState = { with(A = 0x20u) },
+        initState = { with(A = 0x20u) },
         expectedState = { with(A = 0x20u, C = _0, N = _0, Z = _0) }
       )
     }
@@ -271,17 +270,17 @@ class ArithmeticTest {
 
     assertForAddressModes(
       ops,
-      originalState = { with(X = 0x02u) },
+      initState = { with(X = 0x02u) },
       expectedState = { with(X = 0x01u, Z = _0, N = _0) }
     )
     assertForAddressModes(
       ops,
-      originalState = { with(X = 0x01u) },
+      initState = { with(X = 0x01u) },
       expectedState = { with(X = 0x00u, Z = _1, N = _0) }
     )
     assertForAddressModes(
       ops,
-      originalState = { with(X = 0xFFu) },
+      initState = { with(X = 0xFFu) },
       expectedState = { with(X = 0xFEu, Z = _0, N = _1) }
     )
   }
@@ -292,17 +291,17 @@ class ArithmeticTest {
 
     assertForAddressModes(
       ops,
-      originalState = { with(Y = 0x02u) },
+      initState = { with(Y = 0x02u) },
       expectedState = { with(Y = 0x01u, Z = _0, N = _0) }
     )
     assertForAddressModes(
       ops,
-      originalState = { with(Y = 0x01u) },
+      initState = { with(Y = 0x01u) },
       expectedState = { with(Y = 0x00u, Z = _1, N = _0) }
     )
     assertForAddressModes(
       ops,
-      originalState = { with(Y = 0xFFu) },
+      initState = { with(Y = 0xFFu) },
       expectedState = { with(Y = 0xFEu, Z = _0, N = _1) }
     )
   }
@@ -313,17 +312,17 @@ class ArithmeticTest {
 
     assertForAddressModes(
       ops,
-      originalState = { with(X = 0x01u) },
+      initState = { with(X = 0x01u) },
       expectedState = { with(X = 0x02u, Z = _0, N = _0) }
     )
     assertForAddressModes(
       ops,
-      originalState = { with(X = 0xFFu) },
+      initState = { with(X = 0xFFu) },
       expectedState = { with(X = 0x00u, Z = _1, N = _0) }
     )
     assertForAddressModes(
       ops,
-      originalState = { with(X = 0xFEu) },
+      initState = { with(X = 0xFEu) },
       expectedState = { with(X = 0xFFu, Z = _0, N = _1) }
     )
   }
@@ -334,17 +333,17 @@ class ArithmeticTest {
 
     assertForAddressModes(
       ops,
-      originalState = { with(Y = 0x01u) },
+      initState = { with(Y = 0x01u) },
       expectedState = { with(Y = 0x02u, Z = _0, N = _0) }
     )
     assertForAddressModes(
       ops,
-      originalState = { with(Y = 0xFFu) },
+      initState = { with(Y = 0xFFu) },
       expectedState = { with(Y = 0x00u, Z = _1, N = _0) }
     )
     assertForAddressModes(
       ops,
-      originalState = { with(Y = 0xFEu) },
+      initState = { with(Y = 0xFEu) },
       expectedState = { with(Y = 0xFFu, Z = _0, N = _1) }
     )
   }

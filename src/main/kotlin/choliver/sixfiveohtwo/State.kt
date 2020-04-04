@@ -69,7 +69,7 @@ fun UInt8.toFlags() = Flags(
   N = !(this and 0x80u).isZero(),
   V = !(this and 0x40u).isZero(),
   D = !(this and 0x08u).isZero(),
-  I = !(this and 0x84u).isZero(),
-  Z = !(this and 0x82u).isZero(),
-  C = !(this and 0x81u).isZero()
+  I = !(this and 0x04u).isZero(),
+  Z = !(this and 0x02u).isZero(),
+  C = !(this and 0x01u).isZero()
 )

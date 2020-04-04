@@ -86,7 +86,7 @@ enum class Opcode(
   ORA(Flag._Z_N, AluMode.ORA),
   PHA(Flag.NON_, AluMode.NOP),
   PHP(Flag.NON_, AluMode.NOP),
-  PLA(Flag._Z_N, AluMode.NOP),
+  PLA(Flag._Z_N, AluMode.NOP),  // The original datasheet claims no flags set, but rest of the world disagrees
   PLP(Flag.NON_, AluMode.NOP),
   ROL(Flag.CZ_N, AluMode.ROL),
   ROR(Flag.CZ_N, AluMode.ROR),
@@ -111,6 +111,7 @@ enum class AddrMode {
   ACCUMULATOR,
   IMMEDIATE,
   IMPLIED,
+  STACK,  // TODO - this needs to be internal-only
   INDIRECT,
   ABSOLUTE,
   ABSOLUTE_X,
@@ -220,10 +221,10 @@ val ENCODINGS =
       0xB4 to Yeah(LDY, Reg.N, MemSrc.N, Reg.Y, ZERO_PAGE_X),
       0xBC to Yeah(LDY, Reg.N, MemSrc.N, Reg.Y, ABSOLUTE_X),
 
-      0x08 to Yeah(PHP, Reg.Z, MemSrc.Z, Reg.Z),  // TODO - test
-      0x28 to Yeah(PLP, Reg.Z, MemSrc.Z, Reg.Z),  // TODO - test
-      0x48 to Yeah(PHA, Reg.Z, MemSrc.Z, Reg.Z),  // TODO - test
-      0x68 to Yeah(PLA, Reg.Z, MemSrc.Z, Reg.Z),  // TODO - test
+      0x08 to Yeah(PHP, Reg.N, MemSrc.P, Reg.N, STACK),
+      0x28 to Yeah(PLP, Reg.Z, MemSrc.Z, Reg.Z, STACK),  // TODO - test
+      0x48 to Yeah(PHA, Reg.N, MemSrc.A, Reg.N, STACK),
+      0x68 to Yeah(PLA, Reg.N, MemSrc.N, Reg.A, STACK),  // TODO - test
 
       0x18 to Yeah(CLC, Reg.N, MemSrc.N, Reg.N),
       0xD8 to Yeah(CLD, Reg.N, MemSrc.N, Reg.N),

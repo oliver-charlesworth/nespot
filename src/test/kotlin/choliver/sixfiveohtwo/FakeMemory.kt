@@ -1,9 +1,11 @@
 package choliver.sixfiveohtwo
 
+import org.junit.jupiter.api.Assertions.*
+
 class FakeMemory(
   initial: Map<Int, Int> = emptyMap()
 ) : Memory {
-  private val _stores = mutableMapOf<UInt16, UInt8>()
+  private val stores = mutableMapOf<UInt16, UInt8>()
   private val map = initial.entries
     .associate { (k, v) -> k.u16() to v.u8() }
     .toMutableMap()
@@ -12,8 +14,14 @@ class FakeMemory(
 
   override fun store(address: UInt16, data: UInt8) {
     map[address] = data
-    _stores[address] = data
+    stores[address] = data
   }
 
-  val stores get() = _stores.toMap()
+  fun assertStores(expected: Map<Int, Int>, message: String? = null) {
+    assertEquals(
+      expected.entries.associate { (k, v) -> k.u16() to v.u8() },
+      stores,
+      message
+    )
+  }
 }

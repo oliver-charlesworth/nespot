@@ -10,6 +10,14 @@ class AddressCalculatorTest {
   private val memory = FakeMemory()
   private val calc = AddressCalculator(memory)
 
+  @Test
+  fun stack() {
+    assertEquals(
+      0x0120u.u16(),
+      calc.calculate(Stack, State(S = 0x20u))
+    )
+  }
+
   @Nested
   inner class Relative {
     @Test

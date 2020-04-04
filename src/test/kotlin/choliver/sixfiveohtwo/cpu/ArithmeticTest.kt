@@ -355,9 +355,6 @@ class ArithmeticTest {
 
     instructions.fold(State()) { state, enc -> cpu.execute(enc, state) }
 
-    assertEquals(
-      mapOf(0x0000 to (expected and 0xFF), 0x0001 to (expected / 256)).toMemTypes(),
-      mem.stores
-    )
+    mem.assertStores(mapOf(0x0000 to (expected and 0xFF), 0x0001 to (expected / 256)))
   }
 }

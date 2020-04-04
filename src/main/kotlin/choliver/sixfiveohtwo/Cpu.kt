@@ -43,6 +43,7 @@ class Cpu(
 
     return state
       .withNewP(decoded.yeah.op.flag, alu.q, alu) // TODO - simplify args
+      .withNewS(decoded.yeah.op)
       .withNewReg(decoded.yeah.regSink, alu.q)
   }
 
@@ -51,6 +52,7 @@ class Cpu(
     is Immediate -> decoded.addrMode.literal
     is Implied -> selectInputReg(decoded.yeah.regSrc, state)
     is Relative -> 0.u8()  // Don't care
+    is Stack,
     is Absolute,
     is ZeroPage,
     is Indirect,
@@ -72,6 +74,7 @@ class Cpu(
       AddrMode.ACCUMULATOR -> Accumulator
       AddrMode.IMMEDIATE -> Immediate(operand8())
       AddrMode.IMPLIED -> Implied
+      AddrMode.STACK -> Stack
       AddrMode.INDIRECT -> Indirect(operand16())
       AddrMode.ABSOLUTE -> Absolute(operand16())
       AddrMode.ABSOLUTE_X -> AbsoluteIndexed(operand16(), IndexSource.X)
@@ -117,6 +120,13 @@ class Cpu(
       Flag.V0__ -> copy(V = _0)
     }
   })
+
+  // TODO - make this switch on a control line, not opcode
+  private fun State.withNewS(op: Opcode) = when (op) {
+    Opcode.PLA, Opcode.PLP -> copy(S = (S + 1u).u8())
+    Opcode.PHA, Opcode.PHP -> copy(S = (S - 1u).u8())
+    else -> this
+  }
 
   private fun State.withNewReg(reg: Reg, out: UInt8) = when (reg) {
     Reg.A -> copy(A = out)

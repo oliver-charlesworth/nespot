@@ -89,15 +89,9 @@ fun assertForAddressModes(
         "Unexpected state for [${mode.name}]"
       )
 
-      assertEquals(
-        expectedStores(case.operandAddr).toMemTypes(),
-        memory.stores,
-        "Unexpected store for [${mode.name}]"
-      )
+      memory.assertStores(expectedStores(case.operandAddr), "Unexpected store for [${mode.name}]")
     }
   }
 }
-
-fun Map<Int, Int>.toMemTypes() = entries.associate { (k, v) -> k.u16() to v.u8() }
 
 fun enc(vararg bytes: Int) = bytes.map { it.u8() }.toTypedArray()

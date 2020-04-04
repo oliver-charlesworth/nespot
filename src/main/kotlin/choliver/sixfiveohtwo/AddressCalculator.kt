@@ -14,6 +14,7 @@ class AddressCalculator(
     mode: AddressMode,
     state: State
   ): UInt16 = when (mode) {
+    is Stack -> (state.S + 0x100u).u16()
     is Relative -> (state.PC + mode.offset.u16()).u16()
     is Absolute -> mode.address
     is ZeroPage -> mode.address.u16()

@@ -105,8 +105,8 @@ class Cpu(
         PHP -> push(state.P.u8())
         PHA -> push(state.A)
 
-        PLP -> pop().then { updateP(it) }
-        PLA -> pop().then { updateA(it) } // Original datasheet claims no flags set, but rest of the world disagrees
+        PLP -> popTo { updateP(it) }
+        PLA -> popTo { updateA(it) } // Original datasheet claims no flags set, but rest of the world disagrees
 
         JMP -> updatePC(addrO)
         JSR -> this
@@ -114,17 +114,12 @@ class Cpu(
           .push((PC + 2u).lo())
           .updatePC(addrO)
         RTS -> this
-          .pop()
-          .then { updatePC(it.u16()) }
-          .pop()
-          .then { updatePC(combine(lo = PC.u8(), hi = it)) }
+          .popTo { updatePC(it.u16()) }
+          .popTo { updatePC(combine(lo = PC.u8(), hi = it)) }
         RTI -> this
-          .pop()
-          .then { updateP(it) }
-          .pop()
-          .then { updatePC(it.u16()) }
-          .pop()
-          .then { updatePC((combine(lo = PC.u8(), hi = it) - decoded.length).u16()) }
+          .popTo { updateP(it) }
+          .popTo { updatePC(it.u16()) }
+          .popTo { updatePC((combine(lo = PC.u8(), hi = it) - decoded.length).u16()) }
         BRK -> TODO()
 
         BPL -> updatePC(if (!P.N) addrO else PC)
@@ -170,8 +165,11 @@ class Cpu(
   private fun State.push(data: UInt8) = store(stackAddr(S), data)
     .updateS((S - 1u).u8())
 
-  private fun State.pop() = updateS((S + 1u).u8())
-    .and { memory.load(stackAddr(S)) }
+  private fun State.popTo(consume: State.(data: UInt8) -> State): State {
+    val updated = updateS((S + 1u).u8())
+    val data = memory.load(stackAddr(updated.S))
+    return updated.consume(data)
+  }
 
   private fun State.resolveOperand(decoded: Decoded, addr: UInt16) = and { resolveOperand(decoded, this, addr) }
 
@@ -200,14 +198,6 @@ class Cpu(
   private fun resolveOperand(decoded: Decoded, state: State, addr: UInt16): UInt8 = when (decoded.addrMode) {
     is Accumulator -> state.A
     is Immediate -> decoded.addrMode.literal
-    is Absolute,
-    is ZeroPage,
-    is Indirect,
-    is AbsoluteIndexed,
-    is ZeroPageIndexed,
-    is IndexedIndirect,
-    is IndirectIndexed
-    -> memory.load(addr)
-    else -> throw RuntimeException("Unexpected address mode ${decoded.addrMode}")
+    else -> memory.load(addr)
   }
 }

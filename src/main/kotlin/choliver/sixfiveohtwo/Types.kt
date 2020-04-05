@@ -11,6 +11,8 @@ inline fun Int.u8(): UInt8 = toUByte()
 inline fun UInt.u8(): UInt8 = toUByte()
 inline fun UInt16.u8(): UInt8 = toUByte()
 
+inline fun UInt8.s8(): Int8 = toByte()
+
 inline fun Int.u16(): UInt16 = toUShort()
 inline fun UInt.u16() : UInt16 = toUShort()
 inline fun Int8.u16(): UInt16 = toUShort()

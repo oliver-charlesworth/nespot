@@ -32,6 +32,7 @@ const val INIT_PC = 0x5678
 private val CASES = mapOf(
   IMMEDIATE to Case(enc = { enc(it) }),
   IMPLIED to Case(enc = { emptyArray() }),
+  RELATIVE to Case(enc = { enc(it) }),
   ZERO_PAGE to Case(
     enc = { enc(0x30) },
     operandAddr = 0x0030

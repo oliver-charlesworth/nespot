@@ -31,6 +31,7 @@ class Cpu(
     val decoded = decode(encoding)
 
     val addr = addrCalc.calculate(decoded.addrMode, state)
+    val addrO = (addr - decoded.pcInc).u16()  // TODO - handle this more nicely
 
     val updated: State = with (state) {
       when (decoded.yeah.op) {
@@ -84,16 +85,25 @@ class Cpu(
         PLP -> pop().then { updateP(it) }
         PLA -> pop().then { updateA(it) } // Original datasheet claims no flags set, but rest of the world disagrees
 
-        JMP -> updatePC((addr - decoded.pcInc).u16())
+        JMP -> updatePC(addrO)
         JSR -> this
           .push((PC + 2u).hi())   // Push *last* byte of instruction
           .push((PC + 2u).lo())
-          .updatePC((addr - decoded.pcInc).u16())
+          .updatePC(addrO)
         RTS -> this
           .pop()
           .then { updatePC(it.u16()) }
           .pop()
           .then { updatePC(combine(lo = PC.u8(), hi = it)) }
+
+        BPL -> updatePC(if (!P.N) addrO else PC)
+        BMI -> updatePC(if (P.N) addrO else PC)
+        BVC -> updatePC(if (!P.V) addrO else PC)
+        BVS -> updatePC(if (P.V) addrO else PC)
+        BCC -> updatePC(if (!P.C) addrO else PC)
+        BCS -> updatePC(if (P.C) addrO else PC)
+        BNE -> updatePC(if (!P.Z) addrO else PC)
+        BEQ -> updatePC(if (P.Z) addrO else PC)
 
         TXA -> updateA(X)
         TYA -> updateA(Y)
@@ -187,6 +197,7 @@ class Cpu(
       AddrMode.IMPLIED -> Implied
       AddrMode.STACK -> Stack
       AddrMode.INDIRECT -> Indirect(operand16())
+      AddrMode.RELATIVE -> Relative(operand8().s8())
       AddrMode.ABSOLUTE -> Absolute(operand16())
       AddrMode.ABSOLUTE_X -> AbsoluteIndexed(operand16(), IndexSource.X)
       AddrMode.ABSOLUTE_Y -> AbsoluteIndexed(operand16(), IndexSource.Y)

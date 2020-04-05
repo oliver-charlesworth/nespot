@@ -78,6 +78,7 @@ enum class AddrMode {
   IMPLIED,
   STACK,  // TODO - this needs to be internal-only
   INDIRECT,
+  RELATIVE,
   ABSOLUTE,
   ABSOLUTE_X,
   ABSOLUTE_Y,
@@ -133,8 +134,8 @@ val ENCODINGS =
     LAYOUT_SHIFT.encodings(0x40) { Yeah(LSR, Reg.Z, it) } +   // TODO - test
     LAYOUT_SHIFT.encodings(0x60) { Yeah(ROR, Reg.Z, it) } +   // TODO - test
 
-    LAYOUT_INC_DEC.encodings(0xC0) { Yeah(DEC, Reg.Z, it) } +
-    LAYOUT_INC_DEC.encodings(0xE0) { Yeah(INC, Reg.Z, it) } +
+    LAYOUT_INC_DEC.encodings(0xC0) { Yeah(DEC, Reg.N, it) } +
+    LAYOUT_INC_DEC.encodings(0xE0) { Yeah(INC, Reg.N, it) } +
 
     mapOf(
       0x24 to Yeah(BIT, Reg.N, ZERO_PAGE),
@@ -188,14 +189,14 @@ val ENCODINGS =
       0xF8 to Yeah(SED, Reg.N),
       0x78 to Yeah(SEI, Reg.N),
 
-      0x10 to Yeah(BPL, Reg.N),   // TODO - test
-      0x30 to Yeah(BMI, Reg.N),   // TODO - test
-      0x50 to Yeah(BVC, Reg.N),   // TODO - test
-      0x70 to Yeah(BVS, Reg.N),   // TODO - test
-      0x90 to Yeah(BCC, Reg.N),   // TODO - test
-      0xB0 to Yeah(BCS, Reg.N),   // TODO - test
-      0xD0 to Yeah(BNE, Reg.N),   // TODO - test
-      0xF0 to Yeah(BEQ, Reg.N),   // TODO - test
+      0x10 to Yeah(BPL, Reg.N, RELATIVE),
+      0x30 to Yeah(BMI, Reg.N, RELATIVE),
+      0x50 to Yeah(BVC, Reg.N, RELATIVE),
+      0x70 to Yeah(BVS, Reg.N, RELATIVE),
+      0x90 to Yeah(BCC, Reg.N, RELATIVE),
+      0xB0 to Yeah(BCS, Reg.N, RELATIVE),
+      0xD0 to Yeah(BNE, Reg.N, RELATIVE),
+      0xF0 to Yeah(BEQ, Reg.N, RELATIVE),
 
       0x4C to Yeah(JMP, Reg.N, ABSOLUTE),
       0x6C to Yeah(JMP, Reg.Z, INDIRECT),

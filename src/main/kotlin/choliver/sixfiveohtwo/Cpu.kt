@@ -43,7 +43,7 @@ class Cpu(
     }
 
     return state
-      .withNewPC(decoded.pcInc)
+      .withNewPC(decoded, addr)
       .withNewP(decoded.yeah.op.flag, alu.q, alu) // TODO - simplify args
       .withNewS(decoded.yeah.op)
       .withNewReg(decoded.yeah.regSink, alu.q)
@@ -113,7 +113,11 @@ class Cpu(
     Reg.Z -> TODO()
   }
 
-  private fun State.withNewPC(pcInc: UInt8) = copy(PC = (PC + pcInc).u16())
+  private fun State.withNewPC(decoded: Decoded, addr: UInt16) = when (decoded.yeah.pcSrc) {
+    PcSrc.A -> copy(PC = addr)
+    PcSrc.N -> copy(PC = (PC + decoded.pcInc).u16())
+    PcSrc.Z -> TODO()
+  }
 
   private fun State.withNewP(flag: Flag, out: UInt8, alu: Alu.Output) = copy(P = with(P) {
     val c = alu.c

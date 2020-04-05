@@ -72,12 +72,12 @@ class ArithmeticTest {
 
     private fun assertMultiByte(a: Int, b: Int, expected: Int) {
       assertMultiByte(expected, listOf(
-        enc(0xA9, a and 0xFF),  // LDA lo(a)
-        enc(0x69, b and 0xFF),  // ADC lo(b)
-        enc(0x85, 0x00),        // STA #$00
-        enc(0xA9, a / 256),     // LDA hi(a)
-        enc(0x69, b / 256),     // ADC #$AA
-        enc(0x85, 0x01)         // STA #$00
+        enc(0xA9, a.lo().toInt()),  // LDA lo(a)
+        enc(0x69, b.lo().toInt()),  // ADC lo(b)
+        enc(0x85, 0x00),            // STA #$00
+        enc(0xA9, a.hi().toInt()),  // LDA hi(a)
+        enc(0x69, b.hi().toInt()),  // ADC #$AA
+        enc(0x85, 0x01)             // STA #$00
       ))
     }
 
@@ -168,13 +168,13 @@ class ArithmeticTest {
 
     private fun assertMultiByte(a: Int, b: Int, expected: Int) {
       assertMultiByte(expected, listOf(
-        enc(0x38),              // SEC
-        enc(0xA9, a and 0xFF),  // LDA lo(a)
-        enc(0xE9, b and 0xFF),  // SBC lo(b)
-        enc(0x85, 0x00),        // STA #$00
-        enc(0xA9, a / 256),     // LDA hi(a)
-        enc(0xE9, b / 256),     // SBC lo(b)
-        enc(0x85, 0x01)         // STA #$00
+        enc(0x38),                  // SEC
+        enc(0xA9, a.lo().toInt()),  // LDA lo(a)
+        enc(0xE9, b.lo().toInt()),  // SBC lo(b)
+        enc(0x85, 0x00),            // STA #$00
+        enc(0xA9, a.hi().toInt()),  // LDA hi(a)
+        enc(0xE9, b.hi().toInt()),  // SBC lo(b)
+        enc(0x85, 0x01)             // STA #$00
       ))
     }
 
@@ -354,6 +354,6 @@ class ArithmeticTest {
 
     instructions.fold(State()) { state, enc -> cpu.execute(enc, state) }
 
-    mem.assertStores(mapOf(0x0000 to (expected and 0xFF), 0x0001 to (expected / 256)))
+    mem.assertStores(mapOf(0x0000 to expected.lo().toInt(), 0x0001 to expected.hi().toInt()))
   }
 }

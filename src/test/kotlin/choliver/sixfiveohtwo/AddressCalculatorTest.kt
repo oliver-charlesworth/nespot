@@ -55,9 +55,12 @@ class AddressCalculatorTest {
 
   @Test
   fun indirect() {
+    memory.store(0x40FFu, 0x30u)
+    memory.store(0x4100u, 0x12u)
+
     assertEquals(
       0x1230u.u16(),
-      calc.calculate(Indirect(0x1230u), State())
+      calc.calculate(Indirect(0x40FFu), State())
     )
   }
 

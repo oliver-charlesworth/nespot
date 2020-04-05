@@ -24,6 +24,9 @@ private val PROTO_STATES = listOf(
   State(S = 0xCCu)
 )
 
+/** Chosen to straddle a page boundary. */
+const val SCARY_ADDR = 0x12FF
+
 private val CASES = mapOf(
   IMMEDIATE to Case(enc = { enc(it) }),
   IMPLIED to Case(enc = { emptyArray() }),
@@ -42,32 +45,39 @@ private val CASES = mapOf(
     operandAddr = 0x0050
   ),
   ABSOLUTE to Case(
-    enc = { enc(0x30, 0x12) },
-    operandAddr = 0x1230
+    enc = { enc16(SCARY_ADDR) },
+    operandAddr = SCARY_ADDR
   ),
   ABSOLUTE_X to Case(
-    enc = { enc(0x30, 0x12) },
+    enc = { enc16(SCARY_ADDR - 0x20) },
     state = { with(X = 0x20u) },
-    operandAddr = 0x1250
+    operandAddr = SCARY_ADDR
   ),
   ABSOLUTE_Y to Case(
-    enc = { enc(0x30, 0x12) },
+    enc = { enc16(SCARY_ADDR - 0x20) },
     state = { with(Y = 0x20u) },
-    operandAddr = 0x1250
+    operandAddr = SCARY_ADDR
+  ),
+  INDIRECT to Case(
+    enc = { enc16(0x4050) },
+    mem = mem16(0x4050, SCARY_ADDR)
   ),
   INDEXED_INDIRECT to Case(
     enc = { enc(0x30) },
     state = { with(X = 0x10u) },
-    mem = mapOf(0x0040 to 0x30, 0x0041 to 0x12),
-    operandAddr = 0x1230
+    mem = mem16(0x0040, SCARY_ADDR),
+    operandAddr = SCARY_ADDR
   ),
   INDIRECT_INDEXED to Case(
     enc = { enc(0x30) },
     state = { with(Y = 0x10u) },
-    mem = mapOf(0x0030 to 0x20, 0x0031 to 0x12),
-    operandAddr = 0x1230
+    mem = mem16(0x0030, SCARY_ADDR - 0x10),
+    operandAddr = SCARY_ADDR
   )
 )
+
+private fun enc16(data: Int) = enc(data.loI(), data.hiI())
+private fun mem16(addr: Int, data: Int) = mapOf(addr to data.loI(), (addr + 1) to data.hiI())
 
 fun assertForAddressModes(
   ops: Map<AddrMode, Int>,

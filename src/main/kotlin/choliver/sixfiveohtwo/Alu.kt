@@ -10,6 +10,7 @@ class Alu {
 
   // TODO - decimal mode
   fun adc(a: UInt8, b: UInt8, c: Boolean, d: Boolean): Output {
+    if (d) TODO("Decimal mode not implemented")
     val raw = a + b + if (c) 1u else 0u
     val result = raw.u8()
     val sameOperandSigns = (a.isNegative() == b.isNegative())
@@ -20,8 +21,6 @@ class Alu {
       v = sameOperandSigns && differentResultSign
     )
   }
-
-  fun sbc(a: UInt8, b: UInt8, c: Boolean, d: Boolean) = adc(a = a, b = b.inv(), c = c, d = d)
 
   fun asl(q: UInt8) = Output(
     q = (q * 2u).u8(),

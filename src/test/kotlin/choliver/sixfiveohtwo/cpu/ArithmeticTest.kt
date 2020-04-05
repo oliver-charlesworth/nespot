@@ -79,18 +79,20 @@ class ArithmeticTest {
       N: Boolean,
       Z: Boolean
     ) {
+      // TODO - exercise decimal mode
+
       assertForAddressModes(
         ADC,
         operand = operand,
-        initState = { with(A = originalA.u8(), C = _0) },
-        expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
+        initState = { with(A = originalA.u8(), C = _0, D = _0) },
+        expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z, D = _0) }
       )
 
       assertForAddressModes(
         ADC,
         operand = operand,
-        initState = { with(A = (originalA - 1).u8(), C = _1) },
-        expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
+        initState = { with(A = (originalA - 1).u8(), C = _1, D = _0) },
+        expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z, D = _0) }
       )
     }
   }
@@ -165,18 +167,20 @@ class ArithmeticTest {
       N: Boolean,
       Z: Boolean
     ) {
+      // TODO - exercise decimal mode
+
       assertForAddressModes(
         SBC,
         operand = operand,
-        initState = { with(A = originalA.u8(), C = _1) },
-        expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
+        initState = { with(A = originalA.u8(), C = _1, D = _0) },
+        expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z, D = _0) }
       )
 
       assertForAddressModes(
         SBC,
         operand = operand,
-        initState = { with(A = (originalA + 1).u8(), C = _0) },
-        expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
+        initState = { with(A = (originalA + 1).u8(), C = _0, D = _0) },
+        expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z, D = _0) }
       )
     }
   }
@@ -195,36 +199,6 @@ class ArithmeticTest {
         expectedState = { with(A = 0x20u, C = _0, N = _0, Z = _0) }
       )
     }
-
-//    @Test
-//    fun resultIsNegative() {
-//      assertForAddressModesAndCarry(operand = 0x30, originalA = 0x20, A = 0xF0, V = _0, C = _0, N = _1, Z = _0)
-//    }
-//
-//    @Test
-//    fun unsignedCarryOutAndPositive() {
-//      assertForAddressModesAndCarry(operand = 0x30, originalA = 0x50, A = 0x20, V = _0, C = _1, N = _0, Z = _0)
-//    }
-//
-//    @Test
-//    fun unsignedCarryOutAndNegative() {
-//      assertForAddressModesAndCarry(operand = 0x30, originalA = 0xD0, A = 0xA0, V = _0, C = _1, N = _1, Z = _0)
-//    }
-//
-//    @Test
-//    fun overflowToNegative() {
-//      assertForAddressModesAndCarry(operand = 0x90, originalA = 0x20, A = 0x90, V = _1, C = _0, N = _1, Z = _0)
-//    }
-//
-//    @Test
-//    fun overflowToPositive() {
-//      assertForAddressModesAndCarry(operand = 0x70, originalA = 0xE0, A = 0x70, V = _1, C = _1, N = _0, Z = _0)
-//    }
-//
-//    @Test
-//    fun resultIsZero() {
-//      assertForAddressModesAndCarry(operand = 0x10, originalA = 0x10, A = 0x00, V = _0, C = _1, N = _0, Z = _1)
-//    }
   }
 
   // TODO - CPX, CPY

@@ -40,15 +40,8 @@ private val ENCS_SHIFT = ENCS_INC_DEC + mapOf(
   ACCUMULATOR to 0x0A
 )
 
-enum class Reg {
-  X,
-  Y,
-  N, // None
-}
-
 enum class Opcode(
-  val encodings: Map<AddrMode, UInt8>,
-  val regSrc: Reg = Reg.N   // TODO - is this necessary ?
+  val encodings: Map<AddrMode, UInt8>
 ) {
   ADC(standard(0x60)),
   AND(standard(0x20)),
@@ -75,19 +68,19 @@ enum class Opcode(
     IMMEDIATE to 0xE0,
     ZERO_PAGE to 0xE4,
     ABSOLUTE to 0xEC
-  ), Reg.X),  // TODO - test
+  )),  // TODO - test
   CPY(map8(
     IMMEDIATE to 0xC0,
     ZERO_PAGE to 0xC4,
     ABSOLUTE to 0xCC
-  ), Reg.Y),  // TODO - test
+  )),  // TODO - test
   DEC(incDec(0xC0)),
-  DEX(0xCA, Reg.X),
-  DEY(0x88, Reg.Y),
+  DEX(0xCA),
+  DEY(0x88),
   EOR(standard(0x40)),
   INC(incDec(0xE0)),
-  INX(0xE8, Reg.X),
-  INY(0xC8, Reg.Y),
+  INX(0xE8),
+  INY(0xC8),
   JMP(map8(
     ABSOLUTE to 0x4C,
     INDIRECT to 0x6C
@@ -141,15 +134,8 @@ enum class Opcode(
   TXS(0x9A),
   TYA(0x98);
 
-  constructor(enc: Int, regSrc: Reg = Reg.N) : this(map8(IMPLIED to enc), regSrc)
+  constructor(enc: Int) : this(map8(IMPLIED to enc))
 }
-
-
-// TODO - rename
-data class Yeah(
-  val op: Opcode,
-  val addrMode: AddrMode = IMPLIED
-)
 
 private fun standard(base: Int) = ENCS_STANDARD.encode(base)
 

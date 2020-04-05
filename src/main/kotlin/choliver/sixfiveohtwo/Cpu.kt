@@ -1,22 +1,18 @@
 package choliver.sixfiveohtwo
 
-import choliver.sixfiveohtwo.AddrMode.*
 import choliver.sixfiveohtwo.AddressMode.*
+import choliver.sixfiveohtwo.InstructionDecoder.Decoded
 import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
+import java.lang.RuntimeException
 
 class Cpu(
   private val memory: Memory
 ) {
+  private val decoder = InstructionDecoder()
   private val alu = Alu()
   private val addrCalc = AddressCalculator(memory)
-
-  private data class Decoded(
-    val yeah: Yeah,
-    val addrMode: AddressMode,
-    val pcInc: UInt8
-  )
 
   data class StateAnd<T>(
     val state: State,
@@ -29,19 +25,19 @@ class Cpu(
 
   // TODO - homogenise State and Memory paradigm
   fun execute(encoding: Array<UInt8>, state: State): State {
-    val decoded = decode(encoding)
+    val decoded = decoder.decode(encoding)
 
     val addr = addrCalc.calculate(decoded.addrMode, state)
-    val addrO = (addr - decoded.pcInc).u16()  // TODO - handle this more nicely
+    val addrO = (addr - decoded.length).u16()  // TODO - handle this more nicely
 
     val updated: State = with (state) {
-      when (decoded.yeah.op) {
+      when (decoded.op) {
         ADC -> resolveOperand(decoded, addr)
           .gimp { alu.adc(a = A, b = it, c = P.C, d = P.D) }
           .then { updateA(it.q).updateC(it.c).updateV(it.v) }
 
         SBC -> resolveOperand(decoded, addr)
-          .gimp { alu.sbc(a = A, b = it, c = P.C, d = P.D) }
+          .gimp { alu.adc(a = A, b = it.inv(), c = P.C, d = P.D) }
           .then { updateA(it.q).updateC(it.c).updateV(it.v) }
 
         AND -> resolveOperand(decoded, addr)
@@ -181,15 +177,13 @@ class Cpu(
 
   private fun State.updateZN(q: UInt8) = with(Z = q.isZero(), N = q.isNegative())
 
-  private fun State.advancePC(decoded: Decoded) = with(PC = (PC + decoded.pcInc).u16())
+  private fun State.advancePC(decoded: Decoded) = with(PC = (PC + decoded.length).u16())
 
   private fun stackAddr(S: UInt8) = (0x0100u + S).u16()
 
   private fun resolveOperand(decoded: Decoded, state: State, addr: UInt16): UInt8 = when (decoded.addrMode) {
     is Accumulator -> state.A
     is Immediate -> decoded.addrMode.literal
-    is Implied -> selectInputReg(decoded.yeah.op.regSrc, state)
-    is Relative -> 0.u8()  // Don't care
     is Absolute,
     is ZeroPage,
     is Indirect,
@@ -198,55 +192,6 @@ class Cpu(
     is IndexedIndirect,
     is IndirectIndexed
     -> memory.load(addr)
-  }
-
-  private fun decode(encoding: Array<UInt8>): Decoded {
-    var pcInc = 1
-
-    // TODO - error handling
-    val yeah = ENCODINGS[encoding[0]]!!
-
-    fun operand8(): UInt8 {
-      pcInc = 2
-      return encoding[1]
-    }
-    fun operand16(): UInt16 {
-      pcInc = 3
-      return combine(encoding[1], encoding[2])
-    }
-
-    val mode = when (yeah.addrMode) {
-      ACCUMULATOR -> Accumulator
-      IMMEDIATE -> Immediate(operand8())
-      IMPLIED -> Implied
-      INDIRECT -> Indirect(operand16())
-      RELATIVE -> Relative(operand8().s8())
-      ABSOLUTE -> Absolute(operand16())
-      ABSOLUTE_X -> AbsoluteIndexed(operand16(), IndexSource.X)
-      ABSOLUTE_Y -> AbsoluteIndexed(operand16(), IndexSource.Y)
-      ZERO_PAGE -> ZeroPage(operand8())
-      ZERO_PAGE_X -> ZeroPageIndexed(operand8(), IndexSource.X)
-      ZERO_PAGE_Y -> ZeroPageIndexed(operand8(), IndexSource.Y)
-      INDEXED_INDIRECT -> IndexedIndirect(operand8())
-      INDIRECT_INDEXED -> IndirectIndexed(operand8())
-    }
-
-    return Decoded(
-      yeah,
-      mode,
-      pcInc.u8()
-    )
-  }
-
-  private fun selectInputReg(reg: Reg, state: State) = when (reg) {
-    Reg.X -> state.X
-    Reg.Y -> state.Y
-    Reg.N -> 0.u8()
-  }
-
-  companion object {
-    private val ENCODINGS = Opcode.values()
-      .flatMap { it.encodings.entries.map { (mode, enc) -> enc to Yeah(it, mode) } }
-      .toMap()
+    else -> throw RuntimeException("Unexpected address mode ${decoded.addrMode}")
   }
 }

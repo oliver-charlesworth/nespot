@@ -186,22 +186,85 @@ class ArithmeticTest {
   }
 
   @Nested
-  @Disabled // TODO
   inner class Cmp {
-    // TODO - demonstrate that we ignore carry-in
+    @Test
+    fun greaterThan() {
+      assertForAddressModes(
+        CMP,
+        operand = 0xFD,
+        initState = { with(A = 0xFEu) },
+        expectedState = { with(A = 0xFEu, C = _1, N = _0, Z = _0) }
+      )
+    }
 
     @Test
     fun lessThan() {
       assertForAddressModes(
         CMP,
-        operand = 0x30,
-        initState = { with(A = 0x20u) },
-        expectedState = { with(A = 0x20u, C = _0, N = _0, Z = _0) }
+        operand = 0xFF,
+        initState = { with(A = 0xFEu) },
+        expectedState = { with(A = 0xFEu, C = _0, N = _1, Z = _0) }
+      )
+    }
+
+    @Test
+    fun equal() {
+      assertForAddressModes(
+        CMP,
+        operand = 0xFE,
+        initState = { with(A = 0xFEu) },
+        expectedState = { with(A = 0xFEu, C = _1, N = _0, Z = _1) }
+      )
+    }
+
+    @Test
+    fun comparisonIsUnsigned() {
+      assertForAddressModes(
+        CMP,
+        operand = 0x7F,
+        initState = { with(A = 0x80u) },
+        expectedState = { with(A = 0x80u, C = _1, N = _0, Z = _0) } // 0x80 > 0x7F only if unsigned
+      )
+    }
+
+    @Test
+    fun muchGreaterThanSetsN() {
+      assertForAddressModes(
+        CMP,
+        operand = 0x00,
+        initState = { with(A = 0xFEu) },
+        expectedState = { with(A = 0xFEu, C = _1, N = _1, Z = _0) }
       )
     }
   }
 
-  // TODO - CPX, CPY
+  @Nested
+  inner class Cpx {
+    @Test
+    fun greaterThan() {
+      assertForAddressModes(
+        CPX,
+        initState = { with(A = 0xFEu, X = 0xFDu) },
+        expectedState = { with(A = 0xFEu, X = 0xFDu, C = _1, N = _0, Z = _0) }
+      )
+    }
+
+    // TODO
+  }
+
+  @Nested
+  inner class Cpy {
+    @Test
+    fun greaterThan() {
+      assertForAddressModes(
+        CPY,
+        initState = { with(A = 0xFEu, Y = 0xFDu) },
+        expectedState = { with(A = 0xFEu, Y = 0xFDu, C = _1, N = _0, Z = _0) }
+      )
+    }
+
+    // TODO
+  }
 
   @Test
   fun dec() {

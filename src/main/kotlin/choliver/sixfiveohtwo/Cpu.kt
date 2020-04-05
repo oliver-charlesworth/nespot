@@ -40,17 +40,15 @@ class Cpu(
           .gimp { alu.adc(a = A, b = it.inv(), c = P.C, d = P.D) }
           .then { updateA(it.q).updateC(it.c).updateV(it.v) }
 
-        AND -> resolveOperand(decoded, addr)
-          .then { updateA(A and it) }
-
-        ORA -> resolveOperand(decoded, addr)
-          .then { updateA(A or it) }
-
-        EOR -> resolveOperand(decoded, addr)
-          .then { updateA(A xor it) }
-
-        BIT -> resolveOperand(decoded, addr)
-          .then { updateZN(A and it).updateV(!(it and 0x40u).isZero()) }
+        CMP -> resolveOperand(decoded, addr)
+          .gimp { alu.adc(a = A, b = it.inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
+          .then { updateZN(it.q).updateC(it.c) }
+        CPX -> and { X }
+          .gimp { alu.adc(a = A, b = it.inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
+          .then { updateZN(it.q).updateC(it.c) }
+        CPY -> and { Y }
+          .gimp { alu.adc(a = A, b = it.inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
+          .then { updateZN(it.q).updateC(it.c) }
 
         DEC -> resolveOperand(decoded, addr)
           .then {
@@ -83,6 +81,18 @@ class Cpu(
         ROR -> resolveOperand(decoded, addr)
           .gimp { alu.ror(q = it, c = P.C) }
           .then { updateFromShift(decoded, it, addr) }
+
+        AND -> resolveOperand(decoded, addr)
+          .then { updateA(A and it) }
+
+        ORA -> resolveOperand(decoded, addr)
+          .then { updateA(A or it) }
+
+        EOR -> resolveOperand(decoded, addr)
+          .then { updateA(A xor it) }
+
+        BIT -> resolveOperand(decoded, addr)
+          .then { updateZN(A and it).updateV(!(it and 0x40u).isZero()) }
 
         LDA -> resolveOperand(decoded, addr).then { updateA(it) }
         LDX -> resolveOperand(decoded, addr).then { updateX(it) }

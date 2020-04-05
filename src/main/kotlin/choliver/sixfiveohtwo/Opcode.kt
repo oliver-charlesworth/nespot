@@ -63,17 +63,17 @@ enum class Opcode(
   CLD(0xD8),
   CLI(0x58),
   CLV(0xB8),
-  CMP(standard(0xC0)),  // TODO - test
+  CMP(standard(0xC0)),
   CPX(map8(
     IMMEDIATE to 0xE0,
     ZERO_PAGE to 0xE4,
     ABSOLUTE to 0xEC
-  )),  // TODO - test
+  )),
   CPY(map8(
     IMMEDIATE to 0xC0,
     ZERO_PAGE to 0xC4,
     ABSOLUTE to 0xCC
-  )),  // TODO - test
+  )),
   DEC(incDec(0xC0)),
   DEX(0xCA),
   DEY(0x88),

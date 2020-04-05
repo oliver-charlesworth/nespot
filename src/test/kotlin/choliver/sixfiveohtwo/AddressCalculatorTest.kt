@@ -1,7 +1,8 @@
 package choliver.sixfiveohtwo
 
 import choliver.sixfiveohtwo.AddressMode.*
-import choliver.sixfiveohtwo.AddressMode.IndexSource.*
+import choliver.sixfiveohtwo.AddressMode.IndexSource.X
+import choliver.sixfiveohtwo.AddressMode.IndexSource.Y
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -9,14 +10,6 @@ import org.junit.jupiter.api.Test
 class AddressCalculatorTest {
   private val memory = FakeMemory()
   private val calc = AddressCalculator(memory)
-
-  @Test
-  fun stack() {
-    assertEquals(
-      0x0120u.u16(),
-      calc.calculate(Stack, State(S = 0x20u))
-    )
-  }
 
   @Nested
   inner class Relative {

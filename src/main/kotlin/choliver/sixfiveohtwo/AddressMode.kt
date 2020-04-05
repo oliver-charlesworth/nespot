@@ -9,8 +9,6 @@ sealed class AddressMode {
 
   object Implied : AddressMode()
 
-  object Stack : AddressMode()  // TODO - internal-only
-
   data class Immediate(
     val literal: UInt8
   ) : AddressMode()

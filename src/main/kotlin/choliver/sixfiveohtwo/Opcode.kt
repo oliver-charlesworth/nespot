@@ -4,79 +4,116 @@ import choliver.sixfiveohtwo.AddrMode.*
 import choliver.sixfiveohtwo.Opcode.*
 
 enum class Reg {
-  A,
   X,
   Y,
-  S,
-  P,
   N, // None
-  Z  // TODO
 }
 
-enum class Opcode {
-  ADC,
-  AND,
-  ASL,
-  BCC,
-  BCS,
-  BEQ,
-  BIT,
-  BMI,
-  BNE,
-  BPL,
-  BRK,
-  BVC,
-  BVS,
-  CLC,
-  CLD,
-  CLI,
-  CLV,
-  CMP,
-  CPX,
-  CPY,
-  DEC,
-  DEX,
-  DEY,
-  EOR,
-  INC,
-  INX,
-  INY,
-  JMP,
-  JSR,
-  LDA,
-  LDX,
-  LDY,
-  LSR,
-  NOP,
-  ORA,
-  PHA,
-  PHP,
-  PLA,
-  PLP,
-  ROL,
-  ROR,
-  RTI,
-  RTS,
-  SBC,
-  SEC,
-  SED,
-  SEI,
-  STA,
-  STX,
-  STY,
-  TAX,
-  TAY,
-  TSX,
-  TXA,
-  TXS,
-  TYA
+enum class Opcode(
+  val encodings: Map<AddrMode, UInt8>,
+  val regSrc: Reg = Reg.N   // TODO - is this necessary ?
+) {
+  ADC(standard(0x60)),
+  AND(standard(0x20)),
+  ASL(shift(0x00)),   // TODO - test
+  BCC(map8(RELATIVE to 0x90)),
+  BCS(map8(RELATIVE to 0xB0)),
+  BEQ(map8(RELATIVE to 0xF0)),
+  BIT(map8(
+    ZERO_PAGE to 0x24,
+    ABSOLUTE to 0x2C
+  )),
+  BMI(map8(RELATIVE to 0x30)),
+  BNE(map8(RELATIVE to 0xD0)),
+  BPL(map8(RELATIVE to 0x10)),
+  BRK(0x00),  // TODO - test
+  BVC(map8(RELATIVE to 0x50)),
+  BVS(map8(RELATIVE to 0x70)),
+  CLC(0x18),
+  CLD(0xD8),
+  CLI(0x58),
+  CLV(0xB8),
+  CMP(standard(0xC0)),  // TODO - test
+  CPX(map8(
+    IMMEDIATE to 0xE0,
+    ZERO_PAGE to 0xE4,
+    ABSOLUTE to 0xEC
+  ), Reg.X),  // TODO - test
+  CPY(map8(
+    IMMEDIATE to 0xC0,
+    ZERO_PAGE to 0xC4,
+    ABSOLUTE to 0xCC
+  ), Reg.Y),  // TODO - test
+  DEC(incDec(0xC0)),
+  DEX(0xCA, Reg.X),
+  DEY(0x88, Reg.Y),
+  EOR(standard(0x40)),
+  INC(incDec(0xE0)),
+  INX(0xE8, Reg.X),
+  INY(0xC8, Reg.Y),
+  JMP(map8(
+    ABSOLUTE to 0x4C,
+    INDIRECT to 0x6C
+  )),
+  JSR(map8(ABSOLUTE to 0x20)),
+  LDA(standard(0xA0)),
+  LDX(map8(
+    IMMEDIATE to 0xA2,
+    ZERO_PAGE to 0xA6,
+    ABSOLUTE to 0xAE,
+    ZERO_PAGE_Y to 0xB6,
+    ABSOLUTE_Y to 0xBE
+  )),
+  LDY(map8(
+    IMMEDIATE to 0xA0,
+    ZERO_PAGE to 0xA4,
+    ABSOLUTE to 0xAC,
+    ZERO_PAGE_X to 0xB4,
+    ABSOLUTE_X to 0xBC
+  )),
+  LSR(shift(0x40)),   // TODO - test
+  NOP(0xEA),
+  ORA(standard(0x00)),
+  PHA(0x48),
+  PHP(0x08),
+  PLA(0x68),
+  PLP(0x28),
+  ROL(shift(0x20)),   // TODO - test
+  ROR(shift(0x60)),   // TODO - test
+  RTI(0x40),    // TODO - test
+  RTS(0x60),
+  SBC(standard(0xE0)),
+  SEC(0x38),
+  SED(0xF8),
+  SEI(0x78),
+  STA(standard(0x80) - IMMEDIATE),
+  STX(map8(
+    ZERO_PAGE to 0x86,
+    ABSOLUTE to 0x8E,
+    ZERO_PAGE_Y to 0x96
+  )),
+  STY(map8(
+    ZERO_PAGE to 0x84,
+    ABSOLUTE to 0x8C,
+    ZERO_PAGE_X to 0x94
+  )),
+  TAX(0xAA),
+  TAY(0xA8),
+  TSX(0xBA),
+  TXA(0x8A),
+  TXS(0x9A),
+  TYA(0x98);
+
+  constructor(enc: Int, regSrc: Reg = Reg.N) : this(map8(IMPLIED to enc), regSrc)
 }
+
+// TODO - this is gross
+private fun map8(vararg pairs: Pair<AddrMode, Int>) = pairs.associate { (k, v) -> k to v.u8() }
 
 enum class AddrMode {
   ACCUMULATOR,
   IMMEDIATE,
   IMPLIED,
-  STACK,  // TODO - this needs to be internal-only
   INDIRECT,
   RELATIVE,
   ABSOLUTE,
@@ -92,7 +129,6 @@ enum class AddrMode {
 // TODO - rename
 data class Yeah(
   val op: Opcode,
-  val regSrc: Reg = Reg.N,
   val addrMode: AddrMode = IMPLIED
 )
 
@@ -118,104 +154,18 @@ private val LAYOUT_SHIFT = LAYOUT_INC_DEC + listOf(
   0x0A to ACCUMULATOR
 )
 
-val ENCODINGS =
-  emptyMap<UInt8, Yeah>() +
-    LAYOUT_STD.encodings(0x00) { Yeah(ORA, Reg.N, it) } +
-    LAYOUT_STD.encodings(0x20) { Yeah(AND, Reg.N, it) } +
-    LAYOUT_STD.encodings(0x40) { Yeah(EOR, Reg.N, it) } +
-    LAYOUT_STD.encodings(0x60) { Yeah(ADC, Reg.N, it) } +
-    LAYOUT_STD.encodings(0x80) { Yeah(STA, Reg.N, it) } +  // TODO - no IMMEDIATE
-    LAYOUT_STD.encodings(0xA0) { Yeah(LDA, Reg.N, it) } +
-    LAYOUT_STD.encodings(0xC0) { Yeah(CMP, Reg.N, it) } +    // TODO - test
-    LAYOUT_STD.encodings(0xE0) { Yeah(SBC, Reg.N, it) } +
+private fun standard(base: Int) = LAYOUT_STD
+  .associate { (k, v) -> v to (k + base).u8() }
 
-    LAYOUT_SHIFT.encodings(0x00) { Yeah(ASL, Reg.Z, it) } +   // TODO - test
-    LAYOUT_SHIFT.encodings(0x20) { Yeah(ROL, Reg.Z, it) } +   // TODO - test
-    LAYOUT_SHIFT.encodings(0x40) { Yeah(LSR, Reg.Z, it) } +   // TODO - test
-    LAYOUT_SHIFT.encodings(0x60) { Yeah(ROR, Reg.Z, it) } +   // TODO - test
-
-    LAYOUT_INC_DEC.encodings(0xC0) { Yeah(DEC, Reg.N, it) } +
-    LAYOUT_INC_DEC.encodings(0xE0) { Yeah(INC, Reg.N, it) } +
-
-    mapOf(
-      0x24 to Yeah(BIT, Reg.N, ZERO_PAGE),
-      0x2C to Yeah(BIT, Reg.N, ABSOLUTE),
-
-      0xCA to Yeah(DEX, Reg.X),
-      0x88 to Yeah(DEY, Reg.Y),
-
-      0xE8 to Yeah(INX, Reg.X),
-      0xC8 to Yeah(INY, Reg.Y),
-
-      0xE0 to Yeah(CPX, Reg.X, IMMEDIATE), // TODO - test
-      0xE4 to Yeah(CPX, Reg.X, ZERO_PAGE), // TODO - test
-      0xEC to Yeah(CPX, Reg.X, ABSOLUTE),  // TODO - test
-
-      0xC0 to Yeah(CPY, Reg.Y, IMMEDIATE), // TODO - test
-      0xC4 to Yeah(CPY, Reg.Y, ZERO_PAGE), // TODO - test
-      0xCC to Yeah(CPY, Reg.Y, ABSOLUTE),  // TODO - test
-
-      0x86 to Yeah(STX, Reg.N, ZERO_PAGE),
-      0x8E to Yeah(STX, Reg.N, ABSOLUTE),
-      0x96 to Yeah(STX, Reg.N, ZERO_PAGE_Y),
-
-      0x84 to Yeah(STY, Reg.N, ZERO_PAGE),
-      0x8C to Yeah(STY, Reg.N, ABSOLUTE),
-      0x94 to Yeah(STY, Reg.N, ZERO_PAGE_X),
-
-      0xA2 to Yeah(LDX, Reg.N, IMMEDIATE),
-      0xA6 to Yeah(LDX, Reg.N, ZERO_PAGE),
-      0xAE to Yeah(LDX, Reg.N, ABSOLUTE),
-      0xB6 to Yeah(LDX, Reg.N, ZERO_PAGE_Y),
-      0xBE to Yeah(LDX, Reg.N, ABSOLUTE_Y),
-
-      0xA0 to Yeah(LDY, Reg.N, IMMEDIATE),
-      0xA4 to Yeah(LDY, Reg.N, ZERO_PAGE),
-      0xAC to Yeah(LDY, Reg.N, ABSOLUTE),
-      0xB4 to Yeah(LDY, Reg.N, ZERO_PAGE_X),
-      0xBC to Yeah(LDY, Reg.N, ABSOLUTE_X),
-
-      0x08 to Yeah(PHP, Reg.N, STACK),
-      0x28 to Yeah(PLP, Reg.N, STACK),
-      0x48 to Yeah(PHA, Reg.N, STACK),
-      0x68 to Yeah(PLA, Reg.N, STACK),
-
-      0x18 to Yeah(CLC, Reg.N),
-      0xD8 to Yeah(CLD, Reg.N),
-      0x58 to Yeah(CLI, Reg.N),
-      0xB8 to Yeah(CLV, Reg.N),
-
-      0x38 to Yeah(SEC, Reg.N),
-      0xF8 to Yeah(SED, Reg.N),
-      0x78 to Yeah(SEI, Reg.N),
-
-      0x10 to Yeah(BPL, Reg.N, RELATIVE),
-      0x30 to Yeah(BMI, Reg.N, RELATIVE),
-      0x50 to Yeah(BVC, Reg.N, RELATIVE),
-      0x70 to Yeah(BVS, Reg.N, RELATIVE),
-      0x90 to Yeah(BCC, Reg.N, RELATIVE),
-      0xB0 to Yeah(BCS, Reg.N, RELATIVE),
-      0xD0 to Yeah(BNE, Reg.N, RELATIVE),
-      0xF0 to Yeah(BEQ, Reg.N, RELATIVE),
-
-      0x4C to Yeah(JMP, Reg.N, ABSOLUTE),
-      0x6C to Yeah(JMP, Reg.Z, INDIRECT),
-      0x20 to Yeah(JSR, Reg.N, ABSOLUTE),
-      0x40 to Yeah(RTI, Reg.Z),   // TODO - test
-      0x60 to Yeah(RTS, Reg.Z),
-
-      0x8A to Yeah(TXA, Reg.X),
-      0x98 to Yeah(TYA, Reg.Y),
-      0x9A to Yeah(TXS, Reg.X),
-      0xA8 to Yeah(TAY, Reg.A),
-      0xAA to Yeah(TAX, Reg.A),
-      0xBA to Yeah(TSX, Reg.S),
-
-      0x00 to Yeah(BRK, Reg.N),   // TODO - test
-      0xEA to Yeah(NOP, Reg.N)
-    ).mapKeys { (k, _) -> k.u8() }
+private fun incDec(base: Int) = LAYOUT_INC_DEC
+  .associate { (k, v) -> v to (k + base).u8() }
 
 
-private fun List<Pair<Int, AddrMode>>.encodings(base: Int, builder: (AddrMode) -> Yeah) =
-  associate { (k, v) -> (k + base).u8() to builder(v) }
+private fun shift(base: Int) = LAYOUT_SHIFT
+  .associate { (k, v) -> v to (k + base).u8() }
 
+private fun implied(enc: Int) = mapOf(IMPLIED to enc.u8())
+
+val ENCODINGS = Opcode.values()
+  .flatMap { it.encodings.entries.map { (mode, enc) -> enc to Yeah(it, mode) } }
+  .toMap()

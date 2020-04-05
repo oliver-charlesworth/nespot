@@ -163,7 +163,7 @@ class Cpu(
   private fun resolveOperand(decoded: Decoded, state: State, addr: UInt16): UInt8 = when (decoded.addrMode) {
     is Accumulator -> state.A
     is Immediate -> decoded.addrMode.literal
-    is Implied -> selectInputReg(decoded.yeah.regSrc, state)
+    is Implied -> selectInputReg(decoded.yeah.op.regSrc, state)
     is Relative -> 0.u8()  // Don't care
     is Absolute,
     is ZeroPage,
@@ -173,7 +173,6 @@ class Cpu(
     is IndexedIndirect,
     is IndirectIndexed
     -> memory.load(addr)
-    is Stack -> memory.load((addr + 1u).u16())  // TODO - this is cheating, and doesn't wrap correctly
   }
 
   private fun decode(encoding: Array<UInt8>): Decoded {
@@ -195,7 +194,6 @@ class Cpu(
       AddrMode.ACCUMULATOR -> Accumulator
       AddrMode.IMMEDIATE -> Immediate(operand8())
       AddrMode.IMPLIED -> Implied
-      AddrMode.STACK -> Stack
       AddrMode.INDIRECT -> Indirect(operand16())
       AddrMode.RELATIVE -> Relative(operand8().s8())
       AddrMode.ABSOLUTE -> Absolute(operand16())
@@ -216,12 +214,8 @@ class Cpu(
   }
 
   private fun selectInputReg(reg: Reg, state: State) = when (reg) {
-    Reg.A -> state.A
     Reg.X -> state.X
     Reg.Y -> state.Y
-    Reg.S -> state.S
-    Reg.P -> state.P.u8()
     Reg.N -> 0.u8()
-    Reg.Z -> TODO()
   }
 }

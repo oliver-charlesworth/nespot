@@ -27,6 +27,8 @@ private val PROTO_STATES = listOf(
 /** Chosen to straddle a page boundary. */
 const val SCARY_ADDR = 0x12FF
 
+const val INIT_PC = 0x5678
+
 private val CASES = mapOf(
   IMMEDIATE to Case(enc = { enc(it) }),
   IMPLIED to Case(enc = { emptyArray() }),
@@ -76,8 +78,8 @@ private val CASES = mapOf(
   )
 )
 
-private fun enc16(data: Int) = enc(data.loI(), data.hiI())
-private fun mem16(addr: Int, data: Int) = mapOf(addr to data.loI(), (addr + 1) to data.hiI())
+fun enc16(data: Int) = enc(data.loI(), data.hiI())
+fun mem16(addr: Int, data: Int) = mapOf(addr to data.loI(), (addr + 1) to data.hiI())
 
 fun assertForAddressModes(
   ops: Map<AddrMode, Int>,
@@ -95,8 +97,8 @@ fun assertForAddressModes(
       val cpu = Cpu(memory)
 
       val encoding = enc(enc) + case.enc(operand)
-      val init = case.state(proto).with(PC = 0x5678u).initState()
-      val expected = case.state(proto).with(PC = (0x5678u + encoding.size.u8()).u16()).expectedState()
+      val init = case.state(proto).with(PC = INIT_PC.u16()).initState()
+      val expected = case.state(proto).with(PC = (INIT_PC + encoding.size).u16()).expectedState()
 
       assertEquals(expected, cpu.execute(encoding, init), "Unexpected state for [${mode.name}]")
       memory.assertStores(expectedStores(case.operandAddr), "Unexpected store for [${mode.name}]")

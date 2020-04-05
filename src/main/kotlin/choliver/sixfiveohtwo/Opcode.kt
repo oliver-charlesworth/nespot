@@ -136,10 +136,11 @@ enum class MemSrc {
 
 enum class PcSrc {
   N,    // Normal
-  A,    // Address
+  A,    // Address  // TODO - rename
   Z     // TODO()
 }
 
+// TODO - rename
 data class Yeah(
   val op: Opcode,
   val regSrc: Reg = Reg.N,
@@ -253,7 +254,7 @@ val ENCODINGS =
 
       0x4C to Yeah(JMP, Reg.N, MemSrc.N, Reg.N, PcSrc.A, ABSOLUTE),
       0x6C to Yeah(JMP, Reg.Z, MemSrc.N, Reg.N, PcSrc.A, INDIRECT),
-      0x20 to Yeah(JSR, Reg.Z, MemSrc.N, Reg.Z, PcSrc.Z, ABSOLUTE),  // TODO - test
+      0x20 to Yeah(JSR, Reg.N, MemSrc.N, Reg.N, PcSrc.A, ABSOLUTE),
       0x40 to Yeah(RTI, Reg.Z, MemSrc.N, Reg.Z, PcSrc.Z),   // TODO - test
       0x60 to Yeah(RTS, Reg.Z, MemSrc.N, Reg.Z, PcSrc.Z),   // TODO - test
 

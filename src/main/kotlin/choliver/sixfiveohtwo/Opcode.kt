@@ -201,7 +201,7 @@ val ENCODINGS =
       0x6C to Yeah(JMP, Reg.Z, INDIRECT),
       0x20 to Yeah(JSR, Reg.N, ABSOLUTE),
       0x40 to Yeah(RTI, Reg.Z),   // TODO - test
-      0x60 to Yeah(RTS, Reg.Z),   // TODO - test
+      0x60 to Yeah(RTS, Reg.Z),
 
       0x8A to Yeah(TXA, Reg.X),
       0x98 to Yeah(TYA, Reg.Y),

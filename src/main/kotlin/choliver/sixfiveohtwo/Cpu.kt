@@ -84,8 +84,16 @@ class Cpu(
         PLP -> pop().then { updateP(it) }
         PLA -> pop().then { updateA(it) } // Original datasheet claims no flags set, but rest of the world disagrees
 
-        JMP -> updatePC(addr)
-        JSR -> push16((PC + 2u).u16()).updatePC(addr)  // Push *last* byte of instruction
+        JMP -> updatePC((addr - decoded.pcInc).u16())
+        JSR -> this
+          .push((PC + 2u).hi())   // Push *last* byte of instruction
+          .push((PC + 2u).lo())
+          .updatePC((addr - decoded.pcInc).u16())
+        RTS -> this
+          .pop()
+          .then { updatePC(it.u16()) }
+          .pop()
+          .then { updatePC(combine(lo = PC.u8(), hi = it)) }
 
         TXA -> updateA(X)
         TYA -> updateA(Y)
@@ -109,10 +117,8 @@ class Cpu(
       }
     }
 
-    return updated.incrementPC(decoded)
+    return updated.advancePC(decoded)
   }
-
-  private fun State.push16(data: UInt16) = push(data.hi()).push(data.lo())
 
   private fun State.push(data: UInt8) = store(stackAddr(S), data)
     .updateS((S - 1u).u8())
@@ -140,7 +146,7 @@ class Cpu(
 
   private fun State.updateZN(q: UInt8) = with(Z = q.isZero(), N = q.isNegative())
 
-  private fun State.incrementPC(decoded: Decoded) = with(PC = (PC + decoded.pcInc).u16())
+  private fun State.advancePC(decoded: Decoded) = with(PC = (PC + decoded.pcInc).u16())
 
   private fun stackAddr(S: UInt8) = (0x0100u + S).u16()
 

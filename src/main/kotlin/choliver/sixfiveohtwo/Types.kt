@@ -31,4 +31,4 @@ inline fun UInt.hi() = (this / 256u).u8()
 inline fun UInt16.lo() = u8()
 inline fun UInt16.hi() = (this / 256u).u8()
 
-fun combine(low: UInt8, high: UInt8): UInt16 = (low.u16() or (high * 256u).u16())
+fun combine(lo: UInt8, hi: UInt8): UInt16 = (lo.u16() or (hi * 256u).u16())

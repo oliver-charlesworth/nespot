@@ -52,7 +52,7 @@ enum class Opcode(
 ) {
   ADC(standard(0x60)),
   AND(standard(0x20)),
-  ASL(shift(0x00)),   // TODO - test
+  ASL(shift(0x00)),
   BCC(map8(RELATIVE to 0x90)),
   BCS(map8(RELATIVE to 0xB0)),
   BEQ(map8(RELATIVE to 0xF0)),
@@ -108,15 +108,15 @@ enum class Opcode(
     ZERO_PAGE_X to 0xB4,
     ABSOLUTE_X to 0xBC
   )),
-  LSR(shift(0x40)),   // TODO - test
+  LSR(shift(0x40)),
   NOP(0xEA),
   ORA(standard(0x00)),
   PHA(0x48),
   PHP(0x08),
   PLA(0x68),
   PLP(0x28),
-  ROL(shift(0x20)),   // TODO - test
-  ROR(shift(0x60)),   // TODO - test
+  ROL(shift(0x20)),
+  ROR(shift(0x60)),
   RTI(0x40),    // TODO - test
   RTS(0x60),
   SBC(standard(0xE0)),

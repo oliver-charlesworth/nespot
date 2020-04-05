@@ -1,6 +1,7 @@
 package choliver.sixfiveohtwo.cpu
 
 import choliver.sixfiveohtwo.*
+import choliver.sixfiveohtwo.AddrMode.ACCUMULATOR
 import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
@@ -345,6 +346,61 @@ class ArithmeticTest {
       INY,
       initState = { with(Y = 0xFEu) },
       expectedState = { with(Y = 0xFFu, Z = _0, N = _1) }
+    )
+  }
+
+  @Test
+  fun asl() {
+    assertShift(ASL, 0x02, 0x04) { with(C = _0, Z = _0, N = _0) }
+    assertShift(ASL, 0x40, 0x80) { with(C = _0, Z = _0, N = _1) }
+    assertShift(ASL, 0x88, 0x10) { with(C = _1, Z = _0, N = _0) }
+    assertShift(ASL, 0x80, 0x00) { with(C = _1, Z = _1, N = _0) }
+  }
+
+  @Test
+  fun lsr() {
+    assertShift(LSR, 0x80, 0x40) { with(C = _0, Z = _0, N = _0) }
+    assertShift(LSR, 0x01, 0x00) { with(C = _1, Z = _1, N = _0) }
+    assertShift(LSR, 0x00, 0x00) { with(C = _0, Z = _1, N = _0) }
+  }
+
+  @Test
+  fun rol() {
+    assertShift(ROL, 0x02, 0x04, { with(C = _0) }) { with(C = _0, Z = _0, N = _0) }
+    assertShift(ROL, 0x40, 0x80, { with(C = _0) }) { with(C = _0, Z = _0, N = _1) }
+    assertShift(ROL, 0x88, 0x10, { with(C = _0) }) { with(C = _1, Z = _0, N = _0) }
+    assertShift(ROL, 0x80, 0x00, { with(C = _0) }) { with(C = _1, Z = _1, N = _0) }
+    assertShift(ROL, 0x02, 0x05, { with(C = _1) }) { with(C = _0, Z = _0, N = _0) }
+  }
+
+  @Test
+  fun ror() {
+    assertShift(ROR, 0x80, 0x40, { with(C = _0) }) { with(C = _0, Z = _0, N = _0) }
+    assertShift(ROR, 0x01, 0x00, { with(C = _0) }) { with(C = _1, Z = _1, N = _0) }
+    assertShift(ROR, 0x00, 0x00, { with(C = _0) }) { with(C = _0, Z = _1, N = _0) }
+    assertShift(ROR, 0x80, 0xC0, { with(C = _1) }) { with(C = _0, Z = _0, N = _1) }
+  }
+
+  // Accumulator mode is a special case, so handle it separately
+  private fun assertShift(
+    op: Opcode,
+    operand: Int,
+    expected: Int,
+    initState: State.() -> State = { this },
+    expectedState: State.() -> State
+  ) {
+    assertForAddressModes(
+      mapOf(ACCUMULATOR to op.encodings[ACCUMULATOR]!!),
+      initState = { with(A = operand.u8()).initState() },
+      expectedState = { with(A = expected.u8()).expectedState() }
+    )
+
+    assertForAddressModes(
+      op.encodings - ACCUMULATOR,
+      operand = operand,
+      initState = initState,
+      expectedState = expectedState,
+      expectedStores = { mapOf(it to expected) }
     )
   }
 

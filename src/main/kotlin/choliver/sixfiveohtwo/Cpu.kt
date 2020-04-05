@@ -72,6 +72,22 @@ class Cpu(
         INX -> updateX((X + 1u).u8())
         INY -> updateY((Y + 1u).u8())
 
+        ASL -> resolveOperand(decoded, addr)
+          .gimp { alu.asl(q = it) }
+          .then { updateFromShift(decoded, it, addr) }
+
+        LSR -> resolveOperand(decoded, addr)
+          .gimp { alu.lsr(q = it) }
+          .then { updateFromShift(decoded, it, addr) }
+
+        ROL -> resolveOperand(decoded, addr)
+          .gimp { alu.rol(q = it, c = P.C) }
+          .then { updateFromShift(decoded, it, addr) }
+
+        ROR -> resolveOperand(decoded, addr)
+          .gimp { alu.ror(q = it, c = P.C) }
+          .then { updateFromShift(decoded, it, addr) }
+
         LDA -> resolveOperand(decoded, addr).then { updateA(it) }
         LDX -> resolveOperand(decoded, addr).then { updateX(it) }
         LDY -> resolveOperand(decoded, addr).then { updateY(it) }
@@ -130,6 +146,14 @@ class Cpu(
 
     return updated.advancePC(decoded)
   }
+
+  // TODO - this is pretty gross
+  private fun State.updateFromShift(decoded: Decoded, it: Alu.Output, addr: UInt16) =
+    if (decoded.addrMode is Accumulator) {
+      updateA(it.q).updateC(it.c)
+    } else {
+      store(addr, it.q).updateZN(it.q).updateC(it.c)
+    }
 
   private fun State.push(data: UInt8) = store(stackAddr(S), data)
     .updateS((S - 1u).u8())

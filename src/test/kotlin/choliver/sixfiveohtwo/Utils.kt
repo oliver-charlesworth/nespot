@@ -18,10 +18,10 @@ private val PROTO_STATES = listOf(
   State(P = Flags(D = true)),
   State(P = Flags(V = true)),
   State(P = Flags(N = true)),
-  State(A = 0xCCu),
-  State(X = 0xCCu),
-  State(Y = 0xCCu),
-  State(S = 0xCCu)
+  State(A = 0xAAu),
+  State(X = 0xAAu),
+  State(Y = 0xAAu),
+  State(S = 0xAAu)
 )
 
 /** Chosen to straddle a page boundary. */
@@ -30,6 +30,7 @@ const val SCARY_ADDR = 0x12FF
 const val INIT_PC = 0x5678
 
 private val CASES = mapOf(
+  ACCUMULATOR to Case(enc = { emptyArray() }),
   IMMEDIATE to Case(enc = { enc(it) }),
   IMPLIED to Case(enc = { emptyArray() }),
   RELATIVE to Case(enc = { enc(it) }),
@@ -90,7 +91,25 @@ fun assertForAddressModes(
   expectedStores: (operandAddr: Int) -> Map<Int, Int> = { emptyMap() },
   expectedState: State.() -> State = { this }
 ) {
-  op.encodings.forEach { (mode, enc) ->
+  assertForAddressModes(
+    op.encodings,
+    operand,
+    initState,
+    initStores,
+    expectedStores,
+    expectedState
+  )
+}
+
+fun assertForAddressModes(
+  encodings: Map<AddrMode, UInt8>,
+  operand: Int = 0x00,
+  initState: State.() -> State = { this },
+  initStores: Map<Int, Int> = emptyMap(),
+  expectedStores: (operandAddr: Int) -> Map<Int, Int> = { emptyMap() },
+  expectedState: State.() -> State = { this }
+) {
+  encodings.forEach { (mode, enc) ->
     PROTO_STATES.forEach { proto ->
       val case = CASES[mode]!!
 

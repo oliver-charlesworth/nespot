@@ -19,10 +19,6 @@ class Cpu(
     val data: T
   )
 
-  private fun <T> State.and(block: State.() -> T) = StateAnd(this, block(this))
-  private fun <T, R> StateAnd<T>.gimp(block: State.(T) -> R) = StateAnd(state, block(state, data))
-  private fun <T> StateAnd<T>.then(block: State.(T) -> State) = block(state, data)
-
   // TODO - homogenise State and Memory paradigm
   fun execute(encoding: Array<UInt8>, state: State): State {
     val decoded = decoder.decode(encoding)
@@ -31,135 +27,137 @@ class Cpu(
     return with (state.advancePC(decoded)) {
       when (decoded.op) {
         ADC -> resolveOperand(decoded, addr)
-          .gimp { alu.adc(a = A, b = it, c = P.C, d = P.D) }
-          .then { updateA(it.q).updateC(it.c).updateV(it.v) }
+          .then { alu.adc(a = A, b = it, c = P.C, d = P.D) }
+          .updateA { it.q }
+          .updateC { it.c }
+          .updateV { it.v }
 
         SBC -> resolveOperand(decoded, addr)
-          .gimp { alu.adc(a = A, b = it.inv(), c = P.C, d = P.D) }
-          .then { updateA(it.q).updateC(it.c).updateV(it.v) }
+          .then { alu.adc(a = A, b = it.inv(), c = P.C, d = P.D) }
+          .updateA { it.q }
+          .updateC { it.c }
+          .updateV { it.v }
 
         CMP -> resolveOperand(decoded, addr)
-          .gimp { alu.adc(a = A, b = it.inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
-          .then { updateZN(it.q).updateC(it.c) }
-        CPX -> and { X }
-          .gimp { alu.adc(a = A, b = it.inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
-          .then { updateZN(it.q).updateC(it.c) }
-        CPY -> and { Y }
-          .gimp { alu.adc(a = A, b = it.inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
-          .then { updateZN(it.q).updateC(it.c) }
+          .then { alu.adc(a = A, b = it.inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
+          .updateZN { it.q }
+          .updateC { it.c }
+        CPX -> go()
+          .then { alu.adc(a = A, b = X.inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
+          .updateZN { it.q }
+          .updateC { it.c }
+        CPY -> go()
+          .then { alu.adc(a = A, b = Y.inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
+          .updateZN { it.q }
+          .updateC { it.c }
 
         DEC -> resolveOperand(decoded, addr)
-          .then {
-            val data = (it - 1u).u8()
-            store(addr, data).updateZN(data)
-          }
-        DEX -> updateX((X - 1u).u8())
-        DEY -> updateY((Y - 1u).u8())
+          .then { (it - 1u).u8() }
+          .store(addr) { it }
+          .updateZN { it }
+        DEX -> go().updateX { (X - 1u).u8() }
+        DEY -> go().updateY { (Y - 1u).u8() }
 
         INC -> resolveOperand(decoded, addr)
-          .then {
-            val data = (it + 1u).u8()
-            store(addr, data).updateZN(data)
-          }
-        INX -> updateX((X + 1u).u8())
-        INY -> updateY((Y + 1u).u8())
+          .then { (it + 1u).u8() }
+          .store(addr) { it }
+          .updateZN { it }
+        INX -> go().updateX { (X + 1u).u8() }
+        INY -> go().updateY { (Y + 1u).u8() }
 
         ASL -> resolveOperand(decoded, addr)
-          .gimp { alu.asl(q = it) }
-          .then { updateFromShift(decoded, it, addr) }
-
+          .then { alu.asl(q = it) }
+          .updateFromShift(decoded, addr)
         LSR -> resolveOperand(decoded, addr)
-          .gimp { alu.lsr(q = it) }
-          .then { updateFromShift(decoded, it, addr) }
-
+          .then { alu.lsr(q = it) }
+          .updateFromShift(decoded, addr)
         ROL -> resolveOperand(decoded, addr)
-          .gimp { alu.rol(q = it, c = P.C) }
-          .then { updateFromShift(decoded, it, addr) }
-
+          .then { alu.rol(q = it, c = P.C) }
+          .updateFromShift(decoded, addr)
         ROR -> resolveOperand(decoded, addr)
-          .gimp { alu.ror(q = it, c = P.C) }
-          .then { updateFromShift(decoded, it, addr) }
+          .then { alu.ror(q = it, c = P.C) }
+          .updateFromShift(decoded, addr)
 
-        AND -> resolveOperand(decoded, addr)
-          .then { updateA(A and it) }
-
-        ORA -> resolveOperand(decoded, addr)
-          .then { updateA(A or it) }
-
-        EOR -> resolveOperand(decoded, addr)
-          .then { updateA(A xor it) }
+        AND -> resolveOperand(decoded, addr).updateA { A and it }
+        ORA -> resolveOperand(decoded, addr).updateA { A or it }
+        EOR -> resolveOperand(decoded, addr).updateA { A xor it }
 
         BIT -> resolveOperand(decoded, addr)
-          .then { updateZN(A and it).updateV(!(it and 0x40u).isZero()) }
+          .updateZN { A and it }
+          .updateV { !(it and 0x40u).isZero() }
 
-        LDA -> resolveOperand(decoded, addr).then { updateA(it) }
-        LDX -> resolveOperand(decoded, addr).then { updateX(it) }
-        LDY -> resolveOperand(decoded, addr).then { updateY(it) }
+        LDA -> resolveOperand(decoded, addr).updateA { it }
+        LDX -> resolveOperand(decoded, addr).updateX { it }
+        LDY -> resolveOperand(decoded, addr).updateY { it }
 
-        STA -> store(addr, A)
-        STX -> store(addr, X)
-        STY -> store(addr, Y)
+        STA -> go().store(addr) { A }
+        STX -> go().store(addr) { X }
+        STY -> go().store(addr) { Y }
 
-        PHP -> push(state.P.u8())
-        PHA -> push(state.A)
+        PHP -> go().push { P.u8() }
+        PHA -> go().push { A }
 
-        PLP -> popTo { updateP(it) }
-        PLA -> popTo { updateA(it) }
-
-        JMP -> updatePC(addr)
+        PLP -> pop().updateP { it }
+        PLA -> pop().updateA { it }
+        
+        JMP -> go()
+          .updatePCL { addr.lo() }
+          .updatePCH { addr.hi() }
         JSR -> this
-          .push((PC - 1u).hi())   // Push *last* byte of instruction
-          .push((PC - 1u).lo())
-          .updatePC(addr)
+          .extract { PC - 1u }    // Push *last* byte of instruction
+          .push { it.hi() }
+          .push { it.lo() }
+          .updatePCL { addr.lo() }  // TODO - this is cheating
+          .updatePCH { addr.hi() }
         RTS -> this
           .popTo { updatePC(it.u16()) }
           .popTo { updatePC((combine(lo = PC.u8(), hi = it) + 1u).u16()) }
+          .go() // TODO - convert
         RTI -> this
-          .popTo { updateP(it) }
-          .popTo { updatePC(it.u16()) }
-          .popTo { updatePC(combine(lo = PC.u8(), hi = it)) }
+          .pop().updateP { it }
+          .pop().updatePCL { it }
+          .pop().updatePCH { it }
         BRK -> TODO()
 
-        BPL -> updatePC(if (!P.N) addr else PC)
-        BMI -> updatePC(if (P.N) addr else PC)
-        BVC -> updatePC(if (!P.V) addr else PC)
-        BVS -> updatePC(if (P.V) addr else PC)
-        BCC -> updatePC(if (!P.C) addr else PC)
-        BCS -> updatePC(if (P.C) addr else PC)
-        BNE -> updatePC(if (!P.Z) addr else PC)
-        BEQ -> updatePC(if (P.Z) addr else PC)
+        BPL -> go().updatePC { if (!P.N) addr else PC }
+        BMI -> go().updatePC { if (P.N) addr else PC }
+        BVC -> go().updatePC { if (!P.V) addr else PC }
+        BVS -> go().updatePC { if (P.V) addr else PC }
+        BCC -> go().updatePC { if (!P.C) addr else PC }
+        BCS -> go().updatePC { if (P.C) addr else PC }
+        BNE -> go().updatePC { if (!P.Z) addr else PC }
+        BEQ -> go().updatePC { if (P.Z) addr else PC }
 
-        TXA -> updateA(X)
-        TYA -> updateA(Y)
-        TXS -> updateS(X)
-        TAY -> updateY(A)
-        TAX -> updateX(A)
-        TSX -> updateX(S)
+        TXA -> go().updateA { X }
+        TYA -> go().updateA { Y }
+        TXS -> go().updateS { X }
+        TAY -> go().updateY { A }
+        TAX -> go().updateX { A }
+        TSX -> go().updateX { S }
 
-        CLC -> updateC(_0)
-        CLD -> updateD(_0)
-        CLI -> updateI(_0)
-        CLV -> updateV(_0)
+        CLC -> go().updateC { _0 }
+        CLD -> go().updateD { _0 }
+        CLI -> go().updateI { _0 }
+        CLV -> go().updateV { _0 }
 
-        SEC -> updateC(_1)
-        SED -> updateD(_1)
-        SEI -> updateI(_1)
+        SEC -> go().updateC { _1 }
+        SED -> go().updateD { _1 }
+        SEI -> go().updateI { _1 }
 
-        NOP -> this
+        NOP -> go()
       }
-    }
+    }.state
   }
 
   // TODO - this is pretty gross
-  private fun State.updateFromShift(decoded: Decoded, it: Alu.Output, addr: UInt16) =
+  private fun StateAnd<Alu.Output>.updateFromShift(decoded: Decoded, addr: UInt16) =
     if (decoded.addrMode is Accumulator) {
-      updateA(it.q).updateC(it.c)
+      updateA { it.q }.updateC { it.c }
     } else {
-      store(addr, it.q).updateZN(it.q).updateC(it.c)
+      store(addr) { it.q }.updateZN { it.q }.updateC { it.c }
     }
 
-  private fun State.push(data: UInt8) = store(stackAddr(S), data)
-    .updateS((S - 1u).u8())
+  private fun <T> StateAnd<T>.push(f: (T) -> UInt8) = store(stackAddr(state.S), f).updateS { (state.S - 1u).u8() }
 
   private fun State.popTo(consume: State.(data: UInt8) -> State): State {
     val updated = updateS((S + 1u).u8())
@@ -167,33 +165,47 @@ class Cpu(
     return updated.consume(data)
   }
 
-  private fun State.resolveOperand(decoded: Decoded, addr: UInt16) = and { resolveOperand(decoded, this, addr) }
+  private fun <T> StateAnd<T>.pop() = state.pop()
 
-  private fun State.store(addr: UInt16, data: UInt8): State {
-    memory.store(addr, data)
-    return this
+  private fun State.pop() = extract { S }
+    .updateS { (it + 1u).u8() }
+    .then { memory.load(stackAddr(S)) }
+
+  private fun State.resolveOperand(decoded: Decoded, addr: UInt16) = and {
+    when (decoded.addrMode) {
+      is Accumulator -> this.A
+      is Immediate -> decoded.addrMode.literal
+      else -> memory.load(addr)
+    }
   }
 
-  private fun State.updateA(a: UInt8) = with(A = a).updateZN(a)
-  private fun State.updateX(x: UInt8) = with(X = x).updateZN(x)
-  private fun State.updateY(y: UInt8) = with(Y = y).updateZN(y)
+  private fun State.go() = and { this }
+  private fun <T> StateAnd<T>.store(addr: UInt16, f: (T) -> UInt8) = also { memory.store(addr, f(data)) }
+
+  private fun <T> State.and(f: State.() -> T) = StateAnd(this, f(this))
+  private fun <T> State.extract(f: State.() -> T) = StateAnd(this, f())
+  private fun <T, R> StateAnd<T>.then(f: State.(T) -> R) = StateAnd(state, f(state, data))
+  
+  private fun <T> StateAnd<T>.updateA(f: (T) -> UInt8) = copy(state = state.with(A = f(data))).updateZN(f)
+  private fun <T> StateAnd<T>.updateX(f: (T) -> UInt8) = copy(state = state.with(X = f(data))).updateZN(f)
+  private fun <T> StateAnd<T>.updateY(f: (T) -> UInt8) = copy(state = state.with(Y = f(data))).updateZN(f)
+  private fun <T> StateAnd<T>.updateS(f: (T) -> UInt8) = copy(state = state.with(S = f(data)))
+  private fun <T> StateAnd<T>.updateP(f: (T) -> UInt8) = copy(state = state.copy(P = f(data).toFlags()))
+  private fun <T> StateAnd<T>.updatePC(f: (T) -> UInt16) = copy(state = state.with(PC = f(data)))
+  private fun <T> StateAnd<T>.updatePCL(f: (T) -> UInt8) = copy(state = state.with(PC = f(data).u16()))  // TODO - proper
+  private fun <T> StateAnd<T>.updatePCH(f: (T) -> UInt8) = copy(state = state.with(PC = combine(lo = state.PC.u8(), hi = f(data))))  // TODO - proper
+  private fun <T> StateAnd<T>.updateC(f: (T) -> Boolean) = copy(state = state.with(C = f(data)))
+  private fun <T> StateAnd<T>.updateD(f: (T) -> Boolean) = copy(state = state.with(D = f(data)))
+  private fun <T> StateAnd<T>.updateI(f: (T) -> Boolean) = copy(state = state.with(I = f(data)))
+  private fun <T> StateAnd<T>.updateV(f: (T) -> Boolean) = copy(state = state.with(V = f(data)))
+  private fun <T> StateAnd<T>.updateZN(f: (T) -> UInt8) = copy(state = state.updateZN(f(data)))
+
   private fun State.updateS(s: UInt8) = with(S = s)
-  private fun State.updateP(p: UInt8) = copy(P = p.toFlags())
   private fun State.updatePC(pc: UInt16) = with(PC = pc)
-  private fun State.updateC(c: Boolean) = with(C = c)
-  private fun State.updateD(d: Boolean) = with(D = d)
-  private fun State.updateI(i: Boolean) = with(I = i)
-  private fun State.updateV(v: Boolean) = with(V = v)
 
   private fun State.updateZN(q: UInt8) = with(Z = q.isZero(), N = q.isNegative())
 
   private fun State.advancePC(decoded: Decoded) = with(PC = (PC + decoded.length).u16())
 
   private fun stackAddr(S: UInt8) = (0x0100u + S).u16()
-
-  private fun resolveOperand(decoded: Decoded, state: State, addr: UInt16): UInt8 = when (decoded.addrMode) {
-    is Accumulator -> state.A
-    is Immediate -> decoded.addrMode.literal
-    else -> memory.load(addr)
-  }
 }

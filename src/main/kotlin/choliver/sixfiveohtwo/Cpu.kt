@@ -1,6 +1,7 @@
 package choliver.sixfiveohtwo
 
 import choliver.sixfiveohtwo.AddressMode.*
+import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
 
@@ -16,38 +17,132 @@ class Cpu(
     val pcInc: UInt8
   )
 
+  data class StateAnd<T>(
+    val state: State,
+    val data: T
+  )
+
+  private fun <T> State.and(block: State.() -> T) = StateAnd(this, block(this))
+  private fun <T, R> StateAnd<T>.gimp(block: State.(T) -> R) = StateAnd(state, block(state, data))
+  private fun <T> StateAnd<T>.then(block: State.(T) -> State) = block(state, data)
+
   // TODO - homogenise State and Memory paradigm
   fun execute(encoding: Array<UInt8>, state: State): State {
     val decoded = decode(encoding)
 
     val addr = addrCalc.calculate(decoded.addrMode, state)
 
-    val operand = resolveOperand(decoded, state, addr)
+    val updated: State = with (state) {
+      when (decoded.yeah.op) {
+        ADC -> resolveOperand(decoded, addr)
+          .gimp { alu.adc(a = A, b = it, c = P.C, d = P.D) }
+          .then { updateA(it.q).updateC(it.c).updateV(it.v) }
 
-    val alu = alu.execute(decoded.yeah.op.aluMode, Alu.Input(
-      a = state.A,
-      b = operand,
-      c = state.P.C,
-      d = state.P.D
-    ))
+        SBC -> resolveOperand(decoded, addr)
+          .gimp { alu.sbc(a = A, b = it, c = P.C, d = P.D) }
+          .then { updateA(it.q).updateC(it.c).updateV(it.v) }
 
-    when (decoded.yeah.memSrc) {
-      MemSrc.A -> memory.store(addr, state.A)
-      MemSrc.X -> memory.store(addr, state.X)
-      MemSrc.Y -> memory.store(addr, state.Y)
-      MemSrc.S -> memory.store(addr, state.S)
-      MemSrc.P -> memory.store(addr, state.P.u8())
-      MemSrc.R -> TODO()
-      MemSrc.N -> {} // Do nothing
-      MemSrc.Z -> TODO()
+        AND -> resolveOperand(decoded, addr)
+          .then { updateA(A and it) }
+
+        ORA -> resolveOperand(decoded, addr)
+          .then { updateA(A or it) }
+
+        EOR -> resolveOperand(decoded, addr)
+          .then { updateA(A xor it) }
+
+        BIT -> resolveOperand(decoded, addr)
+          .then { updateZN(A and it).updateV(!(it and 0x40u).isZero()) }
+
+        DEC -> resolveOperand(decoded, addr)
+          .then {
+            val data = (it - 1u).u8()
+            store(addr, data).updateZN(data)
+          }
+        DEX -> updateX((X - 1u).u8())
+        DEY -> updateY((Y - 1u).u8())
+
+        INC -> resolveOperand(decoded, addr)
+          .then {
+            val data = (it + 1u).u8()
+            store(addr, data).updateZN(data)
+          }
+        INX -> updateX((X + 1u).u8())
+        INY -> updateY((Y + 1u).u8())
+
+        LDA -> resolveOperand(decoded, addr).then { updateA(it) }
+        LDX -> resolveOperand(decoded, addr).then { updateX(it) }
+        LDY -> resolveOperand(decoded, addr).then { updateY(it) }
+
+        STA -> store(addr, A)
+        STX -> store(addr, X)
+        STY -> store(addr, Y)
+
+        PHP -> push(state.P.u8())
+        PHA -> push(state.A)
+
+        PLP -> pop().then { updateP(it) }
+        PLA -> pop().then { updateA(it) } // Original datasheet claims no flags set, but rest of the world disagrees
+
+        JMP -> updatePC(addr)
+        JSR -> push16((PC + 2u).u16()).updatePC(addr)  // Push *last* byte of instruction
+
+        TXA -> updateA(X)
+        TYA -> updateA(Y)
+        TXS -> updateS(X)
+        TAY -> updateY(A)
+        TAX -> updateX(A)
+        TSX -> updateX(S)
+
+        CLC -> updateC(_0)
+        CLD -> updateD(_0)
+        CLI -> updateI(_0)
+        CLV -> updateV(_0)
+
+        SEC -> updateC(_1)
+        SED -> updateD(_1)
+        SEI -> updateI(_1)
+
+        NOP -> this
+
+        else -> TODO()
+      }
     }
 
-    return state
-      .withNewPC(decoded, addr)
-      .withNewP(decoded.yeah.op.flag, alu.q, alu) // TODO - simplify args
-      .withNewS(decoded.yeah.op)
-      .withNewReg(decoded.yeah.regSink, alu.q)
+    return updated.incrementPC(decoded)
   }
+
+  private fun State.push16(data: UInt16) = push(data.hi()).push(data.lo())
+
+  private fun State.push(data: UInt8) = store(stackAddr(S), data)
+    .updateS((S - 1u).u8())
+
+  private fun State.pop() = updateS((S + 1u).u8())
+    .and { memory.load(stackAddr(S)) }
+
+  private fun State.resolveOperand(decoded: Decoded, addr: UInt16) = and { resolveOperand(decoded, this, addr) }
+
+  private fun State.store(addr: UInt16, data: UInt8): State {
+    memory.store(addr, data)
+    return this
+  }
+
+  private fun State.updateA(a: UInt8) = with(A = a).updateZN(a)
+  private fun State.updateX(x: UInt8) = with(X = x).updateZN(x)
+  private fun State.updateY(y: UInt8) = with(Y = y).updateZN(y)
+  private fun State.updateS(s: UInt8) = with(S = s)
+  private fun State.updateP(p: UInt8) = copy(P = p.toFlags())
+  private fun State.updatePC(pc: UInt16) = with(PC = pc)
+  private fun State.updateC(c: Boolean) = with(C = c)
+  private fun State.updateD(d: Boolean) = with(D = d)
+  private fun State.updateI(i: Boolean) = with(I = i)
+  private fun State.updateV(v: Boolean) = with(V = v)
+
+  private fun State.updateZN(q: UInt8) = with(Z = q.isZero(), N = q.isNegative())
+
+  private fun State.incrementPC(decoded: Decoded) = with(PC = (PC + decoded.pcInc).u16())
+
+  private fun stackAddr(S: UInt8) = (0x0100u + S).u16()
 
   private fun resolveOperand(decoded: Decoded, state: State, addr: UInt16): UInt8 = when (decoded.addrMode) {
     is Accumulator -> state.A
@@ -110,51 +205,6 @@ class Cpu(
     Reg.S -> state.S
     Reg.P -> state.P.u8()
     Reg.N -> 0.u8()
-    Reg.Z -> TODO()
-  }
-
-  private fun State.withNewPC(decoded: Decoded, addr: UInt16) = when (decoded.yeah.pcSrc) {
-    PcSrc.A -> copy(PC = addr)
-    PcSrc.N -> copy(PC = (PC + decoded.pcInc).u16())
-    PcSrc.Z -> TODO()
-  }
-
-  private fun State.withNewP(flag: Flag, out: UInt8, alu: Alu.Output) = copy(P = with(P) {
-    val c = alu.c
-    val z = out.isZero()
-    val v = alu.v
-    val n = out.isNegative()
-
-    when (flag) {
-      Flag.NON_ -> this
-      Flag._Z_N -> copy(Z = z, N = n)
-      Flag.CZ_N -> copy(C = c, Z = z, N = n)
-      Flag._ZVN -> copy(Z = z, V = v, N = n)
-      Flag.CZVN -> copy(C = c, Z = z, V = v, N = n)
-      Flag.C0__ -> copy(C = _0)
-      Flag.C1__ -> copy(C = _1)
-      Flag.I0__ -> copy(I = _0)
-      Flag.I1__ -> copy(I = _1)
-      Flag.D0__ -> copy(D = _0)
-      Flag.D1__ -> copy(D = _1)
-      Flag.V0__ -> copy(V = _0)
-    }
-  })
-
-  // TODO - make this switch on a control line, not opcode
-  private fun State.withNewS(op: Opcode) = when (op) {
-    Opcode.PLA, Opcode.PLP -> copy(S = (S + 1u).u8())
-    Opcode.PHA, Opcode.PHP -> copy(S = (S - 1u).u8())
-    else -> this
-  }
-
-  private fun State.withNewReg(reg: Reg, out: UInt8) = when (reg) {
-    Reg.A -> copy(A = out)
-    Reg.X -> copy(X = out)
-    Reg.Y -> copy(Y = out)
-    Reg.S -> copy(S = out)
-    Reg.P -> copy(P = out.toFlags())
-    Reg.N -> this
     Reg.Z -> TODO()
   }
 }

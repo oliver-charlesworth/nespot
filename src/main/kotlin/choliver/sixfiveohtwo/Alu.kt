@@ -1,15 +1,6 @@
 package choliver.sixfiveohtwo
 
-import choliver.sixfiveohtwo.AluMode.*
-
 class Alu {
-
-  data class Input(
-    val a: UInt8 = 0u,
-    val b: UInt8 = 0u,
-    val c: Boolean = false,
-    val d: Boolean = false
-  )
 
   data class Output(
     val q: UInt8 = 0u,
@@ -17,47 +8,38 @@ class Alu {
     val v: Boolean = false
   )
 
-  fun execute(mode: AluMode, inp: Input) = when (mode) {
-    NOP -> Output(q = inp.b)
-    ADC -> adc(inp)
-    SBC -> adc(inp.copy(b = inp.b.inv()))
-    DEC -> Output(q = (inp.b - 1u).u8())
-    INC -> Output(q = (inp.b + 1u).u8())
-    AND -> Output(q = (inp.a and inp.b))
-    EOR -> Output(q = (inp.a xor inp.b))
-    ORA -> Output(q = (inp.a or inp.b))
-    ASL -> Output(
-      q = (inp.a * 2u).u8(),
-      c = !(inp.a and 0x80u).isZero()
-    )
-    LSR -> Output(
-      q = (inp.a / 2u).u8(),
-      c = !(inp.a and 0x01u).isZero()
-    )
-    ROL -> Output(
-      q = (inp.a * 2u or if (inp.c) 1u else 0u).u8(),
-      c = !(inp.a and 0x80u).isZero()
-    )
-    ROR -> Output(
-      q = (inp.a / 2u or if (inp.c) 0x80u else 0u).u8(),
-      c = !(inp.a and 0x01u).isZero()
-    )
-    BIT -> Output(
-      q = (inp.a and inp.b),
-      v = (inp.b and 0x40u) != 0.u8()
-    )
-  }
-
   // TODO - decimal mode
-  private fun adc(inp: Input): Output {
-    val raw = inp.a + inp.b + if (inp.c) 1u else 0u
+  fun adc(a: UInt8, b: UInt8, c: Boolean, d: Boolean): Output {
+    val raw = a + b + if (c) 1u else 0u
     val result = raw.u8()
-    val sameOperandSigns = (inp.a.isNegative() == inp.b.isNegative())
-    val differentResultSign = (inp.a.isNegative() != result.isNegative())
+    val sameOperandSigns = (a.isNegative() == b.isNegative())
+    val differentResultSign = (a.isNegative() != result.isNegative())
     return Output(
       q = result,
       c = (raw and 0x100u) != 0u,
       v = sameOperandSigns && differentResultSign
     )
   }
+
+  fun sbc(a: UInt8, b: UInt8, c: Boolean, d: Boolean) = adc(a = a, b = b.inv(), c = c, d = d)
+
+  fun asl(q: UInt8) = Output(
+    q = (q * 2u).u8(),
+    c = !(q and 0x80u).isZero()
+  )
+
+  fun lsr(q: UInt8) = Output(
+    q = (q / 2u).u8(),
+    c = !(q and 0x01u).isZero()
+  )
+
+  fun rol(q: UInt8, c: Boolean) = Output(
+    q = (q * 2u or if (c) 1u else 0u).u8(),
+    c = !(q and 0x80u).isZero()
+  )
+
+  fun ror(q: UInt8, c: Boolean) = Output(
+    q = (q / 2u or if (c) 0x80u else 0u).u8(),
+    c = !(q and 0x01u).isZero()
+  )
 }

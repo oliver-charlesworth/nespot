@@ -265,6 +265,35 @@ class ArithmeticTest {
   // TODO - CPX, CPY
 
   @Test
+  fun dec() {
+    val ops = mapOf(
+      ZERO_PAGE to 0XC6,
+      ZERO_PAGE_X to 0xD6,
+      ABSOLUTE to 0xCE,
+      ABSOLUTE_X to 0xDE
+    )
+
+    assertForAddressModes(
+      ops,
+      operand = 0x02,
+      expectedState = { with(Z = _0, N = _0) },
+      expectedStores = { mapOf(it to 0x01) }
+    )
+    assertForAddressModes(
+      ops,
+      operand = 0x01,
+      expectedState = { with(Z = _1, N = _0) },
+      expectedStores = { mapOf(it to 0x00) }
+    )
+    assertForAddressModes(
+      ops,
+      operand = 0xFF,
+      expectedState = { with(Z = _0, N = _1) },
+      expectedStores = { mapOf(it to 0xFE) }
+    )
+  }
+
+  @Test
   fun dex() {
     val ops = mapOf(IMPLIED to 0xCA)
 
@@ -303,6 +332,35 @@ class ArithmeticTest {
       ops,
       initState = { with(Y = 0xFFu) },
       expectedState = { with(Y = 0xFEu, Z = _0, N = _1) }
+    )
+  }
+
+  @Test
+  fun inc() {
+    val ops = mapOf(
+      ZERO_PAGE to 0XE6,
+      ZERO_PAGE_X to 0xF6,
+      ABSOLUTE to 0xEE,
+      ABSOLUTE_X to 0xFE
+    )
+
+    assertForAddressModes(
+      ops,
+      operand = 0x01,
+      expectedState = { with(Z = _0, N = _0) },
+      expectedStores = { mapOf(it to 0x02) }
+    )
+    assertForAddressModes(
+      ops,
+      operand = 0xFF,
+      expectedState = { with(Z = _1, N = _0) },
+      expectedStores = { mapOf(it to 0x00) }
+    )
+    assertForAddressModes(
+      ops,
+      operand = 0xFE,
+      expectedState = { with(Z = _0, N = _1) },
+      expectedStores = { mapOf(it to 0xFF) }
     )
   }
 

@@ -1,30 +1,16 @@
 package choliver.sixfiveohtwo.cpu
 
 import choliver.sixfiveohtwo.*
-import choliver.sixfiveohtwo.AddrMode.*
+import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class ArithmeticTest {
-  // TODO - DEC, INC
-
   @Nested
   inner class Adc {
-    private val ops = mapOf(
-      IMMEDIATE to 0x69,
-      ZERO_PAGE to 0X65,
-      ZERO_PAGE_X to 0x75,
-      ABSOLUTE to 0x6D,
-      ABSOLUTE_X to 0x7D,
-      ABSOLUTE_Y to 0x79,
-      INDEXED_INDIRECT to 0x61,
-      INDIRECT_INDEXED to 0x71
-    )
-
     @Test
     fun resultIsPositive() {
       assertForAddressModesAndCarry(operand = 0x10, originalA = 0x20, A = 0x30, V = _0, C = _0, N = _0, Z = _0)
@@ -93,14 +79,14 @@ class ArithmeticTest {
       Z: Boolean
     ) {
       assertForAddressModes(
-        ops,
+        ADC,
         operand = operand,
         initState = { with(A = originalA.u8(), C = _0) },
         expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
       )
 
       assertForAddressModes(
-        ops,
+        ADC,
         operand = operand,
         initState = { with(A = (originalA - 1).u8(), C = _1) },
         expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
@@ -110,17 +96,6 @@ class ArithmeticTest {
 
   @Nested
   inner class Sbc {
-    private val ops = mapOf(
-      IMMEDIATE to 0xE9,
-      ZERO_PAGE to 0XE5,
-      ZERO_PAGE_X to 0xF5,
-      ABSOLUTE to 0xED,
-      ABSOLUTE_X to 0xFD,
-      ABSOLUTE_Y to 0xF9,
-      INDEXED_INDIRECT to 0xE1,
-      INDIRECT_INDEXED to 0xF1
-    )
-
     @Test
     fun resultIsPositive() {
       assertForAddressModesAndCarry(operand = 0xF0, originalA = 0x20, A = 0x30, V = _0, C = _0, N = _0, Z = _0)
@@ -190,14 +165,14 @@ class ArithmeticTest {
       Z: Boolean
     ) {
       assertForAddressModes(
-        ops,
+        SBC,
         operand = operand,
         initState = { with(A = originalA.u8(), C = _1) },
         expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
       )
 
       assertForAddressModes(
-        ops,
+        SBC,
         operand = operand,
         initState = { with(A = (originalA + 1).u8(), C = _0) },
         expectedState = { with(A = A.u8(), V = V, C = C, N = N, Z = Z) }
@@ -208,23 +183,12 @@ class ArithmeticTest {
   @Nested
   @Disabled // TODO
   inner class Cmp {
-    private val ops = mapOf(
-      IMMEDIATE to 0xC9,
-      ZERO_PAGE to 0XC5,
-      ZERO_PAGE_X to 0xD5,
-      ABSOLUTE to 0xCD,
-      ABSOLUTE_X to 0xDD,
-      ABSOLUTE_Y to 0xD9,
-      INDEXED_INDIRECT to 0xC1,
-      INDIRECT_INDEXED to 0xD1
-    )
-
     // TODO - demonstrate that we ignore carry-in
 
     @Test
     fun lessThan() {
       assertForAddressModes(
-        ops,
+        CMP,
         operand = 0x30,
         initState = { with(A = 0x20u) },
         expectedState = { with(A = 0x20u, C = _0, N = _0, Z = _0) }
@@ -266,27 +230,20 @@ class ArithmeticTest {
 
   @Test
   fun dec() {
-    val ops = mapOf(
-      ZERO_PAGE to 0XC6,
-      ZERO_PAGE_X to 0xD6,
-      ABSOLUTE to 0xCE,
-      ABSOLUTE_X to 0xDE
-    )
-
     assertForAddressModes(
-      ops,
+      DEC,
       operand = 0x02,
       expectedState = { with(Z = _0, N = _0) },
       expectedStores = { mapOf(it to 0x01) }
     )
     assertForAddressModes(
-      ops,
+      DEC,
       operand = 0x01,
       expectedState = { with(Z = _1, N = _0) },
       expectedStores = { mapOf(it to 0x00) }
     )
     assertForAddressModes(
-      ops,
+      DEC,
       operand = 0xFF,
       expectedState = { with(Z = _0, N = _1) },
       expectedStores = { mapOf(it to 0xFE) }
@@ -295,20 +252,18 @@ class ArithmeticTest {
 
   @Test
   fun dex() {
-    val ops = mapOf(IMPLIED to 0xCA)
-
     assertForAddressModes(
-      ops,
+      DEX,
       initState = { with(X = 0x02u) },
       expectedState = { with(X = 0x01u, Z = _0, N = _0) }
     )
     assertForAddressModes(
-      ops,
+      DEX,
       initState = { with(X = 0x01u) },
       expectedState = { with(X = 0x00u, Z = _1, N = _0) }
     )
     assertForAddressModes(
-      ops,
+      DEX,
       initState = { with(X = 0xFFu) },
       expectedState = { with(X = 0xFEu, Z = _0, N = _1) }
     )
@@ -316,20 +271,18 @@ class ArithmeticTest {
 
   @Test
   fun dey() {
-    val ops = mapOf(IMPLIED to 0x88)
-
     assertForAddressModes(
-      ops,
+      DEY,
       initState = { with(Y = 0x02u) },
       expectedState = { with(Y = 0x01u, Z = _0, N = _0) }
     )
     assertForAddressModes(
-      ops,
+      DEY,
       initState = { with(Y = 0x01u) },
       expectedState = { with(Y = 0x00u, Z = _1, N = _0) }
     )
     assertForAddressModes(
-      ops,
+      DEY,
       initState = { with(Y = 0xFFu) },
       expectedState = { with(Y = 0xFEu, Z = _0, N = _1) }
     )
@@ -337,27 +290,20 @@ class ArithmeticTest {
 
   @Test
   fun inc() {
-    val ops = mapOf(
-      ZERO_PAGE to 0XE6,
-      ZERO_PAGE_X to 0xF6,
-      ABSOLUTE to 0xEE,
-      ABSOLUTE_X to 0xFE
-    )
-
     assertForAddressModes(
-      ops,
+      INC,
       operand = 0x01,
       expectedState = { with(Z = _0, N = _0) },
       expectedStores = { mapOf(it to 0x02) }
     )
     assertForAddressModes(
-      ops,
+      INC,
       operand = 0xFF,
       expectedState = { with(Z = _1, N = _0) },
       expectedStores = { mapOf(it to 0x00) }
     )
     assertForAddressModes(
-      ops,
+      INC,
       operand = 0xFE,
       expectedState = { with(Z = _0, N = _1) },
       expectedStores = { mapOf(it to 0xFF) }
@@ -366,20 +312,18 @@ class ArithmeticTest {
 
   @Test
   fun inx() {
-    val ops = mapOf(IMPLIED to 0xE8)
-
     assertForAddressModes(
-      ops,
+      INX,
       initState = { with(X = 0x01u) },
       expectedState = { with(X = 0x02u, Z = _0, N = _0) }
     )
     assertForAddressModes(
-      ops,
+      INX,
       initState = { with(X = 0xFFu) },
       expectedState = { with(X = 0x00u, Z = _1, N = _0) }
     )
     assertForAddressModes(
-      ops,
+      INX,
       initState = { with(X = 0xFEu) },
       expectedState = { with(X = 0xFFu, Z = _0, N = _1) }
     )
@@ -387,20 +331,18 @@ class ArithmeticTest {
 
   @Test
   fun iny() {
-    val ops = mapOf(IMPLIED to 0xC8)
-
     assertForAddressModes(
-      ops,
+      INY,
       initState = { with(Y = 0x01u) },
       expectedState = { with(Y = 0x02u, Z = _0, N = _0) }
     )
     assertForAddressModes(
-      ops,
+      INY,
       initState = { with(Y = 0xFFu) },
       expectedState = { with(Y = 0x00u, Z = _1, N = _0) }
     )
     assertForAddressModes(
-      ops,
+      INY,
       initState = { with(Y = 0xFEu) },
       expectedState = { with(Y = 0xFFu, Z = _0, N = _1) }
     )

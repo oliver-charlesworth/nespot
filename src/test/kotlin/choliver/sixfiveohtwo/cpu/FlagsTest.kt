@@ -1,8 +1,9 @@
 package choliver.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.assertForAddressModes
-import choliver.sixfiveohtwo.AddrMode.IMPLIED
+import choliver.sixfiveohtwo.Opcode
+import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.State
+import choliver.sixfiveohtwo.assertForAddressModes
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
@@ -10,41 +11,41 @@ import org.junit.jupiter.api.Test
 class FlagsTest {
   @Test
   fun clc() {
-    assertFlagModified(0x18, _0) { with(C = it) }
+    assertFlagModified(CLC, _0) { with(C = it) }
   }
 
   @Test
   fun cld() {
-    assertFlagModified(0xD8, _0) { with(D = it) }
+    assertFlagModified(CLD, _0) { with(D = it) }
   }
 
   @Test
   fun cli() {
-    assertFlagModified(0x58, _0) { with(I = it) }
+    assertFlagModified(CLI, _0) { with(I = it) }
   }
 
   @Test
   fun clv() {
-    assertFlagModified(0xB8, _0) { with(V = it) }
+    assertFlagModified(CLV, _0) { with(V = it) }
   }
 
   @Test
   fun sec() {
-    assertFlagModified(0x38, _1) { with(C = it) }
+    assertFlagModified(SEC, _1) { with(C = it) }
   }
 
   @Test
   fun sed() {
-    assertFlagModified(0xF8, _1) { with(D = it) }
+    assertFlagModified(SED, _1) { with(D = it) }
   }
 
   @Test
   fun sei() {
-    assertFlagModified(0x78, _1) { with(I = it) }
+    assertFlagModified(SEI, _1) { with(I = it) }
   }
 
-  private fun assertFlagModified(opcode: Int, expected: Boolean, state: State.(b: Boolean) -> State) {
-    assertForAddressModes(mapOf(IMPLIED to opcode), initState = { state(_1) }, expectedState = { state(expected) })
-    assertForAddressModes(mapOf(IMPLIED to opcode), initState = { state(_0) }, expectedState = { state(expected) })
+  private fun assertFlagModified(op: Opcode, expected: Boolean, state: State.(b: Boolean) -> State) {
+    assertForAddressModes(op, initState = { state(_1) }, expectedState = { state(expected) })
+    assertForAddressModes(op, initState = { state(_0) }, expectedState = { state(expected) })
   }
 }

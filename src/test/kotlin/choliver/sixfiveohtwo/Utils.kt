@@ -83,21 +83,21 @@ fun enc16(data: Int) = enc(data.loI(), data.hiI())
 fun mem16(addr: Int, data: Int) = mapOf(addr to data.loI(), (addr + 1) to data.hiI())
 
 fun assertForAddressModes(
-  ops: Map<AddrMode, Int>,
+  op: Opcode,
   operand: Int = 0x00,
   initState: State.() -> State = { this },
   initStores: Map<Int, Int> = emptyMap(),
   expectedStores: (operandAddr: Int) -> Map<Int, Int> = { emptyMap() },
   expectedState: State.() -> State = { this }
 ) {
-  ops.forEach { (mode, enc) ->
+  op.encodings.forEach { (mode, enc) ->
     PROTO_STATES.forEach { proto ->
       val case = CASES[mode]!!
 
       val memory = FakeMemory(case.mem + (case.operandAddr to operand) + initStores)
       val cpu = Cpu(memory)
 
-      val encoding = enc(enc) + case.enc(operand)
+      val encoding = arrayOf(enc) + case.enc(operand)
       val init = case.state(proto).with(PC = INIT_PC.u16()).initState()
       val expected = case.state(proto).with(PC = (INIT_PC + encoding.size).u16()).expectedState()
 

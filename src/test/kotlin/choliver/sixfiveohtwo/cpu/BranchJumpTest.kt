@@ -1,7 +1,7 @@
 package choliver.sixfiveohtwo.cpu
 
 import choliver.sixfiveohtwo.*
-import choliver.sixfiveohtwo.AddrMode.*
+import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
@@ -11,10 +11,7 @@ class BranchJumpTest {
   @Test
   fun jmp() {
     assertForAddressModes(
-      ops = mapOf(
-        ABSOLUTE to 0x4C,
-        INDIRECT to 0x6C
-      ),
+      JMP,
       expectedState = { with(PC = SCARY_ADDR.u16()) }
     )
   }
@@ -22,7 +19,7 @@ class BranchJumpTest {
   @Test
   fun jsr() {
     assertForAddressModes(
-      ops = mapOf(ABSOLUTE to 0x20),
+      JSR,
       initState = { with(S = 0x30u) },
       expectedState = { with(PC = SCARY_ADDR.u16(), S = 0x2Eu) },
       expectedStores = { mem16(0x012F, INIT_PC + 2) } // JSR stores *last* byte of instruction
@@ -32,7 +29,7 @@ class BranchJumpTest {
   @Test
   fun rts() {
     assertForAddressModes(
-      ops = mapOf(IMPLIED to 0x60),
+      RTS,
       initState = { with(S = 0x2Eu) },
       initStores = mem16(0x012F, SCARY_ADDR - 1), // JSR stores *last* byte of instruction
       expectedState = { with(PC = SCARY_ADDR.u16(), S = 0x30u) }
@@ -41,59 +38,59 @@ class BranchJumpTest {
 
   @Test
   fun bpl() {
-    assertBranch(0x10) { with(N = !it) }
+    assertBranch(BPL) { with(N = !it) }
   }
 
   @Test
   fun bmi() {
-    assertBranch(0x30) { with(N = it) }
+    assertBranch(BMI) { with(N = it) }
   }
 
   @Test
   fun bvc() {
-    assertBranch(0x50) { with(V = !it) }
+    assertBranch(BVC) { with(V = !it) }
   }
 
   @Test
   fun bvs() {
-    assertBranch(0x70) { with(V = it) }
+    assertBranch(BVS) { with(V = it) }
   }
 
   @Test
   fun bcc() {
-    assertBranch(0x90) { with(C = !it) }
+    assertBranch(BCC) { with(C = !it) }
   }
 
   @Test
   fun bcs() {
-    assertBranch(0xB0) { with(C = it) }
+    assertBranch(BCS) { with(C = it) }
   }
 
   @Test
   fun bne() {
-    assertBranch(0xD0) { with(Z = !it) }
+    assertBranch(BNE) { with(Z = !it) }
   }
 
   @Test
   fun beq() {
-    assertBranch(0xF0) { with(Z = it) }
+    assertBranch(BEQ) { with(Z = it) }
   }
 
-  private fun assertBranch(opcode: Int, state: State.(b: Boolean) -> State) {
+  private fun assertBranch(op: Opcode, state: State.(b: Boolean) -> State) {
     assertForAddressModes(
-      ops = mapOf(RELATIVE to opcode),
+      op,
       operand = 0x30,
       initState = { state(_0) },
       expectedState = { state(_0) }
     )
     assertForAddressModes(
-      ops = mapOf(RELATIVE to opcode),
+      op,
       operand = 0x30,
       initState = { state(_1) },
       expectedState = { state(_1).with(PC = (INIT_PC + 0x30).u16()) }
     )
     assertForAddressModes(
-      ops = mapOf(RELATIVE to opcode),
+      op,
       operand = 0xD0,
       initState = { state(_1) },
       expectedState = { state(_1).with(PC = (INIT_PC - 0x30).u16()) }

@@ -1,6 +1,6 @@
 package choliver.sixfiveohtwo
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 
 class FakeMemory(
   initial: Map<Int, Int> = emptyMap()

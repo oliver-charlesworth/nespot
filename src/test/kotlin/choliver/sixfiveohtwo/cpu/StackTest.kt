@@ -1,6 +1,6 @@
 package choliver.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.AddrMode.IMPLIED
+import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.assertForAddressModes
 import choliver.sixfiveohtwo.u8
 import choliver.sixfiveohtwo.utils._0
@@ -8,12 +8,10 @@ import choliver.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
 
 class StackTest {
-  // TODO - unify with Utils
-
   @Test
   fun pha() {
     assertForAddressModes(
-      ops = mapOf(IMPLIED to 0x48),
+      PHA,
       initState = { with(S = 0x30u, A = 0x20u) },
       expectedState = { with(S = 0x2Fu, A = 0x20u) },
       expectedStores = { mapOf(0x0130 to 0x20) }
@@ -23,7 +21,7 @@ class StackTest {
   @Test
   fun php() {
     assertForAddressModes(
-      ops = mapOf(IMPLIED to 0x08),
+      PHP,
       initState = { with(S = 0x30u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
       expectedState = { with(S = 0x2Fu, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
       expectedStores = { mapOf(0x0130 to 0xCF) }
@@ -34,7 +32,7 @@ class StackTest {
   fun pla() {
     fun assertBehaviour(data: Int, Z: Boolean, N: Boolean) {
       assertForAddressModes(
-        ops = mapOf(IMPLIED to 0x68),
+        PLA,
         initStores = mapOf(0x123 to data),
         initState = { with(S = 0x22u) },
         expectedState = { with(S = 0x23u, A = data.u8(), Z = Z, N = N) }
@@ -49,7 +47,7 @@ class StackTest {
   @Test
   fun plp() {
     assertForAddressModes(
-      ops = mapOf(IMPLIED to 0x28),
+      PLP,
       initStores = mapOf(0x123 to 0xCF),
       initState = { with(S = 0x22u) },
       expectedState = { with(S = 0x23u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) }

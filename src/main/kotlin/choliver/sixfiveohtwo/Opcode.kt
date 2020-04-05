@@ -1,7 +1,44 @@
 package choliver.sixfiveohtwo
 
 import choliver.sixfiveohtwo.AddrMode.*
-import choliver.sixfiveohtwo.Opcode.*
+
+enum class AddrMode {
+  ACCUMULATOR,
+  IMMEDIATE,
+  IMPLIED,
+  INDIRECT,
+  RELATIVE,
+  ABSOLUTE,
+  ABSOLUTE_X,
+  ABSOLUTE_Y,
+  ZERO_PAGE,
+  ZERO_PAGE_X,
+  ZERO_PAGE_Y,
+  INDEXED_INDIRECT,
+  INDIRECT_INDEXED
+}
+
+private val ENCS_STANDARD = mapOf(
+  INDEXED_INDIRECT to 0x01,
+  ZERO_PAGE to 0x05,
+  IMMEDIATE to 0x09,
+  ABSOLUTE to 0x0D,
+  INDIRECT_INDEXED to 0x11,
+  ZERO_PAGE_X to 0x15,
+  ABSOLUTE_Y to 0x19,
+  ABSOLUTE_X to 0x1D
+)
+
+private val ENCS_INC_DEC = mapOf(
+  ZERO_PAGE to 0x06,
+  ABSOLUTE to 0x0E,
+  ZERO_PAGE_X to 0x16,
+  ABSOLUTE_X to 0x1E
+)
+
+private val ENCS_SHIFT = ENCS_INC_DEC + mapOf(
+  ACCUMULATOR to 0x0A
+)
 
 enum class Reg {
   X,
@@ -107,24 +144,6 @@ enum class Opcode(
   constructor(enc: Int, regSrc: Reg = Reg.N) : this(map8(IMPLIED to enc), regSrc)
 }
 
-// TODO - this is gross
-private fun map8(vararg pairs: Pair<AddrMode, Int>) = pairs.associate { (k, v) -> k to v.u8() }
-
-enum class AddrMode {
-  ACCUMULATOR,
-  IMMEDIATE,
-  IMPLIED,
-  INDIRECT,
-  RELATIVE,
-  ABSOLUTE,
-  ABSOLUTE_X,
-  ABSOLUTE_Y,
-  ZERO_PAGE,
-  ZERO_PAGE_X,
-  ZERO_PAGE_Y,
-  INDEXED_INDIRECT,
-  INDIRECT_INDEXED
-}
 
 // TODO - rename
 data class Yeah(
@@ -132,40 +151,14 @@ data class Yeah(
   val addrMode: AddrMode = IMPLIED
 )
 
-private val LAYOUT_STD = listOf(
-  0x01 to INDEXED_INDIRECT,
-  0x05 to ZERO_PAGE,
-  0x09 to IMMEDIATE,
-  0x0D to ABSOLUTE,
-  0x11 to INDIRECT_INDEXED,
-  0x15 to ZERO_PAGE_X,
-  0x19 to ABSOLUTE_Y,
-  0x1D to ABSOLUTE_X
-)
+private fun standard(base: Int) = ENCS_STANDARD.encode(base)
 
-private val LAYOUT_INC_DEC = listOf(
-  0x06 to ZERO_PAGE,
-  0x0E to ABSOLUTE,
-  0x16 to ZERO_PAGE_X,
-  0x1E to ABSOLUTE_X
-)
+private fun incDec(base: Int) = ENCS_INC_DEC.encode(base)
 
-private val LAYOUT_SHIFT = LAYOUT_INC_DEC + listOf(
-  0x0A to ACCUMULATOR
-)
+private fun shift(base: Int) = ENCS_SHIFT.encode(base)
 
-private fun standard(base: Int) = LAYOUT_STD
-  .associate { (k, v) -> v to (k + base).u8() }
+private fun Map<AddrMode, Int>.encode(base: Int) = entries
+  .associate { (k, v) -> k to (v + base).u8() }
 
-private fun incDec(base: Int) = LAYOUT_INC_DEC
-  .associate { (k, v) -> v to (k + base).u8() }
-
-
-private fun shift(base: Int) = LAYOUT_SHIFT
-  .associate { (k, v) -> v to (k + base).u8() }
-
-private fun implied(enc: Int) = mapOf(IMPLIED to enc.u8())
-
-val ENCODINGS = Opcode.values()
-  .flatMap { it.encodings.entries.map { (mode, enc) -> enc to Yeah(it, mode) } }
-  .toMap()
+// TODO - this is gross
+private fun map8(vararg pairs: Pair<AddrMode, Int>) = pairs.associate { (k, v) -> k to v.u8() }

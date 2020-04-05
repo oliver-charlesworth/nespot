@@ -1,9 +1,10 @@
 package choliver.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.assertForAddressModes
-import choliver.sixfiveohtwo.AddrMode.IMPLIED
+import choliver.sixfiveohtwo.Opcode
+import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.State
 import choliver.sixfiveohtwo.UInt8
+import choliver.sixfiveohtwo.assertForAddressModes
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
@@ -11,55 +12,55 @@ import org.junit.jupiter.api.Test
 class TransferTest {
   @Test
   fun txa() {
-    assertTransferAndFlags(0x8A, source = { with(X = it) }, dest = { with(A = it) })
+    assertTransferAndFlags(TXA, source = { with(X = it) }, dest = { with(A = it) })
   }
 
   @Test
   fun tya() {
-    assertTransferAndFlags(0x98, source = { with(Y = it) }, dest = { with(A = it) })
+    assertTransferAndFlags(TYA, source = { with(Y = it) }, dest = { with(A = it) })
   }
 
   @Test
   fun tax() {
-    assertTransferAndFlags(0xAA, source = { with(A = it) }, dest = { with(X = it) })
+    assertTransferAndFlags(TAX, source = { with(A = it) }, dest = { with(X = it) })
   }
 
   @Test
   fun tay() {
-    assertTransferAndFlags(0xA8, source = { with(A = it) }, dest = { with(Y = it) })
+    assertTransferAndFlags(TAY, source = { with(A = it) }, dest = { with(Y = it) })
   }
 
   @Test
   fun tsx() {
-    assertTransferAndFlags(0xBA, source = { with(S = it) }, dest = { with(X = it) })
+    assertTransferAndFlags(TSX, source = { with(S = it) }, dest = { with(X = it) })
   }
 
   @Test
   fun txs() {
     assertForAddressModes(
-      mapOf(IMPLIED to 0x9A),
+      TXS,
       initState = { with(X = 0x10u) },
       expectedState = { with(X = 0x10u, S = 0x10u) }
     )
   }
 
   private fun assertTransferAndFlags(
-    opcode: Int,
+    op: Opcode,
     source: State.(UInt8) -> State,
     dest: State.(UInt8) -> State
   ) {
     assertForAddressModes(
-      mapOf(IMPLIED to opcode),
+      op,
       initState = { source(0x10u) },
       expectedState = { source(0x10u).dest(0x10u).with(Z = _0, N = _0) }
     )
     assertForAddressModes(
-      mapOf(IMPLIED to opcode),
+      op,
       initState = { source(0xF0u) },
       expectedState = { source(0xF0u).dest(0xF0u).with(Z = _0, N = _1) }
     )
     assertForAddressModes(
-      mapOf(IMPLIED to opcode),
+      op,
       initState = { source(0x00u) },
       expectedState = { source(0x00u).dest(0x00u).with(Z = _1, N = _0) }
     )

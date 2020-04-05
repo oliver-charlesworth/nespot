@@ -1,5 +1,6 @@
 package choliver.sixfiveohtwo
 
+import choliver.sixfiveohtwo.AddrMode.*
 import choliver.sixfiveohtwo.AddressMode.*
 import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.utils._0
@@ -191,19 +192,19 @@ class Cpu(
     }
 
     val mode = when (yeah.addrMode) {
-      AddrMode.ACCUMULATOR -> Accumulator
-      AddrMode.IMMEDIATE -> Immediate(operand8())
-      AddrMode.IMPLIED -> Implied
-      AddrMode.INDIRECT -> Indirect(operand16())
-      AddrMode.RELATIVE -> Relative(operand8().s8())
-      AddrMode.ABSOLUTE -> Absolute(operand16())
-      AddrMode.ABSOLUTE_X -> AbsoluteIndexed(operand16(), IndexSource.X)
-      AddrMode.ABSOLUTE_Y -> AbsoluteIndexed(operand16(), IndexSource.Y)
-      AddrMode.ZERO_PAGE -> ZeroPage(operand8())
-      AddrMode.ZERO_PAGE_X -> ZeroPageIndexed(operand8(), IndexSource.X)
-      AddrMode.ZERO_PAGE_Y -> ZeroPageIndexed(operand8(), IndexSource.Y)
-      AddrMode.INDEXED_INDIRECT -> IndexedIndirect(operand8())
-      AddrMode.INDIRECT_INDEXED -> IndirectIndexed(operand8())
+      ACCUMULATOR -> Accumulator
+      IMMEDIATE -> Immediate(operand8())
+      IMPLIED -> Implied
+      INDIRECT -> Indirect(operand16())
+      RELATIVE -> Relative(operand8().s8())
+      ABSOLUTE -> Absolute(operand16())
+      ABSOLUTE_X -> AbsoluteIndexed(operand16(), IndexSource.X)
+      ABSOLUTE_Y -> AbsoluteIndexed(operand16(), IndexSource.Y)
+      ZERO_PAGE -> ZeroPage(operand8())
+      ZERO_PAGE_X -> ZeroPageIndexed(operand8(), IndexSource.X)
+      ZERO_PAGE_Y -> ZeroPageIndexed(operand8(), IndexSource.Y)
+      INDEXED_INDIRECT -> IndexedIndirect(operand8())
+      INDIRECT_INDEXED -> IndirectIndexed(operand8())
     }
 
     return Decoded(
@@ -217,5 +218,11 @@ class Cpu(
     Reg.X -> state.X
     Reg.Y -> state.Y
     Reg.N -> 0.u8()
+  }
+
+  companion object {
+    private val ENCODINGS = Opcode.values()
+      .flatMap { it.encodings.entries.map { (mode, enc) -> enc to Yeah(it, mode) } }
+      .toMap()
   }
 }

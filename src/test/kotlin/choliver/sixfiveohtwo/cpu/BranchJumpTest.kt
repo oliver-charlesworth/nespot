@@ -37,6 +37,17 @@ class BranchJumpTest {
   }
 
   @Test
+  fun rti() {
+    assertForAddressModes(
+      RTI,
+      initState = { with(S = 0x2Du) },
+      initStores = mapOf(0x12E to 0xCF) +
+        mem16(0x012F, SCARY_ADDR),
+      expectedState = { with(PC = SCARY_ADDR.u16(), S = 0x30u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) }
+    )
+  }
+
+  @Test
   fun bpl() {
     assertBranch(BPL) { with(N = !it) }
   }

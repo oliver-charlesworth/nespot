@@ -110,7 +110,7 @@ enum class Opcode(
   PLP(0x28),
   ROL(shift(0x20)),
   ROR(shift(0x60)),
-  RTI(0x40),    // TODO - test
+  RTI(0x40),
   RTS(0x60),
   SBC(standard(0xE0)),
   SEC(0x38),

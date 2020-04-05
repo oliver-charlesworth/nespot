@@ -118,6 +118,14 @@ class Cpu(
           .then { updatePC(it.u16()) }
           .pop()
           .then { updatePC(combine(lo = PC.u8(), hi = it)) }
+        RTI -> this
+          .pop()
+          .then { updateP(it) }
+          .pop()
+          .then { updatePC(it.u16()) }
+          .pop()
+          .then { updatePC((combine(lo = PC.u8(), hi = it) - decoded.length).u16()) }
+        BRK -> TODO()
 
         BPL -> updatePC(if (!P.N) addrO else PC)
         BMI -> updatePC(if (P.N) addrO else PC)
@@ -145,8 +153,6 @@ class Cpu(
         SEI -> updateI(_1)
 
         NOP -> this
-
-        else -> TODO()
       }
     }
 

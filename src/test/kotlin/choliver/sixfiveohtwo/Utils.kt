@@ -113,7 +113,11 @@ fun assertForAddressModes(
     PROTO_STATES.forEach { proto ->
       val case = CASES[mode]!!
 
-      val memory = FakeMemory(case.mem + (case.operandAddr to operand) + initStores)
+      val memory = FakeMemory(
+        case.mem +                // Indirection / pointer
+        (case.operandAddr to operand) + // Operand (user-defined value, case-defined location)
+        initStores                      // User-defined
+      )
       val cpu = Cpu(memory)
 
       val encoding = arrayOf(enc) + case.enc(operand)

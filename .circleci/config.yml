@@ -4,6 +4,9 @@ jobs:
     environment:
       GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
+    docker:
+      - image: circleci/openjdk:11.0.3-jdk-stretch
+
     steps:
       - checkout
 

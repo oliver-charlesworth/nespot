@@ -1,11 +1,11 @@
 package choliver.sixfiveohtwo
 
-import choliver.sixfiveohtwo.AddressMode.*
+import choliver.sixfiveohtwo.AddressMode.Accumulator
+import choliver.sixfiveohtwo.AddressMode.Immediate
 import choliver.sixfiveohtwo.InstructionDecoder.Decoded
 import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
-import java.lang.RuntimeException
 
 class Cpu(
   private val memory: Memory
@@ -26,11 +26,9 @@ class Cpu(
   // TODO - homogenise State and Memory paradigm
   fun execute(encoding: Array<UInt8>, state: State): State {
     val decoded = decoder.decode(encoding)
-
     val addr = addrCalc.calculate(decoded.addrMode, state)
-    val addrO = (addr - decoded.length).u16()  // TODO - handle this more nicely
 
-    val updated: State = with (state) {
+    return with (state.advancePC(decoded)) {
       when (decoded.op) {
         ADC -> resolveOperand(decoded, addr)
           .gimp { alu.adc(a = A, b = it, c = P.C, d = P.D) }
@@ -106,30 +104,30 @@ class Cpu(
         PHA -> push(state.A)
 
         PLP -> popTo { updateP(it) }
-        PLA -> popTo { updateA(it) } // Original datasheet claims no flags set, but rest of the world disagrees
+        PLA -> popTo { updateA(it) }
 
-        JMP -> updatePC(addrO)
+        JMP -> updatePC(addr)
         JSR -> this
-          .push((PC + 2u).hi())   // Push *last* byte of instruction
-          .push((PC + 2u).lo())
-          .updatePC(addrO)
+          .push((PC - 1u).hi())   // Push *last* byte of instruction
+          .push((PC - 1u).lo())
+          .updatePC(addr)
         RTS -> this
           .popTo { updatePC(it.u16()) }
-          .popTo { updatePC(combine(lo = PC.u8(), hi = it)) }
+          .popTo { updatePC((combine(lo = PC.u8(), hi = it) + 1u).u16()) }
         RTI -> this
           .popTo { updateP(it) }
           .popTo { updatePC(it.u16()) }
-          .popTo { updatePC((combine(lo = PC.u8(), hi = it) - decoded.length).u16()) }
+          .popTo { updatePC(combine(lo = PC.u8(), hi = it)) }
         BRK -> TODO()
 
-        BPL -> updatePC(if (!P.N) addrO else PC)
-        BMI -> updatePC(if (P.N) addrO else PC)
-        BVC -> updatePC(if (!P.V) addrO else PC)
-        BVS -> updatePC(if (P.V) addrO else PC)
-        BCC -> updatePC(if (!P.C) addrO else PC)
-        BCS -> updatePC(if (P.C) addrO else PC)
-        BNE -> updatePC(if (!P.Z) addrO else PC)
-        BEQ -> updatePC(if (P.Z) addrO else PC)
+        BPL -> updatePC(if (!P.N) addr else PC)
+        BMI -> updatePC(if (P.N) addr else PC)
+        BVC -> updatePC(if (!P.V) addr else PC)
+        BVS -> updatePC(if (P.V) addr else PC)
+        BCC -> updatePC(if (!P.C) addr else PC)
+        BCS -> updatePC(if (P.C) addr else PC)
+        BNE -> updatePC(if (!P.Z) addr else PC)
+        BEQ -> updatePC(if (P.Z) addr else PC)
 
         TXA -> updateA(X)
         TYA -> updateA(Y)
@@ -150,8 +148,6 @@ class Cpu(
         NOP -> this
       }
     }
-
-    return updated.advancePC(decoded)
   }
 
   // TODO - this is pretty gross

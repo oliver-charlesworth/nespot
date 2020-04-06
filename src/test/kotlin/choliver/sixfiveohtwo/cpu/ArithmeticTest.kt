@@ -1,7 +1,7 @@
 package choliver.sixfiveohtwo.cpu
 
 import choliver.sixfiveohtwo.*
-import choliver.sixfiveohtwo.AddrMode.ACCUMULATOR
+import choliver.sixfiveohtwo.AddrMode.*
 import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
@@ -58,12 +58,12 @@ class ArithmeticTest {
 
     private fun assertMultiByte(a: Int, b: Int, expected: Int) {
       assertMultiByte(expected, listOf(
-        enc(0xA9, a.lo().toInt()),  // LDA lo(a)
-        enc(0x69, b.lo().toInt()),  // ADC lo(b)
-        enc(0x85, 0x00),            // STA #$00
-        enc(0xA9, a.hi().toInt()),  // LDA hi(a)
-        enc(0x69, b.hi().toInt()),  // ADC #$AA
-        enc(0x85, 0x01)             // STA #$00
+        enc(LDA[IMMEDIATE], a.lo().toInt()),
+        enc(ADC[IMMEDIATE], b.lo().toInt()),
+        enc(STA[ZERO_PAGE], 0x00),
+        enc(LDA[IMMEDIATE], a.hi().toInt()),
+        enc(ADC[IMMEDIATE], b.hi().toInt()),
+        enc(STA[ZERO_PAGE], 0x01)
       ))
     }
 
@@ -145,13 +145,13 @@ class ArithmeticTest {
 
     private fun assertMultiByte(a: Int, b: Int, expected: Int) {
       assertMultiByte(expected, listOf(
-        enc(0x38),                  // SEC
-        enc(0xA9, a.lo().toInt()),  // LDA lo(a)
-        enc(0xE9, b.lo().toInt()),  // SBC lo(b)
-        enc(0x85, 0x00),            // STA #$00
-        enc(0xA9, a.hi().toInt()),  // LDA hi(a)
-        enc(0xE9, b.hi().toInt()),  // SBC lo(b)
-        enc(0x85, 0x01)             // STA #$00
+        enc(SEC[IMPLIED]),
+        enc(LDA[IMMEDIATE], a.lo().toInt()),
+        enc(SBC[IMMEDIATE], b.lo().toInt()),
+        enc(STA[ZERO_PAGE], 0x00),
+        enc(LDA[IMMEDIATE], a.hi().toInt()),
+        enc(SBC[IMMEDIATE], b.hi().toInt()),
+        enc(STA[ZERO_PAGE], 0x01)
       ))
     }
 

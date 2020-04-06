@@ -136,3 +136,5 @@ fun assertForAddressModes(
 }
 
 fun enc(vararg bytes: Int) = bytes.map { it.u8() }
+
+operator fun Opcode.get(mode: AddrMode): Int = encodings[mode]!!.toInt()

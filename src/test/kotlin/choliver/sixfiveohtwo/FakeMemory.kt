@@ -9,12 +9,15 @@ class FakeMemory(
   private val map = initial.entries
     .associate { (k, v) -> k.u16() to v.u8() }
     .toMutableMap()
+  var trackStores = false
 
   override fun load(address: UInt16) = map[address] ?: 0xCCu  // Easier to spot during debugging than 0x00
 
   override fun store(address: UInt16, data: UInt8) {
     map[address] = data
-    stores[address] = data
+    if (trackStores) {
+      stores[address] = data
+    }
   }
 
   fun assertStores(expected: Map<Int, Int>, message: String? = null) {

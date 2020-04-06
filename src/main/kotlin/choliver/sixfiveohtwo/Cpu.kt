@@ -9,17 +9,21 @@ import choliver.sixfiveohtwo.utils._1
 typealias F<T, R> = State.(T) -> R
 
 class Cpu(
-  private val memory: Memory,
-  initState: State = State(PC = VECTOR_RESET, P = Flags(I = _1))
+  private val memory: Memory
 ) {
-  private var _state: State = initState
+  // Should sequence this via a state machine triggered on reset
+  private var _state: State = State(
+    PC = combine(
+      lo = memory.load(VECTOR_RESET),
+      hi = memory.load((VECTOR_RESET + 1u).u16())
+    ),
+    P = Flags(I = _1)
+  )
   val state get() = _state
 
   private val decoder = InstructionDecoder()
   private val alu = Alu()
   private val addrCalc = AddressCalculator(memory)
-
-  // TODO - reset vector
 
   fun next() {
     val decoded = decoder.decode(memory, _state.PC)

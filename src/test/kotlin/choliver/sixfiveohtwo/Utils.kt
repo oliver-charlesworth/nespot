@@ -1,6 +1,8 @@
 package choliver.sixfiveohtwo
 
 import choliver.sixfiveohtwo.AddrMode.*
+import choliver.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
+import choliver.sixfiveohtwo.Opcode.*
 import org.junit.jupiter.api.Assertions.assertEquals
 
 private data class Case(
@@ -24,10 +26,15 @@ private val PROTO_STATES = listOf(
   State(S = 0xAAu)
 )
 
-/** Chosen to straddle a page boundary. */
-const val SCARY_ADDR = 0x12FF
+const val BASE_ZERO_PAGE = 0x0000
+const val BASE_STACK = 0x0100
+const val BASE_RAM = 0x0200
+const val BASE_ROM = 0x8000
 
-const val INIT_PC = 0x8000
+const val PRELUDE_PC = BASE_ROM
+const val INIT_PC = BASE_ROM + 0x1000
+/** Chosen to straddle a page boundary. */
+const val SCARY_ADDR = BASE_RAM + 0x10FF
 
 private val CASES = mapOf(
   ACCUMULATOR to Case(enc = { emptyList() }),
@@ -63,8 +70,8 @@ private val CASES = mapOf(
     operandAddr = SCARY_ADDR
   ),
   INDIRECT to Case(
-    enc = { enc16(0x4050) },
-    mem = mem16(0x4050, SCARY_ADDR)
+    enc = { enc16(BASE_RAM + 0x3050) },
+    mem = mem16(BASE_RAM + 0x3050, SCARY_ADDR)
   ),
   INDEXED_INDIRECT to Case(
     enc = { enc(0x30) },
@@ -111,28 +118,72 @@ fun assertForAddressModes(
 ) {
   encodings.forEach { (mode, enc) ->
     PROTO_STATES.forEach { proto ->
-      val case = CASES[mode]!!
+      val case = CASES[mode] ?: error("Unhandled mode ${mode}")
 
-      val init = case.state(proto).with(PC = INIT_PC.u16()).initState()
-      val expected = case.state(proto).with(PC = (INIT_PC + (listOf(enc) + case.enc(operand)).size).u16()).expectedState()
+      val instruction = listOf(enc) + case.enc(operand)
 
-      val encoding = (listOf(enc) + case.enc(operand))
-        .withIndex()
-        .associate { (it.index + INIT_PC) to it.value.toInt() }
-
-      val memory = FakeMemory(
-        encoding + // Instructions
-          case.mem +                // Indirection / pointer
-          (case.operandAddr to operand) + // Operand (user-defined value, case-defined location)
-          initStores                      // User-defined
+      assertCpuEffects(
+        instructions = listOf(instruction),
+        initState = case.state(proto).with(PC = INIT_PC.u16()).initState(),
+        initStores = case.mem +             // Indirection / pointer
+          (case.operandAddr to operand) +   // Operand (user-defined value, case-defined location)
+          initStores,                       // User-defined
+        expectedState = case.state(proto).with(PC = (INIT_PC + instruction.size).u16()).expectedState(),
+        expectedStores = expectedStores(case.operandAddr),
+        name = mode.name
       )
-      val cpu = Cpu(memory, init)
-      cpu.next()
-
-      assertEquals(expected, cpu.state, "Unexpected state for [${mode.name}]")
-      memory.assertStores(expectedStores(case.operandAddr), "Unexpected store for [${mode.name}]")
     }
   }
 }
 
+fun assertCpuEffects(
+  instructions: List<List<UInt8>>,
+  initState: State,
+  initStores: Map<Int, Int> = emptyMap(),
+  expectedState: State? = null,
+  expectedStores: Map<Int, Int> = emptyMap(),
+  name: String = ""
+) {
+  // Set up memory so PC trampolines from reset vector to prelude to user instructions
+  val prelude = preludeFor(initState)
+  val memory = FakeMemory(
+    mapOf(
+      VECTOR_RESET.toInt() to PRELUDE_PC.lo().toInt(),
+      (VECTOR_RESET + 1u).toInt() to PRELUDE_PC.hi().toInt()
+    ) +
+      prelude.memoryMap(PRELUDE_PC) +
+      instructions.memoryMap(INIT_PC) +
+      initStores
+  )
+  val cpu = Cpu(memory)
+
+  repeat(prelude.size) { cpu.next() }
+  memory.trackStores = true
+  repeat(instructions.size) { cpu.next() }
+
+  if (expectedState != null) {
+    assertEquals(expectedState, cpu.state, "Unexpected state for [${name}]")
+  }
+  memory.assertStores(expectedStores, "Unexpected store for [${name}]")
+}
+
+/** Prelude instructions that set CPU state (but with hardcoded PC). */
+private fun preludeFor(state: State) = listOf(
+  enc(LDX[IMMEDIATE], state.S.toInt()),
+  enc(TXS[IMPLIED]),
+  enc(LDA[IMMEDIATE], state.P.u8().toInt()),
+  enc(PHA[IMPLIED]),
+  enc(LDA[IMMEDIATE], state.A.toInt()),
+  enc(LDX[IMMEDIATE], state.X.toInt()),
+  enc(LDY[IMMEDIATE], state.Y.toInt()),
+  enc(PLP[IMPLIED]),
+  enc(JMP[ABSOLUTE], INIT_PC.lo().toInt(), INIT_PC.hi().toInt())
+)
+
+fun List<List<UInt8>>.memoryMap(base: Int) = flatten()
+  .withIndex()
+  .associate { (it.index + base) to it.value.toInt() }
+
 fun enc(vararg bytes: Int) = bytes.map { it.u8() }
+
+operator fun Opcode.get(mode: AddrMode): Int = encodings[mode]!!.toInt()

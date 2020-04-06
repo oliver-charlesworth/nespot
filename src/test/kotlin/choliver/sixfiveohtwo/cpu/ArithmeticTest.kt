@@ -1,7 +1,7 @@
 package choliver.sixfiveohtwo.cpu
 
 import choliver.sixfiveohtwo.*
-import choliver.sixfiveohtwo.AddrMode.ACCUMULATOR
+import choliver.sixfiveohtwo.AddrMode.*
 import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
@@ -57,14 +57,18 @@ class ArithmeticTest {
     }
 
     private fun assertMultiByte(a: Int, b: Int, expected: Int) {
-      assertMultiByte(expected, listOf(
-        enc(0xA9, a.lo().toInt()),  // LDA lo(a)
-        enc(0x69, b.lo().toInt()),  // ADC lo(b)
-        enc(0x85, 0x00),            // STA #$00
-        enc(0xA9, a.hi().toInt()),  // LDA hi(a)
-        enc(0x69, b.hi().toInt()),  // ADC #$AA
-        enc(0x85, 0x01)             // STA #$00
-      ))
+      assertCpuEffects(
+        instructions = listOf(
+          enc(LDA[IMMEDIATE], a.lo().toInt()),
+          enc(ADC[IMMEDIATE], b.lo().toInt()),
+          enc(STA[ZERO_PAGE], 0x00),
+          enc(LDA[IMMEDIATE], a.hi().toInt()),
+          enc(ADC[IMMEDIATE], b.hi().toInt()),
+          enc(STA[ZERO_PAGE], 0x01)
+        ),
+        initState = State(),
+        expectedStores = mapOf(0x00 to expected.lo().toInt(), 0x01 to expected.hi().toInt())
+      )
     }
 
     // Each case implemented twice to demonstrate flag setting respects carry in:
@@ -144,15 +148,19 @@ class ArithmeticTest {
     }
 
     private fun assertMultiByte(a: Int, b: Int, expected: Int) {
-      assertMultiByte(expected, listOf(
-        enc(0x38),                  // SEC
-        enc(0xA9, a.lo().toInt()),  // LDA lo(a)
-        enc(0xE9, b.lo().toInt()),  // SBC lo(b)
-        enc(0x85, 0x00),            // STA #$00
-        enc(0xA9, a.hi().toInt()),  // LDA hi(a)
-        enc(0xE9, b.hi().toInt()),  // SBC lo(b)
-        enc(0x85, 0x01)             // STA #$00
-      ))
+      assertCpuEffects(
+        instructions = listOf(
+          enc(SEC[IMPLIED]),
+          enc(LDA[IMMEDIATE], a.lo().toInt()),
+          enc(SBC[IMMEDIATE], b.lo().toInt()),
+          enc(STA[ZERO_PAGE], 0x00),
+          enc(LDA[IMMEDIATE], a.hi().toInt()),
+          enc(SBC[IMMEDIATE], b.hi().toInt()),
+          enc(STA[ZERO_PAGE], 0x01)
+        ),
+        initState = State(),
+        expectedStores = mapOf(0x00 to expected.lo().toInt(), 0x01 to expected.hi().toInt())
+      )
     }
 
     // Each case implemented twice to demonstrate flag setting respects borrow in:
@@ -438,18 +446,5 @@ class ArithmeticTest {
       expectedState = expectedState,
       expectedStores = { mapOf(it to expected) }
     )
-  }
-
-  private fun assertMultiByte(expected: Int, instructions: List<List<UInt8>>) {
-    val mem = FakeMemory(instructions
-      .flatMap { it.toList() }
-      .withIndex()
-      .associate { (it.index + INIT_PC) to it.value.toInt() }
-    )
-    val cpu = Cpu(mem, State(PC = INIT_PC.u16()))
-
-    repeat(instructions.size) { cpu.next() }
-
-    mem.assertStores(mapOf(0x0000 to expected.lo().toInt(), 0x0001 to expected.hi().toInt()))
   }
 }

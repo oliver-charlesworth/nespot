@@ -57,33 +57,35 @@ class Cpu(
 
         DEC -> operand()
           .calc { (it - 1u).u8() }
-          .store { it }
-          .updateZN { it }
+          .storeResult { it }
         DEX -> updateX { (X - 1u).u8() }
         DEY -> updateY { (Y - 1u).u8() }
 
         INC -> operand()
           .calc { (it + 1u).u8() }
-          .store { it }
-          .updateZN { it }
+          .storeResult { it }
         INX -> updateX { (X + 1u).u8() }
         INY -> updateY { (Y + 1u).u8() }
 
         ASL -> operand()
           .calc { alu.asl(q = it) }
-          .updateFromShift()
+          .storeResult { it.q }
+          .updateC { it.c }
 
         LSR -> operand()
           .calc { alu.lsr(q = it) }
-          .updateFromShift()
+          .storeResult { it.q }
+          .updateC { it.c }
 
         ROL -> operand()
           .calc { alu.rol(q = it, c = P.C) }
-          .updateFromShift()
+          .storeResult { it.q }
+          .updateC { it.c }
 
         ROR -> operand()
           .calc { alu.ror(q = it, c = P.C) }
-          .updateFromShift()
+          .storeResult { it.q }
+          .updateC { it.c }
 
         AND -> operand().updateA { A and it }
         ORA -> operand().updateA { A or it }
@@ -113,7 +115,7 @@ class Cpu(
         JSR -> this
           .push { (PC - 1u).hi() }
           .push { (PC - 1u).lo() }
-          .updatePCL { addr.lo() }  // TODO - this is cheating
+          .updatePCL { addr.lo() }
           .updatePCH { addr.hi() }
 
         RTS -> this
@@ -156,14 +158,6 @@ class Cpu(
     }.state
   }
 
-  // TODO - this is pretty gross
-  private fun Ctx<Alu.Output>.updateFromShift() =
-    if (decoded.addrMode is Accumulator) {
-      updateA { it.q }.updateC { it.c }
-    } else {
-      store { it.q }.updateZN { it.q }.updateC { it.c }
-    }
-
   private fun <T> Ctx<T>.operand() = calc {
     when (decoded.addrMode) {
       is Accumulator -> A
@@ -177,6 +171,15 @@ class Cpu(
   private fun <T> Ctx<T>.push(f: F<T, UInt8>) = store(stackAddr(state.S), f).updateS { (S - 1u).u8() }
 
   private fun <T> Ctx<T>.pop() = updateS { (S + 1u).u8() }.calc { memory.load(stackAddr(S)) }
+
+  private fun <T> Ctx<T>.storeResult(f: F<T, UInt8>): Ctx<T> {
+    val data = f(state, data)
+    return if (decoded.addrMode is Accumulator) {
+      updateA { data }
+    } else {
+      store { data }.updateZN { data }
+    }
+  }
 
   private fun <T> Ctx<T>.store(f: F<T, UInt8>) = store(addr, f)
   private fun <T> Ctx<T>.store(addr: UInt16, f: F<T, UInt8>) = also { memory.store(addr, f(state, data)) }

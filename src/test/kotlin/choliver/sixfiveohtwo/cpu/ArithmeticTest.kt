@@ -442,9 +442,9 @@ class ArithmeticTest {
 
   private fun assertMultiByte(expected: Int, instructions: List<Array<UInt8>>) {
     val mem = FakeMemory()
-    val cpu = Cpu(mem)
+    val cpu = Cpu(mem, State())
 
-    instructions.fold(State()) { state, enc -> cpu.execute(enc, state) }
+    instructions.forEach { cpu.next(it) }
 
     mem.assertStores(mapOf(0x0000 to expected.lo().toInt(), 0x0001 to expected.hi().toInt()))
   }

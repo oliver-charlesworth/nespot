@@ -10,23 +10,29 @@ import choliver.sixfiveohtwo.utils._1
 typealias F<T, R> = State.(T) -> R
 
 class Cpu(
-  private val memory: Memory
+  private val memory: Memory,
+  initState: State
 ) {
+  private var _state: State = initState
+  val state get() = _state
+
   private val decoder = InstructionDecoder()
   private val alu = Alu()
   private val addrCalc = AddressCalculator(memory)
 
-  // TODO - homogenise State and Memory paradigm
-  fun execute(encoding: Array<UInt8>, state: State): State {
+  // TODO - reset vector
+  // TODO - interrupt disable on startup
+
+  fun next(encoding: Array<UInt8>) {
     val decoded = decoder.decode(encoding)
     val context = Ctx(
-      state,
+      _state,
       decoded,
       addrCalc.calculate(decoded.addrMode, state),
       null
     )
 
-    return with (context.advancePC()) {
+    _state = with (context.advancePC()) {
       when (decoded.op) {
         ADC -> operand()
           .calc { alu.adc(a = A, b = it, c = P.C, d = P.D) }

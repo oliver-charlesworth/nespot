@@ -113,18 +113,19 @@ fun assertForAddressModes(
     PROTO_STATES.forEach { proto ->
       val case = CASES[mode]!!
 
-      val memory = FakeMemory(
-        case.mem +                // Indirection / pointer
-        (case.operandAddr to operand) + // Operand (user-defined value, case-defined location)
-        initStores                      // User-defined
-      )
-      val cpu = Cpu(memory)
-
       val encoding = arrayOf(enc) + case.enc(operand)
       val init = case.state(proto).with(PC = INIT_PC.u16()).initState()
       val expected = case.state(proto).with(PC = (INIT_PC + encoding.size).u16()).expectedState()
 
-      assertEquals(expected, cpu.execute(encoding, init), "Unexpected state for [${mode.name}]")
+      val memory = FakeMemory(
+        case.mem +                // Indirection / pointer
+          (case.operandAddr to operand) + // Operand (user-defined value, case-defined location)
+          initStores                      // User-defined
+      )
+      val cpu = Cpu(memory, init)
+      cpu.next(encoding)
+
+      assertEquals(expected, cpu.state, "Unexpected state for [${mode.name}]")
       memory.assertStores(expectedStores(case.operandAddr), "Unexpected store for [${mode.name}]")
     }
   }

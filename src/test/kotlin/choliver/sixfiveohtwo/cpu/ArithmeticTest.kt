@@ -441,12 +441,9 @@ class ArithmeticTest {
   }
 
   private fun assertMultiByte(expected: Int, instructions: List<List<UInt8>>) {
-    val mem = FakeMemory(instructions
-      .flatMap { it.toList() }
-      .withIndex()
-      .associate { (it.index + INIT_PC) to it.value.toInt() }
-    )
+    val mem = FakeMemory(instructions.memoryMap(INIT_PC))
     val cpu = Cpu(mem, State(PC = INIT_PC.u16()))
+    mem.trackStores = true
 
     repeat(instructions.size) { cpu.next() }
 

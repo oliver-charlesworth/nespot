@@ -1,6 +1,7 @@
 package choliver.sixfiveohtwo
 
 import choliver.sixfiveohtwo.AddrMode.*
+import choliver.sixfiveohtwo.Opcode.*
 import org.junit.jupiter.api.Assertions.assertEquals
 
 private data class Case(
@@ -28,6 +29,7 @@ private val PROTO_STATES = listOf(
 const val SCARY_ADDR = 0x12FF
 
 const val INIT_PC = 0x8000
+const val OTHER_PC = 0x1000
 
 private val CASES = mapOf(
   ACCUMULATOR to Case(enc = { emptyList() }),
@@ -113,20 +115,24 @@ fun assertForAddressModes(
     PROTO_STATES.forEach { proto ->
       val case = CASES[mode]!!
 
-      val init = case.state(proto).with(PC = INIT_PC.u16()).initState()
-      val expected = case.state(proto).with(PC = (INIT_PC + (listOf(enc) + case.enc(operand)).size).u16()).expectedState()
+      val instruction = listOf(enc) + case.enc(operand)
 
-      val encoding = (listOf(enc) + case.enc(operand))
-        .withIndex()
-        .associate { (it.index + INIT_PC) to it.value.toInt() }
+      val init = case.state(proto).with(PC = INIT_PC.u16()).initState()
+      val expected = case.state(proto).with(PC = (INIT_PC + instruction.size).u16()).expectedState()
+
+      val prelude = preludeFor(init)
 
       val memory = FakeMemory(
-        encoding + // Instructions
-          case.mem +                // Indirection / pointer
-          (case.operandAddr to operand) + // Operand (user-defined value, case-defined location)
-          initStores                      // User-defined
+        prelude.memoryMap(OTHER_PC) +
+          listOf(instruction).memoryMap(INIT_PC) +
+          case.mem +                        // Indirection / pointer
+          (case.operandAddr to operand) +   // Operand (user-defined value, case-defined location)
+          initStores                        // User-defined
       )
-      val cpu = Cpu(memory, init)
+      val cpu = Cpu(memory, State(PC = OTHER_PC.u16()))
+      repeat(prelude.size) { cpu.next() }
+
+      memory.trackStores = true
       cpu.next()
 
       assertEquals(expected, cpu.state, "Unexpected state for [${mode.name}]")
@@ -134,6 +140,22 @@ fun assertForAddressModes(
     }
   }
 }
+
+fun preludeFor(state: State) = listOf(
+  enc(LDX[IMMEDIATE], state.S.toInt()),
+  enc(TXS[IMPLIED]),
+  enc(LDA[IMMEDIATE], state.P.u8().toInt()),
+  enc(PHA[IMPLIED]),
+  enc(LDA[IMMEDIATE], state.A.toInt()),
+  enc(LDX[IMMEDIATE], state.X.toInt()),
+  enc(LDY[IMMEDIATE], state.Y.toInt()),
+  enc(PLP[IMPLIED]),
+  enc(JMP[ABSOLUTE], state.PC.lo().toInt(), state.PC.hi().toInt())
+)
+
+fun List<List<UInt8>>.memoryMap(base: Int) = flatten()
+  .withIndex()
+  .associate { (it.index + base) to it.value.toInt() }
 
 fun enc(vararg bytes: Int) = bytes.map { it.u8() }
 

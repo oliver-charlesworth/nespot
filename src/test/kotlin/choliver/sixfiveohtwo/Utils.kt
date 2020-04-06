@@ -4,7 +4,7 @@ import choliver.sixfiveohtwo.AddrMode.*
 import org.junit.jupiter.api.Assertions.assertEquals
 
 private data class Case(
-  val enc: (operand: Int) -> Array<UInt8>,
+  val enc: (operand: Int) -> List<UInt8>,
   val state: State.() -> State = { this },
   val mem: Map<Int, Int> = emptyMap(),
   val operandAddr: Int = 0x0000
@@ -27,12 +27,12 @@ private val PROTO_STATES = listOf(
 /** Chosen to straddle a page boundary. */
 const val SCARY_ADDR = 0x12FF
 
-const val INIT_PC = 0x5678
+const val INIT_PC = 0x8000
 
 private val CASES = mapOf(
-  ACCUMULATOR to Case(enc = { emptyArray() }),
+  ACCUMULATOR to Case(enc = { emptyList() }),
   IMMEDIATE to Case(enc = { enc(it) }),
-  IMPLIED to Case(enc = { emptyArray() }),
+  IMPLIED to Case(enc = { emptyList() }),
   RELATIVE to Case(enc = { enc(it) }),
   ZERO_PAGE to Case(
     enc = { enc(0x30) },
@@ -113,21 +113,26 @@ fun assertForAddressModes(
     PROTO_STATES.forEach { proto ->
       val case = CASES[mode]!!
 
-      val memory = FakeMemory(
-        case.mem +                // Indirection / pointer
-        (case.operandAddr to operand) + // Operand (user-defined value, case-defined location)
-        initStores                      // User-defined
-      )
-      val cpu = Cpu(memory)
-
-      val encoding = arrayOf(enc) + case.enc(operand)
       val init = case.state(proto).with(PC = INIT_PC.u16()).initState()
-      val expected = case.state(proto).with(PC = (INIT_PC + encoding.size).u16()).expectedState()
+      val expected = case.state(proto).with(PC = (INIT_PC + (listOf(enc) + case.enc(operand)).size).u16()).expectedState()
 
-      assertEquals(expected, cpu.execute(encoding, init), "Unexpected state for [${mode.name}]")
+      val encoding = (listOf(enc) + case.enc(operand))
+        .withIndex()
+        .associate { (it.index + INIT_PC) to it.value.toInt() }
+
+      val memory = FakeMemory(
+        encoding + // Instructions
+          case.mem +                // Indirection / pointer
+          (case.operandAddr to operand) + // Operand (user-defined value, case-defined location)
+          initStores                      // User-defined
+      )
+      val cpu = Cpu(memory, init)
+      cpu.next()
+
+      assertEquals(expected, cpu.state, "Unexpected state for [${mode.name}]")
       memory.assertStores(expectedStores(case.operandAddr), "Unexpected store for [${mode.name}]")
     }
   }
 }
 
-fun enc(vararg bytes: Int) = bytes.map { it.u8() }.toTypedArray()
+fun enc(vararg bytes: Int) = bytes.map { it.u8() }

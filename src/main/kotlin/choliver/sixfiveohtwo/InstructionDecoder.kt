@@ -7,23 +7,18 @@ class InstructionDecoder {
   data class Decoded(
     val op: Opcode,
     val addrMode: AddressMode,
-    val length: UInt8
+    val pc: UInt16
   )
 
-  fun decode(encoding: Array<UInt8>): Decoded {
-    var length = 1
+  fun decode(memory: Memory, pc: UInt16): Decoded {
+    var pc = pc
+    fun load() = memory.load(pc++)
 
     // TODO - error handling
-    val found = ENCODINGS[encoding[0]]!!
+    val found = ENCODINGS[load()]!!
 
-    fun operand8(): UInt8 {
-      length = 2
-      return encoding[1]
-    }
-    fun operand16(): UInt16 {
-      length = 3
-      return combine(encoding[1], encoding[2])
-    }
+    fun operand8() = load()
+    fun operand16() = combine(lo = load(), hi = load())
 
     val mode = when (found.addrMode) {
       ACCUMULATOR -> Accumulator
@@ -44,7 +39,7 @@ class InstructionDecoder {
     return Decoded(
       found.op,
       mode,
-      length.u8()
+      pc
     )
   }
 

@@ -2,7 +2,6 @@ package choliver.sixfiveohtwo
 
 import choliver.sixfiveohtwo.AddressMode.Accumulator
 import choliver.sixfiveohtwo.AddressMode.Immediate
-import choliver.sixfiveohtwo.InstructionDecoder.Decoded
 import choliver.sixfiveohtwo.Opcode.*
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
@@ -10,24 +9,29 @@ import choliver.sixfiveohtwo.utils._1
 typealias F<T, R> = State.(T) -> R
 
 class Cpu(
-  private val memory: Memory
+  private val memory: Memory,
+  initState: State = State(PC = VECTOR_RESET, P = Flags(I = _1))
 ) {
+  private var _state: State = initState
+  val state get() = _state
+
   private val decoder = InstructionDecoder()
   private val alu = Alu()
   private val addrCalc = AddressCalculator(memory)
 
-  // TODO - homogenise State and Memory paradigm
-  fun execute(encoding: Array<UInt8>, state: State): State {
-    val decoded = decoder.decode(encoding)
+  // TODO - reset vector
+
+  fun next() {
+    val decoded = decoder.decode(memory, _state.PC)
     val context = Ctx(
-      state,
-      decoded,
+      _state.with(PC = decoded.pc),
+      decoded.op,
+      decoded.addrMode,
       addrCalc.calculate(decoded.addrMode, state),
       null
     )
-
-    return with (context.advancePC()) {
-      when (decoded.op) {
+    _state = with(context) {
+      when (op) {
         ADC -> operand()
           .calc { alu.adc(a = A, b = it, c = P.C, d = P.D) }
           .updateA { it.q }
@@ -107,7 +111,7 @@ class Cpu(
         PHA -> push { A }
         PLP -> pop().updateP { it }
         PLA -> pop().updateA { it }
-        
+
         JMP -> this
           .updatePCL { addr.lo() }
           .updatePCH { addr.hi() }
@@ -159,9 +163,9 @@ class Cpu(
   }
 
   private fun <T> Ctx<T>.operand() = calc {
-    when (decoded.addrMode) {
+    when (addrMode) {
       is Accumulator -> A
-      is Immediate -> decoded.addrMode.literal
+      is Immediate -> addrMode.literal
       else -> memory.load(addr)
     }
   }
@@ -174,7 +178,7 @@ class Cpu(
 
   private fun <T> Ctx<T>.storeResult(f: F<T, UInt8>): Ctx<T> {
     val data = f(state, data)
-    return if (decoded.addrMode is Accumulator) {
+    return if (addrMode is Accumulator) {
       updateA { data }
     } else {
       store { data }.updateZN { data }
@@ -184,9 +188,7 @@ class Cpu(
   private fun <T> Ctx<T>.store(f: F<T, UInt8>) = store(addr, f)
   private fun <T> Ctx<T>.store(addr: UInt16, f: F<T, UInt8>) = also { memory.store(addr, f(state, data)) }
 
-  private fun <T, R> Ctx<T>.calc(f: F<T, R>) = Ctx(state, decoded, addr, f(state, data))
-
-  private fun <T> Ctx<T>.advancePC() = updatePC { (PC + decoded.length).u16() }
+  private fun <T, R> Ctx<T>.calc(f: F<T, R>) = Ctx(state, op, addrMode, addr, f(state, data))
 
   private fun <T> Ctx<T>.updateA(f: F<T, UInt8>) = update(f) { with(A = it, Z = it.isZero(), N = it.isNegative()) }
   private fun <T> Ctx<T>.updateX(f: F<T, UInt8>) = update(f) { with(X = it, Z = it.isZero(), N = it.isNegative()) }
@@ -208,8 +210,15 @@ class Cpu(
 
   private data class Ctx<T>(
     val state: State,
-    val decoded: Decoded,
+    val op: Opcode,
+    val addrMode: AddressMode,
     val addr: UInt16,
     val data: T
   )
+
+  companion object {
+    val VECTOR_NMI = 0xFFFA.u16()
+    val VECTOR_RESET = 0xFFFC.u16()
+    val VECTOR_IRQ = 0xFFFE.u16()
+  }
 }

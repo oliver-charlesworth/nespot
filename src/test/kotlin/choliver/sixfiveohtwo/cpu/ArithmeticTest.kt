@@ -57,14 +57,18 @@ class ArithmeticTest {
     }
 
     private fun assertMultiByte(a: Int, b: Int, expected: Int) {
-      assertMultiByte(expected, listOf(
-        enc(LDA[IMMEDIATE], a.lo().toInt()),
-        enc(ADC[IMMEDIATE], b.lo().toInt()),
-        enc(STA[ZERO_PAGE], 0x00),
-        enc(LDA[IMMEDIATE], a.hi().toInt()),
-        enc(ADC[IMMEDIATE], b.hi().toInt()),
-        enc(STA[ZERO_PAGE], 0x01)
-      ))
+      assertCpuEffects(
+        instructions = listOf(
+          enc(LDA[IMMEDIATE], a.lo().toInt()),
+          enc(ADC[IMMEDIATE], b.lo().toInt()),
+          enc(STA[ZERO_PAGE], 0x00),
+          enc(LDA[IMMEDIATE], a.hi().toInt()),
+          enc(ADC[IMMEDIATE], b.hi().toInt()),
+          enc(STA[ZERO_PAGE], 0x01)
+        ),
+        initState = State(),
+        expectedStores = mapOf(0x00 to expected.lo().toInt(), 0x01 to expected.hi().toInt())
+      )
     }
 
     // Each case implemented twice to demonstrate flag setting respects carry in:
@@ -144,15 +148,19 @@ class ArithmeticTest {
     }
 
     private fun assertMultiByte(a: Int, b: Int, expected: Int) {
-      assertMultiByte(expected, listOf(
-        enc(SEC[IMPLIED]),
-        enc(LDA[IMMEDIATE], a.lo().toInt()),
-        enc(SBC[IMMEDIATE], b.lo().toInt()),
-        enc(STA[ZERO_PAGE], 0x00),
-        enc(LDA[IMMEDIATE], a.hi().toInt()),
-        enc(SBC[IMMEDIATE], b.hi().toInt()),
-        enc(STA[ZERO_PAGE], 0x01)
-      ))
+      assertCpuEffects(
+        instructions = listOf(
+          enc(SEC[IMPLIED]),
+          enc(LDA[IMMEDIATE], a.lo().toInt()),
+          enc(SBC[IMMEDIATE], b.lo().toInt()),
+          enc(STA[ZERO_PAGE], 0x00),
+          enc(LDA[IMMEDIATE], a.hi().toInt()),
+          enc(SBC[IMMEDIATE], b.hi().toInt()),
+          enc(STA[ZERO_PAGE], 0x01)
+        ),
+        initState = State(),
+        expectedStores = mapOf(0x00 to expected.lo().toInt(), 0x01 to expected.hi().toInt())
+      )
     }
 
     // Each case implemented twice to demonstrate flag setting respects borrow in:
@@ -438,11 +446,5 @@ class ArithmeticTest {
       expectedState = expectedState,
       expectedStores = { mapOf(it to expected) }
     )
-  }
-
-  private fun assertMultiByte(expected: Int, instructions: List<List<UInt8>>) {
-    val context = executeYeah(initState = State(), instructions = instructions)
-
-    context.memory.assertStores(mapOf(0x0000 to expected.lo().toInt(), 0x0001 to expected.hi().toInt()))
   }
 }

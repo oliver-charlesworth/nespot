@@ -122,34 +122,29 @@ fun assertForAddressModes(
 
       val instruction = listOf(enc) + case.enc(operand)
 
-      val init = case.state(proto).with(PC = INIT_PC.u16()).initState()
-      val expected = case.state(proto).with(PC = (INIT_PC + instruction.size).u16()).expectedState()
-
-      val context = executeYeah(
-        initState = init,
+      assertCpuEffects(
         instructions = listOf(instruction),
+        initState = case.state(proto).with(PC = INIT_PC.u16()).initState(),
         initStores = case.mem +             // Indirection / pointer
           (case.operandAddr to operand) +   // Operand (user-defined value, case-defined location)
-          initStores                        // User-defined
+          initStores,                       // User-defined
+        expectedState = case.state(proto).with(PC = (INIT_PC + instruction.size).u16()).expectedState(),
+        expectedStores = expectedStores(case.operandAddr),
+        name = mode.name
       )
-
-      assertEquals(expected, context.state, "Unexpected state for [${mode.name}]")
-      context.memory.assertStores(expectedStores(case.operandAddr), "Unexpected store for [${mode.name}]")
     }
   }
 }
 
-// TODO - better names
-data class ExecutionContext(
-  val memory: FakeMemory,
-  val state: State
-)
-
-fun executeYeah(
+fun assertCpuEffects(
+  instructions: List<List<UInt8>>,
   initState: State,
   initStores: Map<Int, Int> = emptyMap(),
-  instructions: List<List<UInt8>>
-): ExecutionContext {
+  expectedState: State? = null,
+  expectedStores: Map<Int, Int> = emptyMap(),
+  name: String = ""
+) {
+  // Set up memory so PC trampolines from reset vector to prelude to user instructions
   val prelude = preludeFor(initState)
   val memory = FakeMemory(
     mapOf(
@@ -166,7 +161,10 @@ fun executeYeah(
   memory.trackStores = true
   repeat(instructions.size) { cpu.next() }
 
-  return ExecutionContext(memory, cpu.state)
+  if (expectedState != null) {
+    assertEquals(expectedState, cpu.state, "Unexpected state for [${name}]")
+  }
+  memory.assertStores(expectedStores, "Unexpected store for [${name}]")
 }
 
 /** Prelude instructions that set CPU state (but with hardcoded PC). */

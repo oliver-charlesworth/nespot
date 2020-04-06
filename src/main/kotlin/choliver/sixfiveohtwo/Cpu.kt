@@ -34,136 +34,97 @@ class Cpu(
       addrCalc.calculate(decoded.addrMode, state),
       null
     )
-    _state = with(context) {
-      when (op) {
-        ADC -> operand()
-          .calc { alu.adc(a = A, b = it, c = P.C, d = P.D) }
-          .updateA { it.q }
-          .updateC { it.c }
-          .updateV { it.v }
+    _state = context.execute().state
+  }
 
-        SBC -> operand()
-          .calc { alu.adc(a = A, b = it.inv(), c = P.C, d = P.D) }
-          .updateA { it.q }
-          .updateC { it.c }
-          .updateV { it.v }
+  private fun <T> Ctx<T>.execute() = when (op) {
+    ADC -> operand().add { it }
+    SBC -> operand().add { it.inv() }
 
-        CMP -> operand()
-          .calc { alu.adc(a = A, b = it.inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
-          .updateZN { it.q }
-          .updateC { it.c }
+    CMP -> operand().compare { it }
+    CPX -> compare { X }
+    CPY -> compare { Y }
 
-        CPX -> this
-          .calc { alu.adc(a = A, b = X.inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
-          .updateZN { it.q }
-          .updateC { it.c }
+    DEC -> operand().storeResult { (it - 1u).u8() }
+    DEX -> updateX { (X - 1u).u8() }
+    DEY -> updateY { (Y - 1u).u8() }
 
-        CPY -> this
-          .calc { alu.adc(a = A, b = Y.inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
-          .updateZN { it.q }
-          .updateC { it.c }
+    INC -> operand().storeResult { (it + 1u).u8() }
+    INX -> updateX { (X + 1u).u8() }
+    INY -> updateY { (Y + 1u).u8() }
 
-        DEC -> operand()
-          .calc { (it - 1u).u8() }
-          .storeResult { it }
-        DEX -> updateX { (X - 1u).u8() }
-        DEY -> updateY { (Y - 1u).u8() }
+    ASL -> operand().shift { alu.asl(q = it) }
+    LSR -> operand().shift { alu.lsr(q = it) }
+    ROL -> operand().shift { alu.rol(q = it, c = P.C) }
+    ROR -> operand().shift { alu.ror(q = it, c = P.C) }
 
-        INC -> operand()
-          .calc { (it + 1u).u8() }
-          .storeResult { it }
-        INX -> updateX { (X + 1u).u8() }
-        INY -> updateY { (Y + 1u).u8() }
+    AND -> operand().updateA { A and it }
+    ORA -> operand().updateA { A or it }
+    EOR -> operand().updateA { A xor it }
 
-        ASL -> operand()
-          .calc { alu.asl(q = it) }
-          .storeResult { it.q }
-          .updateC { it.c }
+    BIT -> operand()
+      .updateZN { A and it }
+      .updateV { !(it and 0x40u).isZero() }
 
-        LSR -> operand()
-          .calc { alu.lsr(q = it) }
-          .storeResult { it.q }
-          .updateC { it.c }
+    LDA -> operand().updateA { it }
+    LDX -> operand().updateX { it }
+    LDY -> operand().updateY { it }
 
-        ROL -> operand()
-          .calc { alu.rol(q = it, c = P.C) }
-          .storeResult { it.q }
-          .updateC { it.c }
+    STA -> store { A }
+    STX -> store { X }
+    STY -> store { Y }
 
-        ROR -> operand()
-          .calc { alu.ror(q = it, c = P.C) }
-          .storeResult { it.q }
-          .updateC { it.c }
+    PHP -> push { P.u8() }
+    PHA -> push { A }
+    PLP -> pop().updateP { it }
+    PLA -> pop().updateA { it }
 
-        AND -> operand().updateA { A and it }
-        ORA -> operand().updateA { A or it }
-        EOR -> operand().updateA { A xor it }
+    JMP -> this
+      .updatePCL { addr.lo() }
+      .updatePCH { addr.hi() }
 
-        BIT -> operand()
-          .updateZN { A and it }
-          .updateV { !(it and 0x40u).isZero() }
+    JSR -> this
+      .push { (PC - 1u).hi() }
+      .push { (PC - 1u).lo() }
+      .updatePCL { addr.lo() }
+      .updatePCH { addr.hi() }
 
-        LDA -> operand().updateA { it }
-        LDX -> operand().updateX { it }
-        LDY -> operand().updateY { it }
+    RTS -> this
+      .pop().updatePCL { (it + 1u).u8() } // TODO - what about carry?
+      .pop().updatePCH { it }
 
-        STA -> store { A }
-        STX -> store { X }
-        STY -> store { Y }
+    RTI -> this
+      .pop().updateP { it }
+      .pop().updatePCL { it }
+      .pop().updatePCH { it }
 
-        PHP -> push { P.u8() }
-        PHA -> push { A }
-        PLP -> pop().updateP { it }
-        PLA -> pop().updateA { it }
+    BRK -> TODO()
 
-        JMP -> this
-          .updatePCL { addr.lo() }
-          .updatePCH { addr.hi() }
+    BPL -> branch { !P.N }
+    BMI -> branch { P.N }
+    BVC -> branch { !P.V }
+    BVS -> branch { P.V }
+    BCC -> branch { !P.C }
+    BCS -> branch { P.C }
+    BNE -> branch { !P.Z }
+    BEQ -> branch { P.Z }
 
-        JSR -> this
-          .push { (PC - 1u).hi() }
-          .push { (PC - 1u).lo() }
-          .updatePCL { addr.lo() }
-          .updatePCH { addr.hi() }
+    TXA -> updateA { X }
+    TYA -> updateA { Y }
+    TXS -> updateS { X }
+    TAY -> updateY { A }
+    TAX -> updateX { A }
+    TSX -> updateX { S }
 
-        RTS -> this
-          .pop().updatePCL { (it + 1u).u8() } // TODO - what about carry?
-          .pop().updatePCH { it }
+    CLC -> updateC { _0 }
+    CLD -> updateD { _0 }
+    CLI -> updateI { _0 }
+    CLV -> updateV { _0 }
+    SEC -> updateC { _1 }
+    SED -> updateD { _1 }
+    SEI -> updateI { _1 }
 
-        RTI -> this
-          .pop().updateP { it }
-          .pop().updatePCL { it }
-          .pop().updatePCH { it }
-
-        BRK -> TODO()
-
-        BPL -> branch { !P.N }
-        BMI -> branch { P.N }
-        BVC -> branch { !P.V }
-        BVS -> branch { P.V }
-        BCC -> branch { !P.C }
-        BCS -> branch { P.C }
-        BNE -> branch { !P.Z }
-        BEQ -> branch { P.Z }
-
-        TXA -> updateA { X }
-        TYA -> updateA { Y }
-        TXS -> updateS { X }
-        TAY -> updateY { A }
-        TAX -> updateX { A }
-        TSX -> updateX { S }
-
-        CLC -> updateC { _0 }
-        CLD -> updateD { _0 }
-        CLI -> updateI { _0 }
-        CLV -> updateV { _0 }
-        SEC -> updateC { _1 }
-        SED -> updateD { _1 }
-        SEI -> updateI { _1 }
-
-        NOP -> this
-      }
-    }.state
+    NOP -> this
   }
 
   private fun <T> Ctx<T>.operand() = calc {
@@ -173,6 +134,22 @@ class Cpu(
       else -> memory.load(addr)
     }
   }
+
+  private fun Ctx<UInt8>.add(f: F<UInt8, UInt8>) = this
+    .calc { alu.adc(a = A, b = f(it), c = P.C, d = P.D) }
+    .updateA { it.q }
+    .updateC { it.c }
+    .updateV { it.v }
+
+  private fun <T> Ctx<T>.compare(f: F<T, UInt8>) = this
+    .calc { alu.adc(a = A, b = f(it).inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
+    .updateZN { it.q }
+    .updateC { it.c }
+
+  private fun Ctx<UInt8>.shift(f: F<UInt8, Alu.Output>) = this
+    .calc(f)
+    .storeResult { it.q }
+    .updateC { it.c }
 
   private fun <T> Ctx<T>.branch(f: F<T, Boolean>) = updatePC { if (f(state, data)) addr else PC }
 

@@ -441,12 +441,8 @@ class ArithmeticTest {
   }
 
   private fun assertMultiByte(expected: Int, instructions: List<List<UInt8>>) {
-    val mem = FakeMemory(instructions.memoryMap(INIT_PC))
-    val cpu = Cpu(mem, State(PC = INIT_PC.u16()))
-    mem.trackStores = true
+    val context = executeYeah(initState = State(), instructions = instructions)
 
-    repeat(instructions.size) { cpu.next() }
-
-    mem.assertStores(mapOf(0x0000 to expected.lo().toInt(), 0x0001 to expected.hi().toInt()))
+    context.memory.assertStores(mapOf(0x0000 to expected.lo().toInt(), 0x0001 to expected.hi().toInt()))
   }
 }

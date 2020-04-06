@@ -1,6 +1,7 @@
 package choliver.sixfiveohtwo
 
 import choliver.sixfiveohtwo.AddrMode.*
+import choliver.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
 import choliver.sixfiveohtwo.Opcode.*
 import org.junit.jupiter.api.Assertions.assertEquals
 
@@ -124,27 +125,51 @@ fun assertForAddressModes(
       val init = case.state(proto).with(PC = INIT_PC.u16()).initState()
       val expected = case.state(proto).with(PC = (INIT_PC + instruction.size).u16()).expectedState()
 
-      val prelude = preludeFor(init)
-      val memory = FakeMemory(
-        prelude.memoryMap(PRELUDE_PC) +
-          listOf(instruction).memoryMap(INIT_PC) +
-          case.mem +                        // Indirection / pointer
+      val context = executeYeah(
+        initState = init,
+        instructions = listOf(instruction),
+        initStores = case.mem +             // Indirection / pointer
           (case.operandAddr to operand) +   // Operand (user-defined value, case-defined location)
           initStores                        // User-defined
       )
-      val cpu = Cpu(memory, State(PC = PRELUDE_PC.u16()))
 
-      repeat(prelude.size) { cpu.next() }
-      memory.trackStores = true
-      cpu.next()
-
-      assertEquals(expected, cpu.state, "Unexpected state for [${mode.name}]")
-      memory.assertStores(expectedStores(case.operandAddr), "Unexpected store for [${mode.name}]")
+      assertEquals(expected, context.state, "Unexpected state for [${mode.name}]")
+      context.memory.assertStores(expectedStores(case.operandAddr), "Unexpected store for [${mode.name}]")
     }
   }
 }
 
-/** Prelude instructions that set CPU state. */
+// TODO - better names
+data class ExecutionContext(
+  val memory: FakeMemory,
+  val state: State
+)
+
+fun executeYeah(
+  initState: State,
+  initStores: Map<Int, Int> = emptyMap(),
+  instructions: List<List<UInt8>>
+): ExecutionContext {
+  val prelude = preludeFor(initState)
+  val memory = FakeMemory(
+    mapOf(
+      VECTOR_RESET.toInt() to PRELUDE_PC.lo().toInt(),
+      (VECTOR_RESET + 1u).toInt() to PRELUDE_PC.hi().toInt()
+    ) +
+      prelude.memoryMap(PRELUDE_PC) +
+      instructions.memoryMap(INIT_PC) +
+      initStores
+  )
+  val cpu = Cpu(memory)
+
+  repeat(prelude.size) { cpu.next() }
+  memory.trackStores = true
+  repeat(instructions.size) { cpu.next() }
+
+  return ExecutionContext(memory, cpu.state)
+}
+
+/** Prelude instructions that set CPU state (but with hardcoded PC). */
 private fun preludeFor(state: State) = listOf(
   enc(LDX[IMMEDIATE], state.S.toInt()),
   enc(TXS[IMPLIED]),
@@ -154,7 +179,7 @@ private fun preludeFor(state: State) = listOf(
   enc(LDX[IMMEDIATE], state.X.toInt()),
   enc(LDY[IMMEDIATE], state.Y.toInt()),
   enc(PLP[IMPLIED]),
-  enc(JMP[ABSOLUTE], state.PC.lo().toInt(), state.PC.hi().toInt())
+  enc(JMP[ABSOLUTE], INIT_PC.lo().toInt(), INIT_PC.hi().toInt())
 )
 
 fun List<List<UInt8>>.memoryMap(base: Int) = flatten()

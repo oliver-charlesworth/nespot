@@ -25,11 +25,15 @@ private val PROTO_STATES = listOf(
   State(S = 0xAAu)
 )
 
-/** Chosen to straddle a page boundary. */
-const val SCARY_ADDR = 0x12FF
+const val BASE_ZERO_PAGE = 0x0000
+const val BASE_STACK = 0x0100
+const val BASE_RAM = 0x0200
+const val BASE_ROM = 0x8000
 
-const val INIT_PC = 0x8000
-const val OTHER_PC = 0x1000
+const val PRELUDE_PC = BASE_ROM
+const val INIT_PC = BASE_ROM + 0x1000
+/** Chosen to straddle a page boundary. */
+const val SCARY_ADDR = BASE_RAM + 0x10FF
 
 private val CASES = mapOf(
   ACCUMULATOR to Case(enc = { emptyList() }),
@@ -65,8 +69,8 @@ private val CASES = mapOf(
     operandAddr = SCARY_ADDR
   ),
   INDIRECT to Case(
-    enc = { enc16(0x4050) },
-    mem = mem16(0x4050, SCARY_ADDR)
+    enc = { enc16(BASE_RAM + 0x3050) },
+    mem = mem16(BASE_RAM + 0x3050, SCARY_ADDR)
   ),
   INDEXED_INDIRECT to Case(
     enc = { enc(0x30) },
@@ -113,7 +117,7 @@ fun assertForAddressModes(
 ) {
   encodings.forEach { (mode, enc) ->
     PROTO_STATES.forEach { proto ->
-      val case = CASES[mode]!!
+      val case = CASES[mode] ?: error("Unhandled mode ${mode}")
 
       val instruction = listOf(enc) + case.enc(operand)
 
@@ -121,17 +125,16 @@ fun assertForAddressModes(
       val expected = case.state(proto).with(PC = (INIT_PC + instruction.size).u16()).expectedState()
 
       val prelude = preludeFor(init)
-
       val memory = FakeMemory(
-        prelude.memoryMap(OTHER_PC) +
+        prelude.memoryMap(PRELUDE_PC) +
           listOf(instruction).memoryMap(INIT_PC) +
           case.mem +                        // Indirection / pointer
           (case.operandAddr to operand) +   // Operand (user-defined value, case-defined location)
           initStores                        // User-defined
       )
-      val cpu = Cpu(memory, State(PC = OTHER_PC.u16()))
-      repeat(prelude.size) { cpu.next() }
+      val cpu = Cpu(memory, State(PC = PRELUDE_PC.u16()))
 
+      repeat(prelude.size) { cpu.next() }
       memory.trackStores = true
       cpu.next()
 
@@ -141,7 +144,8 @@ fun assertForAddressModes(
   }
 }
 
-fun preludeFor(state: State) = listOf(
+/** Prelude instructions that set CPU state. */
+private fun preludeFor(state: State) = listOf(
   enc(LDX[IMMEDIATE], state.S.toInt()),
   enc(TXS[IMPLIED]),
   enc(LDA[IMMEDIATE], state.P.u8().toInt()),

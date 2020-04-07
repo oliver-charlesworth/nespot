@@ -6,7 +6,7 @@ import choliver.sixfiveohtwo.Opcode.*
 import org.junit.jupiter.api.Assertions.assertEquals
 
 private data class Case(
-  val enc: (operand: Int) -> List<UInt8>,
+  val enc: UInt8.(operand: Int) -> List<UInt8>,
   val state: State.() -> State = { this },
   val mem: Map<Int, Int> = emptyMap(),
   val operandAddr: Int = 0x0000
@@ -37,9 +37,9 @@ const val BASE_USER = BASE_ROM + 0x1000
 const val SCARY_ADDR = BASE_RAM + 0x10FF
 
 private val CASES = mapOf(
-  ACCUMULATOR to Case(enc = { emptyList() }),
+  ACCUMULATOR to Case(enc = { enc() }),
   IMMEDIATE to Case(enc = { enc(it) }),
-  IMPLIED to Case(enc = { emptyList() }),
+  IMPLIED to Case(enc = { enc() }),
   RELATIVE to Case(enc = { enc(it) }),
   ZERO_PAGE to Case(
     enc = { enc(0x30) },
@@ -87,7 +87,6 @@ private val CASES = mapOf(
   )
 )
 
-fun enc16(data: Int) = enc(data.loI(), data.hiI())
 fun mem16(addr: Int, data: Int) = mapOf(addr to data.loI(), (addr + 1) to data.hiI())
 
 fun assertForAddressModes(
@@ -119,8 +118,7 @@ fun assertForAddressModes(
   encodings.forEach { (mode, enc) ->
     PROTO_STATES.forEach { proto ->
       val case = CASES[mode] ?: error("Unhandled mode ${mode}")
-
-      val instruction = listOf(enc) + case.enc(operand)
+      val instruction = case.enc(enc, operand)
 
       assertCpuEffects(
         instructions = listOf(instruction),
@@ -169,21 +167,24 @@ fun assertCpuEffects(
 
 /** Instructions that set CPU state and trampolines to the user code. */
 private fun trampolineFor(state: State) = listOf(
-  enc(LDX[IMMEDIATE], state.S.toInt()),
-  enc(TXS[IMPLIED]),
-  enc(LDA[IMMEDIATE], state.P.u8().toInt()),
-  enc(PHA[IMPLIED]),
-  enc(LDA[IMMEDIATE], state.A.toInt()),
-  enc(LDX[IMMEDIATE], state.X.toInt()),
-  enc(LDY[IMMEDIATE], state.Y.toInt()),
-  enc(PLP[IMPLIED]),
-  enc(JMP[ABSOLUTE], BASE_USER.lo().toInt(), BASE_USER.hi().toInt())
+  LDX[IMMEDIATE].enc(state.S),
+  TXS[IMPLIED].enc(),
+  LDA[IMMEDIATE].enc(state.P.u8()),
+  PHA[IMPLIED].enc(),
+  LDA[IMMEDIATE].enc(state.A),
+  LDX[IMMEDIATE].enc(state.X),
+  LDY[IMMEDIATE].enc(state.Y),
+  PLP[IMPLIED].enc(),
+  JMP[ABSOLUTE].enc16(BASE_USER)
 )
 
 fun List<List<UInt8>>.memoryMap(base: Int) = flatten()
   .withIndex()
   .associate { (it.index + base) to it.value.toInt() }
 
-fun enc(vararg bytes: Int) = bytes.map { it.u8() }
+operator fun Opcode.get(mode: AddrMode = IMPLIED) = encodings[mode]!!
 
-operator fun Opcode.get(mode: AddrMode): Int = encodings[mode]!!.toInt()
+fun UInt8.enc() = listOf(this)
+fun UInt8.enc(operand: Int) = listOf(this, operand.u8())
+fun UInt8.enc(operand: UInt8) = listOf(this, operand)
+fun UInt8.enc16(operand: Int) = listOf(this, operand.lo(), operand.hi())

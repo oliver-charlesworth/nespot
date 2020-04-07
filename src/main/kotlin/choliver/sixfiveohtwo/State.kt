@@ -8,7 +8,7 @@ data class State(
   val S: UInt8 = 0x00u,
   val P: Flags = Flags()
 ) {
-  override fun toString() = "(PC=0x%04X, S=0x%02X, A=0x%02X, X=0x%02X, Y=0x%02X, P=%s)".format(
+  override fun toString() = "(PC=%s, S=0x%02X, A=0x%02X, X=0x%02X, Y=0x%02X, P=%s)".format(
     PC.toString(),
     S.toByte(),
     A.toByte(),

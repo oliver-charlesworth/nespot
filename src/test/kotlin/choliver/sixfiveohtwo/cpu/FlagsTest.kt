@@ -1,8 +1,8 @@
 package choliver.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.Opcode
-import choliver.sixfiveohtwo.Opcode.*
-import choliver.sixfiveohtwo.State
+import choliver.sixfiveohtwo.model.Opcode
+import choliver.sixfiveohtwo.model.Opcode.*
+import choliver.sixfiveohtwo.model.State
 import choliver.sixfiveohtwo.assertForAddressModes
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1

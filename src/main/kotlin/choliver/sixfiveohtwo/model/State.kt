@@ -1,4 +1,4 @@
-package choliver.sixfiveohtwo
+package choliver.sixfiveohtwo.model
 
 data class State(
   val PC: ProgramCounter = ProgramCounter(),

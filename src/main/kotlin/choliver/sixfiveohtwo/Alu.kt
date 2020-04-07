@@ -1,5 +1,10 @@
 package choliver.sixfiveohtwo
 
+import choliver.sixfiveohtwo.model.UInt8
+import choliver.sixfiveohtwo.model.isNegative
+import choliver.sixfiveohtwo.model.isZero
+import choliver.sixfiveohtwo.model.u8
+
 class Alu {
 
   data class Output(

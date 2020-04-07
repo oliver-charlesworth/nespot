@@ -1,8 +1,12 @@
 package choliver.sixfiveohtwo
 
-import choliver.sixfiveohtwo.AddressMode.*
-import choliver.sixfiveohtwo.AddressMode.IndexSource.*
-import choliver.sixfiveohtwo.Opcode.*
+import choliver.sixfiveohtwo.model.Operand.*
+import choliver.sixfiveohtwo.model.Operand.IndexSource.*
+import choliver.sixfiveohtwo.model.Opcode.*
+import choliver.sixfiveohtwo.model.Operand
+import choliver.sixfiveohtwo.model.Opcode
+import choliver.sixfiveohtwo.model.u16
+import choliver.sixfiveohtwo.model.u8
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -22,9 +26,9 @@ class FormatterTest {
     assertEquals("ADC ($34),Y", format(ADC, IndirectIndexed(0x34.u8())))
   }
 
-  private fun format(op: Opcode, mode: AddressMode) = "${op.name}${format(mode)}"
+  private fun format(op: Opcode, mode: Operand) = "${op.name}${format(mode)}"
 
-  private fun format(mode: AddressMode) = when (mode) {
+  private fun format(mode: Operand) = when (mode) {
     is Implied -> ""
     is Accumulator -> " A"
     is Relative -> " $%02x".format(mode.offset)

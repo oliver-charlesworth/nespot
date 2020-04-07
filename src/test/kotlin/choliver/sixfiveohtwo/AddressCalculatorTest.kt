@@ -1,8 +1,11 @@
 package choliver.sixfiveohtwo
 
-import choliver.sixfiveohtwo.AddressMode.*
-import choliver.sixfiveohtwo.AddressMode.IndexSource.X
-import choliver.sixfiveohtwo.AddressMode.IndexSource.Y
+import choliver.sixfiveohtwo.model.Operand.*
+import choliver.sixfiveohtwo.model.Operand.IndexSource.X
+import choliver.sixfiveohtwo.model.Operand.IndexSource.Y
+import choliver.sixfiveohtwo.model.State
+import choliver.sixfiveohtwo.model.toPC
+import choliver.sixfiveohtwo.model.u16
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

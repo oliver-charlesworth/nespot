@@ -1,8 +1,9 @@
 package choliver.sixfiveohtwo.cpu
 
 import choliver.sixfiveohtwo.*
-import choliver.sixfiveohtwo.AddrMode.*
-import choliver.sixfiveohtwo.Opcode.*
+import choliver.sixfiveohtwo.model.*
+import choliver.sixfiveohtwo.model.AddressMode.*
+import choliver.sixfiveohtwo.model.Opcode.*
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Nested

@@ -1,12 +1,17 @@
 package choliver.sixfiveohtwo
 
-import choliver.sixfiveohtwo.AddrMode.*
+import choliver.sixfiveohtwo.model.AddressMode.*
+import choliver.sixfiveohtwo.model.Operand.*
+import choliver.sixfiveohtwo.model.Operand.IndexSource.*
 import choliver.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
-import choliver.sixfiveohtwo.Opcode.*
+import choliver.sixfiveohtwo.model.*
+import choliver.sixfiveohtwo.model.Opcode.*
 import org.junit.jupiter.api.Assertions.assertEquals
 
+// TODO - rename "operand" throughout
 private data class Case(
   val enc: UInt8.(operand: Int) -> List<UInt8>,
+  val gimp: (operand: Int) -> Operand,
   val state: State.() -> State = { this },
   val mem: Map<Int, Int> = emptyMap(),
   val operandAddr: Int = 0x0000
@@ -37,50 +42,59 @@ const val BASE_USER = BASE_ROM + 0x1000
 const val SCARY_ADDR = BASE_RAM + 0x10FF
 
 private val CASES = mapOf(
-  ACCUMULATOR to Case(enc = { enc() }),
-  IMMEDIATE to Case(enc = { enc(it) }),
-  IMPLIED to Case(enc = { enc() }),
-  RELATIVE to Case(enc = { enc(it) }),
+  IMPLIED to Case(enc = { enc() }, gimp = { Implied }),
+  ACCUMULATOR to Case(enc = { enc() }, gimp = { Accumulator }),
+  IMMEDIATE to Case(enc = { enc(it) }, gimp = { Immediate(it.u8()) }),
+  RELATIVE to Case(enc = { enc(it) }, gimp = { Relative(it.s8())} ),
   ZERO_PAGE to Case(
     enc = { enc(0x30) },
+    gimp = { ZeroPage(0x30u) },
     operandAddr = 0x0030
   ),
   ZERO_PAGE_X to Case(
     enc = { enc(0x30) },
+    gimp = { ZeroPageIndexed(0x30u, X) },
     state = { with(X = 0x20u) },
     operandAddr = 0x0050
   ),
   ZERO_PAGE_Y to Case(
     enc = { enc(0x30) },
+    gimp = { ZeroPageIndexed(0x30u, Y) },
     state = { with(Y = 0x20u) },
     operandAddr = 0x0050
   ),
   ABSOLUTE to Case(
     enc = { enc16(SCARY_ADDR) },
+    gimp = { Absolute(SCARY_ADDR.u16()) },
     operandAddr = SCARY_ADDR
   ),
   ABSOLUTE_X to Case(
     enc = { enc16(SCARY_ADDR - 0x20) },
+    gimp = { AbsoluteIndexed((SCARY_ADDR - 0x20).u16(), X) },
     state = { with(X = 0x20u) },
     operandAddr = SCARY_ADDR
   ),
   ABSOLUTE_Y to Case(
     enc = { enc16(SCARY_ADDR - 0x20) },
+    gimp = { AbsoluteIndexed((SCARY_ADDR - 0x20).u16(), Y) },
     state = { with(Y = 0x20u) },
     operandAddr = SCARY_ADDR
   ),
   INDIRECT to Case(
     enc = { enc16(BASE_RAM + 0x3050) },
+    gimp = { Indirect((BASE_RAM + 0x3050).u16()) },
     mem = mem16(BASE_RAM + 0x3050, SCARY_ADDR)
   ),
   INDEXED_INDIRECT to Case(
     enc = { enc(0x30) },
+    gimp = { IndexedIndirect(0x30u) },
     state = { with(X = 0x10u) },
     mem = mem16(0x0040, SCARY_ADDR),
     operandAddr = SCARY_ADDR
   ),
   INDIRECT_INDEXED to Case(
     enc = { enc(0x30) },
+    gimp = { IndirectIndexed(0x30u) },
     state = { with(Y = 0x10u) },
     mem = mem16(0x0030, SCARY_ADDR - 0x10),
     operandAddr = SCARY_ADDR
@@ -108,7 +122,7 @@ fun assertForAddressModes(
 }
 
 fun assertForAddressModes(
-  encodings: Map<AddrMode, UInt8>,
+  encodings: Map<AddressMode, UInt8>,
   operand: Int = 0x00,
   initState: State.() -> State = { this },
   initStores: Map<Int, Int> = emptyMap(),
@@ -182,7 +196,7 @@ fun List<List<UInt8>>.memoryMap(base: Int) = flatten()
   .withIndex()
   .associate { (it.index + base) to it.value.toInt() }
 
-operator fun Opcode.get(mode: AddrMode = IMPLIED) = encodings[mode]!!
+operator fun Opcode.get(mode: AddressMode = IMPLIED) = encodings[mode]!!
 
 fun UInt8.enc() = listOf(this)
 fun UInt8.enc(operand: Int) = listOf(this, operand.u8())

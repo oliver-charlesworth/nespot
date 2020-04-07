@@ -1,18 +1,19 @@
 package choliver.sixfiveohtwo
 
-import choliver.sixfiveohtwo.AddrMode.*
-import choliver.sixfiveohtwo.AddressMode.*
+import choliver.sixfiveohtwo.model.*
+import choliver.sixfiveohtwo.model.AddressMode.*
+import choliver.sixfiveohtwo.model.Operand.*
 
 class InstructionDecoder {
   data class Decoded(
     val op: Opcode,
-    val addrMode: AddressMode,
+    val operand: Operand,
     val pc: ProgramCounter
   )
 
   fun decode(memory: Memory, pc: ProgramCounter): Decoded {
-    var pc = pc
-    fun load() = memory.load((pc++).u16())
+    var pcLocal = pc
+    fun load() = memory.load((pcLocal++).u16())
 
     // TODO - error handling
     val found = ENCODINGS[load()]!!
@@ -20,7 +21,7 @@ class InstructionDecoder {
     fun operand8() = load()
     fun operand16() = combine(lo = load(), hi = load())
 
-    val mode = when (found.addrMode) {
+    val mode = when (found.addressMode) {
       ACCUMULATOR -> Accumulator
       IMMEDIATE -> Immediate(operand8())
       IMPLIED -> Implied
@@ -39,13 +40,13 @@ class InstructionDecoder {
     return Decoded(
       found.op,
       mode,
-      pc
+      pcLocal
     )
   }
 
   private data class OpAndMode(
     val op: Opcode,
-    val addrMode: AddrMode = IMPLIED
+    val addressMode: AddressMode = IMPLIED
   )
 
   companion object {

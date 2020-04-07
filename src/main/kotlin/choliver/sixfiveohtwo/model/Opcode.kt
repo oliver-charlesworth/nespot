@@ -1,22 +1,6 @@
-package choliver.sixfiveohtwo
+package choliver.sixfiveohtwo.model
 
-import choliver.sixfiveohtwo.AddrMode.*
-
-enum class AddrMode {
-  ACCUMULATOR,
-  IMMEDIATE,
-  IMPLIED,
-  INDIRECT,
-  RELATIVE,
-  ABSOLUTE,
-  ABSOLUTE_X,
-  ABSOLUTE_Y,
-  ZERO_PAGE,
-  ZERO_PAGE_X,
-  ZERO_PAGE_Y,
-  INDEXED_INDIRECT,
-  INDIRECT_INDEXED
-}
+import choliver.sixfiveohtwo.model.AddressMode.*
 
 private val ENCS_STANDARD = mapOf(
   INDEXED_INDIRECT to 0x01,
@@ -41,7 +25,7 @@ private val ENCS_SHIFT = ENCS_INC_DEC + mapOf(
 )
 
 enum class Opcode(
-  val encodings: Map<AddrMode, UInt8>
+  val encodings: Map<AddressMode, UInt8>
 ) {
   ADC(standard(0x60)),
   AND(standard(0x20)),
@@ -143,8 +127,8 @@ private fun incDec(base: Int) = ENCS_INC_DEC.encode(base)
 
 private fun shift(base: Int) = ENCS_SHIFT.encode(base)
 
-private fun Map<AddrMode, Int>.encode(base: Int) = entries
+private fun Map<AddressMode, Int>.encode(base: Int) = entries
   .associate { (k, v) -> k to (v + base).u8() }
 
 // TODO - this is gross
-private fun map8(vararg pairs: Pair<AddrMode, Int>) = pairs.associate { (k, v) -> k to v.u8() }
+private fun map8(vararg pairs: Pair<AddressMode, Int>) = pairs.associate { (k, v) -> k to v.u8() }

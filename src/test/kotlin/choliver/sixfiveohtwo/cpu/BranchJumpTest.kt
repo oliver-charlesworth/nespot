@@ -1,7 +1,10 @@
 package choliver.sixfiveohtwo.cpu
 
 import choliver.sixfiveohtwo.*
-import choliver.sixfiveohtwo.Opcode.*
+import choliver.sixfiveohtwo.model.Opcode
+import choliver.sixfiveohtwo.model.Opcode.*
+import choliver.sixfiveohtwo.model.State
+import choliver.sixfiveohtwo.model.toPC
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test

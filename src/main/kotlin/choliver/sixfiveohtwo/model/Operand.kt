@@ -1,53 +1,51 @@
-package choliver.sixfiveohtwo
+package choliver.sixfiveohtwo.model
 
-
-
-sealed class AddressMode {
+sealed class Operand {
   enum class IndexSource { X, Y }
 
-  object Accumulator : AddressMode()
+  object Accumulator : Operand()
 
-  object Implied : AddressMode()
+  object Implied : Operand()
 
   data class Immediate(
     val literal: UInt8
-  ) : AddressMode()
+  ) : Operand()
 
   data class Relative(
     val offset: Int8    // Signed
-  ) : AddressMode()
+  ) : Operand()
 
   data class Absolute(
     val address: UInt16
-  ) : AddressMode()
+  ) : Operand()
 
   data class ZeroPage(
     val address: UInt8
-  ) : AddressMode()
+  ) : Operand()
 
   data class Indirect(
     val address: UInt16
-  ) : AddressMode()
+  ) : Operand()
 
   data class AbsoluteIndexed(
     val address: UInt16,
     val source: IndexSource
-  ) : AddressMode()
+  ) : Operand()
 
   data class ZeroPageIndexed(
     val address: UInt8,
     val source: IndexSource
-  ) : AddressMode()
+  ) : Operand()
 
   // Always uses X as the source
   data class IndexedIndirect(
     val address: UInt8
-  ) : AddressMode()
+  ) : Operand()
 
   // Always uses Y as the source
   data class IndirectIndexed(
     val address: UInt8
-  ) : AddressMode()
+  ) : Operand()
 }
 
 

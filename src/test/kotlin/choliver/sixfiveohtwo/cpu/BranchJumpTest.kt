@@ -93,19 +93,19 @@ class BranchJumpTest {
   private fun assertBranch(op: Opcode, state: State.(b: Boolean) -> State) {
     assertForAddressModes(
       op,
-      operand = 0x30,
+      target = 0x30,
       initState = { state(_0) },
       expectedState = { state(_0) }
     )
     assertForAddressModes(
       op,
-      operand = 0x30,
+      target = 0x30,
       initState = { state(_1) },
       expectedState = { state(_1).with(PC = BASE_USER.toPC() + 0x30) }
     )
     assertForAddressModes(
       op,
-      operand = 0xD0,
+      target = 0xD0,
       initState = { state(_1) },
       expectedState = { state(_1).with(PC = BASE_USER.toPC() - 0x30) }
     )

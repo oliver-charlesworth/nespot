@@ -1,20 +1,19 @@
 package choliver.sixfiveohtwo
 
-import choliver.sixfiveohtwo.model.AddressMode.*
-import choliver.sixfiveohtwo.model.Operand.*
-import choliver.sixfiveohtwo.model.Operand.IndexSource.*
 import choliver.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
 import choliver.sixfiveohtwo.model.*
+import choliver.sixfiveohtwo.model.AddressMode.*
 import choliver.sixfiveohtwo.model.Opcode.*
+import choliver.sixfiveohtwo.model.Operand.*
+import choliver.sixfiveohtwo.model.Operand.IndexSource.X
+import choliver.sixfiveohtwo.model.Operand.IndexSource.Y
 import org.junit.jupiter.api.Assertions.assertEquals
 
-// TODO - rename "operand" throughout
 private data class Case(
-  val enc: UInt8.(operand: Int) -> List<UInt8>,
-  val gimp: (operand: Int) -> Operand,
+  val operand: (value: Int) -> Operand,
   val state: State.() -> State = { this },
   val mem: Map<Int, Int> = emptyMap(),
-  val operandAddr: Int = 0x0000
+  val targetAddr: Int = 0x0000
 )
 
 private val PROTO_STATES = listOf(
@@ -42,62 +41,53 @@ const val BASE_USER = BASE_ROM + 0x1000
 const val SCARY_ADDR = BASE_RAM + 0x10FF
 
 private val CASES = mapOf(
-  IMPLIED to Case(enc = { enc() }, gimp = { Implied }),
-  ACCUMULATOR to Case(enc = { enc() }, gimp = { Accumulator }),
-  IMMEDIATE to Case(enc = { enc(it) }, gimp = { Immediate(it.u8()) }),
-  RELATIVE to Case(enc = { enc(it) }, gimp = { Relative(it.s8())} ),
+  IMPLIED to Case(operand = { Implied }),
+  ACCUMULATOR to Case(operand = { Accumulator }),
+  IMMEDIATE to Case(operand = { Immediate(it.u8()) }),
+  RELATIVE to Case(operand = { Relative(it.s8())} ),
   ZERO_PAGE to Case(
-    enc = { enc(0x30) },
-    gimp = { ZeroPage(0x30u) },
-    operandAddr = 0x0030
+    operand = { ZeroPage(0x30u) },
+    targetAddr = 0x0030
   ),
   ZERO_PAGE_X to Case(
-    enc = { enc(0x30) },
-    gimp = { ZeroPageIndexed(0x30u, X) },
+    operand = { ZeroPageIndexed(0x30u, X) },
     state = { with(X = 0x20u) },
-    operandAddr = 0x0050
+    targetAddr = 0x0050
   ),
   ZERO_PAGE_Y to Case(
-    enc = { enc(0x30) },
-    gimp = { ZeroPageIndexed(0x30u, Y) },
+    operand = { ZeroPageIndexed(0x30u, Y) },
     state = { with(Y = 0x20u) },
-    operandAddr = 0x0050
+    targetAddr = 0x0050
   ),
   ABSOLUTE to Case(
-    enc = { enc16(SCARY_ADDR) },
-    gimp = { Absolute(SCARY_ADDR.u16()) },
-    operandAddr = SCARY_ADDR
+    operand = { Absolute(SCARY_ADDR.u16()) },
+    targetAddr = SCARY_ADDR
   ),
   ABSOLUTE_X to Case(
-    enc = { enc16(SCARY_ADDR - 0x20) },
-    gimp = { AbsoluteIndexed((SCARY_ADDR - 0x20).u16(), X) },
+    operand = { AbsoluteIndexed((SCARY_ADDR - 0x20).u16(), X) },
     state = { with(X = 0x20u) },
-    operandAddr = SCARY_ADDR
+    targetAddr = SCARY_ADDR
   ),
   ABSOLUTE_Y to Case(
-    enc = { enc16(SCARY_ADDR - 0x20) },
-    gimp = { AbsoluteIndexed((SCARY_ADDR - 0x20).u16(), Y) },
+    operand = { AbsoluteIndexed((SCARY_ADDR - 0x20).u16(), Y) },
     state = { with(Y = 0x20u) },
-    operandAddr = SCARY_ADDR
+    targetAddr = SCARY_ADDR
   ),
   INDIRECT to Case(
-    enc = { enc16(BASE_RAM + 0x3050) },
-    gimp = { Indirect((BASE_RAM + 0x3050).u16()) },
+    operand = { Indirect((BASE_RAM + 0x3050).u16()) },
     mem = mem16(BASE_RAM + 0x3050, SCARY_ADDR)
   ),
   INDEXED_INDIRECT to Case(
-    enc = { enc(0x30) },
-    gimp = { IndexedIndirect(0x30u) },
+    operand = { IndexedIndirect(0x30u) },
     state = { with(X = 0x10u) },
     mem = mem16(0x0040, SCARY_ADDR),
-    operandAddr = SCARY_ADDR
+    targetAddr = SCARY_ADDR
   ),
   INDIRECT_INDEXED to Case(
-    enc = { enc(0x30) },
-    gimp = { IndirectIndexed(0x30u) },
+    operand = { IndirectIndexed(0x30u) },
     state = { with(Y = 0x10u) },
     mem = mem16(0x0030, SCARY_ADDR - 0x10),
-    operandAddr = SCARY_ADDR
+    targetAddr = SCARY_ADDR
   )
 )
 
@@ -105,51 +95,34 @@ fun mem16(addr: Int, data: Int) = mapOf(addr to data.loI(), (addr + 1) to data.h
 
 fun assertForAddressModes(
   op: Opcode,
-  operand: Int = 0x00,
+  modes: Set<AddressMode> = op.encodings.keys,
+  target: Int = 0x00,
   initState: State.() -> State = { this },
   initStores: Map<Int, Int> = emptyMap(),
   expectedStores: (operandAddr: Int) -> Map<Int, Int> = { emptyMap() },
   expectedState: State.() -> State = { this }
 ) {
-  assertForAddressModes(
-    op.encodings,
-    operand,
-    initState,
-    initStores,
-    expectedStores,
-    expectedState
-  )
-}
-
-fun assertForAddressModes(
-  encodings: Map<AddressMode, UInt8>,
-  operand: Int = 0x00,
-  initState: State.() -> State = { this },
-  initStores: Map<Int, Int> = emptyMap(),
-  expectedStores: (operandAddr: Int) -> Map<Int, Int> = { emptyMap() },
-  expectedState: State.() -> State = { this }
-) {
-  encodings.forEach { (mode, enc) ->
+  modes.forEach { mode ->
     PROTO_STATES.forEach { proto ->
       val case = CASES[mode] ?: error("Unhandled mode ${mode}")
-      val instruction = case.enc(enc, operand)
+      val instruction = Instruction(op, case.operand(target))
 
       assertCpuEffects(
         instructions = listOf(instruction),
         initState = case.state(proto).with(PC = BASE_USER.toPC()).initState(),
         initStores = case.mem +             // Indirection / pointer
-          (case.operandAddr to operand) +   // Operand (user-defined value, case-defined location)
+          (case.targetAddr to target) +     // Target (user-defined value, case-defined location)
           initStores,                       // User-defined
-        expectedState = case.state(proto).with(PC = BASE_USER.toPC() + instruction.size).expectedState(),
-        expectedStores = expectedStores(case.operandAddr),
-        name = mode.name
+        expectedState = case.state(proto).with(PC = BASE_USER.toPC() + instruction.encode().size).expectedState(),
+        expectedStores = expectedStores(case.targetAddr),
+        name = instruction.format()
       )
     }
   }
 }
 
 fun assertCpuEffects(
-  instructions: List<List<UInt8>>,
+  instructions: List<Instruction>,
   initState: State,
   initStores: Map<Int, Int> = emptyMap(),
   expectedState: State? = null,
@@ -179,26 +152,46 @@ fun assertCpuEffects(
   memory.assertStores(expectedStores, "Unexpected store for [${name}]")
 }
 
+private fun Instruction.encode(): List<UInt8> {
+  fun opEnc(mode: AddressMode) = opcode.encodings[mode] ?: error("Unsupported mode ${mode}")
+  return when (val o = operand) {
+    is Accumulator -> listOf(opEnc(ACCUMULATOR))
+    is Implied -> listOf(opEnc(IMPLIED))
+    is Immediate -> listOf(opEnc(IMMEDIATE), o.literal)
+    is Relative -> listOf(opEnc(RELATIVE), o.offset.u8())
+    is Absolute -> listOf(opEnc(ABSOLUTE), o.address.lo(), o.address.hi())
+    is AbsoluteIndexed -> when (o.source) {
+      X -> listOf(opEnc(ABSOLUTE_X), o.address.lo(), o.address.hi())
+      Y -> listOf(opEnc(ABSOLUTE_Y), o.address.lo(), o.address.hi())
+    }
+    is ZeroPage -> listOf(opEnc(ZERO_PAGE), o.address)
+    is ZeroPageIndexed -> when (o.source) {
+      X -> listOf(opEnc(ZERO_PAGE_X), o.address)
+      Y -> listOf(opEnc(ZERO_PAGE_Y), o.address)
+    }
+    is Indirect -> listOf(opEnc(INDIRECT), o.address.lo(), o.address.hi())
+    is IndexedIndirect -> listOf(opEnc(INDEXED_INDIRECT), o.address)
+    is IndirectIndexed -> listOf(opEnc(INDIRECT_INDEXED), o.address)
+  }
+}
+
+
+
 /** Instructions that set CPU state and trampolines to the user code. */
 private fun trampolineFor(state: State) = listOf(
-  LDX[IMMEDIATE].enc(state.S),
-  TXS[IMPLIED].enc(),
-  LDA[IMMEDIATE].enc(state.P.u8()),
-  PHA[IMPLIED].enc(),
-  LDA[IMMEDIATE].enc(state.A),
-  LDX[IMMEDIATE].enc(state.X),
-  LDY[IMMEDIATE].enc(state.Y),
-  PLP[IMPLIED].enc(),
-  JMP[ABSOLUTE].enc16(BASE_USER)
+  Instruction(LDX, Immediate(state.S)),
+  Instruction(TXS),
+  Instruction(LDA, Immediate(state.P.u8())),
+  Instruction(PHA),
+  Instruction(LDA, Immediate(state.A)),
+  Instruction(LDX, Immediate(state.X)),
+  Instruction(LDY, Immediate(state.Y)),
+  Instruction(PLP),
+  Instruction(JMP, Absolute(BASE_USER.u16()))
 )
 
-fun List<List<UInt8>>.memoryMap(base: Int) = flatten()
+private fun List<Instruction>.memoryMap(base: Int) = map { it.encode() }
+  .flatten()
   .withIndex()
   .associate { (it.index + base) to it.value.toInt() }
 
-operator fun Opcode.get(mode: AddressMode = IMPLIED) = encodings[mode]!!
-
-fun UInt8.enc() = listOf(this)
-fun UInt8.enc(operand: Int) = listOf(this, operand.u8())
-fun UInt8.enc(operand: UInt8) = listOf(this, operand)
-fun UInt8.enc16(operand: Int) = listOf(this, operand.lo(), operand.hi())

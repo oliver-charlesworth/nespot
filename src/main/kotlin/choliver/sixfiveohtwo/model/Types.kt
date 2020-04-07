@@ -8,6 +8,7 @@ typealias Int8 = Byte
 typealias Int16 = Short
 
 inline fun Int.u8(): UInt8 = toUByte()
+inline fun Int8.u8(): UInt8 = toUByte()
 inline fun UInt.u8(): UInt8 = toUByte()
 inline fun UInt16.u8(): UInt8 = toUByte()
 

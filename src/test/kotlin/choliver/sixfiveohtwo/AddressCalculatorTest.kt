@@ -17,7 +17,7 @@ class AddressCalculatorTest {
     fun positiveOffset() {
       assertEquals(
         0x1320.u16(),
-        calc.calculate(Relative(0x30), State(PC = 0x12F0u))
+        calc.calculate(Relative(0x30), State(PC = 0x12F0.toPC()))
       )
     }
 
@@ -25,7 +25,7 @@ class AddressCalculatorTest {
     fun negativeOffset() {
       assertEquals(
         0x12C0.u16(),
-        calc.calculate(Relative(-0x30), State(PC = 0x12F0u))
+        calc.calculate(Relative(-0x30), State(PC = 0x12F0.toPC()))
       )
     }
   }

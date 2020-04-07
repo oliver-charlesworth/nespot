@@ -59,12 +59,12 @@ class ArithmeticTest {
     private fun assertMultiByte(a: Int, b: Int, expected: Int) {
       assertCpuEffects(
         instructions = listOf(
-          enc(LDA[IMMEDIATE], a.lo().toInt()),
-          enc(ADC[IMMEDIATE], b.lo().toInt()),
-          enc(STA[ZERO_PAGE], 0x00),
-          enc(LDA[IMMEDIATE], a.hi().toInt()),
-          enc(ADC[IMMEDIATE], b.hi().toInt()),
-          enc(STA[ZERO_PAGE], 0x01)
+          LDA[IMMEDIATE].enc(a.lo()),
+          ADC[IMMEDIATE].enc(b.lo()),
+          STA[ZERO_PAGE].enc(0x00),
+          LDA[IMMEDIATE].enc(a.hi()),
+          ADC[IMMEDIATE].enc(b.hi()),
+          STA[ZERO_PAGE].enc(0x01)
         ),
         initState = State(),
         expectedStores = mapOf(0x00 to expected.lo().toInt(), 0x01 to expected.hi().toInt())
@@ -150,13 +150,13 @@ class ArithmeticTest {
     private fun assertMultiByte(a: Int, b: Int, expected: Int) {
       assertCpuEffects(
         instructions = listOf(
-          enc(SEC[IMPLIED]),
-          enc(LDA[IMMEDIATE], a.lo().toInt()),
-          enc(SBC[IMMEDIATE], b.lo().toInt()),
-          enc(STA[ZERO_PAGE], 0x00),
-          enc(LDA[IMMEDIATE], a.hi().toInt()),
-          enc(SBC[IMMEDIATE], b.hi().toInt()),
-          enc(STA[ZERO_PAGE], 0x01)
+          SEC[IMPLIED].enc(),
+          LDA[IMMEDIATE].enc(a.lo()),
+          SBC[IMMEDIATE].enc(b.lo()),
+          STA[ZERO_PAGE].enc(0x00),
+          LDA[IMMEDIATE].enc(a.hi()),
+          SBC[IMMEDIATE].enc(b.hi()),
+          STA[ZERO_PAGE].enc(0x01)
         ),
         initState = State(),
         expectedStores = mapOf(0x00 to expected.lo().toInt(), 0x01 to expected.hi().toInt())

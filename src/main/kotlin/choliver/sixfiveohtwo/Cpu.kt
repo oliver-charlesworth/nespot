@@ -30,15 +30,14 @@ class Cpu(
     val decoded = decoder.decode(memory, _state.PC)
     val context = Ctx(
       _state.with(PC = decoded.pc),
-      decoded.op,
-      decoded.operand,
-      addrCalc.calculate(decoded.operand, state),
+      decoded.instruction,
+      addrCalc.calculate(decoded.instruction.operand, state),
       null
     )
     _state = context.execute().state
   }
 
-  private fun <T> Ctx<T>.execute() = when (op) {
+  private fun <T> Ctx<T>.execute() = when (instruction.opcode) {
     ADC -> resolve().add { it }
     SBC -> resolve().add { it.inv() }
 
@@ -130,9 +129,9 @@ class Cpu(
   }
 
   private fun <T> Ctx<T>.resolve() = calc {
-    when (operand) {
+    when (instruction.operand) {
       is Accumulator -> A
-      is Immediate -> operand.literal
+      is Immediate -> instruction.operand.literal
       else -> memory.load(addr)
     }
   }
@@ -161,7 +160,7 @@ class Cpu(
 
   private fun <T> Ctx<T>.storeResult(f: F<T, UInt8>): Ctx<T> {
     val data = f(state, data)
-    return if (operand is Accumulator) {
+    return if (instruction.operand is Accumulator) {
       updateA { data }
     } else {
       store { data }.updateZN { data }
@@ -171,7 +170,7 @@ class Cpu(
   private fun <T> Ctx<T>.store(f: F<T, UInt8>) = store(addr, f)
   private fun <T> Ctx<T>.store(addr: UInt16, f: F<T, UInt8>) = also { memory.store(addr, f(state, data)) }
 
-  private fun <T, R> Ctx<T>.calc(f: F<T, R>) = Ctx(state, op, operand, addr, f(state, data))
+  private fun <T, R> Ctx<T>.calc(f: F<T, R>) = Ctx(state, instruction, addr, f(state, data))
 
   private fun <T> Ctx<T>.updateA(f: F<T, UInt8>) = update(f) { with(A = it, Z = it.isZero(), N = it.isNegative()) }
   private fun <T> Ctx<T>.updateX(f: F<T, UInt8>) = update(f) { with(X = it, Z = it.isZero(), N = it.isNegative()) }
@@ -193,8 +192,7 @@ class Cpu(
 
   private data class Ctx<T>(
     val state: State,
-    val op: Opcode,
-    val operand: Operand,
+    val instruction: Instruction,
     val addr: UInt16,
     val data: T
   )

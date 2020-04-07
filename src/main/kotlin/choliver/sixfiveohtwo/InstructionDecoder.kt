@@ -6,8 +6,7 @@ import choliver.sixfiveohtwo.model.Operand.*
 
 class InstructionDecoder {
   data class Decoded(
-    val op: Opcode,
-    val operand: Operand,
+    val instruction: Instruction,
     val pc: ProgramCounter
   )
 
@@ -37,11 +36,7 @@ class InstructionDecoder {
       INDIRECT_INDEXED -> IndirectIndexed(operand8())
     }
 
-    return Decoded(
-      found.op,
-      mode,
-      pcLocal
-    )
+    return Decoded(Instruction(found.op, mode), pcLocal)
   }
 
   private data class OpAndMode(

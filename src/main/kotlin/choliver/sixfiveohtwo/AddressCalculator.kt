@@ -1,8 +1,9 @@
 package choliver.sixfiveohtwo
 
-import choliver.sixfiveohtwo.AddressMode.*
-import choliver.sixfiveohtwo.AddressMode.IndexSource.X
-import choliver.sixfiveohtwo.AddressMode.IndexSource.Y
+import choliver.sixfiveohtwo.model.*
+import choliver.sixfiveohtwo.model.Operand.*
+import choliver.sixfiveohtwo.model.Operand.IndexSource.X
+import choliver.sixfiveohtwo.model.Operand.IndexSource.Y
 
 // TODO - we should model clock cycles accurately - implement as ucode sequencing in CPU itself
 // TODO - semantics of these are weird for JMP and JSR
@@ -11,29 +12,29 @@ class AddressCalculator(
 ) {
 
   fun calculate(
-    mode: AddressMode,
+    operand: Operand,
     state: State
-  ): UInt16 = when (mode) {
-    is Relative -> (state.PC + mode.offset.u16()).u16()
-    is Absolute -> mode.address
-    is ZeroPage -> mode.address.u16()
+  ): UInt16 = when (operand) {
+    is Relative -> (state.PC + operand.offset.u16()).u16()
+    is Absolute -> operand.address
+    is ZeroPage -> operand.address.u16()
     is Indirect -> combine(
-      lo = memory.load(mode.address),
-      hi = memory.load((mode.address + 1u).u16())
+      lo = memory.load(operand.address),
+      hi = memory.load((operand.address + 1u).u16())
     )
-    is AbsoluteIndexed -> (mode.address + select(mode.source, state)).u16()
-    is ZeroPageIndexed -> (mode.address + select(mode.source, state)).lo().u16()
+    is AbsoluteIndexed -> (operand.address + select(operand.source, state)).u16()
+    is ZeroPageIndexed -> (operand.address + select(operand.source, state)).lo().u16()
     is IndexedIndirect -> {
-      val tmp = (mode.address + state.X)
+      val tmp = (operand.address + state.X)
       combine(
         lo = memory.load(tmp.lo().u16()),
         hi = memory.load((tmp + 1u).lo().u16())
       )
     }
     is IndirectIndexed -> (combine(
-        lo = memory.load(mode.address.u16()),
-        hi = memory.load((mode.address + 1u).lo().u16())
-      ) + state.Y).u16()
+      lo = memory.load(operand.address.u16()),
+      hi = memory.load((operand.address + 1u).lo().u16())
+    ) + state.Y).u16()
     else -> 0.u16()  // Don't care
   }
 

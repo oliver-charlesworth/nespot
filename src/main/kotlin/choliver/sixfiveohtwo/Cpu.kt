@@ -1,8 +1,9 @@
 package choliver.sixfiveohtwo
 
-import choliver.sixfiveohtwo.AddressMode.Accumulator
-import choliver.sixfiveohtwo.AddressMode.Immediate
-import choliver.sixfiveohtwo.Opcode.*
+import choliver.sixfiveohtwo.model.*
+import choliver.sixfiveohtwo.model.Opcode.*
+import choliver.sixfiveohtwo.model.Operand.Accumulator
+import choliver.sixfiveohtwo.model.Operand.Immediate
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
 
@@ -30,45 +31,45 @@ class Cpu(
     val context = Ctx(
       _state.with(PC = decoded.pc),
       decoded.op,
-      decoded.addrMode,
-      addrCalc.calculate(decoded.addrMode, state),
+      decoded.operand,
+      addrCalc.calculate(decoded.operand, state),
       null
     )
     _state = context.execute().state
   }
 
   private fun <T> Ctx<T>.execute() = when (op) {
-    ADC -> operand().add { it }
-    SBC -> operand().add { it.inv() }
+    ADC -> resolve().add { it }
+    SBC -> resolve().add { it.inv() }
 
-    CMP -> operand().compare { it }
+    CMP -> resolve().compare { it }
     CPX -> compare { X }
     CPY -> compare { Y }
 
-    DEC -> operand().storeResult { (it - 1u).u8() }
+    DEC -> resolve().storeResult { (it - 1u).u8() }
     DEX -> updateX { (X - 1u).u8() }
     DEY -> updateY { (Y - 1u).u8() }
 
-    INC -> operand().storeResult { (it + 1u).u8() }
+    INC -> resolve().storeResult { (it + 1u).u8() }
     INX -> updateX { (X + 1u).u8() }
     INY -> updateY { (Y + 1u).u8() }
 
-    ASL -> operand().shift { alu.asl(q = it) }
-    LSR -> operand().shift { alu.lsr(q = it) }
-    ROL -> operand().shift { alu.rol(q = it, c = P.C) }
-    ROR -> operand().shift { alu.ror(q = it, c = P.C) }
+    ASL -> resolve().shift { alu.asl(q = it) }
+    LSR -> resolve().shift { alu.lsr(q = it) }
+    ROL -> resolve().shift { alu.rol(q = it, c = P.C) }
+    ROR -> resolve().shift { alu.ror(q = it, c = P.C) }
 
-    AND -> operand().updateA { A and it }
-    ORA -> operand().updateA { A or it }
-    EOR -> operand().updateA { A xor it }
+    AND -> resolve().updateA { A and it }
+    ORA -> resolve().updateA { A or it }
+    EOR -> resolve().updateA { A xor it }
 
-    BIT -> operand()
+    BIT -> resolve()
       .updateZN { A and it }
       .updateV { !(it and 0x40u).isZero() }
 
-    LDA -> operand().updateA { it }
-    LDX -> operand().updateX { it }
-    LDY -> operand().updateY { it }
+    LDA -> resolve().updateA { it }
+    LDX -> resolve().updateX { it }
+    LDY -> resolve().updateY { it }
 
     STA -> store { A }
     STX -> store { X }
@@ -128,10 +129,10 @@ class Cpu(
     NOP -> this
   }
 
-  private fun <T> Ctx<T>.operand() = calc {
-    when (addrMode) {
+  private fun <T> Ctx<T>.resolve() = calc {
+    when (operand) {
       is Accumulator -> A
-      is Immediate -> addrMode.literal
+      is Immediate -> operand.literal
       else -> memory.load(addr)
     }
   }
@@ -160,7 +161,7 @@ class Cpu(
 
   private fun <T> Ctx<T>.storeResult(f: F<T, UInt8>): Ctx<T> {
     val data = f(state, data)
-    return if (addrMode is Accumulator) {
+    return if (operand is Accumulator) {
       updateA { data }
     } else {
       store { data }.updateZN { data }
@@ -170,7 +171,7 @@ class Cpu(
   private fun <T> Ctx<T>.store(f: F<T, UInt8>) = store(addr, f)
   private fun <T> Ctx<T>.store(addr: UInt16, f: F<T, UInt8>) = also { memory.store(addr, f(state, data)) }
 
-  private fun <T, R> Ctx<T>.calc(f: F<T, R>) = Ctx(state, op, addrMode, addr, f(state, data))
+  private fun <T, R> Ctx<T>.calc(f: F<T, R>) = Ctx(state, op, operand, addr, f(state, data))
 
   private fun <T> Ctx<T>.updateA(f: F<T, UInt8>) = update(f) { with(A = it, Z = it.isZero(), N = it.isNegative()) }
   private fun <T> Ctx<T>.updateX(f: F<T, UInt8>) = update(f) { with(X = it, Z = it.isZero(), N = it.isNegative()) }
@@ -193,7 +194,7 @@ class Cpu(
   private data class Ctx<T>(
     val state: State,
     val op: Opcode,
-    val addrMode: AddressMode,
+    val operand: Operand,
     val addr: UInt16,
     val data: T
   )

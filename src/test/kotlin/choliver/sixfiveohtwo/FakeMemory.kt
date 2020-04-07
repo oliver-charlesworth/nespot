@@ -1,5 +1,6 @@
 package choliver.sixfiveohtwo
 
+import choliver.sixfiveohtwo.model.*
 import org.junit.jupiter.api.Assertions.assertEquals
 
 class FakeMemory(

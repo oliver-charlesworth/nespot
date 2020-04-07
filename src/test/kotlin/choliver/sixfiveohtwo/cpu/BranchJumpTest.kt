@@ -1,7 +1,13 @@
 package choliver.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.*
-import choliver.sixfiveohtwo.Opcode.*
+import choliver.sixfiveohtwo.BASE_USER
+import choliver.sixfiveohtwo.SCARY_ADDR
+import choliver.sixfiveohtwo.assertForAddressModes
+import choliver.sixfiveohtwo.mem16
+import choliver.sixfiveohtwo.model.Opcode
+import choliver.sixfiveohtwo.model.Opcode.*
+import choliver.sixfiveohtwo.model.State
+import choliver.sixfiveohtwo.model.toPC
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
@@ -90,19 +96,19 @@ class BranchJumpTest {
   private fun assertBranch(op: Opcode, state: State.(b: Boolean) -> State) {
     assertForAddressModes(
       op,
-      operand = 0x30,
+      target = 0x30,
       initState = { state(_0) },
       expectedState = { state(_0) }
     )
     assertForAddressModes(
       op,
-      operand = 0x30,
+      target = 0x30,
       initState = { state(_1) },
       expectedState = { state(_1).with(PC = BASE_USER.toPC() + 0x30) }
     )
     assertForAddressModes(
       op,
-      operand = 0xD0,
+      target = 0xD0,
       initState = { state(_1) },
       expectedState = { state(_1).with(PC = BASE_USER.toPC() - 0x30) }
     )

@@ -1,6 +1,6 @@
 @file:Suppress("NOTHING_TO_INLINE")
 
-package choliver.sixfiveohtwo
+package choliver.sixfiveohtwo.model
 
 typealias UInt8 = UByte
 typealias UInt16 = UShort
@@ -8,9 +8,11 @@ typealias Int8 = Byte
 typealias Int16 = Short
 
 inline fun Int.u8(): UInt8 = toUByte()
+inline fun Int8.u8(): UInt8 = toUByte()
 inline fun UInt.u8(): UInt8 = toUByte()
 inline fun UInt16.u8(): UInt8 = toUByte()
 
+inline fun Int.s8(): Int8 = toByte()
 inline fun UInt8.s8(): Int8 = toByte()
 
 inline fun Int.u16(): UInt16 = toUShort()

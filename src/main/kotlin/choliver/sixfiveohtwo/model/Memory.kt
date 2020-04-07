@@ -1,4 +1,4 @@
-package choliver.sixfiveohtwo
+package choliver.sixfiveohtwo.model
 
 interface Memory {
   fun load(address: UInt16): UInt8

@@ -1,6 +1,9 @@
 package choliver.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.*
+import choliver.sixfiveohtwo.BASE_USER
+import choliver.sixfiveohtwo.SCARY_ADDR
+import choliver.sixfiveohtwo.assertForAddressModes
+import choliver.sixfiveohtwo.mem16
 import choliver.sixfiveohtwo.model.Opcode
 import choliver.sixfiveohtwo.model.Opcode.*
 import choliver.sixfiveohtwo.model.State

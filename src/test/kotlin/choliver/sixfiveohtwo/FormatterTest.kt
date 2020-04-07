@@ -1,9 +1,12 @@
 package choliver.sixfiveohtwo
 
-import choliver.sixfiveohtwo.model.*
-import choliver.sixfiveohtwo.model.Operand.*
-import choliver.sixfiveohtwo.model.Operand.IndexSource.*
+import choliver.sixfiveohtwo.model.Instruction
 import choliver.sixfiveohtwo.model.Opcode.*
+import choliver.sixfiveohtwo.model.Operand.*
+import choliver.sixfiveohtwo.model.Operand.IndexSource.X
+import choliver.sixfiveohtwo.model.Operand.IndexSource.Y
+import choliver.sixfiveohtwo.model.u16
+import choliver.sixfiveohtwo.model.u8
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

@@ -1,10 +1,13 @@
 package choliver.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.*
+import choliver.sixfiveohtwo.OPCODES_TO_ENCODINGS
+import choliver.sixfiveohtwo.assertCpuEffects
+import choliver.sixfiveohtwo.assertForAddressModes
 import choliver.sixfiveohtwo.model.*
-import choliver.sixfiveohtwo.model.AddressMode.*
+import choliver.sixfiveohtwo.model.AddressMode.ACCUMULATOR
 import choliver.sixfiveohtwo.model.Opcode.*
-import choliver.sixfiveohtwo.model.Operand.*
+import choliver.sixfiveohtwo.model.Operand.Immediate
+import choliver.sixfiveohtwo.model.Operand.ZeroPage
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Nested

@@ -1,9 +1,9 @@
 package choliver.sixfiveohtwo
 
 import choliver.sixfiveohtwo.model.*
+import choliver.sixfiveohtwo.model.Opcode.*
 import choliver.sixfiveohtwo.model.Operand.Accumulator
 import choliver.sixfiveohtwo.model.Operand.Immediate
-import choliver.sixfiveohtwo.model.Opcode.*
 import choliver.sixfiveohtwo.utils._0
 import choliver.sixfiveohtwo.utils._1
 

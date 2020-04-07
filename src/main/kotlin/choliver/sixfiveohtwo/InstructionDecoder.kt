@@ -50,8 +50,8 @@ class InstructionDecoder {
   )
 
   companion object {
-    private val ENCODINGS = Opcode.values()
-      .flatMap { it.encodings.entries.map { (mode, enc) -> enc to OpAndMode(it, mode) } }
+    private val ENCODINGS = OPCODES_TO_ENCODINGS
+      .flatMap { (op, modes) -> modes.map { (mode, enc) -> enc to OpAndMode(op, mode) } }
       .toMap()
   }
 }

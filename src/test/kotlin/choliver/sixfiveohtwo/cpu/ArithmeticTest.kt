@@ -444,7 +444,7 @@ class ArithmeticTest {
 
     assertForAddressModes(
       op,
-      modes = op.encodings.keys - ACCUMULATOR,
+      modes = OPCODES_TO_ENCODINGS[op]!!.keys - ACCUMULATOR,
       target = target,
       initState = initState,
       expectedState = expectedState,

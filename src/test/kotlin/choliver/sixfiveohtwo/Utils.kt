@@ -95,7 +95,7 @@ fun mem16(addr: Int, data: Int) = mapOf(addr to data.loI(), (addr + 1) to data.h
 
 fun assertForAddressModes(
   op: Opcode,
-  modes: Set<AddressMode> = op.encodings.keys,
+  modes: Set<AddressMode> = OPCODES_TO_ENCODINGS[op]?.keys ?: error("Unhandled opcode ${op.name}"),
   target: Int = 0x00,
   initState: State.() -> State = { this },
   initStores: Map<Int, Int> = emptyMap(),
@@ -153,7 +153,7 @@ fun assertCpuEffects(
 }
 
 private fun Instruction.encode(): List<UInt8> {
-  fun opEnc(mode: AddressMode) = opcode.encodings[mode] ?: error("Unsupported mode ${mode}")
+  fun opEnc(mode: AddressMode) = OPCODES_TO_ENCODINGS[opcode]!![mode] ?: error("Unsupported mode ${mode}")
   return when (val o = operand) {
     is Accumulator -> listOf(opEnc(ACCUMULATOR))
     is Implied -> listOf(opEnc(IMPLIED))

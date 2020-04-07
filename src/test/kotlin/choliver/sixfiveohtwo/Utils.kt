@@ -31,8 +31,8 @@ const val BASE_STACK = 0x0100
 const val BASE_RAM = 0x0200
 const val BASE_ROM = 0x8000
 
-const val PRELUDE_PC = BASE_ROM
-const val INIT_PC = BASE_ROM + 0x1000
+const val BASE_TRAMPOLINE = BASE_ROM
+const val BASE_USER = BASE_ROM + 0x1000
 /** Chosen to straddle a page boundary. */
 const val SCARY_ADDR = BASE_RAM + 0x10FF
 
@@ -124,11 +124,11 @@ fun assertForAddressModes(
 
       assertCpuEffects(
         instructions = listOf(instruction),
-        initState = case.state(proto).with(PC = INIT_PC.u16()).initState(),
+        initState = case.state(proto).with(PC = BASE_USER.toPC()).initState(),
         initStores = case.mem +             // Indirection / pointer
           (case.operandAddr to operand) +   // Operand (user-defined value, case-defined location)
           initStores,                       // User-defined
-        expectedState = case.state(proto).with(PC = (INIT_PC + instruction.size).u16()).expectedState(),
+        expectedState = case.state(proto).with(PC = BASE_USER.toPC() + instruction.size).expectedState(),
         expectedStores = expectedStores(case.operandAddr),
         name = mode.name
       )
@@ -144,20 +144,20 @@ fun assertCpuEffects(
   expectedStores: Map<Int, Int> = emptyMap(),
   name: String = ""
 ) {
-  // Set up memory so PC trampolines from reset vector to prelude to user instructions
-  val prelude = preludeFor(initState)
+  // Set up memory so PC jumps from reset vector to trampoline to user instructions
+  val trampoline = trampolineFor(initState)
   val memory = FakeMemory(
     mapOf(
-      VECTOR_RESET.toInt() to PRELUDE_PC.lo().toInt(),
-      (VECTOR_RESET + 1u).toInt() to PRELUDE_PC.hi().toInt()
+      VECTOR_RESET.toInt() to BASE_TRAMPOLINE.lo().toInt(),
+      (VECTOR_RESET + 1u).toInt() to BASE_TRAMPOLINE.hi().toInt()
     ) +
-      prelude.memoryMap(PRELUDE_PC) +
-      instructions.memoryMap(INIT_PC) +
+      trampoline.memoryMap(BASE_TRAMPOLINE) +
+      instructions.memoryMap(BASE_USER) +
       initStores
   )
   val cpu = Cpu(memory)
 
-  repeat(prelude.size) { cpu.next() }
+  repeat(trampoline.size) { cpu.next() }
   memory.trackStores = true
   repeat(instructions.size) { cpu.next() }
 
@@ -167,8 +167,8 @@ fun assertCpuEffects(
   memory.assertStores(expectedStores, "Unexpected store for [${name}]")
 }
 
-/** Prelude instructions that set CPU state (but with hardcoded PC). */
-private fun preludeFor(state: State) = listOf(
+/** Instructions that set CPU state and trampolines to the user code. */
+private fun trampolineFor(state: State) = listOf(
   enc(LDX[IMMEDIATE], state.S.toInt()),
   enc(TXS[IMPLIED]),
   enc(LDA[IMMEDIATE], state.P.u8().toInt()),
@@ -177,7 +177,7 @@ private fun preludeFor(state: State) = listOf(
   enc(LDX[IMMEDIATE], state.X.toInt()),
   enc(LDY[IMMEDIATE], state.Y.toInt()),
   enc(PLP[IMPLIED]),
-  enc(JMP[ABSOLUTE], INIT_PC.lo().toInt(), INIT_PC.hi().toInt())
+  enc(JMP[ABSOLUTE], BASE_USER.lo().toInt(), BASE_USER.hi().toInt())
 )
 
 fun List<List<UInt8>>.memoryMap(base: Int) = flatten()

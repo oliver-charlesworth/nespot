@@ -1,7 +1,7 @@
 package choliver.sixfiveohtwo
 
 data class State(
-  val PC: UInt16 = 0x00u,
+  val PC: ProgramCounter = ProgramCounter(),
   val A: UInt8 = 0x00u,
   val X: UInt8 = 0x00u,
   val Y: UInt8 = 0x00u,
@@ -9,7 +9,7 @@ data class State(
   val P: Flags = Flags()
 ) {
   override fun toString() = "(PC=0x%04X, S=0x%02X, A=0x%02X, X=0x%02X, Y=0x%02X, P=%s)".format(
-    PC.toShort(),
+    PC.toString(),
     S.toByte(),
     A.toByte(),
     X.toByte(),
@@ -19,7 +19,7 @@ data class State(
 
   /** Like [copy], but allows us to also set individual status flags. */
   fun with(
-    PC: UInt16 = this.PC,
+    PC: ProgramCounter = this.PC,
     A: UInt8 = this.A,
     X: UInt8 = this.X,
     Y: UInt8 = this.Y,
@@ -39,6 +39,26 @@ data class State(
     P = Flags(N = N, V = V, D = D, I = I, Z = Z, C = C)
   )
 }
+
+data class ProgramCounter(
+  val L: UInt8 = 0x00u,
+  val H: UInt8 = 0x00u
+) {
+  override fun toString() = "0x%02X%02X".format(H.toByte(), L.toByte())
+
+  operator fun plus(rhs: Int) = this + rhs.u16()
+  operator fun plus(rhs: UInt16) = (u16() + rhs).u16().toPC()
+
+  operator fun minus(rhs: Int) = this - rhs.u16()
+  operator fun minus(rhs: UInt16) = (u16() - rhs).u16().toPC()
+
+  operator fun inc() = this + 1u
+
+  fun u16(): UInt16 = (L.u16() + H.u16() * 256u).u16()
+}
+
+fun Int.toPC() = u16().toPC()
+fun UInt16.toPC() = ProgramCounter(L = lo(), H = hi())
 
 data class Flags(
   val N: Boolean = false,

@@ -12,7 +12,7 @@ class BranchJumpTest {
   fun jmp() {
     assertForAddressModes(
       JMP,
-      expectedState = { with(PC = SCARY_ADDR.u16()) }
+      expectedState = { with(PC = SCARY_ADDR.toPC()) }
     )
   }
 
@@ -21,8 +21,8 @@ class BranchJumpTest {
     assertForAddressModes(
       JSR,
       initState = { with(S = 0x30u) },
-      expectedState = { with(PC = SCARY_ADDR.u16(), S = 0x2Eu) },
-      expectedStores = { mem16(0x012F, INIT_PC + 2) } // JSR stores *last* byte of instruction
+      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x2Eu) },
+      expectedStores = { mem16(0x012F, BASE_USER + 2) } // JSR stores *last* byte of instruction
     )
   }
 
@@ -32,7 +32,7 @@ class BranchJumpTest {
       RTS,
       initState = { with(S = 0x2Eu) },
       initStores = mem16(0x012F, SCARY_ADDR - 1), // JSR stores *last* byte of instruction
-      expectedState = { with(PC = SCARY_ADDR.u16(), S = 0x30u) }
+      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x30u) }
     )
   }
 
@@ -43,7 +43,7 @@ class BranchJumpTest {
       initState = { with(S = 0x2Du) },
       initStores = mapOf(0x12E to 0xCF) +
         mem16(0x012F, SCARY_ADDR),
-      expectedState = { with(PC = SCARY_ADDR.u16(), S = 0x30u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) }
+      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x30u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) }
     )
   }
 
@@ -98,13 +98,13 @@ class BranchJumpTest {
       op,
       operand = 0x30,
       initState = { state(_1) },
-      expectedState = { state(_1).with(PC = (INIT_PC + 0x30).u16()) }
+      expectedState = { state(_1).with(PC = BASE_USER.toPC() + 0x30) }
     )
     assertForAddressModes(
       op,
       operand = 0xD0,
       initState = { state(_1) },
-      expectedState = { state(_1).with(PC = (INIT_PC - 0x30).u16()) }
+      expectedState = { state(_1).with(PC = BASE_USER.toPC() - 0x30) }
     )
   }
 }

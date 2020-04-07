@@ -7,12 +7,12 @@ class InstructionDecoder {
   data class Decoded(
     val op: Opcode,
     val addrMode: AddressMode,
-    val pc: UInt16
+    val pc: ProgramCounter
   )
 
-  fun decode(memory: Memory, pc: UInt16): Decoded {
+  fun decode(memory: Memory, pc: ProgramCounter): Decoded {
     var pc = pc
-    fun load() = memory.load(pc++)
+    fun load() = memory.load((pc++).u16())
 
     // TODO - error handling
     val found = ENCODINGS[load()]!!

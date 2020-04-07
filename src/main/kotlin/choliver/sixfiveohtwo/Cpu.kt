@@ -13,9 +13,9 @@ class Cpu(
 ) {
   // Should sequence this via a state machine triggered on reset
   private var _state: State = State(
-    PC = combine(
-      lo = memory.load(VECTOR_RESET),
-      hi = memory.load((VECTOR_RESET + 1u).u16())
+    PC = ProgramCounter(
+      L = memory.load(VECTOR_RESET),
+      H = memory.load((VECTOR_RESET + 1u).u16())
     ),
     P = Flags(I = _1)
   )
@@ -84,14 +84,15 @@ class Cpu(
       .updatePCH { addr.hi() }
 
     JSR -> this
-      .push { (PC - 1u).hi() }
-      .push { (PC - 1u).lo() }
+      .push { (PC - 1u).H }   // PC already pointing at next instruction
+      .push { (PC - 1u).L }
       .updatePCL { addr.lo() }
       .updatePCH { addr.hi() }
 
     RTS -> this
-      .pop().updatePCL { (it + 1u).u8() } // TODO - what about carry?
+      .pop().updatePCL { it }
       .pop().updatePCH { it }
+      .updatePC { PC + 1 }
 
     RTI -> this
       .pop().updateP { it }
@@ -151,7 +152,7 @@ class Cpu(
     .storeResult { it.q }
     .updateC { it.c }
 
-  private fun <T> Ctx<T>.branch(f: F<T, Boolean>) = updatePC { if (f(state, data)) addr else PC }
+  private fun <T> Ctx<T>.branch(f: F<T, Boolean>) = updatePC { if (f(state, data)) addr.toPC() else PC }
 
   private fun <T> Ctx<T>.push(f: F<T, UInt8>) = store(stackAddr(state.S), f).updateS { (S - 1u).u8() }
 
@@ -176,9 +177,9 @@ class Cpu(
   private fun <T> Ctx<T>.updateY(f: F<T, UInt8>) = update(f) { with(Y = it, Z = it.isZero(), N = it.isNegative()) }
   private fun <T> Ctx<T>.updateS(f: F<T, UInt8>) = update(f) { with(S = it) }
   private fun <T> Ctx<T>.updateP(f: F<T, UInt8>) = update(f) { copy(P = it.toFlags()) }
-  private fun <T> Ctx<T>.updatePC(f: F<T, UInt16>) = update(f) { with(PC = it) }
-  private fun <T> Ctx<T>.updatePCL(f: F<T, UInt8>) = update(f) { with(PC = it.u16()) }  // TODO - proper
-  private fun <T> Ctx<T>.updatePCH(f: F<T, UInt8>) = update(f) { with(PC = combine(lo = PC.u8(), hi = it)) }  // TODO - proper
+  private fun <T> Ctx<T>.updatePC(f: F<T, ProgramCounter>) = update(f) { with(PC = it) }
+  private fun <T> Ctx<T>.updatePCL(f: F<T, UInt8>) = update(f) { with(PC = PC.copy(L = it)) }
+  private fun <T> Ctx<T>.updatePCH(f: F<T, UInt8>) = update(f) { with(PC = PC.copy(H = it)) }
   private fun <T> Ctx<T>.updateC(f: F<T, Boolean>) = update(f) { with(C = it) }
   private fun <T> Ctx<T>.updateD(f: F<T, Boolean>) = update(f) { with(D = it) }
   private fun <T> Ctx<T>.updateI(f: F<T, Boolean>) = update(f) { with(I = it) }

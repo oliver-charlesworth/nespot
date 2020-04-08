@@ -24,7 +24,7 @@ class StackTest {
       PHP,
       initState = { with(S = 0x30u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
       expectedState = { with(S = 0x2Fu, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
-      expectedStores = { mapOf(0x0130 to 0xCF) }
+      expectedStores = { mapOf(0x0130 to 0xDF) }  // Note B is also set on stack
     )
   }
 

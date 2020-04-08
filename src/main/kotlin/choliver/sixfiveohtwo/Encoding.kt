@@ -43,7 +43,7 @@ val OPCODES_TO_ENCODINGS: Map<Opcode, Map<AddressMode, UInt8>> = mapOf(
   BMI to map8(RELATIVE to 0x30),
   BNE to map8(RELATIVE to 0xD0),
   BPL to map8(RELATIVE to 0x10),
-  BRK to map8(IMPLIED to 0x00),  // TODO - test
+  BRK to map8(IMPLIED to 0x00),
   BVC to map8(RELATIVE to 0x50),
   BVS to map8(RELATIVE to 0x70),
   CLC to map8(IMPLIED to 0x18),

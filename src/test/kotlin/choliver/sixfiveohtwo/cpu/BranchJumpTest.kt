@@ -1,9 +1,6 @@
 package choliver.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.BASE_USER
-import choliver.sixfiveohtwo.SCARY_ADDR
-import choliver.sixfiveohtwo.assertForAddressModes
-import choliver.sixfiveohtwo.mem16
+import choliver.sixfiveohtwo.*
 import choliver.sixfiveohtwo.model.Opcode
 import choliver.sixfiveohtwo.model.Opcode.*
 import choliver.sixfiveohtwo.model.State
@@ -29,6 +26,20 @@ class BranchJumpTest {
       initState = { with(S = 0x30u) },
       expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x2Eu) },
       expectedStores = { mem16(0x012F, BASE_USER + 2) } // JSR stores *last* byte of instruction
+    )
+  }
+
+  @Test
+  fun brk() {
+    assertForAddressModes(
+      BRK,
+      initState = { with(S = 0x30u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
+      initStores = mem16(Cpu.VECTOR_IRQ.toInt(), SCARY_ADDR),
+      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x2Du, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
+      expectedStores = {
+        mem16(0x012F, BASE_USER + 2) + // BRK stores PC+2
+        mapOf(0x12E to 0xDF)  // Note B is also set on stack
+      }
     )
   }
 

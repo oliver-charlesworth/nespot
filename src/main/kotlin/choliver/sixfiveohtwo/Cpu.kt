@@ -116,7 +116,8 @@ class Cpu(
       .push { (PC + 1u).H }     // Should be PC+2 (because BRK is weird), but we already advanced PC
       .push { (PC + 1u).L }
       .push { P.u8() or 0x10u } // Set B flag on stack
-    // TODO Load (VECTOR_IRQ) -> PC
+      .load { VECTOR_IRQ }.updatePCL { it }
+      .load { (VECTOR_IRQ + 1u).u16() }.updatePCH { it }
 
     BPL -> branch { !P.N }
     BMI -> branch { P.N }
@@ -145,12 +146,10 @@ class Cpu(
     NOP -> this
   }
 
-  private fun <T> Ctx<T>.resolve() = calc {
-    when (instruction.operand) {
-      is Accumulator -> A
-      is Immediate -> instruction.operand.literal
-      else -> memory.load(addr)
-    }
+  private fun <T> Ctx<T>.resolve() = when (instruction.operand) {
+    is Accumulator -> calc { A }
+    is Immediate -> calc { instruction.operand.literal }
+    else -> load { addr }
   }
 
   private fun Ctx<UInt8>.add(f: F<UInt8, UInt8>) = this
@@ -173,7 +172,9 @@ class Cpu(
 
   private fun <T> Ctx<T>.push(f: F<T, UInt8>) = store(stackAddr(state.S), f).updateS { (S - 1u).u8() }
 
-  private fun <T> Ctx<T>.pop() = updateS { (S + 1u).u8() }.calc { memory.load(stackAddr(S)) }
+  private fun <T> Ctx<T>.pop() = updateS { (S + 1u).u8() }.load { stackAddr(S) }
+
+  private fun <T> Ctx<T>.load(f: F<T, UInt16>) = calc { memory.load(f(it)) }
 
   private fun <T> Ctx<T>.storeResult(f: F<T, UInt8>): Ctx<T> {
     val data = f(state, data)

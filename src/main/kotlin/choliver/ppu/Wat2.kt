@@ -1,7 +1,6 @@
 package choliver.ppu
 
 import javafx.application.Application
-import javafx.geometry.Rectangle2D
 import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.image.ImageView
@@ -19,8 +18,9 @@ class Wat2 : Application() {
   }
 
   override fun start(primaryStage: Stage) {
-    primaryStage.title = "PixelWriter Test"
+    primaryStage.title = "Wat"
     primaryStage.scene = Scene(drawImageData())
+    primaryStage.isResizable = false
     primaryStage.show()
   }
 
@@ -32,14 +32,33 @@ class Wat2 : Application() {
     val img = WritableImage(pixelBuffer)
 
     for (y in 0 until CANVAS_HEIGHT) {
-      for (x in 0 until CANVAS_WIDTH) {
-        val r = y * 255 / CANVAS_HEIGHT
-        val g = x * 255 / CANVAS_WIDTH
 
-        data.put(0.toByte())
-        data.put(g.toByte())
-        data.put(r.toByte())
-        data.put(255.toByte())
+      // TODO (33 times)
+      // - Read nametable entry
+      // - Read attribute table entry
+      // - Read low/high bytes from pattern table
+      // - Combine into palette indices
+      // - Read color
+
+
+      // TODO - account for fine offset (requires one extra tile)
+      for (xT in 0 until CANVAS_WIDTH / TILE_SIZE) {
+        // - Read nametable entry
+        // - Read attribute table entry
+        // - Read low/high bytes from pattern table
+
+        for (xP in 0 until 8) {
+          // - Combine into palette indices
+          // - Read color
+        }
+      }
+
+
+      for (x in 0 until CANVAS_WIDTH) {
+        val idx = (x / (CANVAS_WIDTH / 16)) + (y / (CANVAS_HEIGHT / 4)) * 16
+        val color = COLORS[idx]
+
+        data.putInt(color)
       }
     }
     data.position(0)
@@ -47,6 +66,8 @@ class Wat2 : Application() {
 
     pixelBuffer.updateBuffer { null }
     val imageView = ImageView(img)
+    imageView.fitWidth = CANVAS_WIDTH * 2.0
+    imageView.fitHeight = CANVAS_HEIGHT * 2.0
 
     root.children.add(imageView)
     return root

@@ -1,12 +1,12 @@
-package choliver.sixfiveohtwo.cpu
+package choliver.nes.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.*
-import choliver.sixfiveohtwo.model.Opcode
-import choliver.sixfiveohtwo.model.Opcode.*
-import choliver.sixfiveohtwo.model.State
-import choliver.sixfiveohtwo.model.toPC
-import choliver.sixfiveohtwo.utils._0
-import choliver.sixfiveohtwo.utils._1
+import choliver.nes.sixfiveohtwo.*
+import choliver.nes.sixfiveohtwo.model.Opcode
+import choliver.nes.sixfiveohtwo.model.Opcode.*
+import choliver.nes.sixfiveohtwo.model.State
+import choliver.nes.sixfiveohtwo.model.toPC
+import choliver.nes.sixfiveohtwo.utils._0
+import choliver.nes.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
 
 class BranchJumpTest {

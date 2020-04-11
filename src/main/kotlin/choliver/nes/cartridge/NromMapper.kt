@@ -3,10 +3,10 @@ package choliver.nes.cartridge
 import choliver.nes.cartridge.ChrMemory.ChrLoadResult
 import choliver.nes.cartridge.ChrMemory.ChrStoreResult
 import choliver.nes.cartridge.MapperConfig.Mirroring.*
-import choliver.sixfiveohtwo.model.UInt16
-import choliver.sixfiveohtwo.model.UInt8
-import choliver.sixfiveohtwo.model.u16
-import choliver.sixfiveohtwo.model.u8
+import choliver.nes.sixfiveohtwo.model.UInt16
+import choliver.nes.sixfiveohtwo.model.UInt8
+import choliver.nes.sixfiveohtwo.model.u16
+import choliver.nes.sixfiveohtwo.model.u8
 import mu.KotlinLogging
 
 // https://wiki.nesdev.com/w/index.php/NROM

@@ -1,11 +1,11 @@
-package choliver.sixfiveohtwo
+package choliver.nes.sixfiveohtwo
 
-import choliver.sixfiveohtwo.model.*
-import choliver.sixfiveohtwo.model.Opcode.*
-import choliver.sixfiveohtwo.model.Operand.Accumulator
-import choliver.sixfiveohtwo.model.Operand.Immediate
-import choliver.sixfiveohtwo.utils._0
-import choliver.sixfiveohtwo.utils._1
+import choliver.nes.sixfiveohtwo.model.*
+import choliver.nes.sixfiveohtwo.model.Opcode.*
+import choliver.nes.sixfiveohtwo.model.Operand.Accumulator
+import choliver.nes.sixfiveohtwo.model.Operand.Immediate
+import choliver.nes.sixfiveohtwo.utils._0
+import choliver.nes.sixfiveohtwo.utils._1
 
 typealias F<T, R> = State.(T) -> R
 

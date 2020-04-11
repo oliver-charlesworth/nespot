@@ -1,8 +1,8 @@
-package choliver.sixfiveohtwo
+package choliver.nes.sixfiveohtwo
 
-import choliver.sixfiveohtwo.model.*
-import choliver.sixfiveohtwo.model.AddressMode.*
-import choliver.sixfiveohtwo.model.Operand.*
+import choliver.nes.sixfiveohtwo.model.*
+import choliver.nes.sixfiveohtwo.model.AddressMode.*
+import choliver.nes.sixfiveohtwo.model.Operand.*
 
 class InstructionDecoder {
   data class Decoded(

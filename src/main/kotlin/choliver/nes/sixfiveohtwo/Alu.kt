@@ -1,9 +1,9 @@
-package choliver.sixfiveohtwo
+package choliver.nes.sixfiveohtwo
 
-import choliver.sixfiveohtwo.model.UInt8
-import choliver.sixfiveohtwo.model.isNegative
-import choliver.sixfiveohtwo.model.isZero
-import choliver.sixfiveohtwo.model.u8
+import choliver.nes.sixfiveohtwo.model.UInt8
+import choliver.nes.sixfiveohtwo.model.isNegative
+import choliver.nes.sixfiveohtwo.model.isZero
+import choliver.nes.sixfiveohtwo.model.u8
 
 class Alu {
 

@@ -1,12 +1,12 @@
-package choliver.sixfiveohtwo
+package choliver.nes.sixfiveohtwo
 
-import choliver.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
-import choliver.sixfiveohtwo.model.*
-import choliver.sixfiveohtwo.model.AddressMode.*
-import choliver.sixfiveohtwo.model.Opcode.*
-import choliver.sixfiveohtwo.model.Operand.*
-import choliver.sixfiveohtwo.model.Operand.IndexSource.X
-import choliver.sixfiveohtwo.model.Operand.IndexSource.Y
+import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
+import choliver.nes.sixfiveohtwo.model.*
+import choliver.nes.sixfiveohtwo.model.AddressMode.*
+import choliver.nes.sixfiveohtwo.model.Opcode.*
+import choliver.nes.sixfiveohtwo.model.Operand.*
+import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
+import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
 import org.junit.jupiter.api.Assertions.assertEquals
 
 private data class Case(

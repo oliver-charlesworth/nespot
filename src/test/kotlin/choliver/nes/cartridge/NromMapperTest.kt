@@ -1,11 +1,11 @@
 package choliver.nes.cartridge
 
-import choliver.nes.cartridge.Mirroring.HORIZONTAL
-import choliver.nes.cartridge.Mirroring.VERTICAL
 import choliver.nes.cartridge.ChrMemory.ChrLoadResult
 import choliver.nes.cartridge.ChrMemory.ChrStoreResult
-import choliver.sixfiveohtwo.model.u16
-import choliver.sixfiveohtwo.model.u8
+import choliver.nes.cartridge.MapperConfig.Mirroring
+import choliver.nes.cartridge.MapperConfig.Mirroring.*
+import choliver.nes.sixfiveohtwo.model.u16
+import choliver.nes.sixfiveohtwo.model.u8
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test

@@ -1,7 +1,7 @@
 package choliver.nes.cartridge
 
-import choliver.sixfiveohtwo.model.UInt16
-import choliver.sixfiveohtwo.model.UInt8
+import choliver.nes.sixfiveohtwo.model.UInt16
+import choliver.nes.sixfiveohtwo.model.UInt8
 
 interface ChrMemory {
   fun load(addr: UInt16): ChrLoadResult

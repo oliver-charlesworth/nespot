@@ -1,9 +1,9 @@
-package choliver.sixfiveohtwo
+package choliver.nes.sixfiveohtwo
 
-import choliver.sixfiveohtwo.model.*
-import choliver.sixfiveohtwo.model.Operand.*
-import choliver.sixfiveohtwo.model.Operand.IndexSource.X
-import choliver.sixfiveohtwo.model.Operand.IndexSource.Y
+import choliver.nes.sixfiveohtwo.model.*
+import choliver.nes.sixfiveohtwo.model.Operand.*
+import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
+import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
 
 // TODO - we should model clock cycles accurately - implement as ucode sequencing in CPU itself
 // TODO - semantics of these are weird for JMP and JSR

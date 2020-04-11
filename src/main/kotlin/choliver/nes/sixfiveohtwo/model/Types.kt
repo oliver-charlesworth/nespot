@@ -1,6 +1,6 @@
 @file:Suppress("NOTHING_TO_INLINE")
 
-package choliver.sixfiveohtwo.model
+package choliver.nes.sixfiveohtwo.model
 
 typealias UInt8 = UByte
 typealias UInt16 = UShort

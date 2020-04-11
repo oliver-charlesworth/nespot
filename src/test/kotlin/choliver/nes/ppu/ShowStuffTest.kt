@@ -2,7 +2,7 @@ package choliver.nes.ppu
 
 import choliver.nes.cartridge.Cartridge
 import choliver.nes.cartridge.ChrMemory.ChrLoadResult.Data
-import choliver.sixfiveohtwo.model.u16
+import choliver.nes.sixfiveohtwo.model.u16
 import javafx.application.Application.launch
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test

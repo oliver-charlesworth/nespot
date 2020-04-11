@@ -1,15 +1,15 @@
-package choliver.sixfiveohtwo.cpu
+package choliver.nes.sixfiveohtwo.cpu
 
-import choliver.sixfiveohtwo.OPCODES_TO_ENCODINGS
-import choliver.sixfiveohtwo.assertCpuEffects
-import choliver.sixfiveohtwo.assertForAddressModes
-import choliver.sixfiveohtwo.model.*
-import choliver.sixfiveohtwo.model.AddressMode.ACCUMULATOR
-import choliver.sixfiveohtwo.model.Opcode.*
-import choliver.sixfiveohtwo.model.Operand.Immediate
-import choliver.sixfiveohtwo.model.Operand.ZeroPage
-import choliver.sixfiveohtwo.utils._0
-import choliver.sixfiveohtwo.utils._1
+import choliver.nes.sixfiveohtwo.OPCODES_TO_ENCODINGS
+import choliver.nes.sixfiveohtwo.assertCpuEffects
+import choliver.nes.sixfiveohtwo.assertForAddressModes
+import choliver.nes.sixfiveohtwo.model.*
+import choliver.nes.sixfiveohtwo.model.AddressMode.ACCUMULATOR
+import choliver.nes.sixfiveohtwo.model.Opcode.*
+import choliver.nes.sixfiveohtwo.model.Operand.Immediate
+import choliver.nes.sixfiveohtwo.model.Operand.ZeroPage
+import choliver.nes.sixfiveohtwo.utils._0
+import choliver.nes.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 

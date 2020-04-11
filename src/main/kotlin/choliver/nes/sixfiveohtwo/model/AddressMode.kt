@@ -1,4 +1,4 @@
-package choliver.sixfiveohtwo.model
+package choliver.nes.sixfiveohtwo.model
 
 enum class AddressMode {
   ACCUMULATOR,

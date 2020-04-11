@@ -1,7 +1,7 @@
-package choliver.sixfiveohtwo
+package choliver.nes.sixfiveohtwo
 
-import choliver.sixfiveohtwo.model.Instruction
-import choliver.sixfiveohtwo.model.Operand
+import choliver.nes.sixfiveohtwo.model.Instruction
+import choliver.nes.sixfiveohtwo.model.Operand
 
 fun Instruction.format() = "${opcode.name}${format(operand)}"
 

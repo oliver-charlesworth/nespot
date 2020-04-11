@@ -1,4 +1,4 @@
-package choliver.sixfiveohtwo.model
+package choliver.nes.sixfiveohtwo.model
 
 interface Memory {
   fun load(addr: UInt16): UInt8

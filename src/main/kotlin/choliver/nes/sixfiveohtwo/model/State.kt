@@ -1,5 +1,7 @@
 package choliver.nes.sixfiveohtwo.model
 
+import choliver.nes.*
+
 data class State(
   val PC: ProgramCounter = ProgramCounter(),
   val A: UInt8 = 0x00u,

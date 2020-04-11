@@ -4,7 +4,7 @@ import choliver.nes.sixfiveohtwo.assertForAddressModes
 import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.State
-import choliver.nes.sixfiveohtwo.model.UInt8
+import choliver.nes.UInt8
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test

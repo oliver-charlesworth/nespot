@@ -1,5 +1,6 @@
 package choliver.nes.sixfiveohtwo
 
+import choliver.nes.*
 import choliver.nes.sixfiveohtwo.model.*
 import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.Operand.Accumulator

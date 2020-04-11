@@ -1,5 +1,8 @@
 package choliver.nes.sixfiveohtwo
 
+import choliver.nes.Memory
+import choliver.nes.combine
+import choliver.nes.s8
 import choliver.nes.sixfiveohtwo.model.*
 import choliver.nes.sixfiveohtwo.model.AddressMode.*
 import choliver.nes.sixfiveohtwo.model.Operand.*

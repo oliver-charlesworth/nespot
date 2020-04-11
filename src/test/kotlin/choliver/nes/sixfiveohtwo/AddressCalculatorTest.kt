@@ -5,7 +5,7 @@ import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
 import choliver.nes.sixfiveohtwo.model.State
 import choliver.nes.sixfiveohtwo.model.toPC
-import choliver.nes.sixfiveohtwo.model.u16
+import choliver.nes.u16
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

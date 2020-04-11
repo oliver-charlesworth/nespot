@@ -5,8 +5,8 @@ import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
-import choliver.nes.sixfiveohtwo.model.u16
-import choliver.nes.sixfiveohtwo.model.u8
+import choliver.nes.u16
+import choliver.nes.u8
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

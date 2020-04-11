@@ -1,5 +1,9 @@
 package choliver.nes.sixfiveohtwo.model
 
+import choliver.nes.Int8
+import choliver.nes.UInt16
+import choliver.nes.UInt8
+
 sealed class Operand {
   enum class IndexSource { X, Y }
 

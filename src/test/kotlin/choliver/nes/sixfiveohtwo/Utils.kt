@@ -1,5 +1,6 @@
 package choliver.nes.sixfiveohtwo
 
+import choliver.nes.*
 import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
 import choliver.nes.sixfiveohtwo.model.*
 import choliver.nes.sixfiveohtwo.model.AddressMode.*

@@ -1,5 +1,7 @@
 package choliver.nes.sixfiveohtwo.cpu
 
+import choliver.nes.hi
+import choliver.nes.lo
 import choliver.nes.sixfiveohtwo.OPCODES_TO_ENCODINGS
 import choliver.nes.sixfiveohtwo.assertCpuEffects
 import choliver.nes.sixfiveohtwo.assertForAddressModes
@@ -10,6 +12,7 @@ import choliver.nes.sixfiveohtwo.model.Operand.Immediate
 import choliver.nes.sixfiveohtwo.model.Operand.ZeroPage
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
+import choliver.nes.u8
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 

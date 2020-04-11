@@ -4,8 +4,8 @@ import choliver.nes.cartridge.ChrMemory.ChrLoadResult
 import choliver.nes.cartridge.ChrMemory.ChrStoreResult
 import choliver.nes.cartridge.MapperConfig.Mirroring
 import choliver.nes.cartridge.MapperConfig.Mirroring.*
-import choliver.nes.sixfiveohtwo.model.u16
-import choliver.nes.sixfiveohtwo.model.u8
+import choliver.nes.u16
+import choliver.nes.u8
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test

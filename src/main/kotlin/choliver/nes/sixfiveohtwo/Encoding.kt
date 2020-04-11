@@ -4,8 +4,8 @@ import choliver.nes.sixfiveohtwo.model.AddressMode
 import choliver.nes.sixfiveohtwo.model.AddressMode.*
 import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.Opcode.*
-import choliver.nes.sixfiveohtwo.model.UInt8
-import choliver.nes.sixfiveohtwo.model.u8
+import choliver.nes.UInt8
+import choliver.nes.u8
 
 private val ENCS_STANDARD = mapOf(
   INDEXED_INDIRECT to 0x01,

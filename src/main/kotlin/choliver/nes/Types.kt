@@ -36,3 +36,7 @@ inline fun UInt16.lo() = u8()
 inline fun UInt16.hi() = (this / 256u).u8()
 
 fun combine(lo: UInt8, hi: UInt8): UInt16 = (lo.u16() or (hi * 256u).u16())
+
+fun Byte.isBitSet(i: Int) = (toInt() and (1 shl i)) != 0
+fun UInt8.isBitSet(i: Int) = (toInt() and (1 shl i)) != 0
+

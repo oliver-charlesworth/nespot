@@ -1,6 +1,7 @@
 package choliver.nes.cartridge
 
 import choliver.nes.cartridge.MapperConfig.Mirroring.*
+import choliver.nes.isBitSet
 
 // https://wiki.nesdev.com/w/index.php/INES
 class Cartridge(romData: ByteArray) {
@@ -39,8 +40,6 @@ class Cartridge(romData: ByteArray) {
       else -> throw UnsupportedRomException("Mapper #${mapper}")
     }
   }
-
-  private fun Byte.isBitSet(i: Int) = (toInt() and (1 shl i)) != 0
 
   class UnsupportedRomException(message: String) : RuntimeException(message)
 }

@@ -25,8 +25,8 @@ class Cartridge(romData: ByteArray) {
   )
 
   private val mapper = createMapper(romData)
-  private val prg = mapper.prg  // Nothing special - just log bus conflicts and all-null
-  private val chr = mapper.chr  // Return data, VRAM addr or null
+  val prg = mapper.prg  // Nothing special - just log bus conflicts and all-null
+  val chr = mapper.chr  // Return data, VRAM addr or null
 
   init {
     val magicNumber = romData.copyOfRange(0, 4).toList()

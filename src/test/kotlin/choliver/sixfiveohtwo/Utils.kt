@@ -158,20 +158,20 @@ private fun Instruction.encode(): List<UInt8> {
     is Accumulator -> listOf(opEnc(ACCUMULATOR))
     is Implied -> listOf(opEnc(IMPLIED))
     is Immediate -> listOf(opEnc(IMMEDIATE), o.literal)
-    is Relative -> listOf(opEnc(RELATIVE), o.offset.u8())
-    is Absolute -> listOf(opEnc(ABSOLUTE), o.address.lo(), o.address.hi())
+    is Relative -> listOf(opEnc(RELATIVE), o.addr.u8())
+    is Absolute -> listOf(opEnc(ABSOLUTE), o.addr.lo(), o.addr.hi())
     is AbsoluteIndexed -> when (o.source) {
-      X -> listOf(opEnc(ABSOLUTE_X), o.address.lo(), o.address.hi())
-      Y -> listOf(opEnc(ABSOLUTE_Y), o.address.lo(), o.address.hi())
+      X -> listOf(opEnc(ABSOLUTE_X), o.addr.lo(), o.addr.hi())
+      Y -> listOf(opEnc(ABSOLUTE_Y), o.addr.lo(), o.addr.hi())
     }
-    is ZeroPage -> listOf(opEnc(ZERO_PAGE), o.address)
+    is ZeroPage -> listOf(opEnc(ZERO_PAGE), o.addr)
     is ZeroPageIndexed -> when (o.source) {
-      X -> listOf(opEnc(ZERO_PAGE_X), o.address)
-      Y -> listOf(opEnc(ZERO_PAGE_Y), o.address)
+      X -> listOf(opEnc(ZERO_PAGE_X), o.addr)
+      Y -> listOf(opEnc(ZERO_PAGE_Y), o.addr)
     }
-    is Indirect -> listOf(opEnc(INDIRECT), o.address.lo(), o.address.hi())
-    is IndexedIndirect -> listOf(opEnc(INDEXED_INDIRECT), o.address)
-    is IndirectIndexed -> listOf(opEnc(INDIRECT_INDEXED), o.address)
+    is Indirect -> listOf(opEnc(INDIRECT), o.addr.lo(), o.addr.hi())
+    is IndexedIndirect -> listOf(opEnc(INDEXED_INDIRECT), o.addr)
+    is IndirectIndexed -> listOf(opEnc(INDIRECT_INDEXED), o.addr)
   }
 }
 

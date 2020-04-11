@@ -12,39 +12,39 @@ sealed class Operand {
   ) : Operand()
 
   data class Relative(
-    val offset: Int8    // Signed
+    val addr: Int8    // Signed
   ) : Operand()
 
   data class Absolute(
-    val address: UInt16
+    val addr: UInt16
   ) : Operand()
 
   data class ZeroPage(
-    val address: UInt8
+    val addr: UInt8
   ) : Operand()
 
   data class Indirect(
-    val address: UInt16
+    val addr: UInt16
   ) : Operand()
 
   data class AbsoluteIndexed(
-    val address: UInt16,
+    val addr: UInt16,
     val source: IndexSource
   ) : Operand()
 
   data class ZeroPageIndexed(
-    val address: UInt8,
+    val addr: UInt8,
     val source: IndexSource
   ) : Operand()
 
   // Always uses X as the source
   data class IndexedIndirect(
-    val address: UInt8
+    val addr: UInt8
   ) : Operand()
 
   // Always uses Y as the source
   data class IndirectIndexed(
-    val address: UInt8
+    val addr: UInt8
   ) : Operand()
 }
 

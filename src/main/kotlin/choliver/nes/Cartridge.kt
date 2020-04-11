@@ -1,7 +1,6 @@
 package choliver.nes
 
 import choliver.nes.Cartridge.Mirroring.*
-import choliver.sixfiveohtwo.model.Memory
 
 // https://wiki.nesdev.com/w/index.php/INES
 class Cartridge(romData: ByteArray) {
@@ -12,10 +11,11 @@ class Cartridge(romData: ByteArray) {
   }
 
   interface Mapper {
-    val prg: Memory
-    val chr: Memory
+    val prg: PrgMemory
+    val chr: ChrMemory
   }
 
+  @Suppress("ArrayInDataClass")
   data class Stuff(
     val hasPersistentMem: Boolean,
     val mirroring: Mirroring,
@@ -25,8 +25,8 @@ class Cartridge(romData: ByteArray) {
   )
 
   private val mapper = createMapper(romData)
-  private val prg = mapper.prg
-  private val chr = mapper.chr
+  private val prg = mapper.prg  // Nothing special - just log bus conflicts and all-null
+  private val chr = mapper.chr  // Return data, VRAM addr or null
 
   init {
     val magicNumber = romData.copyOfRange(0, 4).toList()

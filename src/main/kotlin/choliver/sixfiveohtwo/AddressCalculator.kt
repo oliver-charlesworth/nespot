@@ -15,14 +15,14 @@ class AddressCalculator(
     operand: Operand,
     state: State
   ): UInt16 = when (operand) {
-    is Relative -> (state.PC + operand.offset.u16()).u16()
-    is Absolute -> operand.address
-    is AbsoluteIndexed -> (operand.address + select(operand.source, state)).u16()
-    is ZeroPage -> operand.address.u16()
-    is ZeroPageIndexed -> (operand.address + select(operand.source, state)).lo().u16()
-    is Indirect -> load16(operand.address)
-    is IndexedIndirect -> load16FromZeroPage((operand.address + state.X).u8())
-    is IndirectIndexed -> (load16FromZeroPage(operand.address) + state.Y).u16()
+    is Relative -> (state.PC + operand.addr.u16()).u16()
+    is Absolute -> operand.addr
+    is AbsoluteIndexed -> (operand.addr + select(operand.source, state)).u16()
+    is ZeroPage -> operand.addr.u16()
+    is ZeroPageIndexed -> (operand.addr + select(operand.source, state)).lo().u16()
+    is Indirect -> load16(operand.addr)
+    is IndexedIndirect -> load16FromZeroPage((operand.addr + state.X).u8())
+    is IndirectIndexed -> (load16FromZeroPage(operand.addr) + state.Y).u16()
     else -> 0.u16()  // Don't care
   }
 

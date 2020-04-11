@@ -12,12 +12,12 @@ class FakeMemory(
     .toMutableMap()
   var trackStores = false
 
-  override fun load(address: UInt16) = map[address] ?: 0xCCu  // Easier to spot during debugging than 0x00
+  override fun load(addr: UInt16) = map[addr] ?: 0xCCu  // Easier to spot during debugging than 0x00
 
-  override fun store(address: UInt16, data: UInt8) {
-    map[address] = data
+  override fun store(addr: UInt16, data: UInt8) {
+    map[addr] = data
     if (trackStores) {
-      stores[address] = data
+      stores[addr] = data
     }
   }
 

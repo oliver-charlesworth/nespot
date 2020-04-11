@@ -1,28 +1,9 @@
-package choliver.nes
+package choliver.nes.cartridge
 
-import choliver.nes.Cartridge.Mirroring.*
+import choliver.nes.cartridge.MapperConfig.Mirroring.*
 
 // https://wiki.nesdev.com/w/index.php/INES
 class Cartridge(romData: ByteArray) {
-  enum class Mirroring {
-    HORIZONTAL,
-    VERTICAL,
-    IGNORED   // TODO - not sure if this is mutually exclusive
-  }
-
-  interface Mapper {
-    val prg: PrgMemory
-    val chr: ChrMemory
-  }
-
-  @Suppress("ArrayInDataClass")
-  data class Stuff(
-    val hasPersistentMem: Boolean,
-    val mirroring: Mirroring,
-    val trainerData: ByteArray,
-    val prgData: ByteArray,
-    val chrData: ByteArray
-  )
 
   private val mapper = createMapper(romData)
   val prg = mapper.prg  // Nothing special - just log bus conflicts and all-null
@@ -40,7 +21,7 @@ class Cartridge(romData: ByteArray) {
     val sizeChrRom = romData[5] * 8192
     val sizeTrainer = if (romData[6].isBitSet(2)) 512 else 0
 
-    val stuff = Stuff(
+    val config = MapperConfig(
       hasPersistentMem = romData[6].isBitSet(1),
       mirroring = when {
         romData[6].isBitSet(3) -> IGNORED
@@ -54,7 +35,7 @@ class Cartridge(romData: ByteArray) {
 
     // https://wiki.nesdev.com/w/index.php/Mapper#iNES_1.0_mapper_grid
     return when (val mapper = ((romData[6].toInt() and 0xF0) shr 4) or ((romData[7].toInt() and 0xF0))) {
-      0 -> NromMapper(stuff)
+      0 -> NromMapper(config)
       else -> throw UnsupportedRomException("Mapper #${mapper}")
     }
   }

@@ -1,4 +1,4 @@
-package choliver.ppu
+package choliver.nes.ppu
 
 import javafx.application.Application
 import javafx.scene.Group
@@ -11,10 +11,10 @@ import javafx.stage.Stage
 import java.nio.ByteBuffer
 
 
-abstract class Wat2 : Application() {
+abstract class BaseApplication : Application() {
   companion object {
     @JvmStatic
-    fun main(args: Array<String>) = launch(Wat2::class.java, *args)
+    fun main(args: Array<String>) = launch(BaseApplication::class.java, *args)
   }
 
   override fun start(primaryStage: Stage) {

@@ -1,4 +1,4 @@
-package choliver.nes
+package choliver.nes.cartridge
 
 import org.junit.jupiter.api.Test
 

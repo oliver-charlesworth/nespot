@@ -1,7 +1,7 @@
-package choliver.ppu
+package choliver.nes.ppu
 
-import choliver.nes.Cartridge
-import choliver.nes.ChrMemory.ChrLoadResult.Data
+import choliver.nes.cartridge.Cartridge
+import choliver.nes.cartridge.ChrMemory.ChrLoadResult.Data
 import choliver.sixfiveohtwo.model.u16
 import javafx.application.Application.launch
 import org.junit.jupiter.api.Disabled
@@ -12,7 +12,7 @@ class ShowStuffTest {
   @Test
   @Disabled
   fun palette() {
-    class PaletteApp : Wat2() {
+    class PaletteApp : BaseApplication() {
       override fun populateData(data: ByteBuffer) {
         for (y in 0 until CANVAS_HEIGHT) {
           for (x in 0 until CANVAS_WIDTH) {
@@ -28,7 +28,7 @@ class ShowStuffTest {
   @Test
   @Disabled
   fun patterns() {
-    class PatternsApp : Wat2() {
+    class PatternsApp : BaseApplication() {
       val cartridge = Cartridge(javaClass.getResource("/smb.nes").readBytes())
 
       private fun getPatternData(
@@ -41,9 +41,7 @@ class ShowStuffTest {
         val p0 = (cartridge.chr.load(addr.u16()) as Data).data.toInt()
         val p1 = (cartridge.chr.load((addr + 8).u16()) as Data).data.toInt()
 
-        return (0..7).map {
-          ((p0 shr (7 - it)) and 1) or (((p1 shr (7 - it)) and 1) * 2)
-        }
+        return (0..7).map { ((p0 shr (7 - it)) and 1) or (((p1 shr (7 - it)) and 1) * 2) }
       }
 
       private val palette = listOf(

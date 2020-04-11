@@ -1,8 +1,8 @@
-package choliver.nes
+package choliver.nes.cartridge
 
-import choliver.nes.Cartridge.Mirroring.*
-import choliver.nes.ChrMemory.ChrLoadResult
-import choliver.nes.ChrMemory.ChrStoreResult
+import choliver.nes.cartridge.ChrMemory.ChrLoadResult
+import choliver.nes.cartridge.ChrMemory.ChrStoreResult
+import choliver.nes.cartridge.MapperConfig.Mirroring.*
 import choliver.sixfiveohtwo.model.UInt16
 import choliver.sixfiveohtwo.model.UInt8
 import choliver.sixfiveohtwo.model.u16
@@ -10,11 +10,11 @@ import choliver.sixfiveohtwo.model.u8
 import mu.KotlinLogging
 
 // https://wiki.nesdev.com/w/index.php/NROM
-class NromMapper(private val stuff: Cartridge.Stuff) : Cartridge.Mapper {
+class NromMapper(private val config: MapperConfig) : Mapper {
   private val logger = KotlinLogging.logger {}
 
   init {
-    with(stuff) {
+    with(config) {
       validate(!hasPersistentMem, "Persistent memory")
       validate(mirroring != IGNORED, "Ignored mirroring control")
       validate(trainerData.isEmpty(), "Trainer data")
@@ -26,7 +26,7 @@ class NromMapper(private val stuff: Cartridge.Stuff) : Cartridge.Mapper {
   override val prg = object : PrgMemory {
     override fun load(addr: UInt16) = when (addr) {
       in PRG_RAM_RANGE -> TODO()
-      in PRG_ROM_RANGE -> stuff.prgData[addr.toInt() and (stuff.prgData.size - 1)].u8()
+      in PRG_ROM_RANGE -> config.prgData[addr.toInt() and (config.prgData.size - 1)].u8()
       else -> null
     }
 
@@ -40,7 +40,7 @@ class NromMapper(private val stuff: Cartridge.Stuff) : Cartridge.Mapper {
 
   override val chr = object : ChrMemory {
     override fun load(addr: UInt16) = when (addr) {
-      in CHR_ROM_RANGE -> ChrLoadResult.Data(stuff.chrData[addr.toInt()].u8())
+      in CHR_ROM_RANGE -> ChrLoadResult.Data(config.chrData[addr.toInt()].u8())
       in VRAM_RANGE -> ChrLoadResult.VramAddr(mapToVram(addr))
       else -> throw IndexOutOfBoundsException(addr.toInt()) // Should never happen?
     }
@@ -55,7 +55,7 @@ class NromMapper(private val stuff: Cartridge.Stuff) : Cartridge.Mapper {
     }
 
     // TODO - optimise - hoist the conditional out?
-    private fun mapToVram(addr: UInt16): UInt16 = when (stuff.mirroring) {
+    private fun mapToVram(addr: UInt16): UInt16 = when (config.mirroring) {
       HORIZONTAL -> (addr and 1023u) or ((addr and 2048u).toInt() shr 1).u16()
       VERTICAL -> (addr and 2047u)
       IGNORED -> throw UnsupportedOperationException()

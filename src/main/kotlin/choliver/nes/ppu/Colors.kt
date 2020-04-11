@@ -1,4 +1,4 @@
-package choliver.ppu
+package choliver.nes.ppu
 
 // Palette generated using default settings here: http://drag.wootest.net/misc/palgen.html
 val COLORS = object {}.javaClass.getResource("/nespalette.pal")

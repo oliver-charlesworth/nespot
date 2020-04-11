@@ -1,11 +1,9 @@
-package choliver.nes
+package choliver.nes.cartridge
 
-import choliver.nes.Cartridge.Mirroring
-import choliver.nes.Cartridge.Mirroring.HORIZONTAL
-import choliver.nes.Cartridge.Mirroring.VERTICAL
-import choliver.nes.Cartridge.Stuff
-import choliver.nes.ChrMemory.ChrLoadResult
-import choliver.nes.ChrMemory.ChrStoreResult
+import choliver.nes.cartridge.Mirroring.HORIZONTAL
+import choliver.nes.cartridge.Mirroring.VERTICAL
+import choliver.nes.cartridge.ChrMemory.ChrLoadResult
+import choliver.nes.cartridge.ChrMemory.ChrStoreResult
 import choliver.sixfiveohtwo.model.u16
 import choliver.sixfiveohtwo.model.u8
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -142,7 +140,7 @@ class NromMapperTest {
     prgData: ByteArray = ByteArray(32768),
     chrData: ByteArray = ByteArray(8192),
     mirroring: Mirroring = VERTICAL
-  ) = NromMapper(Stuff(
+  ) = NromMapper(MapperConfig(
     hasPersistentMem = false,
     mirroring = mirroring,
     trainerData = byteArrayOf(),

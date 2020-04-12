@@ -29,10 +29,11 @@ class Nes(rom: ByteArray) {
     }
   }
 
-  private class InterceptingMemory(mem: Memory) : Memory by mem {
+  private class InterceptingMemory(private val mem: Memory) : Memory by mem {
     private val _stores = mutableListOf<Pair<Address, Data>>()
 
     override fun store(addr: Address, data: Data) {
+      mem.store(addr, data)
       _stores += (addr to data)
     }
 

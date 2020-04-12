@@ -1,6 +1,7 @@
 package choliver.nes.debugger
 
 import choliver.nes.Address
+import choliver.nes.Data
 import choliver.nes.Nes
 import choliver.nes.debugger.Command.*
 import choliver.nes.debugger.Command.CreatePoint.Break
@@ -13,7 +14,6 @@ import choliver.nes.debugger.Debugger.Point.Watchpoint
 import choliver.nes.sixfiveohtwo.model.Opcode.JSR
 import choliver.nes.sixfiveohtwo.model.Opcode.RTS
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
-import choliver.nes.sixfiveohtwo.model.toPC
 import java.io.InputStream
 import java.io.PrintStream
 import java.util.*
@@ -28,7 +28,7 @@ class Debugger(
     data class Watchpoint(override val num: Int, val addr: Address) : Point(num)
   }
 
-  private val reader = stdin.bufferedReader()
+  private val parser = CommandParser(stdin)
   private val nes = Nes(rom).instrumentation
 
   private var nextPointNum = 1
@@ -44,7 +44,7 @@ class Debugger(
     loop@ while (true) {
       stdout.print("[${nes.state.PC}]: ")
 
-      when (val cmd = parseCommand(reader.readLine())) {
+      when (val cmd = parser.next()) {
         is Execute -> execute(cmd)
         is CreatePoint -> createPoint(cmd)
         is DeletePoint -> deletePoint(cmd)
@@ -68,7 +68,7 @@ class Debugger(
       }
 
       is Finish -> {
-        val target = stack.peek()
+        val target = nes.decodeAt(stack.peek()).nextPc
         while (nes.state.PC != target) {
           if (!step()) break
         }
@@ -86,13 +86,13 @@ class Debugger(
         })
         points[point.num] = point
         breakpoints[point.pc] = point
-        stdout.println("Breakpoint #${point.num} at ${point.pc}: ${instAt(point.pc)}")
+        stdout.println("Breakpoint #${point.num}: ${point.pc} -> ${instAt(point.pc)}")
       }
       is Watch -> {
         val point = Watchpoint(nextPointNum++, cmd.addr)
         points[point.num] = point
         watchpoints[point.addr] = point
-        stdout.println("Watchpoint #${point.num} at ${point.addr}")
+        stdout.println("Watchpoint #${point.num}: ${point.addr.format()}")
       }
     }
   }
@@ -103,11 +103,11 @@ class Debugger(
         when (val point = points.remove(cmd.num)) {
           is Breakpoint -> {
             breakpoints.remove(point.pc)
-            stdout.println("Deleted breakpoint #${point.num} at ${point.pc}: ${instAt(point.pc)}")
+            stdout.println("Deleted breakpoint #${point.num}: ${point.pc} -> ${instAt(point.pc)}")
           }
           is Watchpoint -> {
             watchpoints.remove(point.addr)
-            stdout.println("Deleted watchpoint #${point.num} at ${point.addr}")
+            stdout.println("Deleted watchpoint #${point.num}: ${point.addr.format()}")
           }
           null -> stdout.println("No such breakpoint or watchpoint")
         }
@@ -137,7 +137,7 @@ class Debugger(
         stdout.println("No watchpoints")
       } else {
         println("Num  Address")
-        watchpoints.forEach { (_, v) -> stdout.println("%-4d 0x%04x".format(v.num, v.addr)) }
+        watchpoints.forEach { (_, v) -> stdout.println("%-4d %s".format(v.num, v.addr.format())) }
       }
 
       is Info.Backtrace -> {
@@ -153,8 +153,9 @@ class Debugger(
   private fun step(): Boolean {
     updateStack()
     maybeTraceInstruction()
-    nes.step()
-    return isBreakpointHit()
+    val stores = nes.step()
+    maybeTraceStores(stores)
+    return isWatchpointHit(stores) && isBreakpointHit()
   }
 
   private fun updateStack() {
@@ -176,10 +177,28 @@ class Debugger(
     }
   }
 
+  private fun maybeTraceStores(stores: List<Pair<Address, Data>>) {
+    if (isVerbose) {
+      stores.forEach { (addr, data) ->
+        stdout.println("    ${addr.format()} <- ${data.format8()}")
+      }
+    }
+  }
+
+  private fun isWatchpointHit(stores: List<Pair<Address, Data>>): Boolean {
+    val wp = stores.map { watchpoints[it.first] }.firstOrNull { it != null }
+    return if (wp != null) {
+      stdout.println("Hit watchpoint #${wp.num}: ${wp.addr.format()}")
+      false
+    } else {
+      true
+    }
+  }
+
   private fun isBreakpointHit(): Boolean {
     val bp = breakpoints[nes.state.PC]
     return if (bp != null) {
-      stdout.println("Hit breakpoint #${bp}")
+      stdout.println("Hit breakpoint #${bp.num}")
       false
     } else {
       true
@@ -188,78 +207,6 @@ class Debugger(
 
   private fun instAt(pc: ProgramCounter) = nes.decodeAt(pc).instruction
 
-  private fun parseCommand(raw: String): Command {
-    val r = raw.trim()
-    val bits = if (r.isEmpty()) listOf("step") else r.split("\\s+".toRegex())
-
-    val error = Error("Can't parse: ${r}")
-
-    fun noArgs(cmd: Command) = when (bits.size) {
-      1 -> cmd
-      else -> error
-    }
-
-    return when (bits[0]) {
-      "s", "step" -> when (bits.size) {
-        1 -> Step(1)
-        2 -> bits[1].toIntOrNull()?.let(::Step) ?: error
-        else -> error
-      }
-
-      "c", "cont" -> noArgs(Continue)
-
-      "f", "finish" -> noArgs(Finish)
-
-      "b", "break" -> when (bits.size) {
-        1 -> Break.Here
-        2 -> when {
-          bits[1] == "+" -> Break.AtNext
-          else -> bits[1].toAddressOrNull()?.let { Break.At(it.toPC()) } ?: error
-        }
-        else -> error
-      }
-
-      "w", "watch" -> when (bits.size) {
-        2 -> bits[1].toAddressOrNull()?.let(::Watch) ?: error
-        else -> error
-      }
-
-      // TODO - clear
-
-      "d", "delete" -> when (bits.size) {
-        1 -> All
-        2 -> bits[1].toIntOrNull()?.let(::ByNum) ?: error
-        else -> error
-      }
-
-      "i", "info" -> when (bits.size) {
-        1 -> error
-        else -> when (bits[1]) {
-          "r", "reg" -> Info.Reg
-          "b", "break" -> Info.Break
-          "w", "watch" -> Info.Watch
-          else -> error
-        }
-      }
-
-      "p", "print" -> when (bits.size) {
-        2 -> bits[1].toAddressOrNull()?.let { Info.Print(it) } ?: error
-        else -> error
-      }
-
-      "v", "verbosity" -> noArgs(ToggleVerbosity)
-
-      "bt", "backtrace" -> noArgs(Info.Backtrace)
-
-      "r", "restart" -> noArgs(Restart)
-
-      "q", "quit" -> noArgs(Quit)
-
-      else -> error
-    }
-  }
-
-  private fun String.toAddressOrNull() = removePrefix("0x")
-    .toIntOrNull(16)
-    ?.let { if (it in 0x0000..0xFFFF) it else null }
+  private fun Address.format() = "0x%04x".format(this)
+  private fun Data.format8() = "0x%02x".format(this)
 }

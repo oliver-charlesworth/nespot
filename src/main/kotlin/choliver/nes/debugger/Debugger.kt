@@ -14,32 +14,39 @@ class Debugger(
 ) {
   private val reader = stdin.bufferedReader()
   private val nes = Nes(rom)
-  private val breakpoints = mutableListOf<ProgramCounter>()
+  private var nextBreakpointNum = 1
+  private val breakpoints = mutableMapOf<ProgramCounter, Int>()
 
   fun start() {
     // TODO - handle Ctrl+C ?
     loop@ while (true) {
       stdout.print("[${nes.state.PC}]: ")
+
       when (val cmd = parseCommand(reader.readLine())) {
-        is Step -> repeat(cmd.num) step@{
-          nes.step()
-          if (nes.state.PC in breakpoints) {
-            return@step
+        is Step -> repeat(cmd.num) step@{ if (!step()) return@step }
+
+        is Continue -> while (true) { if (!step()) break }
+
+        is CreateBreakpoint -> {
+          val target = when (cmd) {
+            is CreateBreakpoint.Here -> nes.state.PC
+            is CreateBreakpoint.Next -> nes.decodeAt(nes.state.PC).nextPc
+            is CreateBreakpoint.At -> cmd.addr.toPC()
           }
+          // TODO - detect dupes
+          stdout.println("Breakpoint #${nextBreakpointNum} at ${target}: ${instAt(target)}")
+          breakpoints[target] = nextBreakpointNum++
         }
 
-        is Continue -> while (true) {
-          nes.step()
-          if (nes.state.PC in breakpoints) {
-            break
+        is DeleteBreakpoint -> {
+          val entry = breakpoints.entries.firstOrNull { it.value == cmd.num }
+          if (entry != null) {
+            stdout.println("Deleted breakpoint #${entry.value} at ${entry.key}: ${instAt(entry.key)}")
+            breakpoints.remove(entry.key)
+          } else {
+            stdout.println("No such breakpoint")
           }
         }
-
-        is BreakHere -> breakpoints.add(nes.state.PC)
-
-        is BreakNext -> breakpoints.add(nes.decodeAt(nes.state.PC).nextPc)
-
-        is BreakAt -> breakpoints.add(cmd.addr.toPC())
 
         is InfoReg -> println(nes.state)
 
@@ -47,11 +54,12 @@ class Debugger(
           if (breakpoints.isEmpty()) {
             stdout.println("No breakpoints")
           } else {
-            breakpoints.forEach { stdout.println("    ${it} -> ${nes.decodeAt(it).instruction}") }
+            println("Num  Address  Instruction")
+            breakpoints.forEach { stdout.println("%-4d %s   %s".format(it.value, it.key, instAt(it.key))) }
           }
         }
 
-        is Where -> println(nes.decodeAt(nes.state.PC).instruction)
+        is Where -> println(instAt(nes.state.PC))
 
         is Restart -> nes.reset()
 
@@ -59,6 +67,19 @@ class Debugger(
 
         is Error -> stdout.println(cmd.msg)
       }
+    }
+  }
+
+  private fun instAt(pc: ProgramCounter) = nes.decodeAt(pc).instruction
+
+  private fun step(): Boolean {
+    nes.step()
+    val bp = breakpoints[nes.state.PC]
+    return if (bp != null) {
+      stdout.println("Hit breakpoint #${bp}")
+      false
+    } else {
+      true
     }
   }
 
@@ -80,12 +101,17 @@ class Debugger(
       }
 
       "b", "break" -> when (bits.size) {
-        1 -> BreakHere
+        1 -> CreateBreakpoint.Here
         2 -> when {
-          bits[1] == "+" -> BreakNext
-          bits[1].startsWith("0x") -> bits[1].toAddressOrNull()?.let(::BreakAt) ?: error
+          bits[1] == "+" -> CreateBreakpoint.Next
+          bits[1].startsWith("0x") -> bits[1].toAddressOrNull()?.let { CreateBreakpoint.At(it) } ?: error
           else -> error
         }
+        else -> error
+      }
+
+      "d", "delete" -> when (bits.size) {
+        2 -> bits[1].toIntOrNull()?.let(::DeleteBreakpoint) ?: error
         else -> error
       }
 
@@ -120,16 +146,4 @@ class Debugger(
   private fun String.toAddressOrNull() = removePrefix("0x")
     .toIntOrNull(16)
     ?.let { if (it in 0x0000..0xFFFF) it else null }
-
-  companion object {
-    @JvmStatic
-    fun main(args: Array<String>) = Debugger(
-      rom = {}.javaClass.getResource("/smb.nes").readBytes(),
-      stdin = System.`in`,
-      stdout = System.out
-    ).start()
-
-
-  }
-
 }

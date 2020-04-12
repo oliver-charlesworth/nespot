@@ -5,9 +5,12 @@ import choliver.nes.Address
 sealed class Command {
   data class Step(val num: Int) : Command()
   object Continue : Command()
-  object BreakHere : Command()
-  object BreakNext : Command()
-  data class BreakAt(val addr: Address) : Command()
+  sealed class CreateBreakpoint : Command() {
+    object Here : CreateBreakpoint()
+    object Next : CreateBreakpoint()
+    data class At(val addr: Address) : Command()
+  }
+  data class DeleteBreakpoint(val num: Int) : Command()
   object InfoReg : Command()
   object InfoBreak : Command()
   object Where : Command()

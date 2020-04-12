@@ -40,9 +40,9 @@ class Cpu(
   }
 
   fun step() {
-    val decoded = decodeAtRaw(_state.PC)
+    val decoded = decodeAt(_state.PC)
     logger.info("${_state.PC}: ${decoded.instruction}")
-    _state = _state.with(PC = decoded.pc)
+    _state = _state.with(PC = decoded.nextPc)
     val context = Ctx(
       _state,
       decoded.instruction,
@@ -52,9 +52,7 @@ class Cpu(
     _state = context.execute().state
   }
 
-  fun decodeAt(pc: ProgramCounter) = decodeAtRaw(pc).instruction
-
-  private fun decodeAtRaw(pc: ProgramCounter) = decoder.decode(memory, pc)
+  fun decodeAt(pc: ProgramCounter) = decoder.decode(memory, pc)
 
   private fun <T> Ctx<T>.execute() = when (instruction.opcode) {
     ADC -> resolve().add { it }
@@ -119,8 +117,8 @@ class Cpu(
       .pop().updatePCH { it }
 
     BRK -> this
-      .push { (PC + 1).H }     // Should be PC+2 (because BRK is weird), but we already advanced PC
-      .push { (PC + 1).L }
+      .push { PC.H }
+      .push { PC.L }
       .push { P.data() or 0x10 } // Set B flag on stack
       .load { VECTOR_IRQ }.updatePCL { it }
       .load { VECTOR_IRQ + 1 }.updatePCH { it }

@@ -29,7 +29,23 @@ class Nes(rom: ByteArray) {
     }
   }
 
-  private val cpu = Cpu(cpuMapper)
+  private class InterceptingMemory(mem: Memory) : Memory by mem {
+    private val _stores = mutableListOf<Pair<Address, Data>>()
+
+    override fun store(addr: Address, data: Data) {
+      _stores += (addr to data)
+    }
+
+    fun reset() {
+      _stores.clear()
+    }
+
+    val stores get() = _stores.toList()
+  }
+
+  private val interceptor = InterceptingMemory(cpuMapper)
+
+  private val cpu = Cpu(interceptor)
 
   val instrumentation = Instrumentation()
 
@@ -42,8 +58,10 @@ class Nes(rom: ByteArray) {
       cpu.reset()
     }
 
-    fun step() {
+    fun step(): List<Pair<Address, Data>> {
+      interceptor.reset()
       cpu.step()
+      return interceptor.stores
     }
 
     fun peek(addr: Address) = cpuMapper.load(addr)

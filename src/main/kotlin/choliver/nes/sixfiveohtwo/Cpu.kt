@@ -57,9 +57,9 @@ class Cpu(
     ADC -> resolve().add { it }
     SBC -> resolve().add { it xor 0xFF }
 
-    CMP -> resolve().compare { it }
-    CPX -> compare { X }
-    CPY -> compare { Y }
+    CMP -> resolve().compare { A }
+    CPX -> resolve().compare { X }
+    CPY -> resolve().compare { Y }
 
     DEC -> resolve().storeResult { it - 1 }
     DEX -> updateX { X - 1 }
@@ -161,8 +161,8 @@ class Cpu(
     .updateC { it.c }
     .updateV { it.v }
 
-  private fun <T> Ctx<T>.compare(f: F<T, Data>) = this
-    .calc { alu.adc(a = A, b = f(it) xor 0xFF, c = _1, d = _0) }  // Ignores borrow and decimal mode
+  private fun Ctx<Data>.compare(f: F<Data, Data>) = this
+    .calc { alu.adc(a = f(it), b = data xor 0xFF, c = _1, d = _0) }  // Ignores borrow and decimal mode
     .updateZN { it.q }
     .updateC { it.c }
 

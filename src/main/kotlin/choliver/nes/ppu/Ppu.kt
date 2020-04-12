@@ -18,6 +18,9 @@ class Ppu(
     PPUDATA
   }
 
+  fun readReg(reg: Int) = 0x00 // TODO
+  fun writeReg(reg: Int, data: Data) {} // TODO
+
   fun readReg(reg: Register): Data = when (reg) {
     PPUSTATUS -> TODO()
     OAMDATA -> TODO() // Unclear what the semantics of read are

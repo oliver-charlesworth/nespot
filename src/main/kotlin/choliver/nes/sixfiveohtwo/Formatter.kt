@@ -3,7 +3,7 @@ package choliver.nes.sixfiveohtwo
 import choliver.nes.sixfiveohtwo.model.Instruction
 import choliver.nes.sixfiveohtwo.model.Operand
 
-fun Instruction.format() = "${opcode.name}${format(operand)}"
+fun Instruction.format() = "${opcode.name.toLowerCase()}${format(operand)}"
 
 private fun format(operand: Operand) = when (operand) {
   is Operand.Implied -> ""

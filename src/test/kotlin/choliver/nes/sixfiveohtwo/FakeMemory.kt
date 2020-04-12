@@ -1,31 +1,28 @@
 package choliver.nes.sixfiveohtwo
 
-import choliver.nes.*
+import choliver.nes.Address
+import choliver.nes.Data
+import choliver.nes.Memory
 import org.junit.jupiter.api.Assertions.assertEquals
 
 class FakeMemory(
-  initial: Map<Int, Int> = emptyMap()
+  initial: Map<Address, Data> = emptyMap()
 ) : Memory {
-  private val stores = mutableMapOf<UInt16, UInt8>()
-  private val map = initial.entries
-    .associate { (k, v) -> k.u16() to v.u8() }
-    .toMutableMap()
+  private val stores = mutableMapOf<Address, Data>()
+  private val map = initial.toMutableMap()
   var trackStores = false
 
-  override fun load(addr: UInt16) = map[addr] ?: 0xCCu  // Easier to spot during debugging than 0x00
+  override fun load(addr: Address) = map[addr] ?: 0xCC  // Easier to spot during debugging than 0x00
 
-  override fun store(addr: UInt16, data: UInt8) {
+  override fun store(addr: Address, data: Data) {
     map[addr] = data
     if (trackStores) {
       stores[addr] = data
     }
   }
 
+  // TODO - inline?
   fun assertStores(expected: Map<Int, Int>, message: String? = null) {
-    assertEquals(
-      expected.entries.associate { (k, v) -> k.u16() to v.u8() },
-      stores,
-      message
-    )
+    assertEquals(expected, stores, message)
   }
 }

@@ -3,9 +3,8 @@ package choliver.nes.cartridge
 import choliver.nes.cartridge.ChrMemory.ChrLoadResult
 import choliver.nes.cartridge.ChrMemory.ChrStoreResult
 import choliver.nes.cartridge.MapperConfig.Mirroring
-import choliver.nes.cartridge.MapperConfig.Mirroring.*
-import choliver.nes.u16
-import choliver.nes.u8
+import choliver.nes.cartridge.MapperConfig.Mirroring.HORIZONTAL
+import choliver.nes.cartridge.MapperConfig.Mirroring.VERTICAL
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -16,8 +15,8 @@ class NromMapperTest {
   fun `returns null for unmapped addresses`() {
     val mapper = mapper()
 
-    assertNull(mapper.prg.load(0x0000.u16()))
-    assertNull(mapper.prg.load(0x5FFF.u16()))
+    assertNull(mapper.prg.load(0x0000))
+    assertNull(mapper.prg.load(0x5FFF))
   }
 
   @Test
@@ -29,10 +28,10 @@ class NromMapperTest {
       this[32767] = 0x60
     })
 
-    assertEquals(0x30.u8(), mapper.prg.load(0x8000.u16()))
-    assertEquals(0x40.u8(), mapper.prg.load(0xBFFF.u16()))
-    assertEquals(0x50.u8(), mapper.prg.load(0xC000.u16()))
-    assertEquals(0x60.u8(), mapper.prg.load(0xFFFF.u16()))
+    assertEquals(0x30, mapper.prg.load(0x8000))
+    assertEquals(0x40, mapper.prg.load(0xBFFF))
+    assertEquals(0x50, mapper.prg.load(0xC000))
+    assertEquals(0x60, mapper.prg.load(0xFFFF))
   }
 
   @Test
@@ -42,10 +41,10 @@ class NromMapperTest {
       this[16383] = 0x40
     })
 
-    assertEquals(0x30.u8(), mapper.prg.load(0x8000.u16()))
-    assertEquals(0x40.u8(), mapper.prg.load(0xBFFF.u16()))
-    assertEquals(0x30.u8(), mapper.prg.load(0xC000.u16()))
-    assertEquals(0x40.u8(), mapper.prg.load(0xFFFF.u16()))
+    assertEquals(0x30, mapper.prg.load(0x8000))
+    assertEquals(0x40, mapper.prg.load(0xBFFF))
+    assertEquals(0x30, mapper.prg.load(0xC000))
+    assertEquals(0x40, mapper.prg.load(0xFFFF))
   }
 
   @Test
@@ -55,11 +54,11 @@ class NromMapperTest {
       this[8191] = 0x40
     })
 
-    assertEquals(ChrLoadResult.Data(0x30.u8()), mapper.chr.load(0x0000.u16()))
-    assertEquals(ChrLoadResult.Data(0x40.u8()), mapper.chr.load(0x1FFF.u16()))
+    assertEquals(ChrLoadResult.Data(0x30), mapper.chr.load(0x0000))
+    assertEquals(ChrLoadResult.Data(0x40), mapper.chr.load(0x1FFF))
 
-    assertEquals(ChrStoreResult.None, mapper.chr.store(0x0000.u16(), 0x30.u8()))
-    assertEquals(ChrStoreResult.None, mapper.chr.store(0x1FFF.u16(), 0x30.u8()))
+    assertEquals(ChrStoreResult.None, mapper.chr.store(0x0000, 0x30))
+    assertEquals(ChrStoreResult.None, mapper.chr.store(0x1FFF, 0x30))
   }
 
   @Test
@@ -94,8 +93,8 @@ class NromMapperTest {
     )
 
     cases.forEach { (source, target) ->
-      assertEquals(ChrLoadResult.VramAddr(target.u16()), mapper.chr.load(source.u16()))
-      assertEquals(ChrStoreResult.VramAddr(target.u16()), mapper.chr.store(source.u16(), 0x30.u8()))
+      assertEquals(ChrLoadResult.VramAddr(target), mapper.chr.load(source))
+      assertEquals(ChrStoreResult.VramAddr(target), mapper.chr.store(source, 0x30))
     }
   }
 
@@ -131,8 +130,8 @@ class NromMapperTest {
     )
 
     cases.forEach { (source, target) ->
-      assertEquals(ChrLoadResult.VramAddr(target.u16()), mapper.chr.load(source.u16()))
-      assertEquals(ChrStoreResult.VramAddr(target.u16()), mapper.chr.store(source.u16(), 0x30.u8()))
+      assertEquals(ChrLoadResult.VramAddr(target), mapper.chr.load(source))
+      assertEquals(ChrStoreResult.VramAddr(target), mapper.chr.store(source, 0x30))
     }
   }
 

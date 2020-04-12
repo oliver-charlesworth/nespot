@@ -1,8 +1,8 @@
 package choliver.nes.sixfiveohtwo.cpu
 
+import choliver.nes.Data
 import choliver.nes.sixfiveohtwo.assertForAddressModes
 import choliver.nes.sixfiveohtwo.model.Opcode.*
-import choliver.nes.u8
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
@@ -12,8 +12,8 @@ class StackTest {
   fun pha() {
     assertForAddressModes(
       PHA,
-      initState = { with(S = 0x30u, A = 0x20u) },
-      expectedState = { with(S = 0x2Fu, A = 0x20u) },
+      initState = { with(S = 0x30, A = 0x20) },
+      expectedState = { with(S = 0x2F, A = 0x20) },
       expectedStores = { mapOf(0x0130 to 0x20) }
     )
   }
@@ -22,20 +22,20 @@ class StackTest {
   fun php() {
     assertForAddressModes(
       PHP,
-      initState = { with(S = 0x30u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
-      expectedState = { with(S = 0x2Fu, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
+      initState = { with(S = 0x30, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
+      expectedState = { with(S = 0x2F, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
       expectedStores = { mapOf(0x0130 to 0xDF) }  // Note B is also set on stack
     )
   }
 
   @Test
   fun pla() {
-    fun assertBehaviour(data: Int, Z: Boolean, N: Boolean) {
+    fun assertBehaviour(data: Data, Z: Boolean, N: Boolean) {
       assertForAddressModes(
         PLA,
         initStores = mapOf(0x123 to data),
-        initState = { with(S = 0x22u) },
-        expectedState = { with(S = 0x23u, A = data.u8(), Z = Z, N = N) }
+        initState = { with(S = 0x22) },
+        expectedState = { with(S = 0x23, A = data, Z = Z, N = N) }
       )
     }
 
@@ -49,8 +49,8 @@ class StackTest {
     assertForAddressModes(
       PLP,
       initStores = mapOf(0x123 to 0xCF),
-      initState = { with(S = 0x22u) },
-      expectedState = { with(S = 0x23u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) }
+      initState = { with(S = 0x22) },
+      expectedState = { with(S = 0x23, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) }
     )
   }
 }

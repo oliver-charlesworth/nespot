@@ -1,9 +1,9 @@
 package choliver.nes.cartridge
 
-import choliver.nes.UInt16
-import choliver.nes.UInt8
+import choliver.nes.Address
+import choliver.nes.Data
 
 interface PrgMemory {
-  fun load(addr: UInt16): UInt8?  // null if unmapped
-  fun store(addr: UInt16, data: UInt8) {}
+  fun load(addr: Address): Data?  // null if unmapped
+  fun store(addr: Address, data: Data) {}
 }

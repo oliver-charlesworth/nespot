@@ -1,6 +1,10 @@
 package choliver.nes.sixfiveohtwo.cpu
 
-import choliver.nes.sixfiveohtwo.*
+import choliver.nes.sixfiveohtwo.BASE_USER
+import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_IRQ
+import choliver.nes.sixfiveohtwo.SCARY_ADDR
+import choliver.nes.sixfiveohtwo.addrToMem
+import choliver.nes.sixfiveohtwo.assertForAddressModes
 import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.State
@@ -23,9 +27,9 @@ class BranchJumpTest {
   fun jsr() {
     assertForAddressModes(
       JSR,
-      initState = { with(S = 0x30u) },
-      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x2Eu) },
-      expectedStores = { mem16(0x012F, BASE_USER + 2) } // JSR stores *last* byte of instruction
+      initState = { with(S = 0x30) },
+      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x2E) },
+      expectedStores = { addrToMem(0x012F, BASE_USER + 2) } // JSR stores *last* byte of instruction
     )
   }
 
@@ -33,11 +37,11 @@ class BranchJumpTest {
   fun brk() {
     assertForAddressModes(
       BRK,
-      initState = { with(S = 0x30u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
-      initStores = mem16(Cpu.VECTOR_IRQ.toInt(), SCARY_ADDR),
-      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x2Du, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
+      initState = { with(S = 0x30, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
+      initStores = addrToMem(VECTOR_IRQ, SCARY_ADDR),
+      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x2D, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
       expectedStores = {
-        mem16(0x012F, BASE_USER + 2) + // BRK stores PC+2
+        addrToMem(0x012F, BASE_USER + 2) + // BRK stores PC+2
         mapOf(0x12E to 0xDF)  // Note B is also set on stack
       }
     )
@@ -47,9 +51,9 @@ class BranchJumpTest {
   fun rts() {
     assertForAddressModes(
       RTS,
-      initState = { with(S = 0x2Eu) },
-      initStores = mem16(0x012F, SCARY_ADDR - 1), // JSR stores *last* byte of instruction
-      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x30u) }
+      initState = { with(S = 0x2E) },
+      initStores = addrToMem(0x012F, SCARY_ADDR - 1), // JSR stores *last* byte of instruction
+      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x30) }
     )
   }
 
@@ -57,10 +61,9 @@ class BranchJumpTest {
   fun rti() {
     assertForAddressModes(
       RTI,
-      initState = { with(S = 0x2Du) },
-      initStores = mapOf(0x12E to 0xCF) +
-        mem16(0x012F, SCARY_ADDR),
-      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x30u, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) }
+      initState = { with(S = 0x2D) },
+      initStores = mapOf(0x12E to 0xCF) + addrToMem(0x012F, SCARY_ADDR),
+      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x30, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) }
     )
   }
 

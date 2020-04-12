@@ -1,9 +1,6 @@
 package choliver.nes.ppu
 
-import choliver.nes.Memory
-import choliver.nes.UInt16
-import choliver.nes.UInt8
-import choliver.nes.isBitSet
+import choliver.nes.*
 import choliver.nes.ppu.Ppu.Register.*
 
 class Ppu(
@@ -21,20 +18,20 @@ class Ppu(
     PPUDATA
   }
 
-  fun readReg(reg: Register): UInt8 = when (reg) {
+  fun readReg(reg: Register): Data = when (reg) {
     PPUSTATUS -> TODO()
     OAMDATA -> TODO() // Unclear what the semantics of read are
     PPUDATA -> TODO()
     else -> throw IllegalArgumentException("Attempt to read from ${reg.name}")
   }
 
-  fun writeReg(reg: Register, data: UInt8) {
+  fun writeReg(reg: Register, data: Data) {
     when (reg) {
       PPUCTRL -> {
-        addrInc = if (data.isBitSet(2)) 32u else 1u
+        addrInc = if (data.isBitSet(2)) 32 else 1
         nametableAddr = TODO()
-        spriteTableAddr = if (data.isBitSet(3)) 0x1000u else 0x0000u
-        backgroundTableAddr = if (data.isBitSet(4)) 0x1000u else 0x0000u
+        spriteTableAddr = if (data.isBitSet(3)) 0x1000 else 0x0000
+        backgroundTableAddr = if (data.isBitSet(4)) 0x1000 else 0x0000
         isLargeSprites = data.isBitSet(5)
         // TODO - is master/slave important?
         isNmiEnabled = data.isBitSet(7)
@@ -63,10 +60,10 @@ class Ppu(
 
   // TODO - what about immutability ?
 
-  private var addrInc: UInt16 = 1u
-  private var nametableAddr: UInt16 = 0x2000u
-  private var spriteTableAddr: UInt16 = 0x0000u
-  private var backgroundTableAddr: UInt16 = 0x0000u
+  private var addrInc: Int = 1
+  private var nametableAddr: Address = 0x2000
+  private var spriteTableAddr: Address = 0x0000
+  private var backgroundTableAddr: Address = 0x0000
   private var isLargeSprites: Boolean = false
   private var isNmiEnabled: Boolean = false
 
@@ -79,6 +76,6 @@ class Ppu(
   private var isGreenEmphasized: Boolean = false
   private var isBlueEmphasized: Boolean = false
 
-  private var oamAddr: UInt8 = 0x00u    // TODO - apparently this is reset to 0 during rendering
+  private var oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
   private val oamData = ByteArray(256)
 }

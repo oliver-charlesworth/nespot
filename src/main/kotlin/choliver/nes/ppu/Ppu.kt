@@ -2,10 +2,13 @@ package choliver.nes.ppu
 
 import choliver.nes.*
 import choliver.nes.ppu.Ppu.Register.*
+import mu.KotlinLogging
 
 class Ppu(
   private val memory: Memory
 ) {
+  private val logger = KotlinLogging.logger {}
+
   // http://wiki.nesdev.com/w/index.php/PPU_registers
   enum class Register {
     PPUCTRL,
@@ -18,8 +21,17 @@ class Ppu(
     PPUDATA
   }
 
-  fun readReg(reg: Int) = 0x00 // TODO
-  fun writeReg(reg: Int, data: Data) {} // TODO
+  fun readReg(reg: Int): Int {
+    logger.info("Reading reg #${reg}")
+    return when (reg) {
+      REG_PPUSTATUS -> 0x80 // TODO - remove debug hack that emulates VBL
+      else -> 0x00
+    }
+  } // TODO
+
+  fun writeReg(reg: Int, data: Data) {
+    logger.info("Writing 0x%02x to reg #${reg}".format(data))
+  } // TODO
 
   fun readReg(reg: Register): Data = when (reg) {
     PPUSTATUS -> TODO()
@@ -51,7 +63,7 @@ class Ppu(
       }
       OAMADDR -> oamAddr = data
       OAMDATA -> {
-        oamData[oamAddr.toInt()] = data.toByte()
+        oamData[oamAddr] = data.toByte()
         oamAddr++
       }
       PPUSCROLL -> TODO()
@@ -81,4 +93,15 @@ class Ppu(
 
   private var oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
   private val oamData = ByteArray(256)
+
+  companion object {
+    private const val REG_PPUCTRL = 0
+    private const val REG_PPUMASK = 1
+    private const val REG_PPUSTATUS = 2
+    private const val REG_OAMADDR = 3
+    private const val REG_OAMDATA = 4
+    private const val REG_PPUSCROLL = 5
+    private const val REG_PPUADDR = 6
+    private const val REG_PPUDATA = 7
+  }
 }

@@ -345,24 +345,24 @@ class ArithmeticTest {
 
   @Test
   fun inc() {
-//    assertForAddressModes(
-//      INC,
-//      target = 0x01,
-//      expectedState = { with(Z = _0, N = _0) },
-//      expectedStores = { mapOf(it to 0x02) }
-//    )
+    assertForAddressModes(
+      INC,
+      target = 0x01,
+      expectedState = { with(Z = _0, N = _0) },
+      expectedStores = { mapOf(it to 0x02) }
+    )
     assertForAddressModes(
       INC,
       target = 0xFF,
       expectedState = { with(Z = _1, N = _0) },
       expectedStores = { mapOf(it to 0x00) }
     )
-//    assertForAddressModes(
-//      INC,
-//      target = 0xFE,
-//      expectedState = { with(Z = _0, N = _1) },
-//      expectedStores = { mapOf(it to 0xFF) }
-//    )
+    assertForAddressModes(
+      INC,
+      target = 0xFE,
+      expectedState = { with(Z = _0, N = _1) },
+      expectedStores = { mapOf(it to 0xFF) }
+    )
   }
 
   @Test

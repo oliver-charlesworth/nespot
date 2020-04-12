@@ -22,7 +22,8 @@ class InstructionDecoder {
     fun load() = memory.load((pcLocal++).addr())
 
     // TODO - error handling
-    val found = ENCODINGS[load()]!!
+    val opcode = load()
+    val found = ENCODINGS[opcode] ?: error("Unexpected opcode 0x%02x at %s".format(opcode, pc))
 
     fun operand8() = load()
     fun operand16() = addr(lo = load(), hi = load())

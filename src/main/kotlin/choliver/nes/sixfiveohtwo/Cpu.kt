@@ -7,22 +7,21 @@ import choliver.nes.sixfiveohtwo.model.Operand.Accumulator
 import choliver.nes.sixfiveohtwo.model.Operand.Immediate
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
+import mu.KotlinLogging
 
 typealias F<T, R> = State.(T) -> R
 
 class Cpu(
   private val memory: Memory
 ) {
+  private val logger = KotlinLogging.logger {}
+
   private var _state: State = State()
   val state get() = _state
 
   private val decoder = InstructionDecoder()
   private val alu = Alu()
   private val addrCalc = AddressCalculator(memory)
-
-  init {
-    reset()
-  }
 
   fun reset() = vector(VECTOR_RESET, _1)
   fun irq() = vector(VECTOR_IRQ, _0)
@@ -37,18 +36,25 @@ class Cpu(
       ),
       P = Flags(I = I)
     )
+    logger.info("Vectoring to ${_state.PC}")
   }
 
-  fun next() {
-    val decoded = decoder.decode(memory, _state.PC)
+  fun step() {
+    val decoded = decodeAtRaw(_state.PC)
+    logger.info("${_state.PC}: ${decoded.instruction}")
+    _state = _state.with(PC = decoded.pc)
     val context = Ctx(
-      _state.with(PC = decoded.pc),
+      _state,
       decoded.instruction,
-      addrCalc.calculate(decoded.instruction.operand, state),
+      addrCalc.calculate(decoded.instruction.operand, _state),
       null
     )
     _state = context.execute().state
   }
+
+  fun decodeAt(pc: ProgramCounter) = decodeAtRaw(pc).instruction
+
+  private fun decodeAtRaw(pc: ProgramCounter) = decoder.decode(memory, pc)
 
   private fun <T> Ctx<T>.execute() = when (instruction.opcode) {
     ADC -> resolve().add { it }

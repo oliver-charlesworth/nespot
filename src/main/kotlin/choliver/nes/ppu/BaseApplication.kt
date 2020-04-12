@@ -13,8 +13,7 @@ import java.nio.ByteBuffer
 
 abstract class BaseApplication : Application() {
   companion object {
-    @JvmStatic
-    fun main(args: Array<String>) = launch(BaseApplication::class.java, *args)
+    const val SCALE = 4
   }
 
   override fun start(primaryStage: Stage) {
@@ -26,9 +25,9 @@ abstract class BaseApplication : Application() {
 
   private fun drawImageData(): Group {
     val root = Group()
-    val data = ByteBuffer.allocateDirect(CANVAS_WIDTH * CANVAS_HEIGHT * 4)
+    val data = ByteBuffer.allocateDirect(CANVAS_WIDTH * CANVAS_HEIGHT * 4 * SCALE * SCALE)
     val pixelFormat = PixelFormat.getByteBgraPreInstance() // Mac native format
-    val pixelBuffer = PixelBuffer(CANVAS_WIDTH, CANVAS_HEIGHT, data, pixelFormat)
+    val pixelBuffer = PixelBuffer(CANVAS_WIDTH * SCALE, CANVAS_HEIGHT * SCALE, data, pixelFormat)
     val img = WritableImage(pixelBuffer)
 
     populateData(data)
@@ -36,9 +35,6 @@ abstract class BaseApplication : Application() {
 
     pixelBuffer.updateBuffer { null }
     val imageView = ImageView(img)
-    imageView.fitWidth = CANVAS_WIDTH * 4.0
-    imageView.fitHeight = CANVAS_HEIGHT * 4.0
-
     root.children.add(imageView)
     return root
   }

@@ -14,9 +14,9 @@ class ShowStuffTest {
   fun palette() {
     class PaletteApp : BaseApplication() {
       override fun populateData(data: ByteBuffer) {
-        for (y in 0 until CANVAS_HEIGHT) {
-          for (x in 0 until CANVAS_WIDTH) {
-            data.putInt(COLORS[(x / (CANVAS_WIDTH / 16)) + (y / (CANVAS_HEIGHT / 4)) * 16])
+        for (y in 0 until CANVAS_HEIGHT * SCALE) {
+          for (x in 0 until CANVAS_WIDTH * SCALE) {
+            data.putInt(COLORS[(x / (CANVAS_WIDTH  * SCALE / 16)) + (y / (CANVAS_HEIGHT  * SCALE / 4)) * 16])
           }
         }
       }
@@ -52,20 +52,30 @@ class ShowStuffTest {
       ).map { COLORS[it] }
 
       override fun populateData(data: ByteBuffer) {
-        for (yT in 0 until CANVAS_HEIGHT / 8) {
+        val buf = IntArray(CANVAS_WIDTH * SCALE)
+        for (yT in 0 until CANVAS_HEIGHT / TILE_SIZE) {
           for (y in 0 until 8) {
-            for (xT in 0 until CANVAS_WIDTH / 8) {
+            var i = 0
+            for (xT in 0 until CANVAS_WIDTH / TILE_SIZE) {
               if (xT < 32 && yT < 16) {
-                getPatternData(xT / 16, yT, xT % 16, y).forEach { data.putInt(palette[it]) }
+                getPatternData(xT / 16, yT, xT % 16, y).forEach { c ->
+                  repeat(SCALE) { buf[i++] = palette[c] }
+                }
               } else {
-                repeat(8) { data.putInt(0) }
+                repeat(TILE_SIZE * SCALE) { buf[i++] = 0 }
               }
             }
+
+            repeat(SCALE) { buf.forEach { data.putInt(it) } }
           }
         }
       }
     }
 
     launch(PatternsApp::class.java)
+  }
+
+  companion object {
+    const val TILE_SIZE = 8
   }
 }

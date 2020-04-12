@@ -1,10 +1,10 @@
 package choliver.nes.sixfiveohtwo.cpu
 
+import choliver.nes.Data
 import choliver.nes.sixfiveohtwo.assertForAddressModes
 import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.State
-import choliver.nes.UInt8
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
@@ -39,30 +39,30 @@ class TransferTest {
   fun txs() {
     assertForAddressModes(
       TXS,
-      initState = { with(X = 0x10u) },
-      expectedState = { with(X = 0x10u, S = 0x10u) }
+      initState = { with(X = 0x10) },
+      expectedState = { with(X = 0x10, S = 0x10) }
     )
   }
 
   private fun assertTransferAndFlags(
     op: Opcode,
-    source: State.(UInt8) -> State,
-    dest: State.(UInt8) -> State
+    source: State.(Data) -> State,
+    dest: State.(Data) -> State
   ) {
     assertForAddressModes(
       op,
-      initState = { source(0x10u) },
-      expectedState = { source(0x10u).dest(0x10u).with(Z = _0, N = _0) }
+      initState = { source(0x10) },
+      expectedState = { source(0x10).dest(0x10).with(Z = _0, N = _0) }
     )
     assertForAddressModes(
       op,
-      initState = { source(0xF0u) },
-      expectedState = { source(0xF0u).dest(0xF0u).with(Z = _0, N = _1) }
+      initState = { source(0xF0) },
+      expectedState = { source(0xF0).dest(0xF0).with(Z = _0, N = _1) }
     )
     assertForAddressModes(
       op,
-      initState = { source(0x00u) },
-      expectedState = { source(0x00u).dest(0x00u).with(Z = _1, N = _0) }
+      initState = { source(0x00) },
+      expectedState = { source(0x00).dest(0x00).with(Z = _1, N = _0) }
     )
   }
 

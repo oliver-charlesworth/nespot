@@ -4,28 +4,28 @@ import choliver.nes.*
 
 data class State(
   val PC: ProgramCounter = ProgramCounter(),
-  val A: UInt8 = 0x00u,
-  val X: UInt8 = 0x00u,
-  val Y: UInt8 = 0x00u,
-  val S: UInt8 = 0x00u,
+  val A: Data = 0x00,
+  val X: Data = 0x00,
+  val Y: Data = 0x00,
+  val S: Data = 0x00,
   val P: Flags = Flags()
 ) {
   override fun toString() = "(PC=%s, S=0x%02X, A=0x%02X, X=0x%02X, Y=0x%02X, P=%s)".format(
     PC.toString(),
-    S.toByte(),
-    A.toByte(),
-    X.toByte(),
-    Y.toByte(),
+    S,
+    A,
+    X,
+    Y,
     P.toString()
   )
 
   /** Like [copy], but allows us to also set individual status flags. */
   fun with(
     PC: ProgramCounter = this.PC,
-    A: UInt8 = this.A,
-    X: UInt8 = this.X,
-    Y: UInt8 = this.Y,
-    S: UInt8 = this.S,
+    A: Data = this.A,
+    X: Data = this.X,
+    Y: Data = this.Y,
+    S: Data = this.S,
     N: Boolean = P.N,
     V: Boolean = P.V,
     D: Boolean = P.D,
@@ -43,24 +43,19 @@ data class State(
 }
 
 data class ProgramCounter(
-  val L: UInt8 = 0x00u,
-  val H: UInt8 = 0x00u
+  val L: Data = 0x00,
+  val H: Data = 0x00
 ) {
-  override fun toString() = "0x%02X%02X".format(H.toByte(), L.toByte())
+  override fun toString() = "0x%02X%02X".format(H, L)
 
-  operator fun plus(rhs: Int) = this + rhs.u16()
-  operator fun plus(rhs: UInt16) = (u16() + rhs).u16().toPC()
+  operator fun plus(rhs: Int) = (addr() + rhs).toPC()
+  operator fun minus(rhs: Int) = (addr() - rhs).toPC()
+  operator fun inc() = this + 1
 
-  operator fun minus(rhs: Int) = this - rhs.u16()
-  operator fun minus(rhs: UInt16) = (u16() - rhs).u16().toPC()
-
-  operator fun inc() = this + 1u
-
-  fun u16(): UInt16 = (L.u16() + H.u16() * 256u).u16()
+  fun addr(): Address = L + (H shl 8)
 }
 
-fun Int.toPC() = u16().toPC()
-fun UInt16.toPC() = ProgramCounter(L = lo(), H = hi())
+fun Address.toPC() = ProgramCounter(L = lo(), H = hi())
 
 data class Flags(
   val N: Boolean = false,
@@ -79,21 +74,21 @@ data class Flags(
     if (C) 'C' else '-'
   )
 
-  fun u8() = (
+  fun data(): Data = (
     (if (N) 0x80 else 0) or
     (if (V) 0x40 else 0) or
     (if (D) 0x08 else 0) or
     (if (I) 0x04 else 0) or
     (if (Z) 0x02 else 0) or
     (if (C) 0x01 else 0)
-  ).u8()
+  )
 }
 
-fun UInt8.toFlags() = Flags(
-  N = !(this and 0x80u).isZero(),
-  V = !(this and 0x40u).isZero(),
-  D = !(this and 0x08u).isZero(),
-  I = !(this and 0x04u).isZero(),
-  Z = !(this and 0x02u).isZero(),
-  C = !(this and 0x01u).isZero()
+fun Data.toFlags() = Flags(
+  N = isBitSet(7),
+  V = isBitSet(6),
+  D = isBitSet(3),
+  I = isBitSet(2),
+  Z = isBitSet(1),
+  C = isBitSet(0)
 )

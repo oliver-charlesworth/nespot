@@ -8,7 +8,7 @@ fun Instruction.format() = "${opcode.name}${format(operand)}"
 private fun format(operand: Operand) = when (operand) {
   is Operand.Implied -> ""
   is Operand.Accumulator -> " A"
-  is Operand.Relative -> " $%02x".format(operand.addr)
+  is Operand.Relative -> " $%02x".format(operand.offset)
   is Operand.Immediate -> " #$%02x".format(operand.literal.toByte())
   is Operand.ZeroPage -> " $%02x".format(operand.addr.toByte())
   is Operand.ZeroPageIndexed -> " $%02x,%s".format(operand.addr.toByte(), operand.source.name)

@@ -1,8 +1,8 @@
 package choliver.nes.sixfiveohtwo.model
 
-import choliver.nes.Int8
-import choliver.nes.UInt16
-import choliver.nes.UInt8
+import choliver.nes.Address
+import choliver.nes.Address8
+import choliver.nes.Data
 
 sealed class Operand {
   enum class IndexSource { X, Y }
@@ -12,43 +12,43 @@ sealed class Operand {
   object Implied : Operand()
 
   data class Immediate(
-    val literal: UInt8
+    val literal: Data
   ) : Operand()
 
   data class Relative(
-    val addr: Int8    // Signed
+    val offset: Data    // Signed
   ) : Operand()
 
   data class Absolute(
-    val addr: UInt16
+    val addr: Address
   ) : Operand()
 
   data class ZeroPage(
-    val addr: UInt8
+    val addr: Address8
   ) : Operand()
 
   data class Indirect(
-    val addr: UInt16
+    val addr: Data
   ) : Operand()
 
   data class AbsoluteIndexed(
-    val addr: UInt16,
+    val addr: Address,
     val source: IndexSource
   ) : Operand()
 
   data class ZeroPageIndexed(
-    val addr: UInt8,
+    val addr: Address8,
     val source: IndexSource
   ) : Operand()
 
   // Always uses X as the source
   data class IndexedIndirect(
-    val addr: UInt8
+    val addr: Address8
   ) : Operand()
 
   // Always uses Y as the source
   data class IndirectIndexed(
-    val addr: UInt8
+    val addr: Address8
   ) : Operand()
 }
 

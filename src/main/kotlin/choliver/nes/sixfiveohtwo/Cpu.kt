@@ -13,7 +13,6 @@ typealias F<T, R> = State.(T) -> R
 class Cpu(
   private val memory: Memory
 ) {
-  // Should sequence this via a state machine triggered on reset
   private var _state: State = State()
   val state get() = _state
 
@@ -29,12 +28,12 @@ class Cpu(
   fun irq() = vector(VECTOR_IRQ, _0)
   fun nmi() = vector(VECTOR_NMI, _0)
 
-  private fun vector(addr: UInt16, I: Boolean) {
+  private fun vector(addr: Address, I: Boolean) {
     // TODO - need to force a BRK instruction, but disable stack fuckery for RESET
     _state = State(
       PC = ProgramCounter(
         L = memory.load(addr),
-        H = memory.load((addr + 1u).u16())
+        H = memory.load(addr + 1)
       ),
       P = Flags(I = I)
     )
@@ -53,19 +52,19 @@ class Cpu(
 
   private fun <T> Ctx<T>.execute() = when (instruction.opcode) {
     ADC -> resolve().add { it }
-    SBC -> resolve().add { it.inv() }
+    SBC -> resolve().add { it xor 0xFF }
 
     CMP -> resolve().compare { it }
     CPX -> compare { X }
     CPY -> compare { Y }
 
-    DEC -> resolve().storeResult { (it - 1u).u8() }
-    DEX -> updateX { (X - 1u).u8() }
-    DEY -> updateY { (Y - 1u).u8() }
+    DEC -> resolve().storeResult { it - 1 }
+    DEX -> updateX { X - 1 }
+    DEY -> updateY { Y - 1 }
 
-    INC -> resolve().storeResult { (it + 1u).u8() }
-    INX -> updateX { (X + 1u).u8() }
-    INY -> updateY { (Y + 1u).u8() }
+    INC -> resolve().storeResult { it + 1 }
+    INX -> updateX { X + 1 }
+    INY -> updateY { Y + 1 }
 
     ASL -> resolve().shift { alu.asl(q = it) }
     LSR -> resolve().shift { alu.lsr(q = it) }
@@ -78,7 +77,7 @@ class Cpu(
 
     BIT -> resolve()
       .updateZN { A and it }
-      .updateV { !(it and 0x40u).isZero() }
+      .updateV { it.isBitSet(6) }
 
     LDA -> resolve().updateA { it }
     LDX -> resolve().updateX { it }
@@ -88,7 +87,7 @@ class Cpu(
     STX -> store { X }
     STY -> store { Y }
 
-    PHP -> push { P.u8() or 0x10u } // Most online references state that PHP also sets B on stack
+    PHP -> push { P.data() or 0x10 } // Most online references state that PHP also sets B on stack
     PHA -> push { A }
     PLP -> pop().updateP { it }
     PLA -> pop().updateA { it }
@@ -98,8 +97,8 @@ class Cpu(
       .updatePCH { addr.hi() }
 
     JSR -> this
-      .push { (PC - 1u).H }   // One before next instruction (note we already advanced PC)
-      .push { (PC - 1u).L }
+      .push { (PC - 1).H }   // One before next instruction (note we already advanced PC)
+      .push { (PC - 1).L }
       .updatePCL { addr.lo() }
       .updatePCH { addr.hi() }
 
@@ -114,11 +113,11 @@ class Cpu(
       .pop().updatePCH { it }
 
     BRK -> this
-      .push { (PC + 1u).H }     // Should be PC+2 (because BRK is weird), but we already advanced PC
-      .push { (PC + 1u).L }
-      .push { P.u8() or 0x10u } // Set B flag on stack
+      .push { (PC + 1).H }     // Should be PC+2 (because BRK is weird), but we already advanced PC
+      .push { (PC + 1).L }
+      .push { P.data() or 0x10 } // Set B flag on stack
       .load { VECTOR_IRQ }.updatePCL { it }
-      .load { (VECTOR_IRQ + 1u).u16() }.updatePCH { it }
+      .load { VECTOR_IRQ + 1 }.updatePCH { it }
 
     BPL -> branch { !P.N }
     BMI -> branch { P.N }
@@ -153,31 +152,31 @@ class Cpu(
     else -> load { addr }
   }
 
-  private fun Ctx<UInt8>.add(f: F<UInt8, UInt8>) = this
+  private fun Ctx<Data>.add(f: F<Data, Data>) = this
     .calc { alu.adc(a = A, b = f(it), c = P.C, d = P.D) }
     .updateA { it.q }
     .updateC { it.c }
     .updateV { it.v }
 
-  private fun <T> Ctx<T>.compare(f: F<T, UInt8>) = this
-    .calc { alu.adc(a = A, b = f(it).inv(), c = _1, d = _0) }  // Ignores borrow and decimal mode
+  private fun <T> Ctx<T>.compare(f: F<T, Data>) = this
+    .calc { alu.adc(a = A, b = f(it) xor 0xFF, c = _1, d = _0) }  // Ignores borrow and decimal mode
     .updateZN { it.q }
     .updateC { it.c }
 
-  private fun Ctx<UInt8>.shift(f: F<UInt8, Alu.Output>) = this
+  private fun Ctx<Data>.shift(f: F<Data, Alu.Output>) = this
     .calc(f)
     .storeResult { it.q }
     .updateC { it.c }
 
   private fun <T> Ctx<T>.branch(f: F<T, Boolean>) = updatePC { if (f(state, data)) addr.toPC() else PC }
 
-  private fun <T> Ctx<T>.push(f: F<T, UInt8>) = store(stackAddr(state.S), f).updateS { (S - 1u).u8() }
+  private fun <T> Ctx<T>.push(f: F<T, Data>) = store(stackAddr(state.S), f).updateS { S - 1 }
 
-  private fun <T> Ctx<T>.pop() = updateS { (S + 1u).u8() }.load { stackAddr(S) }
+  private fun <T> Ctx<T>.pop() = updateS { S + 1 }.load { stackAddr(S) }
 
-  private fun <T> Ctx<T>.load(f: F<T, UInt16>) = calc { memory.load(f(it)) }
+  private fun <T> Ctx<T>.load(f: F<T, Address>) = calc { memory.load(f(it)) }
 
-  private fun <T> Ctx<T>.storeResult(f: F<T, UInt8>): Ctx<T> {
+  private fun <T> Ctx<T>.storeResult(f: F<T, Data>): Ctx<T> {
     val data = f(state, data)
     return if (instruction.operand is Accumulator) {
       updateA { data }
@@ -186,39 +185,40 @@ class Cpu(
     }
   }
 
-  private fun <T> Ctx<T>.store(f: F<T, UInt8>) = store(addr, f)
-  private fun <T> Ctx<T>.store(addr: UInt16, f: F<T, UInt8>) = also { memory.store(addr, f(state, data)) }
+  private fun <T> Ctx<T>.store(f: F<T, Data>) = store(addr, f)
+  private fun <T> Ctx<T>.store(addr: Address, f: F<T, Data>) = also { memory.store(addr, f(state, data).data()) }
 
   private fun <T, R> Ctx<T>.calc(f: F<T, R>) = Ctx(state, instruction, addr, f(state, data))
 
-  private fun <T> Ctx<T>.updateA(f: F<T, UInt8>) = update(f) { with(A = it, Z = it.isZero(), N = it.isNegative()) }
-  private fun <T> Ctx<T>.updateX(f: F<T, UInt8>) = update(f) { with(X = it, Z = it.isZero(), N = it.isNegative()) }
-  private fun <T> Ctx<T>.updateY(f: F<T, UInt8>) = update(f) { with(Y = it, Z = it.isZero(), N = it.isNegative()) }
-  private fun <T> Ctx<T>.updateS(f: F<T, UInt8>) = update(f) { with(S = it) }
-  private fun <T> Ctx<T>.updateP(f: F<T, UInt8>) = update(f) { copy(P = it.toFlags()) }
+  private fun <T> Ctx<T>.updateA(f: F<T, Data>) = updateD(f) { with(A = it, Z = it.isZero(), N = it.isNeg()) }
+  private fun <T> Ctx<T>.updateX(f: F<T, Data>) = updateD(f) { with(X = it, Z = it.isZero(), N = it.isNeg()) }
+  private fun <T> Ctx<T>.updateY(f: F<T, Data>) = updateD(f) { with(Y = it, Z = it.isZero(), N = it.isNeg()) }
+  private fun <T> Ctx<T>.updateS(f: F<T, Data>) = updateD(f) { with(S = it) }
+  private fun <T> Ctx<T>.updateP(f: F<T, Data>) = updateD(f) { copy(P = it.toFlags()) }
   private fun <T> Ctx<T>.updatePC(f: F<T, ProgramCounter>) = update(f) { with(PC = it) }
-  private fun <T> Ctx<T>.updatePCL(f: F<T, UInt8>) = update(f) { with(PC = PC.copy(L = it)) }
-  private fun <T> Ctx<T>.updatePCH(f: F<T, UInt8>) = update(f) { with(PC = PC.copy(H = it)) }
+  private fun <T> Ctx<T>.updatePCL(f: F<T, Data>) = updateD(f) { with(PC = PC.copy(L = it)) }
+  private fun <T> Ctx<T>.updatePCH(f: F<T, Data>) = updateD(f) { with(PC = PC.copy(H = it)) }
   private fun <T> Ctx<T>.updateC(f: F<T, Boolean>) = update(f) { with(C = it) }
   private fun <T> Ctx<T>.updateD(f: F<T, Boolean>) = update(f) { with(D = it) }
   private fun <T> Ctx<T>.updateI(f: F<T, Boolean>) = update(f) { with(I = it) }
   private fun <T> Ctx<T>.updateV(f: F<T, Boolean>) = update(f) { with(V = it) }
-  private fun <T> Ctx<T>.updateZN(f: F<T, UInt8>) = update(f) { with(Z = it.isZero(), N = it.isNegative()) }
+  private fun <T> Ctx<T>.updateZN(f: F<T, Data>) = updateD(f) { with(Z = it.isZero(), N = it.isNeg()) }
 
+  private fun <T> Ctx<T>.updateD(f: F<T, Data>, g: State.(Data) -> State) = copy(state = g(state, f(state, data).data()))
   private fun <T, R> Ctx<T>.update(f: F<T, R>, g: State.(R) -> State) = copy(state = g(state, f(state, data)))
 
-  private fun stackAddr(S: UInt8) = (0x0100u + S).u16()
+  private fun stackAddr(S: Data): Address = (0x0100 + S)
 
   private data class Ctx<T>(
     val state: State,
     val instruction: Instruction,
-    val addr: UInt16,
+    val addr: Address,
     val data: T
   )
 
   companion object {
-    val VECTOR_NMI = 0xFFFA.u16()
-    val VECTOR_RESET = 0xFFFC.u16()
-    val VECTOR_IRQ = 0xFFFE.u16()
+    const val VECTOR_NMI: Address = 0xFFFA
+    const val VECTOR_RESET: Address = 0xFFFC
+    const val VECTOR_IRQ: Address = 0xFFFE
   }
 }

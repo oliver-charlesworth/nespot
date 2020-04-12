@@ -1,11 +1,15 @@
 package choliver.nes.sixfiveohtwo
 
 import choliver.nes.Memory
-import choliver.nes.combine
-import choliver.nes.s8
-import choliver.nes.sixfiveohtwo.model.*
+import choliver.nes.addr
+import choliver.nes.sixfiveohtwo.model.AddressMode
 import choliver.nes.sixfiveohtwo.model.AddressMode.*
+import choliver.nes.sixfiveohtwo.model.Instruction
+import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.Operand.*
+import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
+import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
+import choliver.nes.sixfiveohtwo.model.ProgramCounter
 
 class InstructionDecoder {
   data class Decoded(
@@ -15,26 +19,26 @@ class InstructionDecoder {
 
   fun decode(memory: Memory, pc: ProgramCounter): Decoded {
     var pcLocal = pc
-    fun load() = memory.load((pcLocal++).u16())
+    fun load() = memory.load((pcLocal++).addr())
 
     // TODO - error handling
     val found = ENCODINGS[load()]!!
 
     fun operand8() = load()
-    fun operand16() = combine(lo = load(), hi = load())
+    fun operand16() = addr(lo = load(), hi = load())
 
     val mode = when (found.addressMode) {
       ACCUMULATOR -> Accumulator
       IMMEDIATE -> Immediate(operand8())
       IMPLIED -> Implied
       INDIRECT -> Indirect(operand16())
-      RELATIVE -> Relative(operand8().s8())
+      RELATIVE -> Relative(operand8())
       ABSOLUTE -> Absolute(operand16())
-      ABSOLUTE_X -> AbsoluteIndexed(operand16(), IndexSource.X)
-      ABSOLUTE_Y -> AbsoluteIndexed(operand16(), IndexSource.Y)
+      ABSOLUTE_X -> AbsoluteIndexed(operand16(), X)
+      ABSOLUTE_Y -> AbsoluteIndexed(operand16(), Y)
       ZERO_PAGE -> ZeroPage(operand8())
-      ZERO_PAGE_X -> ZeroPageIndexed(operand8(), IndexSource.X)
-      ZERO_PAGE_Y -> ZeroPageIndexed(operand8(), IndexSource.Y)
+      ZERO_PAGE_X -> ZeroPageIndexed(operand8(), X)
+      ZERO_PAGE_Y -> ZeroPageIndexed(operand8(), Y)
       INDEXED_INDIRECT -> IndexedIndirect(operand8())
       INDIRECT_INDEXED -> IndirectIndexed(operand8())
     }

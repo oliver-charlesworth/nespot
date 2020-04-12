@@ -31,19 +31,25 @@ class Nes(rom: ByteArray) {
 
   private val cpu = Cpu(cpuMapper)
 
-  internal val state get() = cpu.state
-
-  internal fun decodeAt(pc: ProgramCounter) = cpu.decodeAt(pc)
+  val instrumentation = Instrumentation()
 
   init {
-    reset()
+    instrumentation.reset()
   }
 
-  fun reset() {
-    cpu.reset()
-  }
+  inner class Instrumentation internal constructor() {
+    fun reset() {
+      cpu.reset()
+    }
 
-  fun step() {
-    cpu.step()
+    fun step() {
+      cpu.step()
+    }
+
+    fun peek(addr: Address) = cpuMapper.load(addr)
+
+    val state get() = cpu.state
+
+    fun decodeAt(pc: ProgramCounter) = cpu.decodeAt(pc)
   }
 }

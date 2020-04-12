@@ -41,7 +41,6 @@ class Cpu(
 
   fun step() {
     val decoded = decodeAt(_state.PC)
-    logger.info("${_state.PC}: ${decoded.instruction}")
     _state = _state.with(PC = decoded.nextPc)
     val context = Ctx(
       _state,

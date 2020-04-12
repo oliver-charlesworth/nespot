@@ -74,8 +74,4 @@ class ShowStuffTest {
 
     launch(PatternsApp::class.java)
   }
-
-  companion object {
-    const val TILE_SIZE = 8
-  }
 }

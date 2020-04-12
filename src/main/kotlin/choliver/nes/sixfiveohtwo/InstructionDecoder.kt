@@ -6,6 +6,7 @@ import choliver.nes.sixfiveohtwo.model.AddressMode
 import choliver.nes.sixfiveohtwo.model.AddressMode.*
 import choliver.nes.sixfiveohtwo.model.Instruction
 import choliver.nes.sixfiveohtwo.model.Opcode
+import choliver.nes.sixfiveohtwo.model.Opcode.BRK
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
@@ -14,15 +15,16 @@ import choliver.nes.sixfiveohtwo.model.ProgramCounter
 class InstructionDecoder {
   data class Decoded(
     val instruction: Instruction,
-    val pc: ProgramCounter
+    val nextPc: ProgramCounter
   )
 
   fun decode(memory: Memory, pc: ProgramCounter): Decoded {
-    var pcLocal = pc
-    fun load() = memory.load((pcLocal++).addr())
+    var nextPc = pc
+    fun load() = memory.load((nextPc++).addr())
 
     // TODO - error handling
-    val found = ENCODINGS[load()]!!
+    val opcode = load()
+    val found = ENCODINGS[opcode] ?: error("Unexpected opcode 0x%02x at %s".format(opcode, pc))
 
     fun operand8() = load()
     fun operand16() = addr(lo = load(), hi = load())
@@ -43,7 +45,11 @@ class InstructionDecoder {
       INDIRECT_INDEXED -> IndirectIndexed(operand8())
     }
 
-    return Decoded(Instruction(found.op, mode), pcLocal)
+    if (found.op == BRK) {
+      load()  // Special case
+    }
+
+    return Decoded(Instruction(found.op, mode), nextPc)
   }
 
   private data class OpAndMode(

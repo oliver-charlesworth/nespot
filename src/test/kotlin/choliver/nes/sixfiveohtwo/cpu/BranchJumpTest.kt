@@ -118,13 +118,13 @@ class BranchJumpTest {
       op,
       target = 0x30,
       initState = { state(_1) },
-      expectedState = { state(_1).with(PC = BASE_USER.toPC() + 0x30) }
+      expectedState = { state(_1).with(PC = BASE_USER.toPC() + 2 + 0x30) }  // Offset from *next* instruction
     )
     assertForAddressModes(
       op,
       target = 0xD0,
       initState = { state(_1) },
-      expectedState = { state(_1).with(PC = BASE_USER.toPC() - 0x30) }
+      expectedState = { state(_1).with(PC = BASE_USER.toPC() + 2 - 0x30) }  // Offset from *next* instruction
     )
   }
 }

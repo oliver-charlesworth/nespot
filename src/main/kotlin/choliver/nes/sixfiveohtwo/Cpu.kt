@@ -7,22 +7,21 @@ import choliver.nes.sixfiveohtwo.model.Operand.Accumulator
 import choliver.nes.sixfiveohtwo.model.Operand.Immediate
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
+import mu.KotlinLogging
 
 typealias F<T, R> = State.(T) -> R
 
 class Cpu(
   private val memory: Memory
 ) {
+  private val logger = KotlinLogging.logger {}
+
   private var _state: State = State()
   val state get() = _state
 
   private val decoder = InstructionDecoder()
   private val alu = Alu()
   private val addrCalc = AddressCalculator(memory)
-
-  init {
-    reset()
-  }
 
   fun reset() = vector(VECTOR_RESET, _1)
   fun irq() = vector(VECTOR_IRQ, _0)
@@ -37,26 +36,30 @@ class Cpu(
       ),
       P = Flags(I = I)
     )
+    logger.info("Vectoring to ${_state.PC}")
   }
 
-  fun next() {
-    val decoded = decoder.decode(memory, _state.PC)
+  fun step() {
+    val decoded = decodeAt(_state.PC)
+    _state = _state.with(PC = decoded.nextPc)
     val context = Ctx(
-      _state.with(PC = decoded.pc),
+      _state,
       decoded.instruction,
-      addrCalc.calculate(decoded.instruction.operand, state),
+      addrCalc.calculate(decoded.instruction.operand, _state),
       null
     )
     _state = context.execute().state
   }
 
+  fun decodeAt(pc: ProgramCounter) = decoder.decode(memory, pc)
+
   private fun <T> Ctx<T>.execute() = when (instruction.opcode) {
     ADC -> resolve().add { it }
     SBC -> resolve().add { it xor 0xFF }
 
-    CMP -> resolve().compare { it }
-    CPX -> compare { X }
-    CPY -> compare { Y }
+    CMP -> resolve().compare { A }
+    CPX -> resolve().compare { X }
+    CPY -> resolve().compare { Y }
 
     DEC -> resolve().storeResult { it - 1 }
     DEX -> updateX { X - 1 }
@@ -113,8 +116,8 @@ class Cpu(
       .pop().updatePCH { it }
 
     BRK -> this
-      .push { (PC + 1).H }     // Should be PC+2 (because BRK is weird), but we already advanced PC
-      .push { (PC + 1).L }
+      .push { PC.H }
+      .push { PC.L }
       .push { P.data() or 0x10 } // Set B flag on stack
       .load { VECTOR_IRQ }.updatePCL { it }
       .load { VECTOR_IRQ + 1 }.updatePCH { it }
@@ -158,8 +161,8 @@ class Cpu(
     .updateC { it.c }
     .updateV { it.v }
 
-  private fun <T> Ctx<T>.compare(f: F<T, Data>) = this
-    .calc { alu.adc(a = A, b = f(it) xor 0xFF, c = _1, d = _0) }  // Ignores borrow and decimal mode
+  private fun Ctx<Data>.compare(f: F<Data, Data>) = this
+    .calc { alu.adc(a = f(it), b = data xor 0xFF, c = _1, d = _0) }  // Ignores borrow and decimal mode
     .updateZN { it.q }
     .updateC { it.c }
 

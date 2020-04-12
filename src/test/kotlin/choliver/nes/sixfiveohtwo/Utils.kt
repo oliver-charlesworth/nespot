@@ -114,7 +114,7 @@ fun assertForAddressModes(
           initStores,                       // User-defined
         expectedState = case.state(proto).with(PC = BASE_USER.toPC() + instruction.encode().size).expectedState(),
         expectedStores = expectedStores(case.targetAddr),
-        name = instruction.format()
+        name = instruction.toString()
       )
     }
   }
@@ -138,9 +138,10 @@ fun assertCpuEffects(
   )
   val cpu = Cpu(memory)
 
-  repeat(trampoline.size) { cpu.next() }
+  cpu.reset()
+  repeat(trampoline.size) { cpu.step() }
   memory.trackStores = true
-  repeat(instructions.size) { cpu.next() }
+  repeat(instructions.size) { cpu.step() }
 
   if (expectedState != null) {
     assertEquals(expectedState, cpu.state, "Unexpected state for [${name}]")

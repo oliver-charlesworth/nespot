@@ -261,8 +261,9 @@ class ArithmeticTest {
     fun greaterThan() {
       assertForAddressModes(
         CPX,
-        initState = { with(A = 0xFE, X = 0xFD) },
-        expectedState = { with(A = 0xFE, X = 0xFD, C = _1, N = _0, Z = _0) }
+        target = 0xFD,
+        initState = { with(X = 0xFE) },
+        expectedState = { with(X = 0xFE, C = _1, N = _0, Z = _0) }
       )
     }
 
@@ -275,8 +276,9 @@ class ArithmeticTest {
     fun greaterThan() {
       assertForAddressModes(
         CPY,
-        initState = { with(A = 0xFE, Y = 0xFD) },
-        expectedState = { with(A = 0xFE, Y = 0xFD, C = _1, N = _0, Z = _0) }
+        target = 0xFD,
+        initState = { with(Y = 0xFE) },
+        expectedState = { with(Y = 0xFE, C = _1, N = _0, Z = _0) }
       )
     }
 
@@ -345,24 +347,24 @@ class ArithmeticTest {
 
   @Test
   fun inc() {
-//    assertForAddressModes(
-//      INC,
-//      target = 0x01,
-//      expectedState = { with(Z = _0, N = _0) },
-//      expectedStores = { mapOf(it to 0x02) }
-//    )
+    assertForAddressModes(
+      INC,
+      target = 0x01,
+      expectedState = { with(Z = _0, N = _0) },
+      expectedStores = { mapOf(it to 0x02) }
+    )
     assertForAddressModes(
       INC,
       target = 0xFF,
       expectedState = { with(Z = _1, N = _0) },
       expectedStores = { mapOf(it to 0x00) }
     )
-//    assertForAddressModes(
-//      INC,
-//      target = 0xFE,
-//      expectedState = { with(Z = _0, N = _1) },
-//      expectedStores = { mapOf(it to 0xFF) }
-//    )
+    assertForAddressModes(
+      INC,
+      target = 0xFE,
+      expectedState = { with(Z = _0, N = _1) },
+      expectedStores = { mapOf(it to 0xFF) }
+    )
   }
 
   @Test

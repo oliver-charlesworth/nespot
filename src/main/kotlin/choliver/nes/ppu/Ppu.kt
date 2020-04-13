@@ -20,6 +20,16 @@ class Ppu(
         )
         0x80 // TODO - remove debug hack that emulates VBL
       }
+
+      REG_PPUDATA -> {
+        // TODO - handle differently for palette reads
+        val ret = state.ppuReadBuffered
+        state = state.copy(
+          addr = (state.addr + 1).addr(),
+          ppuReadBuffered = memory.load(state.addr)
+        )
+        ret
+      }
       else -> 0x00
     }
   } // TODO
@@ -47,7 +57,6 @@ class Ppu(
         isBlueEmphasized = data.isBitSet(7)
       )
 
-
       REG_OAMADDR -> state = state.copy(oamAddr = data)
 
       REG_OAMDATA -> {
@@ -68,6 +77,7 @@ class Ppu(
       )
 
       REG_PPUDATA -> {
+        // TODO - palette writes
         memory.store(state.addr, data)
         state = state.copy(addr = (state.addr + 1).addr())
       }
@@ -96,6 +106,7 @@ class Ppu(
 
     val addrWriteLo: Boolean = false, // TODO - better name, or encapsulation
     val addr: Address = 0x0000,
+    val ppuReadBuffered: Data = 0x00,
 
     val oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
   )

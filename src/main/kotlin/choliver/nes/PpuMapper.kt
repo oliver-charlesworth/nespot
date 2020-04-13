@@ -1,17 +1,23 @@
 package choliver.nes
 
+import choliver.nes.cartridge.ChrMemory
+import choliver.nes.cartridge.ChrMemory.ChrLoadResult
+
 class PpuMapper(
+  private val chr: ChrMemory,
   private val ram: Memory
 ) : Memory {
-  // TODO
+  // TODO - this hardcoded mapping is wrong
   override fun load(addr: Address) = when {
-    addr in 0x2000..0x3FFF -> ram.load(addr % 2048)
+    addr < 0x2000 -> (chr.load(addr) as ChrLoadResult.Data).data
+    addr < 0x4000 -> ram.load(addr % 2048)
     else -> 0x00
   }
 
-  // TODO
+  // TODO - this hardcoded mapping is wrong
   override fun store(addr: Address, data: Data) = when {
-    addr in 0x2000..0x3FFF -> ram.store(addr % 2048, data)
+    addr < 0x2000 -> { chr.store(addr, data); Unit }
+    addr < 0x4000 -> ram.store(addr % 2048, data)
     else -> {}
   }
 }

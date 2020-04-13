@@ -4,13 +4,13 @@ v
 u 0x8057
 
 # OperMode
-display 0x0770
+#display 0x0770
 # OperMode_Task
-display 0x0772
+#display 0x0772
 # ScreenRoutineTask
-display 0x073c
+#display 0x073c
 # ColumnSets
-display 0x071e
+#display 0x071e
 
 # InitializeGame (0)
 nmi
@@ -78,6 +78,8 @@ f
 # ScreenRoutines (1) - GetAlternatePalette1 (B)
 nmi
 f
+
+q
 
 # ScreenRoutines (1) - DrawTitleScreen (C)
 nmi

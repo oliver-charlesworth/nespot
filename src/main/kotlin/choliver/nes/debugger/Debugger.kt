@@ -5,6 +5,7 @@ import choliver.nes.Data
 import choliver.nes.Nes
 import choliver.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nes.Nes.Companion.PPU_RAM_SIZE
+import choliver.nes.debugger.CallStackManager.FrameType.*
 import choliver.nes.debugger.Command.*
 import choliver.nes.debugger.Command.CreatePoint.Break
 import choliver.nes.debugger.Command.CreatePoint.Watch
@@ -12,38 +13,26 @@ import choliver.nes.debugger.Command.DeletePoint.All
 import choliver.nes.debugger.Command.DeletePoint.ByNum
 import choliver.nes.debugger.Command.Event.*
 import choliver.nes.debugger.Command.Execute.*
-import choliver.nes.debugger.Debugger.RoutineType.*
 import choliver.nes.debugger.PointManager.Point.Breakpoint
 import choliver.nes.debugger.PointManager.Point.Watchpoint
-import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
 import java.io.InputStream
 import java.io.PrintStream
-import java.util.*
 
 class Debugger(
   rom: ByteArray,
   stdin: InputStream,
   private val stdout: PrintStream
 ) {
-  private enum class RoutineType {
-    JUMP,
-    NMI,
-    IRQ
-  }
-
-  private data class StackEntry(
-    val next: ProgramCounter,
-    val type: RoutineType
-  )
-
   private val parser = CommandParser(stdin)
   private val nes = Nes(rom).instrumentation
   private var points = PointManager()
-  private val stack = Stack<StackEntry>()
+  private var stack = CallStackManager(nes)
   private var isVerbose = true
 
   fun start() {
+    event(Reset) // TODO - this is cheating
+
     // TODO - handle Ctrl+C ?
     loop@ while (true) {
       stdout.print("[${nes.state.PC}]: ")
@@ -69,11 +58,11 @@ class Debugger(
 
       is Next -> {
         // Perform specified number of instructions, but only within this stack frame
-        val depth = stack.size
+        val myDepth = stack.depth
         var n = cmd.num
-        while ((n > 0) && (stack.size >= depth)) {
+        while ((n > 0) && (stack.depth >= myDepth)) {
           if (!step()) break
-          if (stack.size == depth) {
+          if (stack.depth == myDepth) {
             n--
           }
         }
@@ -99,8 +88,8 @@ class Debugger(
       }
 
       is Finish -> {
-        val depth = stack.size
-        while (stack.size >= depth) {
+        val myDepth = stack.depth
+        while (stack.depth >= myDepth) {
           if (!step()) break
         }
       }
@@ -159,13 +148,16 @@ class Debugger(
       }
 
       is Info.Backtrace -> {
-        stdout.println("#%-4d %s: %s".format(0, nes.state.PC, instAt(nes.state.PC)))
-        stack.reversed().forEachIndexed { idx, entry ->
-          stdout.println("#%-4d %s: %-20s%s".format(
-            idx + 1,
-            entry.next,
-            instAt(entry.next),
-            if (entry.type != JUMP) "(${entry.type.name})" else ""
+        stack.frames.forEachIndexed { idx, frame ->
+          stdout.println("#%-4d %s  <%s>  %-20s%s".format(
+            idx,
+            frame.current,
+            frame.start,
+            instAt(frame.current),
+            when (frame.type) {
+              NMI, IRQ -> " (${frame.type.name})"
+              else -> ""
+            }
           ))
         }
       }
@@ -190,43 +182,31 @@ class Debugger(
   private fun event(cmd: Event) {
     when (cmd) {
       is Reset -> {
-        stack.clear()
         nes.reset()
+        stack.handleReset()
       }
       is Nmi -> {
-        stack.push(StackEntry(nes.state.PC, NMI))
         nes.nmi()
+        stack.handleNmi()
       }
       is Irq -> {
-        stack.push(StackEntry(nes.state.PC, IRQ))
         nes.irq()
+        stack.handleIrq()
       }
     }
   }
 
   private fun step(): Boolean {
-    updateStack()
     maybeTraceInstruction()
+    stack.handleStep()
     val stores = nes.step()
     maybeTraceStores(stores)
     return isWatchpointHit(stores) && isBreakpointHit()
   }
 
-  private fun updateStack() {
-    when (instAt(nes.state.PC).opcode) {
-      JSR -> stack.push(StackEntry(nextPc(), JUMP))
-      RTS, RTI -> try {
-        stack.pop() // TODO - validate type
-      } catch (_: EmptyStackException) {
-        stdout.println("Tried to return with empty stack")
-      }
-      else -> {}
-    }
-  }
-
   private fun maybeTraceInstruction() {
     if (isVerbose) {
-      stdout.println("${nes.state.PC}: ${instAt(nes.state.PC)}")
+      stdout.println("${nes.state.PC}: ${instAt(nes.state.PC)}")  // TODO - de-dupe with InspectInst handler
     }
   }
 

@@ -5,6 +5,9 @@ import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
 
 sealed class Command {
+  object Script : Command()
+  object Nop : Command()
+
   sealed class Execute : Command() {
     data class Step(val num: Int) : Execute()
     data class Next(val num: Int) : Execute()
@@ -28,10 +31,13 @@ sealed class Command {
     data class ByNum(val num: Int) : DeletePoint()
   }
 
+  data class CreateDisplay(val addr: Address) : Command()
+
   sealed class Info : Command() {
     object Reg : Info()
     object Break : Info()
     object Watch : Info()
+    object Display : Info()
     object Backtrace : Info()
     data class Print(val addr: Address) : Info()
     data class InspectInst(val pc: ProgramCounter, val num: Int) : Info()

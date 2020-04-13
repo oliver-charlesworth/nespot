@@ -5,7 +5,8 @@ import choliver.nes.Data
 import choliver.nes.Nes
 import choliver.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nes.Nes.Companion.PPU_RAM_SIZE
-import choliver.nes.debugger.CallStackManager.FrameType.*
+import choliver.nes.debugger.CallStackManager.FrameType.IRQ
+import choliver.nes.debugger.CallStackManager.FrameType.NMI
 import choliver.nes.debugger.Command.*
 import choliver.nes.debugger.Command.CreatePoint.Break
 import choliver.nes.debugger.Command.CreatePoint.Watch
@@ -21,32 +22,50 @@ import java.io.PrintStream
 
 class Debugger(
   rom: ByteArray,
-  stdin: InputStream,
-  private val stdout: PrintStream
+  private val stdin: InputStream,
+  private val stdout: PrintStream,
+  private val script: String = ""
 ) {
-  private val parser = CommandParser(stdin)
   private val nes = Nes(rom).instrumentation
   private var points = PointManager()
   private var stack = CallStackManager(nes)
   private var isVerbose = true
 
+  // Displays
+  private var nextDisplayNum = 1
+  private val displays = mutableMapOf<Int, Address>()
+
   fun start() {
     event(Reset) // TODO - this is cheating
+    consume(CommandParser(stdin), true)
+  }
 
+  private fun consume(parser: CommandParser, enablePrompts: Boolean) {
     // TODO - handle Ctrl+C ?
-    loop@ while (true) {
-      stdout.print("[${nes.state.PC}]: ")
+    while (true) {
+      if (enablePrompts) {
+        stdout.print("[${nes.state.PC}]: ")
+      }
 
       when (val cmd = parser.next()) {
+        is Script -> script()
         is Execute -> execute(cmd)
         is CreatePoint -> createPoint(cmd)
         is DeletePoint -> deletePoint(cmd)
+        is CreateDisplay -> displays[nextDisplayNum++] = cmd.addr
         is Info -> info(cmd)
         is ToggleVerbosity -> isVerbose = !isVerbose
         is Event -> event(cmd)
-        is Quit -> break@loop
+        is Quit -> return
         is Error -> stdout.println(cmd.msg)
       }
+    }
+  }
+
+  // TODO - this recursion is weird - can we combine this + stdin with flatMap magic?
+  private fun script() {
+    script.byteInputStream().use { stream ->
+      consume(CommandParser(stream), false)
     }
   }
 
@@ -94,6 +113,8 @@ class Debugger(
         }
       }
     }
+
+    displayDisplays()
   }
 
   private fun createPoint(cmd: CreatePoint) {
@@ -147,6 +168,13 @@ class Debugger(
         points.watchpoints.forEach { (_, v) -> stdout.println("%-4d %s".format(v.num, v.addr.format())) }
       }
 
+      is Info.Display -> if (displays.isEmpty()) {
+        stdout.println("No displays")
+      } else {
+        println("Num  Address")
+        displays.forEach { (k, v) -> stdout.println("%-4d %s".format(k, v.format())) }
+      }
+
       is Info.Backtrace -> {
         stack.frames.forEachIndexed { idx, frame ->
           stdout.println("#%-4d %s  <%s>  %-20s%s".format(
@@ -166,7 +194,7 @@ class Debugger(
 
       is Info.PpuRam -> displayDump((0 until PPU_RAM_SIZE).map { nes.peekV(it) })
 
-      is Info.Print -> stdout.println("0x%02x".format(nes.peek(cmd.addr)))
+      is Info.Print -> stdout.println(nes.peek(cmd.addr).format8())
 
       is Info.InspectInst -> {
         var pc = cmd.pc
@@ -239,6 +267,12 @@ class Debugger(
     (0 until offset).fold(nes.state.PC) { pc, _ -> nes.decodeAt(pc).nextPc }
 
   private fun instAt(pc: ProgramCounter) = nes.decodeAt(pc).instruction
+
+  private fun displayDisplays() {
+    displays.forEach { (k, v) ->
+      stdout.println("${k}: ${v.format()} = ${nes.peek(v).format8()}")
+    }
+  }
 
   private fun displayDump(data: List<Data>) {
     val numPerRow = 32

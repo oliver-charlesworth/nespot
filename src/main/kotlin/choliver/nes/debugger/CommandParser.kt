@@ -15,17 +15,27 @@ class CommandParser(stdin: InputStream) {
     return parseCommand(reader.readLine())
   }
 
-  private fun parseCommand(raw: String): Command {
+  private fun parseCommand(raw: String?): Command {
+    if (raw == null) {
+      return Quit
+    }
     val r = raw.trim()
-    val bits = if (r.isEmpty()) listOf("next") else r.split("\\s+".toRegex())
+    if (r.isEmpty()) {
+      return Next(1)
+    }
+    if (r.startsWith("#")) {
+      return Nop
+    }
+
+    val bits = r.split("\\s+".toRegex())
 
     val error = Error("Can't parse: ${r}")
-
     fun noArgs(cmd: Command) = if (bits.size == 1) cmd else error
-
     fun <T> T?.oneArg(create: (T) -> Command) = if (this != null) create(this) else error
 
     return when (bits[0]) {
+      "script" -> noArgs(Script)
+
       "s", "step" -> when (bits.size) {
         1 -> Step(1)
         2 -> bits[1].toIntOrNull().oneArg(::Step)
@@ -65,6 +75,11 @@ class CommandParser(stdin: InputStream) {
         else -> error
       }
 
+      "display" -> when (bits.size) {
+        2 -> bits[1].toAddressOrNull().oneArg(::CreateDisplay)
+        else -> error
+      }
+
       // TODO - clear
 
       "d", "delete" -> when (bits.size) {
@@ -79,6 +94,7 @@ class CommandParser(stdin: InputStream) {
           "r", "reg" -> Info.Reg
           "b", "break" -> Info.Break
           "w", "watch" -> Info.Watch
+          "d", "display" -> Info.Display
           "ram" -> Info.CpuRam
           "vram" -> Info.PpuRam
           else -> error

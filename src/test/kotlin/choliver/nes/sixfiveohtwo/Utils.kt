@@ -8,6 +8,7 @@ import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
+import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
 
 private data class Case(
@@ -130,23 +131,27 @@ fun assertCpuEffects(
 ) {
   // Set up memory so PC jumps from reset vector to trampoline to user instructions
   val trampoline = trampolineFor(initState)
-  val memory = FakeMemory(
-    addrToMem(VECTOR_RESET, BASE_TRAMPOLINE) +
+
+  val memory = mock<Memory> {
+    val memoryMap = addrToMem(VECTOR_RESET, BASE_TRAMPOLINE) +
       trampoline.memoryMap(BASE_TRAMPOLINE) +
       instructions.memoryMap(BASE_USER) +
+      mapOf((initState.S + 0x100) to initState.P.data()) +
       initStores
-  )
-  val cpu = Cpu(memory)
 
+    on { load(any()) } doAnswer { memoryMap[it.getArgument(0)] ?: 0xCC } // Easier to spot during debugging than 0x00
+  }
+
+  val cpu = Cpu(memory)
   cpu.reset()
   repeat(trampoline.size) { cpu.step() }
-  memory.trackStores = true
   repeat(instructions.size) { cpu.step() }
 
   if (expectedState != null) {
     assertEquals(expectedState, cpu.state, "Unexpected state for [${name}]")
   }
-  memory.assertStores(expectedStores, "Unexpected store for [${name}]")
+  expectedStores.forEach { (addr, data) -> verify(memory).store(addr, data) }
+  verify(memory, times(expectedStores.size)).store(any(), any())
 }
 
 private fun Instruction.encode(): List<Data> {
@@ -172,14 +177,10 @@ private fun Instruction.encode(): List<Data> {
   }
 }
 
-
-
-/** Instructions that set CPU state and trampolines to the user code. */
+/** Instructions that sets AXYS, loads P from stack, and trampolines to the user code. */
 private fun trampolineFor(state: State) = listOf(
-  Instruction(LDX, Immediate(state.S)),
+  Instruction(LDX, Immediate((state.S - 1).addr8())),
   Instruction(TXS),
-  Instruction(LDA, Immediate(state.P.data())),
-  Instruction(PHA),
   Instruction(LDA, Immediate(state.A)),
   Instruction(LDX, Immediate(state.X)),
   Instruction(LDY, Immediate(state.Y)),

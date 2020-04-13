@@ -1,16 +1,20 @@
 package choliver.nes.sixfiveohtwo
 
+import choliver.nes.Memory
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
 import choliver.nes.sixfiveohtwo.model.State
 import choliver.nes.sixfiveohtwo.model.toPC
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class AddressCalculatorTest {
-  private val memory = FakeMemory()
+  private val memory = mock<Memory>()
   private val calc = AddressCalculator(memory)
 
   @Nested
@@ -50,8 +54,8 @@ class AddressCalculatorTest {
 
   @Test
   fun indirect() {
-    memory.store(0x40FF, 0x30)
-    memory.store(0x4100, 0x12)
+    whenever(memory.load(0x40FF)) doReturn 0x30
+    whenever(memory.load(0x4100)) doReturn 0x12
 
     assertEquals(
       0x1230,
@@ -109,8 +113,8 @@ class AddressCalculatorTest {
   inner class IndexedIndirect {
     @Test
     fun basic() {
-      memory.store(0x0030, 0x30)
-      memory.store(0x0031, 0x12)
+      whenever(memory.load(0x0030)) doReturn 0x30
+      whenever(memory.load(0x0031)) doReturn 0x12
 
       assertEquals(
         0x1230,
@@ -120,8 +124,8 @@ class AddressCalculatorTest {
 
     @Test
     fun zeroPageWraparoundOffset() {
-      memory.store(0x0030, 0x30)
-      memory.store(0x0031, 0x12)
+      whenever(memory.load(0x0030)) doReturn 0x30
+      whenever(memory.load(0x0031)) doReturn 0x12
 
       assertEquals(
         0x1230,
@@ -131,8 +135,8 @@ class AddressCalculatorTest {
 
     @Test
     fun zeroPageWraparoundHighByte() {
-      memory.store(0x00FF, 0x30)
-      memory.store(0x0000, 0x12)
+      whenever(memory.load(0x00FF)) doReturn 0x30
+      whenever(memory.load(0x0000)) doReturn 0x12
 
       assertEquals(
         0x1230,
@@ -146,8 +150,8 @@ class AddressCalculatorTest {
   inner class IndirectIndexed {
     @Test
     fun basic() {
-      memory.store(0x0030, 0x30)
-      memory.store(0x0031, 0x12)
+      whenever(memory.load(0x0030)) doReturn 0x30
+      whenever(memory.load(0x0031)) doReturn 0x12
 
       assertEquals(
         0x1240,
@@ -157,8 +161,8 @@ class AddressCalculatorTest {
 
     @Test
     fun zeroPageWraparoundHighByte() {
-      memory.store(0x00FF, 0x30)
-      memory.store(0x0000, 0x12)
+      whenever(memory.load(0x00FF)) doReturn 0x30
+      whenever(memory.load(0x0000)) doReturn 0x12
 
       assertEquals(
         0x1240,

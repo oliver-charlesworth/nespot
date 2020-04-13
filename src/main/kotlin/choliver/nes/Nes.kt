@@ -4,8 +4,10 @@ import choliver.nes.cartridge.Cartridge
 import choliver.nes.ppu.Ppu
 import choliver.nes.sixfiveohtwo.Cpu
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
+import mu.KotlinLogging
 
 class Nes(rom: ByteArray) {
+  private val logger = KotlinLogging.logger {}
   private val cartridge = Cartridge(rom)
 
   private val cpuRam = Ram(2048)
@@ -15,19 +17,11 @@ class Nes(rom: ByteArray) {
 
   private val ppu = Ppu(ppuRam)
 
-  private val cpuMapper = object : Memory {
-    override fun load(addr: Address) = when {
-      addr < 0x2000 -> cpuRam.load(addr % 2048)
-      addr < 0x4000 -> ppu.readReg(addr % 8)
-      else -> cartridge.prg.load(addr)!!
-    }
-
-    override fun store(addr: Address, data: Data) = when {
-      addr < 0x2000 -> cpuRam.store(addr % 2048, data)
-      addr < 0x4000 -> ppu.writeReg(addr % 8, data)
-      else -> cartridge.prg.store(addr, data)
-    }
-  }
+  private val cpuMapper = CpuMapper(
+    prg = cartridge.prg,
+    ram = cpuRam,
+    ppu = ppu
+  )
 
   private class InterceptingMemory(private val mem: Memory) : Memory by mem {
     private val _stores = mutableListOf<Pair<Address, Data>>()
@@ -78,5 +72,10 @@ class Nes(rom: ByteArray) {
     val state get() = cpu.state
 
     fun decodeAt(pc: ProgramCounter) = cpu.decodeAt(pc)
+  }
+
+  companion object {
+    const val ADDR_OAMDATA: Address = 0x2004
+    const val ADDR_OAMDMA: Address = 0x4014
   }
 }

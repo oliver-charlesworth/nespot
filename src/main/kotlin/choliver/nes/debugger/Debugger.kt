@@ -11,7 +11,8 @@ import choliver.nes.debugger.Command.DeletePoint.ByNum
 import choliver.nes.debugger.Command.Event.*
 import choliver.nes.debugger.Command.Execute.*
 import choliver.nes.debugger.Debugger.RoutineType.*
-import choliver.nes.debugger.PointManager.Point.*
+import choliver.nes.debugger.PointManager.Point.Breakpoint
+import choliver.nes.debugger.PointManager.Point.Watchpoint
 import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
 import java.io.InputStream

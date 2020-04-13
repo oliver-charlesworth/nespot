@@ -23,19 +23,22 @@ class Cpu(
   private val alu = Alu()
   private val addrCalc = AddressCalculator(memory)
 
-  fun reset() = vector(VECTOR_RESET, _1)
-  fun irq() = vector(VECTOR_IRQ, _0)
-  fun nmi() = vector(VECTOR_NMI, _0)
+  fun reset() = vector(VECTOR_RESET, updateStack = false, disableIrq = true)
+  fun irq() = vector(VECTOR_IRQ, updateStack = true, disableIrq = false)  // TODO - only if I = _1
+  fun nmi() = vector(VECTOR_NMI, updateStack = true, disableIrq = false)
 
-  private fun vector(addr: Address, I: Boolean) {
-    // TODO - need to force a BRK instruction, but disable stack fuckery for RESET
-    _state = State(
-      PC = ProgramCounter(
-        L = memory.load(addr),
-        H = memory.load(addr + 1)
-      ),
-      P = Flags(I = I)
+  private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean) {
+    val context = Ctx(
+      _state,
+      Operand.Implied,
+      0,
+      null
     )
+    _state = context
+      .interrupt(addr, updateStack = updateStack, setBreakFlag = false)
+      .updateI { disableIrq }
+      .state
+
     logger.info("Vectoring to ${_state.PC}")
   }
 
@@ -44,16 +47,16 @@ class Cpu(
     _state = _state.with(PC = decoded.nextPc)
     val context = Ctx(
       _state,
-      decoded.instruction,
+      decoded.instruction.operand,
       addrCalc.calculate(decoded.instruction.operand, _state),
       null
     )
-    _state = context.execute().state
+    _state = context.execute(decoded.instruction.opcode).state
   }
 
   fun decodeAt(pc: ProgramCounter) = decoder.decode(memory, pc)
 
-  private fun <T> Ctx<T>.execute() = when (instruction.opcode) {
+  private fun <T> Ctx<T>.execute(op: Opcode) = when (op) {
     ADC -> resolve().add { it }
     SBC -> resolve().add { it xor 0xFF }
 
@@ -115,12 +118,7 @@ class Cpu(
       .pop().updatePCL { it }
       .pop().updatePCH { it }
 
-    BRK -> this
-      .push { PC.H }
-      .push { PC.L }
-      .push { P.data() or 0x10 } // Set B flag on stack
-      .load { VECTOR_IRQ }.updatePCL { it }
-      .load { VECTOR_IRQ + 1 }.updatePCH { it }
+    BRK -> interrupt(VECTOR_IRQ, updateStack = true, setBreakFlag = true)
 
     BPL -> branch { !P.N }
     BMI -> branch { P.N }
@@ -149,9 +147,9 @@ class Cpu(
     NOP -> this
   }
 
-  private fun <T> Ctx<T>.resolve() = when (instruction.operand) {
+  private fun <T> Ctx<T>.resolve() = when (operand) {
     is Accumulator -> calc { A }
-    is Immediate -> calc { instruction.operand.literal }
+    is Immediate -> calc { operand.literal }
     else -> load { addr }
   }
 
@@ -173,6 +171,20 @@ class Cpu(
 
   private fun <T> Ctx<T>.branch(f: F<T, Boolean>) = updatePC { if (f(state, data)) addr.toPC() else PC }
 
+  private fun <T> Ctx<T>.interrupt(vector: Address, updateStack: Boolean, setBreakFlag: Boolean) = this
+    .run {
+      if (updateStack) {
+        this
+          .push { PC.H }
+          .push { PC.L }
+          .push { P.data() or (if (setBreakFlag) 0x10 else 0x00) }
+      } else {
+        this
+      }
+    }
+    .load { vector }.updatePCL { it }
+    .load { vector + 1 }.updatePCH { it }
+
   private fun <T> Ctx<T>.push(f: F<T, Data>) = store(stackAddr(state.S), f).updateS { S - 1 }
 
   private fun <T> Ctx<T>.pop() = updateS { S + 1 }.load { stackAddr(S) }
@@ -181,7 +193,7 @@ class Cpu(
 
   private fun <T> Ctx<T>.storeResult(f: F<T, Data>): Ctx<T> {
     val data = f(state, data)
-    return if (instruction.operand is Accumulator) {
+    return if (operand is Accumulator) {
       updateA { data }
     } else {
       store { data }.updateZN { data }
@@ -191,7 +203,7 @@ class Cpu(
   private fun <T> Ctx<T>.store(f: F<T, Data>) = store(addr, f)
   private fun <T> Ctx<T>.store(addr: Address, f: F<T, Data>) = also { memory.store(addr, f(state, data).data()) }
 
-  private fun <T, R> Ctx<T>.calc(f: F<T, R>) = Ctx(state, instruction, addr, f(state, data))
+  private fun <T, R> Ctx<T>.calc(f: F<T, R>) = Ctx(state, operand, addr, f(state, data))
 
   private fun <T> Ctx<T>.updateA(f: F<T, Data>) = updateD(f) { with(A = it, Z = it.isZero(), N = it.isNeg()) }
   private fun <T> Ctx<T>.updateX(f: F<T, Data>) = updateD(f) { with(X = it, Z = it.isZero(), N = it.isNeg()) }
@@ -214,7 +226,7 @@ class Cpu(
 
   private data class Ctx<T>(
     val state: State,
-    val instruction: Instruction,
+    val operand: Operand,
     val addr: Address,
     val data: T
   )

@@ -1,6 +1,9 @@
 package choliver.nes.debugger
 
 import choliver.nes.debugger.Command.*
+import choliver.nes.debugger.Command.CreatePoint.Break
+import choliver.nes.debugger.Command.CreatePoint.Watch
+import choliver.nes.debugger.Command.Execute.*
 import choliver.nes.sixfiveohtwo.model.toPC
 import java.io.InputStream
 
@@ -13,37 +16,42 @@ class CommandParser(stdin: InputStream) {
 
   private fun parseCommand(raw: String): Command {
     val r = raw.trim()
-    val bits = if (r.isEmpty()) listOf("step") else r.split("\\s+".toRegex())
+    val bits = if (r.isEmpty()) listOf("next") else r.split("\\s+".toRegex())
 
     val error = Error("Can't parse: ${r}")
 
-    fun noArgs(cmd: Command) = when (bits.size) {
-      1 -> cmd
-      else -> error
-    }
+    fun noArgs(cmd: Command) = if (bits.size == 1) cmd else error
+
+    fun <T> T?.oneArg(create: (T) -> Command) = if (this != null) create(this) else error
 
     return when (bits[0]) {
       "s", "step" -> when (bits.size) {
-        1 -> Execute.Step(1)
-        2 -> bits[1].toIntOrNull()?.let(Execute::Step) ?: error
+        1 -> Step(1)
+        2 -> bits[1].toIntOrNull().oneArg(::Step)
         else -> error
       }
 
-      "c", "cont" -> noArgs(Execute.Continue)
+      "n", "next" -> when (bits.size) {
+        1 -> Next(1)
+        2 -> bits[1].toIntOrNull().oneArg(::Next)
+        else -> error
+      }
 
-      "f", "finish" -> noArgs(Execute.Finish)
+      "c", "cont" -> noArgs(Continue)
+
+      "f", "finish" -> noArgs(Finish)
 
       "b", "break" -> when (bits.size) {
-        1 -> CreatePoint.Break.Here
+        1 -> Break.AtOffset(0)
         2 -> when {
-          bits[1] == "+" -> CreatePoint.Break.AtNext
-          else -> bits[1].toAddressOrNull()?.let { CreatePoint.Break.At(it.toPC()) } ?: error
+          bits[1].startsWith("+") -> bits[1].removePrefix("+").toIntOrNull().oneArg(Break::AtOffset)
+          else -> bits[1].toAddressOrNull().oneArg { Break.At(it.toPC()) }
         }
         else -> error
       }
 
       "w", "watch" -> when (bits.size) {
-        2 -> bits[1].toAddressOrNull()?.let(CreatePoint::Watch) ?: error
+        2 -> bits[1].toAddressOrNull().oneArg(::Watch)
         else -> error
       }
 
@@ -51,7 +59,7 @@ class CommandParser(stdin: InputStream) {
 
       "d", "delete" -> when (bits.size) {
         1 -> DeletePoint.All
-        2 -> bits[1].toIntOrNull()?.let(DeletePoint::ByNum) ?: error
+        2 -> bits[1].toIntOrNull().oneArg(DeletePoint::ByNum)
         else -> error
       }
 
@@ -66,7 +74,7 @@ class CommandParser(stdin: InputStream) {
       }
 
       "p", "print" -> when (bits.size) {
-        2 -> bits[1].toAddressOrNull()?.let { Info.Print(it) } ?: error
+        2 -> bits[1].toAddressOrNull().oneArg(Info::Print)
         else -> error
       }
 
@@ -74,7 +82,9 @@ class CommandParser(stdin: InputStream) {
 
       "bt", "backtrace" -> noArgs(Info.Backtrace)
 
-      "r", "restart" -> noArgs(Restart)
+      "r", "reset" -> noArgs(Event.Reset)
+      "nmi" -> noArgs(Event.Nmi)
+      "irq" -> noArgs(Event.Irq)
 
       "q", "quit" -> noArgs(Quit)
 

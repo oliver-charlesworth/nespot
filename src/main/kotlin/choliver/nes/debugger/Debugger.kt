@@ -8,11 +8,11 @@ import choliver.nes.debugger.Command.CreatePoint.Break
 import choliver.nes.debugger.Command.CreatePoint.Watch
 import choliver.nes.debugger.Command.DeletePoint.All
 import choliver.nes.debugger.Command.DeletePoint.ByNum
+import choliver.nes.debugger.Command.Event.*
 import choliver.nes.debugger.Command.Execute.*
-import choliver.nes.debugger.Debugger.Point.Breakpoint
-import choliver.nes.debugger.Debugger.Point.Watchpoint
-import choliver.nes.sixfiveohtwo.model.Opcode.JSR
-import choliver.nes.sixfiveohtwo.model.Opcode.RTS
+import choliver.nes.debugger.Debugger.RoutineType.*
+import choliver.nes.debugger.PointManager.Point.*
+import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
 import java.io.InputStream
 import java.io.PrintStream
@@ -23,20 +23,21 @@ class Debugger(
   stdin: InputStream,
   private val stdout: PrintStream
 ) {
-  private sealed class Point(open val num: Int) {
-    data class Breakpoint(override val num: Int, val pc: ProgramCounter) : Point(num)
-    data class Watchpoint(override val num: Int, val addr: Address) : Point(num)
+  private enum class RoutineType {
+    JUMP,
+    NMI,
+    IRQ
   }
+
+  private data class StackEntry(
+    val next: ProgramCounter,
+    val type: RoutineType
+  )
 
   private val parser = CommandParser(stdin)
   private val nes = Nes(rom).instrumentation
-
-  private var nextPointNum = 1
-  private val points = mutableMapOf<Int, Point>()
-  private val breakpoints = mutableMapOf<ProgramCounter, Breakpoint>()
-  private val watchpoints = mutableMapOf<Address, Watchpoint>()
-
-  private val stack = Stack<ProgramCounter>()
+  private var points = PointManager()
+  private val stack = Stack<StackEntry>()
   private var isVerbose = true
 
   fun start() {
@@ -50,7 +51,7 @@ class Debugger(
         is DeletePoint -> deletePoint(cmd)
         is Info -> info(cmd)
         is ToggleVerbosity -> isVerbose = !isVerbose
-        is Restart -> nes.reset()
+        is Event -> event(cmd)
         is Quit -> break@loop
         is Error -> stdout.println(cmd.msg)
       }
@@ -63,12 +64,19 @@ class Debugger(
         if (!step()) break
       }
 
+      is Next -> {
+        val target = nextPc(cmd.offset)
+        while (nes.state.PC != target) {
+          if (!step()) break
+        }
+      }
+
       is Continue -> while (true) {
         if (!step()) break
       }
 
       is Finish -> {
-        val target = nes.decodeAt(stack.peek()).nextPc
+        val target = stack.peek().next
         while (nes.state.PC != target) {
           if (!step()) break
         }
@@ -79,19 +87,14 @@ class Debugger(
   private fun createPoint(cmd: CreatePoint) {
     when (cmd) {
       is Break -> {
-        val point = Breakpoint(nextPointNum++, when (cmd) {
-          is Break.Here -> nes.state.PC
-          is Break.AtNext -> nes.decodeAt(nes.state.PC).nextPc
+        val point = points.addBreakpoint(when (cmd) {
+          is Break.AtOffset -> nextPc(cmd.offset)
           is Break.At -> cmd.pc
         })
-        points[point.num] = point
-        breakpoints[point.pc] = point
         stdout.println("Breakpoint #${point.num}: ${point.pc} -> ${instAt(point.pc)}")
       }
       is Watch -> {
-        val point = Watchpoint(nextPointNum++, cmd.addr)
-        points[point.num] = point
-        watchpoints[point.addr] = point
+        val point = points.addWatchpoint(cmd.addr)
         stdout.println("Watchpoint #${point.num}: ${point.addr.format()}")
       }
     }
@@ -100,23 +103,15 @@ class Debugger(
   private fun deletePoint(cmd: DeletePoint) {
     when (cmd) {
       is ByNum -> {
-        when (val point = points.remove(cmd.num)) {
-          is Breakpoint -> {
-            breakpoints.remove(point.pc)
-            stdout.println("Deleted breakpoint #${point.num}: ${point.pc} -> ${instAt(point.pc)}")
-          }
-          is Watchpoint -> {
-            watchpoints.remove(point.addr)
-            stdout.println("Deleted watchpoint #${point.num}: ${point.addr.format()}")
-          }
+        when (val removed = points.remove(cmd.num)) {
+          is Breakpoint -> stdout.println("Deleted breakpoint #${removed.num}: ${removed.pc} -> ${instAt(removed.pc)}")
+          is Watchpoint -> stdout.println("Deleted watchpoint #${removed.num}: ${removed.addr.format()}")
           null -> stdout.println("No such breakpoint or watchpoint")
         }
       }
 
       is All -> {
-        points.clear()
-        breakpoints.clear()
-        watchpoints.clear()
+        points.removeAll()
         stdout.println("Deleted all breakpoints & watchpoints")
       }
     }
@@ -126,27 +121,50 @@ class Debugger(
     when (cmd) {
       is Info.Reg -> println(nes.state)
 
-      is Info.Break -> if (breakpoints.isEmpty()) {
+      is Info.Break -> if (points.breakpoints.isEmpty()) {
         stdout.println("No breakpoints")
       } else {
         println("Num  Address  Instruction")
-        breakpoints.forEach { (_, v) -> stdout.println("%-4d %s   %s".format(v.num, v.pc, instAt(v.pc))) }
+        points.breakpoints.forEach { (_, v) -> stdout.println("%-4d %s   %s".format(v.num, v.pc, instAt(v.pc))) }
       }
 
-      is Info.Watch -> if (watchpoints.isEmpty()) {
+      is Info.Watch -> if (points.watchpoints.isEmpty()) {
         stdout.println("No watchpoints")
       } else {
         println("Num  Address")
-        watchpoints.forEach { (_, v) -> stdout.println("%-4d %s".format(v.num, v.addr.format())) }
+        points.watchpoints.forEach { (_, v) -> stdout.println("%-4d %s".format(v.num, v.addr.format())) }
       }
 
       is Info.Backtrace -> {
-        fun print(num: Int, pc: ProgramCounter) = stdout.println("#%-4d %s: %s".format(num, pc, instAt(pc)))
-        print(0, nes.state.PC)
-        stack.reversed().forEachIndexed { idx, pc -> print(idx + 1, pc) }
+        stdout.println("#%-4d %s: %s".format(0, nes.state.PC, instAt(nes.state.PC)))
+        stack.reversed().forEachIndexed { idx, entry ->
+          stdout.println("#%-4d %s: %-20s%s".format(
+            idx + 1,
+            entry.next,
+            instAt(entry.next),
+            if (entry.type != JUMP) "(${entry.type.name})" else ""
+          ))
+        }
       }
 
       is Info.Print -> stdout.println("0x%02x".format(nes.peek(cmd.addr)))
+    }
+  }
+
+  private fun event(cmd: Event) {
+    when (cmd) {
+      is Reset -> {
+        stack.clear()
+        nes.reset()
+      }
+      is Nmi -> {
+        stack.push(StackEntry(nes.state.PC, NMI))
+        nes.nmi()
+      }
+      is Irq -> {
+        stack.push(StackEntry(nes.state.PC, IRQ))
+        nes.irq()
+      }
     }
   }
 
@@ -159,13 +177,12 @@ class Debugger(
   }
 
   private fun updateStack() {
-    // TODO - handle interrupts
     when (instAt(nes.state.PC).opcode) {
-      JSR -> stack.push(nes.state.PC)
-      RTS -> try {
-        stack.pop()
+      JSR -> stack.push(StackEntry(nextPc(), JUMP))
+      RTS, RTI -> try {
+        stack.pop() // TODO - validate type
       } catch (_: EmptyStackException) {
-        stdout.println("Tried to RTS on empty stack")
+        stdout.println("Tried to return with empty stack")
       }
       else -> {}
     }
@@ -185,25 +202,25 @@ class Debugger(
     }
   }
 
-  private fun isWatchpointHit(stores: List<Pair<Address, Data>>): Boolean {
-    val wp = stores.map { watchpoints[it.first] }.firstOrNull { it != null }
-    return if (wp != null) {
-      stdout.println("Hit watchpoint #${wp.num}: ${wp.addr.format()}")
+  private fun isWatchpointHit(stores: List<Pair<Address, Data>>) =
+    when (val wp = stores.map { points.watchpoints[it.first] }.firstOrNull { it != null }) {
+      null -> true
+      else -> {
+        stdout.println("Hit watchpoint #${wp.num}: ${wp.addr.format()}")
+        false
+      }
+    }
+
+  private fun isBreakpointHit() = when (val bp = points.breakpoints[nes.state.PC]) {
+    null -> true
+    else -> {
+      stdout.println("Hit breakpoint #${bp.num}")
       false
-    } else {
-      true
     }
   }
 
-  private fun isBreakpointHit(): Boolean {
-    val bp = breakpoints[nes.state.PC]
-    return if (bp != null) {
-      stdout.println("Hit breakpoint #${bp.num}")
-      false
-    } else {
-      true
-    }
-  }
+  private fun nextPc(offset: Int = 1) =
+    (0 until offset).fold(nes.state.PC) { pc, _ -> nes.decodeAt(pc).nextPc }
 
   private fun instAt(pc: ProgramCounter) = nes.decodeAt(pc).instruction
 

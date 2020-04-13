@@ -59,6 +59,14 @@ class Nes(rom: ByteArray) {
       cpu.reset()
     }
 
+    fun nmi() {
+      cpu.nmi()
+    }
+
+    fun irq() {
+      cpu.irq()
+    }
+
     fun step(): List<Pair<Address, Data>> {
       interceptor.reset()
       cpu.step()

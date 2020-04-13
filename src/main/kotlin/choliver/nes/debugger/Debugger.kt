@@ -8,11 +8,12 @@ import choliver.nes.debugger.Command.CreatePoint.Break
 import choliver.nes.debugger.Command.CreatePoint.Watch
 import choliver.nes.debugger.Command.DeletePoint.All
 import choliver.nes.debugger.Command.DeletePoint.ByNum
+import choliver.nes.debugger.Command.Event.*
 import choliver.nes.debugger.Command.Execute.*
 import choliver.nes.debugger.Debugger.Point.Breakpoint
 import choliver.nes.debugger.Debugger.Point.Watchpoint
-import choliver.nes.sixfiveohtwo.model.Opcode.JSR
-import choliver.nes.sixfiveohtwo.model.Opcode.RTS
+import choliver.nes.debugger.Debugger.RoutineType.*
+import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
 import java.io.InputStream
 import java.io.PrintStream
@@ -28,6 +29,17 @@ class Debugger(
     data class Watchpoint(override val num: Int, val addr: Address) : Point(num)
   }
 
+  private enum class RoutineType {
+    JUMP,
+    NMI,
+    IRQ
+  }
+
+  private data class StackEntry(
+    val next: ProgramCounter,
+    val type: RoutineType
+  )
+
   private val parser = CommandParser(stdin)
   private val nes = Nes(rom).instrumentation
 
@@ -36,7 +48,7 @@ class Debugger(
   private val breakpoints = mutableMapOf<ProgramCounter, Breakpoint>()
   private val watchpoints = mutableMapOf<Address, Watchpoint>()
 
-  private val stack = Stack<ProgramCounter>()
+  private val stack = Stack<StackEntry>()
   private var isVerbose = true
 
   fun start() {
@@ -50,7 +62,7 @@ class Debugger(
         is DeletePoint -> deletePoint(cmd)
         is Info -> info(cmd)
         is ToggleVerbosity -> isVerbose = !isVerbose
-        is Restart -> nes.reset()
+        is Event -> event(cmd)
         is Quit -> break@loop
         is Error -> stdout.println(cmd.msg)
       }
@@ -63,12 +75,19 @@ class Debugger(
         if (!step()) break
       }
 
+      is Next -> {
+        val target = nextPc(cmd.num)
+        while (nes.state.PC != target) {
+          if (!step()) break
+        }
+      }
+
       is Continue -> while (true) {
         if (!step()) break
       }
 
       is Finish -> {
-        val target = nes.decodeAt(stack.peek()).nextPc
+        val target = stack.peek().next
         while (nes.state.PC != target) {
           if (!step()) break
         }
@@ -80,8 +99,7 @@ class Debugger(
     when (cmd) {
       is Break -> {
         val point = Breakpoint(nextPointNum++, when (cmd) {
-          is Break.Here -> nes.state.PC
-          is Break.AtNext -> nes.decodeAt(nes.state.PC).nextPc
+          is Break.AtOffset -> nextPc(cmd.offset)
           is Break.At -> cmd.pc
         })
         points[point.num] = point
@@ -141,12 +159,35 @@ class Debugger(
       }
 
       is Info.Backtrace -> {
-        fun print(num: Int, pc: ProgramCounter) = stdout.println("#%-4d %s: %s".format(num, pc, instAt(pc)))
-        print(0, nes.state.PC)
-        stack.reversed().forEachIndexed { idx, pc -> print(idx + 1, pc) }
+        stdout.println("#%-4d %s: %s".format(0, nes.state.PC, instAt(nes.state.PC)))
+        stack.reversed().forEachIndexed { idx, entry ->
+          stdout.println("#%-4d %s: %-20s%s".format(
+            idx + 1,
+            entry.next,
+            instAt(entry.next),
+            if (entry.type != JUMP) "(${entry.type.name})" else ""
+          ))
+        }
       }
 
       is Info.Print -> stdout.println("0x%02x".format(nes.peek(cmd.addr)))
+    }
+  }
+
+  private fun event(cmd: Event) {
+    when (cmd) {
+      is Reset -> {
+        stack.clear()
+        nes.reset()
+      }
+      is Nmi -> {
+        stack.push(StackEntry(nes.state.PC, NMI))
+        nes.nmi()
+      }
+      is Irq -> {
+        stack.push(StackEntry(nes.state.PC, IRQ))
+        nes.irq()
+      }
     }
   }
 
@@ -161,11 +202,11 @@ class Debugger(
   private fun updateStack() {
     // TODO - handle interrupts
     when (instAt(nes.state.PC).opcode) {
-      JSR -> stack.push(nes.state.PC)
-      RTS -> try {
-        stack.pop()
+      JSR -> stack.push(StackEntry(nextPc(), JUMP))
+      RTS, RTI -> try {
+        stack.pop() // TODO - validate type
       } catch (_: EmptyStackException) {
-        stdout.println("Tried to RTS on empty stack")
+        stdout.println("Tried to return with empty stack")
       }
       else -> {}
     }
@@ -204,6 +245,9 @@ class Debugger(
       true
     }
   }
+
+  private fun nextPc(count: Int = 1) =
+    (0 until count).fold(nes.state.PC) { pc, _ -> nes.decodeAt(pc).nextPc }
 
   private fun instAt(pc: ProgramCounter) = nes.decodeAt(pc).instruction
 

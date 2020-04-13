@@ -244,10 +244,23 @@ class Debugger(
     val numPerRow = 32
     data.chunked(numPerRow)
       .forEachIndexed { i, row ->
-        val tmp = row
-          .chunked(2)
-          .joinToString(" ") { "%02x%02x".format(it[0], it[1]) }
-        stdout.println("${(i * numPerRow).format()}: ${tmp}")
+        val hex = row
+          .chunked(16)
+          .joinToString("  ") { half ->
+            half
+              .chunked(2)
+              .joinToString(" ") { "%02x%02x".format(it[0], it[1]) }
+          }
+
+        val chars = row
+          .chunked(16)
+          .joinToString(" ") { half ->
+            half
+              .map { if (it in 32..126) it.toChar() else '.' }
+              .joinToString("")
+          }
+
+        stdout.println("${(i * numPerRow).format()}:  ${hex}  ${chars}")
       }
   }
 

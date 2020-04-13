@@ -3,6 +3,7 @@ package choliver.nes
 import choliver.nes.cartridge.Cartridge
 import choliver.nes.ppu.Ppu
 import choliver.nes.sixfiveohtwo.Cpu
+import choliver.nes.sixfiveohtwo.model.Instruction
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
 
 class Nes(rom: ByteArray) {
@@ -42,10 +43,6 @@ class Nes(rom: ByteArray) {
 
   val instrumentation = Instrumentation()
 
-  init {
-    instrumentation.reset()
-  }
-
   inner class Instrumentation internal constructor() {
     fun reset() {
       cpu.reset()
@@ -66,12 +63,13 @@ class Nes(rom: ByteArray) {
     }
 
     fun peek(addr: Address) = cpuMapper.load(addr)
-
     fun peekV(addr: Address) = ppuRam.load(addr)  // TODO - use PPU mapper?
 
     val state get() = cpu.state
 
+    // TODO - combine
     fun decodeAt(pc: ProgramCounter) = cpu.decodeAt(pc)
+    fun calcAddr(instruction: Instruction) = cpu.calcAddr(instruction)
   }
 
   companion object {

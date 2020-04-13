@@ -48,13 +48,15 @@ class Cpu(
     val context = Ctx(
       _state,
       decoded.instruction.operand,
-      addrCalc.calculate(decoded.instruction.operand, _state),
+      calcAddr(decoded.instruction),
       null
     )
     _state = context.execute(decoded.instruction.opcode).state
   }
 
+  // TODO - combine
   fun decodeAt(pc: ProgramCounter) = decoder.decode(memory, pc)
+  fun calcAddr(instruction: Instruction) = addrCalc.calculate(instruction.operand, _state)
 
   private fun <T> Ctx<T>.execute(op: Opcode) = when (op) {
     ADC -> resolve().add { it }

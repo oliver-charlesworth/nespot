@@ -6,7 +6,7 @@ import choliver.nes.sixfiveohtwo.model.ProgramCounter
 sealed class Command {
   sealed class Execute : Command() {
     data class Step(val num: Int) : Execute()
-    data class Next(val offset: Int) : Execute()
+    data class Next(val num: Int) : Execute()
     object Continue : Execute()
     object Finish : Execute()
   }

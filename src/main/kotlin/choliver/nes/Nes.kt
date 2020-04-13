@@ -4,10 +4,8 @@ import choliver.nes.cartridge.Cartridge
 import choliver.nes.ppu.Ppu
 import choliver.nes.sixfiveohtwo.Cpu
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
-import mu.KotlinLogging
 
 class Nes(rom: ByteArray) {
-  private val logger = KotlinLogging.logger {}
   private val cartridge = Cartridge(rom)
 
   private val cpuRam = Ram(2048)

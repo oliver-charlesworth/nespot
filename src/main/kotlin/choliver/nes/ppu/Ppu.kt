@@ -11,7 +11,6 @@ class Ppu(
   private val oam = Ram(256)
 
   fun readReg(reg: Int): Int {
-    logger.info("Reading reg #${reg}")
     return when (reg) {
       REG_PPUSTATUS -> 0x80 // TODO - remove debug hack that emulates VBL
       else -> 0x00
@@ -19,8 +18,6 @@ class Ppu(
   } // TODO
 
   fun writeReg(reg: Int, data: Data) {
-    logger.info("Writing 0x%02x to reg #${reg}".format(data))
-
     when (reg) {
       REG_PPUCTRL -> state = state.copy(
         addrInc = if (data.isBitSet(2)) 32 else 1,
@@ -51,18 +48,16 @@ class Ppu(
         state = state.copy(oamAddr = (state.oamAddr + 1).addr8())
       }
 
-      REG_PPUSCROLL -> TODO()
+      REG_PPUSCROLL -> {} // TODO
 
-      REG_PPUADDR -> TODO()
+      REG_PPUADDR -> {} // TODO
 
-      REG_PPUDATA -> TODO()
+      REG_PPUDATA -> {} // TODO
 
       else -> throw IllegalArgumentException("Attempt to write to reg #${reg}")   // Should never happen
     }
 
   }
-
-  // TODO - what about immutability ?
 
   private data class State(
     val addrInc: Int = 1,

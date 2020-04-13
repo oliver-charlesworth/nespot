@@ -66,9 +66,14 @@ class Debugger(
       }
 
       is Next -> {
-        val target = nextPc(cmd.offset)
-        while (nes.state.PC != target) {
+        // Perform specified number of instructions, but only within this stack frame
+        val depth = stack.size
+        var n = cmd.num
+        while ((n > 0) && (stack.size >= depth)) {
           if (!step()) break
+          if (stack.size == depth) {
+            n--
+          }
         }
       }
 

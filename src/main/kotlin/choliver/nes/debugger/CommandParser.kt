@@ -4,6 +4,7 @@ import choliver.nes.debugger.Command.*
 import choliver.nes.debugger.Command.CreatePoint.Break
 import choliver.nes.debugger.Command.CreatePoint.Watch
 import choliver.nes.debugger.Command.Execute.*
+import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.toPC
 import java.io.InputStream
 
@@ -38,7 +39,11 @@ class CommandParser(stdin: InputStream) {
       }
 
       "u", "until" -> when (bits.size) {
-        2 -> bits[1].toAddressOrNull().oneArg { Until(it.toPC()) }
+        2 -> when {
+          bits[1].startsWith("+") -> bits[1].removePrefix("+").toIntOrNull().oneArg(::UntilOffset)
+          bits[1].startsWith("0x") -> bits[1].toPcOrNull().oneArg(::Until)
+          else -> bits[1].toOpcodeOrNull().oneArg(::UntilOpcode)
+        }
         else -> error
       }
 
@@ -50,7 +55,7 @@ class CommandParser(stdin: InputStream) {
         1 -> Break.AtOffset(0)
         2 -> when {
           bits[1].startsWith("+") -> bits[1].removePrefix("+").toIntOrNull().oneArg(Break::AtOffset)
-          else -> bits[1].toAddressOrNull().oneArg { Break.At(it.toPC()) }
+          else -> bits[1].toPcOrNull().oneArg(Break::At)
         }
         else -> error
       }
@@ -85,6 +90,19 @@ class CommandParser(stdin: InputStream) {
         else -> error
       }
 
+      "xi" -> when (bits.size) {
+        2, 3 -> {
+          bits[1].toPcOrNull()?.let { pc ->
+            when (bits.size) {
+              2 -> Info.InspectInst(pc, 1)
+              3 -> bits[2].toIntOrNull()?.let { Info.InspectInst(pc, it) }
+              else -> error
+            }
+          } ?: error
+        }
+        else -> error
+      }
+
       "v", "verbosity" -> noArgs(ToggleVerbosity)
 
       "bt", "backtrace" -> noArgs(Info.Backtrace)
@@ -98,6 +116,14 @@ class CommandParser(stdin: InputStream) {
       else -> error
     }
   }
+
+  private fun String.toOpcodeOrNull() = try {
+    Opcode.valueOf(this.toUpperCase())
+  } catch (_: IllegalArgumentException) {
+    null
+  }
+
+  private fun String.toPcOrNull() = toAddressOrNull()?.toPC()
 
   private fun String.toAddressOrNull() = removePrefix("0x")
     .toIntOrNull(16)

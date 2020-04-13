@@ -83,6 +83,17 @@ class Debugger(
         if (!step()) break
       }
 
+      is UntilOffset -> {
+        val target = nextPc(cmd.offset)
+        while (nes.state.PC != target) {
+          if (!step()) break
+        }
+      }
+
+      is UntilOpcode -> while (instAt(nes.state.PC).opcode != cmd.op) {
+        if (!step()) break
+      }
+
       is Continue -> while (true) {
         if (!step()) break
       }
@@ -164,6 +175,15 @@ class Debugger(
       is Info.PpuRam -> displayDump((0 until PPU_RAM_SIZE).map { nes.peekV(it) })
 
       is Info.Print -> stdout.println("0x%02x".format(nes.peek(cmd.addr)))
+
+      is Info.InspectInst -> {
+        var pc = cmd.pc
+        repeat(cmd.num) {
+          val decoded = nes.decodeAt(pc)
+          stdout.println("${pc}: ${decoded.instruction}")
+          pc = decoded.nextPc
+        }
+      }
     }
   }
 

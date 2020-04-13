@@ -11,9 +11,9 @@ class Nes(rom: ByteArray) {
   private val cpuRam = Ram(CPU_RAM_SIZE)
   private val ppuRam = Ram(PPU_RAM_SIZE)
 
-  // TODO - PPU mapper
+  private val ppuMapper = PpuMapper(ppuRam)
 
-  private val ppu = Ppu(ppuRam)
+  private val ppu = Ppu(ppuMapper)
 
   private val cpuMapper = CpuMapper(
     prg = cartridge.prg,

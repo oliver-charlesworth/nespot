@@ -12,7 +12,14 @@ class Ppu(
 
   fun readReg(reg: Int): Int {
     return when (reg) {
-      REG_PPUSTATUS -> 0x80 // TODO - remove debug hack that emulates VBL
+      REG_PPUSTATUS -> {
+        // Reset stuff
+        state = state.copy(
+          addrWriteLo = false,
+          addr = 0
+        )
+        0x80 // TODO - remove debug hack that emulates VBL
+      }
       else -> 0x00
     }
   } // TODO
@@ -50,9 +57,20 @@ class Ppu(
 
       REG_PPUSCROLL -> {} // TODO
 
-      REG_PPUADDR -> {} // TODO
+      // TODO - this probably latches the data on second write
+      REG_PPUADDR -> state = state.copy(
+        addr = if (state.addrWriteLo) {
+          addr(lo = data, hi = state.addr.hi())
+        } else {
+          addr(lo = state.addr.lo(), hi = data)
+        },
+        addrWriteLo = !state.addrWriteLo
+      )
 
-      REG_PPUDATA -> {} // TODO
+      REG_PPUDATA -> {
+        memory.store(state.addr, data)
+        state = state.copy(addr = (state.addr + 1).addr())
+      }
 
       else -> throw IllegalArgumentException("Attempt to write to reg #${reg}")   // Should never happen
     }
@@ -75,6 +93,9 @@ class Ppu(
     val isRedEmphasized: Boolean = false,
     val isGreenEmphasized: Boolean = false,
     val isBlueEmphasized: Boolean = false,
+
+    val addrWriteLo: Boolean = false, // TODO - better name, or encapsulation
+    val addr: Address = 0x0000,
 
     val oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
   )

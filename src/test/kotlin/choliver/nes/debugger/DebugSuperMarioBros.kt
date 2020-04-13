@@ -6,7 +6,8 @@ class DebugSuperMarioBros {
     fun main(args: Array<String>) = Debugger(
       rom = {}.javaClass.getResource("/smb.nes").readBytes(),
       stdin = System.`in`,
-      stdout = System.out
+      stdout = System.out,
+      script = {}.javaClass.getResource("/smb.script").readText()
     ).start()
   }
 }

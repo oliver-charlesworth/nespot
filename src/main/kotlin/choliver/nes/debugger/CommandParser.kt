@@ -37,6 +37,11 @@ class CommandParser(stdin: InputStream) {
         else -> error
       }
 
+      "u", "until" -> when (bits.size) {
+        2 -> bits[1].toAddressOrNull().oneArg { Until(it.toPC()) }
+        else -> error
+      }
+
       "c", "cont" -> noArgs(Continue)
 
       "f", "finish" -> noArgs(Finish)
@@ -69,6 +74,8 @@ class CommandParser(stdin: InputStream) {
           "r", "reg" -> Info.Reg
           "b", "break" -> Info.Break
           "w", "watch" -> Info.Watch
+          "ram" -> Info.CpuRam
+          "vram" -> Info.PpuRam
           else -> error
         }
       }

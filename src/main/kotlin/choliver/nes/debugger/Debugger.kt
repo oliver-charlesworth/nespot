@@ -3,6 +3,8 @@ package choliver.nes.debugger
 import choliver.nes.Address
 import choliver.nes.Data
 import choliver.nes.Nes
+import choliver.nes.Nes.Companion.CPU_RAM_SIZE
+import choliver.nes.Nes.Companion.PPU_RAM_SIZE
 import choliver.nes.debugger.Command.*
 import choliver.nes.debugger.Command.CreatePoint.Break
 import choliver.nes.debugger.Command.CreatePoint.Watch
@@ -77,13 +79,17 @@ class Debugger(
         }
       }
 
+      is Until -> while (nes.state.PC != cmd.pc) {
+        if (!step()) break
+      }
+
       is Continue -> while (true) {
         if (!step()) break
       }
 
       is Finish -> {
-        val target = stack.peek().next
-        while (nes.state.PC != target) {
+        val depth = stack.size
+        while (stack.size >= depth) {
           if (!step()) break
         }
       }
@@ -152,6 +158,10 @@ class Debugger(
           ))
         }
       }
+
+      is Info.CpuRam -> displayDump((0 until CPU_RAM_SIZE).map { nes.peek(it) })
+
+      is Info.PpuRam -> displayDump((0 until PPU_RAM_SIZE).map { nes.peekV(it) })
 
       is Info.Print -> stdout.println("0x%02x".format(nes.peek(cmd.addr)))
     }
@@ -229,6 +239,17 @@ class Debugger(
     (0 until offset).fold(nes.state.PC) { pc, _ -> nes.decodeAt(pc).nextPc }
 
   private fun instAt(pc: ProgramCounter) = nes.decodeAt(pc).instruction
+
+  private fun displayDump(data: List<Data>) {
+    val numPerRow = 32
+    data.chunked(numPerRow)
+      .forEachIndexed { i, row ->
+        val tmp = row
+          .chunked(2)
+          .joinToString(" ") { "%02x%02x".format(it[0], it[1]) }
+        stdout.println("${(i * numPerRow).format()}: ${tmp}")
+      }
+  }
 
   private fun Address.format() = "0x%04x".format(this)
   private fun Data.format8() = "0x%02x".format(this)

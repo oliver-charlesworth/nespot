@@ -8,8 +8,8 @@ import choliver.nes.sixfiveohtwo.model.ProgramCounter
 class Nes(rom: ByteArray) {
   private val cartridge = Cartridge(rom)
 
-  private val cpuRam = Ram(2048)
-  private val ppuRam = Ram(2048)
+  private val cpuRam = Ram(CPU_RAM_SIZE)
+  private val ppuRam = Ram(PPU_RAM_SIZE)
 
   // TODO - PPU mapper
 
@@ -67,12 +67,17 @@ class Nes(rom: ByteArray) {
 
     fun peek(addr: Address) = cpuMapper.load(addr)
 
+    fun peekV(addr: Address) = ppuRam.load(addr)  // TODO - use PPU mapper?
+
     val state get() = cpu.state
 
     fun decodeAt(pc: ProgramCounter) = cpu.decodeAt(pc)
   }
 
   companion object {
+    const val CPU_RAM_SIZE = 2048
+    const val PPU_RAM_SIZE = 2048
+
     const val ADDR_OAMDATA: Address = 0x2004
     const val ADDR_OAMDMA: Address = 0x4014
   }

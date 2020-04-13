@@ -7,6 +7,7 @@ sealed class Command {
   sealed class Execute : Command() {
     data class Step(val num: Int) : Execute()
     data class Next(val num: Int) : Execute()
+    data class Until(val pc: ProgramCounter) : Execute()
     object Continue : Execute()
     object Finish : Execute()
   }
@@ -30,6 +31,8 @@ sealed class Command {
     object Watch : Info()
     object Backtrace : Info()
     data class Print(val addr: Address) : Info()
+    object CpuRam : Info()
+    object PpuRam : Info()
   }
 
   object ToggleVerbosity : Command()

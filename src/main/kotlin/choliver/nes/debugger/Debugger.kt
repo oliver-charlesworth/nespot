@@ -56,6 +56,7 @@ class Debugger(
         is Info -> info(cmd)
         is ToggleVerbosity -> isVerbose = !isVerbose
         is Event -> event(cmd)
+        is Render -> nes.render()
         is Quit -> return
         is Error -> stdout.println(cmd.msg)
       }
@@ -65,7 +66,7 @@ class Debugger(
   // TODO - this recursion is weird - can we combine this + stdin with flatMap magic?
   private fun script() {
     script.byteInputStream().use { stream ->
-      consume(CommandParser(stream), false)
+      consume(CommandParser(stream, ignoreBlanks = true), enablePrompts = false)
     }
   }
 

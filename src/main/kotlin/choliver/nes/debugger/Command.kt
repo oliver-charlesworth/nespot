@@ -52,6 +52,9 @@ sealed class Command {
     object Nmi : Event()
     object Irq : Event()
   }
+
+  object Render : Command()
+
   object Quit : Command()
   data class Error(val msg: String) : Command()
 }

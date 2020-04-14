@@ -4,11 +4,11 @@ v
 u 0x8057
 
 # OperMode
-#display 0x0770
+display 0x0770
 # OperMode_Task
-#display 0x0772
+display 0x0772
 # ScreenRoutineTask
-#display 0x073c
+display 0x073c
 # ColumnSets
 #display 0x071e
 
@@ -79,8 +79,6 @@ f
 nmi
 f
 
-q
-
 # ScreenRoutines (1) - DrawTitleScreen (C)
 nmi
 f
@@ -92,6 +90,14 @@ f
 # ScreenRoutines (1) - WriteTopScore (E)
 nmi
 f
+
+# PrimaryGameSetup (2)
+nmi
+f
+
+  # GameMenuRoutine (3)
+#nmi
+#f
 
 
 v

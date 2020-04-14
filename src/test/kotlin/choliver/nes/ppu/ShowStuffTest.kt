@@ -3,6 +3,8 @@ package choliver.nes.ppu
 import choliver.nes.cartridge.Cartridge
 import choliver.nes.cartridge.ChrMemory.ChrLoadResult.Data
 import javafx.application.Application.launch
+import javafx.application.Platform
+import javafx.stage.Stage
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.nio.ByteBuffer

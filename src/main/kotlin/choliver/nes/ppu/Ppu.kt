@@ -1,7 +1,10 @@
 package choliver.nes.ppu
 
 import choliver.nes.*
+import javafx.application.Platform
+import javafx.stage.Stage
 import mu.KotlinLogging
+import java.nio.ByteBuffer
 
 class Ppu(
   private val memory: Memory
@@ -10,6 +13,61 @@ class Ppu(
   private var state = State()
   private val palette = Ram(32)
   private val oam = Ram(256)
+
+  // Oh god oh god
+  fun render() {
+
+    class OhGodOhGod : BaseApplication() {
+      override fun populateData(data: ByteBuffer) {
+        val buf = IntArray(CANVAS_WIDTH * SCALE)
+
+        // For each row of tiles
+        for (yT in 0 until CANVAS_HEIGHT / TILE_SIZE) {
+          // For each scan-line
+          for (y in 0 until TILE_SIZE) {
+            var i = 0
+
+            // For each column of tiles
+            for (xT in 0 until CANVAS_WIDTH / TILE_SIZE) {
+              val addrNametable = 0x2000 + yT * (CANVAS_WIDTH / TILE_SIZE) + xT
+
+              getPatternData(addrNametable, y).forEach { c ->
+                repeat(SCALE) { buf[i++] = palette[c] }
+              }
+            }
+
+            repeat(SCALE) { buf.forEach { data.putInt(it) } }
+          }
+        }
+      }
+
+      private fun getPatternData(
+        addrNametable: Address,
+        scanline: Int     // 0 to 7
+      ): List<Int> {
+        val addr = memory.load(addrNametable) * 16 + 0x1000 + scanline  // TODO - remove hardcoding for pattern table 1
+        val p0 = memory.load(addr)
+        val p1 = memory.load(addr + 8)
+
+        return (0..7).map { ((p0 shr (7 - it)) and 1) or (((p1 shr (7 - it)) and 1) * 2) }
+      }
+
+      private val palette = listOf(
+        15,  // Black
+        23,  // Red
+        54,  // Yellow
+        24   // Shitty green
+      ).map { COLORS[it] }
+    }
+
+    val app = OhGodOhGod()
+    app.init()
+
+    Platform.startup {
+      val stage = Stage()
+      app.start(stage)
+    }
+  }
 
   fun readReg(reg: Int): Int {
     return when (reg) {

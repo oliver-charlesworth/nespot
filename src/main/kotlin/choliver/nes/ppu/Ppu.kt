@@ -8,6 +8,7 @@ class Ppu(
 ) {
   private val logger = KotlinLogging.logger {}
   private var state = State()
+  private val palette = Ram(32)
   private val oam = Ram(256)
 
   fun readReg(reg: Int): Int {
@@ -21,13 +22,22 @@ class Ppu(
         0x80 // TODO - remove debug hack that emulates VBL
       }
 
+      REG_OAMDATA -> {
+        val ret = oam.load(state.oamAddr)
+        state = state.withincrementedOamAddr()
+        ret
+      }
+
       REG_PPUDATA -> {
-        // TODO - handle differently for palette reads
-        val ret = state.ppuReadBuffered
-        state = state.copy(
-          addr = (state.addr + 1).addr(),
-          ppuReadBuffered = memory.load(state.addr)
-        )
+        val ret = when {
+          state.addr < BASE_PALETTE -> {
+            val ret = state.ppuReadBuffered
+            state = state.copy(ppuReadBuffered = memory.load(state.addr))
+            ret
+          }
+          else -> palette.load(state.addr and 0x1F)
+        }
+        state = state.withIncrementedPpuAddr()
         ret
       }
       else -> 0x00
@@ -61,7 +71,7 @@ class Ppu(
 
       REG_OAMDATA -> {
         oam.store(state.oamAddr, data)
-        state = state.copy(oamAddr = (state.oamAddr + 1).addr8())
+        state = state.withincrementedOamAddr()
       }
 
       REG_PPUSCROLL -> {} // TODO
@@ -77,15 +87,19 @@ class Ppu(
       )
 
       REG_PPUDATA -> {
-        // TODO - palette writes
-        memory.store(state.addr, data)
-        state = state.copy(addr = (state.addr + 1).addr())
+        when {
+          state.addr < BASE_PALETTE -> memory.store(state.addr, data)
+          else -> palette.store(state.addr and 0x1F, data)
+        }
+        state = state.withIncrementedPpuAddr()
       }
 
       else -> throw IllegalArgumentException("Attempt to write to reg #${reg}")   // Should never happen
     }
-
   }
+
+  private fun State.withincrementedOamAddr() = copy(oamAddr = (state.oamAddr + 1).addr8())
+  private fun State.withIncrementedPpuAddr() = copy(addr = (state.addr + 1).addr())
 
   private data class State(
     val addrInc: Int = 1,
@@ -123,5 +137,7 @@ class Ppu(
     const val REG_PPUSCROLL = 5
     const val REG_PPUADDR = 6
     const val REG_PPUDATA = 7
+
+    const val BASE_PALETTE: Address = 0x3F00
   }
 }

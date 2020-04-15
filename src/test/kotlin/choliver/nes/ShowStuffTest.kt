@@ -14,9 +14,9 @@ class ShowStuffTest {
   @Test
   @Disabled
   fun palette() {
-    for (y in 0 until CANVAS_HEIGHT * SCALE) {
-      for (x in 0 until CANVAS_WIDTH * SCALE) {
-        app.buffer.putInt(COLORS[(x / (CANVAS_WIDTH * SCALE / 16)) + (y / (CANVAS_HEIGHT * SCALE / 4)) * 16])
+    for (y in 0 until SCREEN_HEIGHT * SCALE) {
+      for (x in 0 until SCREEN_WIDTH * SCALE) {
+        app.buffer.putInt(COLORS[(x / (SCREEN_WIDTH * SCALE / 16)) + (y / (SCREEN_HEIGHT * SCALE / 4)) * 16])
       }
     }
 
@@ -50,7 +50,7 @@ class ShowStuffTest {
       24   // Shitty green
     ).map { COLORS[it] }
 
-    val scanline = IntArray(CANVAS_WIDTH * SCALE)
+    val scanline = IntArray(SCREEN_WIDTH * SCALE)
     for (yT in 0 until NUM_TILE_ROWS) {
       for (y in 0 until 8) {
         var i = 0

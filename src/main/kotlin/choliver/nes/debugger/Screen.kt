@@ -1,7 +1,7 @@
 package choliver.nes.debugger
 
-import choliver.nes.ppu.CANVAS_HEIGHT
-import choliver.nes.ppu.CANVAS_WIDTH
+import choliver.nes.ppu.SCREEN_HEIGHT
+import choliver.nes.ppu.SCREEN_WIDTH
 import javafx.application.Platform
 import javafx.scene.Group
 import javafx.scene.Scene
@@ -20,10 +20,10 @@ class Screen {
   }
 
   private val latch = CountDownLatch(1)
-  val buffer: ByteBuffer = ByteBuffer.allocateDirect(CANVAS_WIDTH * CANVAS_HEIGHT * 4 * SCALE * SCALE)
+  val buffer: ByteBuffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4 * SCALE * SCALE)
   private val pixelBuffer = PixelBuffer(
-    CANVAS_WIDTH * SCALE,
-    CANVAS_HEIGHT * SCALE,
+    SCREEN_WIDTH * SCALE,
+    SCREEN_HEIGHT * SCALE,
     buffer,
     PixelFormat.getByteBgraPreInstance() // Mac native format
   )

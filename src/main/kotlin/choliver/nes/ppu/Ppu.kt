@@ -11,14 +11,17 @@ class Ppu(
   private var state = State()
   private val palette = Palette()
   private val oam = Ram(256)
-  private val renderer = Renderer(memory, palette)
+  private val renderer = Renderer(memory, palette, oam)
+
+  private var gross = false
 
   // Oh god oh god
   fun renderTo(buffer: ByteBuffer) {
     renderer.renderTo(
       buffer,
       nametableAddr = state.nametableAddr,
-      bgPatternTableAddr = state.bgPatternTableAddr
+      bgPatternTableAddr = state.bgPatternTableAddr,
+      sprPatternTableAddr = state.sprPatternTableAddr
     )
   }
 
@@ -30,7 +33,8 @@ class Ppu(
           addrWriteLo = false,
           addr = 0
         )
-        0x80 // TODO - remove debug hack that emulates VBL
+        gross = !gross
+        0x80 + if (gross) 0x40 else 0x00 // TODO - remove debug hack that emulates VBL
       }
 
       REG_OAMDATA -> {

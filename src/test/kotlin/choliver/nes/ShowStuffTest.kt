@@ -3,7 +3,6 @@ package choliver.nes
 import choliver.nes.cartridge.Cartridge
 import choliver.nes.cartridge.ChrMemory.ChrLoadResult.Data
 import choliver.nes.debugger.Screen
-import choliver.nes.debugger.Screen.Companion.SCALE
 import choliver.nes.ppu.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -16,9 +15,9 @@ class ShowStuffTest {
   @Test
   @Disabled
   fun palette() {
-    for (y in 0 until SCREEN_HEIGHT * SCALE) {
-      for (x in 0 until SCREEN_WIDTH * SCALE) {
-        app.buffer.putInt(COLORS[(x / (SCREEN_WIDTH * SCALE / 16)) + (y / (SCREEN_HEIGHT * SCALE / 4)) * 16])
+    for (y in 0 until SCREEN_HEIGHT) {
+      for (x in 0 until SCREEN_WIDTH) {
+        app.buffer.putInt(COLORS[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16])
       }
     }
 
@@ -52,21 +51,21 @@ class ShowStuffTest {
       24   // Shitty green
     ).map { COLORS[it] }
 
-    val scanline = IntArray(SCREEN_WIDTH * SCALE)
+    val scanline = IntArray(SCREEN_WIDTH)
     for (yT in 0 until NUM_TILE_ROWS) {
       for (y in 0 until 8) {
         var i = 0
         for (xT in 0 until NUM_TILE_COLUMNS) {
           if (xT < 32 && yT < 16) {
             getPatternData(xT / 16, yT, xT % 16, y).forEach { c ->
-              repeat(SCALE) { scanline[i++] = palette[c] }
+              scanline[i++] = palette[c]
             }
           } else {
-            repeat(TILE_SIZE * SCALE) { scanline[i++] = 0 }
+            repeat(TILE_SIZE) { scanline[i++] = 0 }
           }
         }
 
-        repeat(SCALE) { scanline.forEach { app.buffer.putInt(it) } }
+        scanline.forEach { app.buffer.putInt(it) }
       }
     }
 

@@ -2,7 +2,6 @@ package choliver.nes.ppu
 
 import choliver.nes.Address
 import choliver.nes.Memory
-import choliver.nes.debugger.Screen.Companion.SCALE
 import choliver.nes.isBitSet
 import java.nio.ByteBuffer
 
@@ -16,10 +15,10 @@ import java.nio.ByteBuffer
 // TODO - emphasize
 class Renderer(
   private val memory: Memory,
-  private val palette: Palette,
+  private val palette: Memory,
   private val oam: Memory
 ) {
-  private val scanline = IntArray(SCREEN_WIDTH * SCALE)
+  private val scanline = IntArray(SCREEN_WIDTH)
 
   fun renderTo(
     buffer: ByteBuffer,
@@ -30,14 +29,13 @@ class Renderer(
     for (y in 0 until SCREEN_HEIGHT) {
       renderBackground(y, nametableAddr, bgPatternTableAddr)
       renderSprites(y, sprPatternTableAddr)
-      repeat(SCALE) { scanline.forEach { buffer.putInt(it) } }
+      scanline.forEach { buffer.putInt(it) }
     }
   }
 
   private fun renderBackground(y: Int, nametableAddr: Address, bgPatternTableAddr: Address) {
     val yTile = y / TILE_SIZE
     val yPixel = y % TILE_SIZE
-    var i = 0
     for (xTile in 0 until NUM_TILE_COLUMNS) {
       val addrNt = nametableAddr + (yTile * NUM_TILE_COLUMNS + xTile)
       val addrAttr = nametableAddr + 960 + ((yTile / 4) * (NUM_TILE_COLUMNS / 4) + (xTile / 4))
@@ -47,8 +45,7 @@ class Renderer(
       for (xPixel in 0 until TILE_SIZE) {
         val c = patternPixel(pattern, xPixel)
         val paletteAddr = if (c == 0) 0 else (iPalette * 4 + c) // Background colour is universal
-        val color = COLORS[palette.load(paletteAddr)]
-        repeat(SCALE) { scanline[i++] = color }
+        scanline[xTile * TILE_SIZE + xPixel] = COLORS[palette.load(paletteAddr)]
       }
     }
   }
@@ -80,8 +77,7 @@ class Renderer(
           // Handle transparency
           if (c != 0) {
             val paletteAddr = (iPalette * 4 + c)
-            val color = COLORS[palette.load(paletteAddr)]
-            (0 until SCALE).forEach { scanline[(xSprite + xPixel) * SCALE + it] = color }
+            scanline[xSprite + xPixel] = COLORS[palette.load(paletteAddr)]
           }
         }
       }

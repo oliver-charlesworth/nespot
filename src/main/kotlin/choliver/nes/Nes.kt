@@ -5,6 +5,7 @@ import choliver.nes.ppu.Ppu
 import choliver.nes.sixfiveohtwo.Cpu
 import choliver.nes.sixfiveohtwo.model.Instruction
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
+import java.nio.ByteBuffer
 
 class Nes(rom: ByteArray) {
   private val cartridge = Cartridge(rom)
@@ -65,8 +66,8 @@ class Nes(rom: ByteArray) {
       return interceptor.stores
     }
 
-    fun render() {
-      ppu.render()
+    fun renderTo(buffer: ByteBuffer) {
+      ppu.renderTo(buffer)
     }
 
     fun peek(addr: Address) = cpuMapper.load(addr)

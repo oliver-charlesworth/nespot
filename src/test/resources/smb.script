@@ -96,9 +96,7 @@ f
 nmi
 f
 
-# GameMenuRoutine (3)
-#nmi
-#f
-
+render
+q
 
 v

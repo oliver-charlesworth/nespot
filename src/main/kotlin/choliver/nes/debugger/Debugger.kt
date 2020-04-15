@@ -17,6 +17,7 @@ import choliver.nes.debugger.Command.Execute.*
 import choliver.nes.debugger.PointManager.Point.Breakpoint
 import choliver.nes.debugger.PointManager.Point.Watchpoint
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
+import javafx.application.Platform
 import java.io.InputStream
 import java.io.PrintStream
 
@@ -61,7 +62,7 @@ class Debugger(
         is Info -> info(cmd)
         is ToggleVerbosity -> isVerbose = !isVerbose
         is Event -> event(cmd)
-        is Render -> nes.render()
+        is Render -> render()
         is Quit -> return
         is Error -> stdout.println(cmd.msg)
       }
@@ -313,6 +314,15 @@ class Debugger(
 
         stdout.println("${(i * numPerRow).format()}:  ${hex}  ${chars}")
       }
+  }
+
+  private fun render() {
+    val app = Screen()
+
+    app.start()
+
+    nes.renderTo(app.buffer)
+    app.redraw()
   }
 
   private fun Address.format() = "0x%04x".format(this)

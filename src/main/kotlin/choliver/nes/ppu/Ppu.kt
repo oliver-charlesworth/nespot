@@ -157,7 +157,7 @@ class Ppu(
   }
 
   private fun State.withincrementedOamAddr() = copy(oamAddr = (state.oamAddr + 1).addr8())
-  private fun State.withIncrementedPpuAddr() = copy(addr = (state.addr + 1).addr())
+  private fun State.withIncrementedPpuAddr() = copy(addr = (state.addr + addrInc).addr()) // TODO - add test for addIncr = 32
 
   private data class State(
     val addrInc: Int = 1,

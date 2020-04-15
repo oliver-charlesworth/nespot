@@ -8,6 +8,7 @@ import choliver.nes.ppu.Ppu.Companion.BASE_PALETTE
 import choliver.nes.ppu.Ppu.Companion.REG_OAMADDR
 import choliver.nes.ppu.Ppu.Companion.REG_OAMDATA
 import choliver.nes.ppu.Ppu.Companion.REG_PPUADDR
+import choliver.nes.ppu.Ppu.Companion.REG_PPUCTRL
 import choliver.nes.ppu.Ppu.Companion.REG_PPUDATA
 import choliver.nes.ppu.Ppu.Companion.REG_PPUSTATUS
 import com.nhaarman.mockitokotlin2.doReturn
@@ -65,6 +66,20 @@ class PpuTest {
 
       ppu.readReg(REG_PPUDATA)  // Ignore garbage read
       assertEquals(0x30, ppu.readReg(REG_PPUDATA))
+    }
+
+    @Test
+    fun `increments by 32 if PPUCTRL set appropriately`() {
+      ppu.writeReg(REG_PPUCTRL, 0x04)
+      setPpuAddress(0x1230)
+
+      ppu.writeReg(REG_PPUDATA, 0x20)
+      ppu.writeReg(REG_PPUDATA, 0x30)
+      ppu.writeReg(REG_PPUDATA, 0x40)
+
+      verify(memory).store(0x1230, 0x20)
+      verify(memory).store(0x1250, 0x30)
+      verify(memory).store(0x1270, 0x40)
     }
   }
 

@@ -42,6 +42,7 @@ f
 
 # ScreenRoutines (1) - AreaParserTaskControl (8)
 # Do this 12 times
+
 nmi
 f
 nmi
@@ -95,9 +96,11 @@ f
 nmi
 f
 
-  # GameMenuRoutine (3)
-#nmi
-#f
+q
+
+# GameMenuRoutine (3)
+nmi
+f
 
 
 v

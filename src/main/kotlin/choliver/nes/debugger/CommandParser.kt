@@ -93,6 +93,7 @@ class CommandParser(
       "i", "info" -> when (bits.size) {
         1 -> error
         else -> when (bits[1]) {
+          "s", "stats" -> Info.Stats
           "r", "reg" -> Info.Reg
           "b", "break" -> Info.Break
           "w", "watch" -> Info.Watch

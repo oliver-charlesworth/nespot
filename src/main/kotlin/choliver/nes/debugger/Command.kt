@@ -34,6 +34,7 @@ sealed class Command {
   data class CreateDisplay(val addr: Address) : Command()
 
   sealed class Info : Command() {
+    object Stats : Info()
     object Reg : Info()
     object Break : Info()
     object Watch : Info()

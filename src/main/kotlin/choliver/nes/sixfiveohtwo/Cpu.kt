@@ -7,15 +7,12 @@ import choliver.nes.sixfiveohtwo.model.Operand.Accumulator
 import choliver.nes.sixfiveohtwo.model.Operand.Immediate
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
-import mu.KotlinLogging
 
 typealias F<T, R> = State.(T) -> R
 
 class Cpu(
   private val memory: Memory
 ) {
-  private val logger = KotlinLogging.logger {}
-
   private var _state: State = State()
   val state get() = _state
 
@@ -38,8 +35,6 @@ class Cpu(
       .interrupt(addr, updateStack = updateStack, setBreakFlag = false)
       .updateI { disableIrq }
       .state
-
-    logger.info("Vectoring to ${_state.PC}")
   }
 
   fun step() {

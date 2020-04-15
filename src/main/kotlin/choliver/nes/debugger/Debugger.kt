@@ -227,8 +227,9 @@ class Debugger(
 
   private fun step(): Boolean {
     maybeTraceInstruction()
-    stack.handleStep()
+    stack.preStep()
     val stores = nes.step()
+    stack.postStep()
     maybeTraceStores(stores)
     return isWatchpointHit(stores) && isBreakpointHit()
   }

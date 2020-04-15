@@ -55,7 +55,7 @@ class Renderer(
 
   private fun renderSprites(y: Int, sprPatternTableAddr: Address) {
     for (iSprite in 0 until NUM_SPRITES) {
-      val ySprite = oam.load(iSprite * 4 + 0) // Nesdev says +1, but that doesn't work
+      val ySprite = oam.load(iSprite * 4 + 0) + 1   // Offset of one scanline
       val xSprite = oam.load(iSprite * 4 + 3)
       val iTile = oam.load(iSprite * 4 + 1)
       val attrs = oam.load(iSprite * 4 + 2)

@@ -59,11 +59,9 @@ class CallStackManager(
     pushFrame(IRQ, peekVector(VECTOR_IRQ)) // TODO - check for stack overflow
   }
 
-  fun handleStep() {
+  fun preStep() {
     val decoded = nes.decodeAt(nes.state.PC)
     val addr = nes.calcAddr(decoded.instruction)
-
-    updateLatestFrame(decoded)
 
     when (decoded.instruction.opcode) {
       TXS -> if (valid) {
@@ -86,8 +84,8 @@ class CallStackManager(
         onUserData = {},  // Vanilla
         onFrame = {
           when (it.type) {
-            FrameType.JSR -> pushFrame(JSR_PARTIAL, it.start, it.current)
-            JSR_PARTIAL -> updateLatestFrame(decoded) // Manually removed a stack frame, so update the next
+            FrameType.JSR -> pushFrame(JSR_PARTIAL, it.start)
+            JSR_PARTIAL -> {} // Manually removed a stack frame
             NMI -> unsupported("manual unwinding of NMI frame")
             IRQ -> unsupported("manual unwinding of IRQ frame")
             RESET -> unsupported("stack underflow")
@@ -126,9 +124,9 @@ class CallStackManager(
     }
   }
 
-  private fun updateLatestFrame(decoded: Decoded) {
+  fun postStep() {
     val latest = map.entries.last()
-    latest.setValue(latest.value.copy(current = decoded.nextPc))
+    latest.setValue(latest.value.copy(current = nes.state.PC))
   }
 
   private fun pushFrame(type: FrameType, start: ProgramCounter, current: ProgramCounter = start) {

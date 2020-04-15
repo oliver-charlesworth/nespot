@@ -26,9 +26,14 @@ class Debugger(
   private val stdout: PrintStream,
   private val script: String = ""
 ) {
+  private data class Stats(
+    val numInstructions: Int
+  )
+
   private val nes = Nes(rom).instrumentation
   private var points = PointManager()
   private var stack = CallStackManager(nes)
+  private var stats = Stats(0)
   private var isVerbose = true
 
   // Displays
@@ -56,6 +61,7 @@ class Debugger(
         is Info -> info(cmd)
         is ToggleVerbosity -> isVerbose = !isVerbose
         is Event -> event(cmd)
+        is Render -> nes.render()
         is Quit -> return
         is Error -> stdout.println(cmd.msg)
       }
@@ -65,7 +71,7 @@ class Debugger(
   // TODO - this recursion is weird - can we combine this + stdin with flatMap magic?
   private fun script() {
     script.byteInputStream().use { stream ->
-      consume(CommandParser(stream), false)
+      consume(CommandParser(stream, ignoreBlanks = true), enablePrompts = false)
     }
   }
 
@@ -152,7 +158,9 @@ class Debugger(
 
   private fun info(cmd: Info) {
     when (cmd) {
-      is Info.Reg -> println(nes.state)
+      is Info.Stats -> displayStats()
+
+      is Info.Reg -> stdout.println(nes.state)
 
       is Info.Break -> if (points.breakpoints.isEmpty()) {
         stdout.println("No breakpoints")
@@ -212,23 +220,28 @@ class Debugger(
       is Reset -> {
         nes.reset()
         stack.handleReset()
+        stdout.println("Triggered RESET -> ${nes.state.PC}")
       }
       is Nmi -> {
         nes.nmi()
         stack.handleNmi()
+        stdout.println("Triggered NMI -> ${nes.state.PC}")
       }
       is Irq -> {
         nes.irq()
         stack.handleIrq()
+        stdout.println("Triggered IRQ -> ${nes.state.PC}")
       }
     }
   }
 
   private fun step(): Boolean {
     maybeTraceInstruction()
-    stack.handleStep()
+    stack.preStep()
     val stores = nes.step()
+    stack.postStep()
     maybeTraceStores(stores)
+    stats = stats.copy(numInstructions = stats.numInstructions + 1)
     return isWatchpointHit(stores) && isBreakpointHit()
   }
 
@@ -272,6 +285,10 @@ class Debugger(
     displays.forEach { (k, v) ->
       stdout.println("${k}: ${v.format()} = ${nes.peek(v).format8()}")
     }
+  }
+
+  private fun displayStats() {
+    stdout.println("Num instructions executed: ${stats.numInstructions}")
   }
 
   private fun displayDump(data: List<Data>) {

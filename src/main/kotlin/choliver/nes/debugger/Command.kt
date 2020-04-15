@@ -34,6 +34,7 @@ sealed class Command {
   data class CreateDisplay(val addr: Address) : Command()
 
   sealed class Info : Command() {
+    object Stats : Info()
     object Reg : Info()
     object Break : Info()
     object Watch : Info()
@@ -52,6 +53,9 @@ sealed class Command {
     object Nmi : Event()
     object Irq : Event()
   }
+
+  object Render : Command()
+
   object Quit : Command()
   data class Error(val msg: String) : Command()
 }

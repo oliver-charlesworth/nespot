@@ -8,7 +8,10 @@ import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.toPC
 import java.io.InputStream
 
-class CommandParser(stdin: InputStream) {
+class CommandParser(
+  stdin: InputStream,
+  private val ignoreBlanks: Boolean = false
+) {
   private val reader = stdin.bufferedReader()
 
   fun next(): Command {
@@ -20,11 +23,10 @@ class CommandParser(stdin: InputStream) {
       return Quit
     }
     val r = raw.trim()
-    if (r.isEmpty()) {
-      return Next(1)
-    }
-    if (r.startsWith("#")) {
-      return Nop
+    when {
+      r.isEmpty() && !ignoreBlanks -> return Next(1)
+      r.isEmpty() && ignoreBlanks -> return Nop
+      r.startsWith("#") -> return Nop
     }
 
     val bits = r.split("\\s+".toRegex())
@@ -91,6 +93,7 @@ class CommandParser(stdin: InputStream) {
       "i", "info" -> when (bits.size) {
         1 -> error
         else -> when (bits[1]) {
+          "s", "stats" -> Info.Stats
           "r", "reg" -> Info.Reg
           "b", "break" -> Info.Break
           "w", "watch" -> Info.Watch
@@ -126,6 +129,8 @@ class CommandParser(stdin: InputStream) {
       "r", "reset" -> noArgs(Event.Reset)
       "nmi" -> noArgs(Event.Nmi)
       "irq" -> noArgs(Event.Irq)
+
+      "render" -> noArgs(Render)
 
       "q", "quit" -> noArgs(Quit)
 

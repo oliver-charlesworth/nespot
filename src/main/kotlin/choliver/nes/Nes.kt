@@ -65,6 +65,10 @@ class Nes(rom: ByteArray) {
       return interceptor.stores
     }
 
+    fun render() {
+      ppu.render()
+    }
+
     fun peek(addr: Address) = cpuMapper.load(addr)
     fun peekV(addr: Address) = ppuRam.load(addr)  // TODO - use PPU mapper?
 

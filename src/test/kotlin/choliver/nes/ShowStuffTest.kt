@@ -7,9 +7,11 @@ import choliver.nes.debugger.Screen.Companion.SCALE
 import choliver.nes.ppu.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
 
 class ShowStuffTest {
-  private val app = Screen()
+  private val latch = CountDownLatch(1)
+  private val app = Screen { latch.countDown() }
 
   @Test
   @Disabled
@@ -20,9 +22,9 @@ class ShowStuffTest {
       }
     }
 
-    app.start()
+    app.show()
     app.redraw()
-    app.await()
+    latch.await()
   }
 
   @Test
@@ -68,8 +70,8 @@ class ShowStuffTest {
       }
     }
 
-    app.start()
+    app.show()
     app.redraw()
-    app.await()
+    latch.await()
   }
 }

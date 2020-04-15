@@ -17,7 +17,6 @@ import choliver.nes.debugger.Command.Execute.*
 import choliver.nes.debugger.PointManager.Point.Breakpoint
 import choliver.nes.debugger.PointManager.Point.Watchpoint
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
-import javafx.application.Platform
 import java.io.InputStream
 import java.io.PrintStream
 
@@ -31,6 +30,7 @@ class Debugger(
     val numInstructions: Int
   )
 
+  private val screen = Screen()
   private val nes = Nes(rom).instrumentation
   private var points = PointManager()
   private var stack = CallStackManager(nes)
@@ -317,12 +317,9 @@ class Debugger(
   }
 
   private fun render() {
-    val app = Screen()
-
-    app.start()
-
-    nes.renderTo(app.buffer)
-    app.redraw()
+    screen.show()
+    nes.renderTo(screen.buffer)
+    screen.redraw()
   }
 
   private fun Address.format() = "0x%04x".format(this)

@@ -11,15 +11,15 @@ import javafx.scene.image.PixelFormat
 import javafx.scene.image.WritableImage
 import javafx.stage.Stage
 import java.nio.ByteBuffer
-import java.util.concurrent.CountDownLatch
 
 
-class Screen {
+class Screen(private val onClose: () -> Unit = {}) {
   companion object {
     const val SCALE = 4
   }
 
-  private val latch = CountDownLatch(1)
+  private var isStarted = false
+  private lateinit var stage: Stage
   val buffer: ByteBuffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4 * SCALE * SCALE)
   private val pixelBuffer = PixelBuffer(
     SCREEN_WIDTH * SCALE,
@@ -33,21 +33,37 @@ class Screen {
     Platform.runLater { pixelBuffer.updateBuffer { null } }
   }
 
-  fun start() {
+  fun show() {
+    if (!isStarted) {
+      start()
+    }
+    Platform.runLater {
+      stage.show()
+      stage.toFront()
+    }
+  }
+
+  fun hide() {
+    Platform.runLater {
+      stage.hide()
+    }
+  }
+
+  private fun start() {
+    Platform.setImplicitExit(false)
     Platform.startup {
-      val stage = Stage()
+      stage = Stage()
       stage.title = "Wat"
       stage.scene = Scene(Group().apply {
         children.add(ImageView(WritableImage(pixelBuffer)))
       })
       stage.isResizable = false
-      stage.setOnCloseRequest { latch.countDown() }
-      stage.show()
+      stage.setOnCloseRequest {
+        it.consume();
+        hide()
+        onClose()
+      }
     }
-  }
-
-  fun await() {
-    latch.await()
-    Platform.exit()
+    isStarted = true
   }
 }

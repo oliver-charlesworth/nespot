@@ -30,6 +30,7 @@ class Debugger(
     val numInstructions: Int
   )
 
+  private val screen = Screen()
   private val nes = Nes(rom).instrumentation
   private var points = PointManager()
   private var stack = CallStackManager(nes)
@@ -61,7 +62,7 @@ class Debugger(
         is Info -> info(cmd)
         is ToggleVerbosity -> isVerbose = !isVerbose
         is Event -> event(cmd)
-        is Render -> nes.render()
+        is Render -> render()
         is Quit -> return
         is Error -> stdout.println(cmd.msg)
       }
@@ -313,6 +314,12 @@ class Debugger(
 
         stdout.println("${(i * numPerRow).format()}:  ${hex}  ${chars}")
       }
+  }
+
+  private fun render() {
+    screen.show()
+    nes.renderTo(screen.buffer)
+    screen.redraw()
   }
 
   private fun Address.format() = "0x%04x".format(this)

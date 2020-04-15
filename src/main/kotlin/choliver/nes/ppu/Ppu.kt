@@ -1,8 +1,6 @@
 package choliver.nes.ppu
 
 import choliver.nes.*
-import javafx.application.Platform
-import javafx.stage.Stage
 import mu.KotlinLogging
 import java.nio.ByteBuffer
 
@@ -11,62 +9,20 @@ class Ppu(
 ) {
   private val logger = KotlinLogging.logger {}
   private var state = State()
-  private val palette = Ram(32)
+  private val palette = Palette()
   private val oam = Ram(256)
+  private val renderer = Renderer(memory, palette, oam)
+
+  private var gross = false
 
   // Oh god oh god
-  fun render() {
-
-    class OhGodOhGod : BaseApplication() {
-      override fun populateData(data: ByteBuffer) {
-        val buf = IntArray(CANVAS_WIDTH * SCALE)
-
-        // For each row of tiles
-        for (yT in 0 until CANVAS_HEIGHT / TILE_SIZE) {
-          // For each scan-line
-          for (y in 0 until TILE_SIZE) {
-            var i = 0
-
-            // For each column of tiles
-            for (xT in 0 until CANVAS_WIDTH / TILE_SIZE) {
-              val addrNametable = 0x2000 + yT * (CANVAS_WIDTH / TILE_SIZE) + xT
-
-              getPatternData(addrNametable, y).forEach { c ->
-                repeat(SCALE) { buf[i++] = palette[c] }
-              }
-            }
-
-            repeat(SCALE) { buf.forEach { data.putInt(it) } }
-          }
-        }
-      }
-
-      private fun getPatternData(
-        addrNametable: Address,
-        scanline: Int     // 0 to 7
-      ): List<Int> {
-        val addr = memory.load(addrNametable) * 16 + 0x1000 + scanline  // TODO - remove hardcoding for pattern table 1
-        val p0 = memory.load(addr)
-        val p1 = memory.load(addr + 8)
-
-        return (0..7).map { ((p0 shr (7 - it)) and 1) or (((p1 shr (7 - it)) and 1) * 2) }
-      }
-
-      private val palette = listOf(
-        15,  // Black
-        23,  // Red
-        54,  // Yellow
-        24   // Shitty green
-      ).map { COLORS[it] }
-    }
-
-    val app = OhGodOhGod()
-    app.init()
-
-    Platform.startup {
-      val stage = Stage()
-      app.start(stage)
-    }
+  fun renderTo(buffer: ByteBuffer) {
+    renderer.renderTo(
+      buffer,
+      nametableAddr = state.nametableAddr,
+      bgPatternTableAddr = state.bgPatternTableAddr,
+      sprPatternTableAddr = state.sprPatternTableAddr
+    )
   }
 
   fun readReg(reg: Int): Int {
@@ -77,7 +33,8 @@ class Ppu(
           addrWriteLo = false,
           addr = 0
         )
-        0x80 // TODO - remove debug hack that emulates VBL
+        gross = !gross
+        0x80 + if (gross) 0x40 else 0x00 // TODO - remove debug hack that emulates VBL
       }
 
       REG_OAMDATA -> {
@@ -106,9 +63,9 @@ class Ppu(
     when (reg) {
       REG_PPUCTRL -> state = state.copy(
         addrInc = if (data.isBitSet(2)) 32 else 1,
-        nametableAddr = 0, // TODO
-        spriteTableAddr = if (data.isBitSet(3)) 0x1000 else 0x0000,
-        backgroundTableAddr = if (data.isBitSet(4)) 0x1000 else 0x0000,
+        nametableAddr = 0x2000, // TODO
+        sprPatternTableAddr = if (data.isBitSet(3)) 0x1000 else 0x0000,
+        bgPatternTableAddr = if (data.isBitSet(4)) 0x1000 else 0x0000,
         isLargeSprites = data.isBitSet(5),
         // TODO - is master/slave important?
         isNmiEnabled = data.isBitSet(7)
@@ -162,8 +119,8 @@ class Ppu(
   private data class State(
     val addrInc: Int = 1,
     val nametableAddr: Address = 0x2000,
-    val spriteTableAddr: Address = 0x0000,
-    val backgroundTableAddr: Address = 0x0000,
+    val sprPatternTableAddr: Address = 0x0000,
+    val bgPatternTableAddr: Address = 0x0000,
     val isLargeSprites: Boolean = false,
     val isNmiEnabled: Boolean = false,
 
@@ -182,8 +139,6 @@ class Ppu(
 
     val oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
   )
-
-
 
   companion object {
     // http://wiki.nesdev.com/w/index.php/PPU_registers

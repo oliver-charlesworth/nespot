@@ -9,7 +9,6 @@ import choliver.nes.debugger.CallStackManager.FrameType.*
 import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_IRQ
 import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_NMI
 import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
-import choliver.nes.sixfiveohtwo.InstructionDecoder.Decoded
 import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.Opcode.JSR
 import choliver.nes.sixfiveohtwo.model.ProgramCounter

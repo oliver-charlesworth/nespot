@@ -96,11 +96,16 @@ f
 nmi
 f
 
-q
 
-# GameMenuRoutine (3)
 nmi
 f
 
+nmi
+f
+
+nmi
+f
+
+render
 
 v

@@ -16,7 +16,8 @@ import java.nio.IntBuffer
 class Renderer(
   private val memory: Memory,
   private val palette: Memory,
-  private val oam: Memory
+  private val oam: Memory,
+  private val colors: List<Int> = COLORS
 ) {
   data class Context(
     val nametableAddr: Address,
@@ -42,7 +43,7 @@ class Renderer(
     y: Int
   ) {
     renderBackground(ctx, y)
-    renderSprites(ctx, y)
+//    renderSprites(ctx, y)
     scanline.forEach { buffer.put(it) }
   }
 
@@ -58,7 +59,7 @@ class Renderer(
       for (xPixel in 0 until TILE_SIZE) {
         val c = patternPixel(pattern, xPixel)
         val paletteAddr = if (c == 0) 0 else (iPalette * 4 + c) // Background colour is universal
-        scanline[xTile * TILE_SIZE + xPixel] = COLORS[palette.load(paletteAddr)]
+        scanline[xTile * TILE_SIZE + xPixel] = colors[palette.load(paletteAddr)]
       }
     }
   }
@@ -90,7 +91,7 @@ class Renderer(
           // Handle transparency
           if (c != 0) {
             val paletteAddr = (iPalette * 4 + c)
-            scanline[xSprite + xPixel] = COLORS[palette.load(paletteAddr)]
+            scanline[xSprite + xPixel] = colors[palette.load(paletteAddr)]
           }
         }
       }
@@ -101,7 +102,7 @@ class Renderer(
     ((pattern shr (7 - xPixel)) and 1) or (((pattern shr (14 - xPixel)) and 2))
 
   private fun getPattern(base: Address, idx: Int, yPixel: Int): Int {
-    val addr: Address = base + idx * 16 + yPixel
+    val addr: Address = base + (idx * 16) + yPixel
     val p0 = memory.load(addr)
     val p1 = memory.load(addr + TILE_SIZE)
     return (p1 shl 8) or p0

@@ -16,7 +16,6 @@ class RendererTest {
   // TODO - scrolling / offset
   // TODO - universal background colour - sprites
   // TODO - conditional rendering
-  // TODO - all metatile value offsets (0, 2, 4, 6)
 
   private val colors = (0..63).toList()
   private val paletteEntries = (0..15).map { it + 5 }
@@ -73,7 +72,7 @@ class RendererTest {
     }
 
     @Test
-    fun `uses location-based attributes`() {
+    fun `uses location-based attributes - bottom metatile`() {
       val pattern = List(TILE_SIZE) { 1 } // Arbitrary non-zero pixel
       val attrEntries = listOf(0, 1, 2, 3, 2, 3, 0, 1, 3, 2, 1, 0, 1, 0, 3, 2)
 
@@ -83,6 +82,19 @@ class RendererTest {
       assertRendersAs((0 until SCREEN_WIDTH).map { x ->
         colors[paletteEntries[1 + attrEntries[x / METATILE_SIZE] * NUM_ENTRIES_PER_PALETTE]]
       })
+    }
+
+    @Test
+    fun `uses location-based attributes - top metatile`() {
+      val pattern = List(TILE_SIZE) { 1 } // Arbitrary non-zero pixel
+      val attrEntries = listOf(0, 1, 2, 3, 2, 3, 0, 1, 3, 2, 1, 0, 1, 0, 3, 2)
+
+      initAttributeMemory(attrEntries, yTile = 13)
+      initPatternMemory(mapOf(0 to pattern))
+
+      assertRendersAs((0 until SCREEN_WIDTH).map { x ->
+        colors[paletteEntries[1 + attrEntries[x / METATILE_SIZE] * NUM_ENTRIES_PER_PALETTE]]
+      }, yTile = 13)
     }
 
     @Test
@@ -107,7 +119,7 @@ class RendererTest {
     }
   }
 
-  private fun assertRendersAs(expected: List<Int>) {
+  private fun assertRendersAs(expected: List<Int>, yTile: Int = this.yTile, yPixel: Int = this.yPixel) {
     renderer.renderScanlineTo(
       buffer,
       ctx = Renderer.Context(
@@ -121,13 +133,13 @@ class RendererTest {
     assertEquals(expected, buffer.array().toList())
   }
 
-  private fun initNametableMemory(nametableEntries: List<Int>) {
+  private fun initNametableMemory(nametableEntries: List<Int>, yTile: Int = this.yTile) {
     nametableEntries.forEachIndexed { idx, data ->
       whenever(memory.load(nametableAddr + (yTile * NUM_TILE_COLUMNS) + idx)) doReturn data
     }
   }
 
-  private fun initAttributeMemory(attrEntries: List<Int>) {
+  private fun initAttributeMemory(attrEntries: List<Int>, yTile: Int = this.yTile) {
     attrEntries.chunked(2).forEachIndexed { idx, data ->
       val attr = if ((yTile % 4) / 2 == 0) {
         (data[1] shl 2) or (data[0] shl 0)
@@ -140,7 +152,7 @@ class RendererTest {
     }
   }
 
-  private fun initPatternMemory(patterns: Map<Int, List<Int>>) {
+  private fun initPatternMemory(patterns: Map<Int, List<Int>>, yPixel: Int = this.yPixel) {
     patterns.forEach { (idx, v) ->
       var lo = 0
       var hi = 0

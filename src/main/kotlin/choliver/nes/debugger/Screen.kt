@@ -11,6 +11,7 @@ import javafx.scene.image.PixelFormat
 import javafx.scene.image.WritableImage
 import javafx.stage.Stage
 import java.nio.ByteBuffer
+import java.nio.IntBuffer
 
 
 class Screen(private val onClose: () -> Unit = {}) {
@@ -20,16 +21,17 @@ class Screen(private val onClose: () -> Unit = {}) {
 
   private var isStarted = false
   private lateinit var stage: Stage
-  val buffer: ByteBuffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
+  private val _buffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
+  val buffer: IntBuffer = _buffer.asIntBuffer()
   private val pixelBuffer = PixelBuffer(
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
-    buffer,
+    _buffer,
     PixelFormat.getByteBgraPreInstance() // Mac native format
   )
 
   fun redraw() {
-    buffer.position(0)
+    _buffer.position(0)
     Platform.runLater { pixelBuffer.updateBuffer { null } }
   }
 

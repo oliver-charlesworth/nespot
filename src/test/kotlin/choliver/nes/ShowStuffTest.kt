@@ -17,7 +17,7 @@ class ShowStuffTest {
   fun palette() {
     for (y in 0 until SCREEN_HEIGHT) {
       for (x in 0 until SCREEN_WIDTH) {
-        app.buffer.putInt(COLORS[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16])
+        app.buffer.put(COLORS[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16])
       }
     }
 
@@ -65,7 +65,7 @@ class ShowStuffTest {
           }
         }
 
-        scanline.forEach { app.buffer.putInt(it) }
+        scanline.forEach { app.buffer.put(it) }
       }
     }
 

@@ -3,7 +3,7 @@ package choliver.nes.ppu
 import choliver.nes.Address
 import choliver.nes.Memory
 import choliver.nes.isBitSet
-import java.nio.ByteBuffer
+import java.nio.IntBuffer
 
 // TODO - eliminate all the magic numbers here
 // TODO - conditional rendering
@@ -18,29 +18,42 @@ class Renderer(
   private val palette: Memory,
   private val oam: Memory
 ) {
+  data class Context(
+    val nametableAddr: Address,
+    val bgPatternTableAddr: Address,
+    val sprPatternTableAddr: Address
+  )
+
   private val scanline = IntArray(SCREEN_WIDTH)
 
+  // TODO - move to orchestration layer
   fun renderTo(
-    buffer: ByteBuffer,
-    nametableAddr: Address,
-    bgPatternTableAddr: Address,
-    sprPatternTableAddr: Address
+    buffer: IntBuffer,
+    ctx: Context
   ) {
     for (y in 0 until SCREEN_HEIGHT) {
-      renderBackground(y, nametableAddr, bgPatternTableAddr)
-      renderSprites(y, sprPatternTableAddr)
-      scanline.forEach { buffer.putInt(it) }
+      renderScanlineTo(buffer, ctx, y)
     }
   }
 
-  private fun renderBackground(y: Int, nametableAddr: Address, bgPatternTableAddr: Address) {
+  fun renderScanlineTo(
+    buffer: IntBuffer,
+    ctx: Context,
+    y: Int
+  ) {
+    renderBackground(ctx, y)
+    renderSprites(ctx, y)
+    scanline.forEach { buffer.put(it) }
+  }
+
+  private fun renderBackground(ctx: Context, y: Int) {
     val yTile = y / TILE_SIZE
     val yPixel = y % TILE_SIZE
     for (xTile in 0 until NUM_TILE_COLUMNS) {
-      val addrNt = nametableAddr + (yTile * NUM_TILE_COLUMNS + xTile)
-      val addrAttr = nametableAddr + 960 + ((yTile / 4) * (NUM_TILE_COLUMNS / 4) + (xTile / 4))
+      val addrNt = ctx.nametableAddr + (yTile * NUM_TILE_COLUMNS + xTile)
+      val addrAttr = ctx.nametableAddr + 960 + ((yTile / 4) * (NUM_TILE_COLUMNS / 4) + (xTile / 4))
       val iPalette = (memory.load(addrAttr) shr (((yTile / 2) % 2) * 4 + ((xTile / 2) % 2) * 2)) and 0x03
-      val pattern = getPattern(bgPatternTableAddr, memory.load(addrNt), yPixel)
+      val pattern = getPattern(ctx.bgPatternTableAddr, memory.load(addrNt), yPixel)
 
       for (xPixel in 0 until TILE_SIZE) {
         val c = patternPixel(pattern, xPixel)
@@ -50,7 +63,7 @@ class Renderer(
     }
   }
 
-  private fun renderSprites(y: Int, sprPatternTableAddr: Address) {
+  private fun renderSprites(ctx: Context, y: Int) {
     for (iSprite in 0 until NUM_SPRITES) {
       val ySprite = oam.load(iSprite * 4 + 0) + 1   // Offset of one scanline
       val xSprite = oam.load(iSprite * 4 + 3)
@@ -63,7 +76,7 @@ class Renderer(
       val yPixel = y - ySprite
       if (yPixel in 0 until TILE_SIZE) {
         val pattern = getPattern(
-          sprPatternTableAddr,
+          ctx.sprPatternTableAddr,
           iTile,
           if (flipY) (7 - yPixel) else yPixel
         )

@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.nio.IntBuffer
 import kotlin.random.Random
@@ -13,7 +14,7 @@ class RendererTest {
   // TODO - correct base addresses
   // TODO - nametable calculation
   // TODO - scrolling / offset
-  // TODO - universal background colour
+  // TODO - universal background colour - sprites
   // TODO - conditional rendering
   // TODO - all metatile value offsets (0, 2, 4, 6)
 
@@ -45,67 +46,68 @@ class RendererTest {
   private val yTile = 14
   private val yPixel = 4
 
-  @Test
-  fun `renders background`() {
-    // One scanline for each pattern (note - no zeros in this test case)
-    val patternEntries = List(NUM_PATTERNS) { List(TILE_SIZE) { random.nextInt(1, 4) } }
+  @Nested
+  inner class Background {
+    @Test
+    fun `renders patterns for palette #0`() {
+      val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
 
-    // One tile-row's worth of nametable and attribute entries
-    val nametableEntries = List(NUM_TILE_COLUMNS) { random.nextInt(0, NUM_PATTERNS) }
-    val attrEntries = List(NUM_METATILE_COLUMNS) { random.nextInt(0, 4) }  // TODO - 2 and 4 are magic numbers
+      initPatternMemory(mapOf(0 to pattern))
 
-    initNametableMemory(nametableEntries)
-    initAttributeMemory(attrEntries)
-    initPatternMemory(patternEntries)
-
-    render()
-
-    val expected = (0 until SCREEN_WIDTH).map { x ->
-      val xMetaTile = x / METATILE_SIZE
-      val xTile = x / TILE_SIZE
-      val xPixel = x % TILE_SIZE
-
-      val yeah = patternEntries[nametableEntries[xTile]][xPixel]
-      colors[paletteEntries[yeah + attrEntries[xMetaTile] * 4]]
+      assertRendersAs((0 until SCREEN_WIDTH).map { x ->
+        colors[paletteEntries[pattern[x % TILE_SIZE]]]
+      })
     }
 
-    assertEquals(expected, buffer.array().toList())
-  }
+    @Test
+    fun `renders patterns for higher palettes using universal background color`() {
+      val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
+      val attrEntries = List(NUM_METATILE_COLUMNS) { 1 }  // Arbitrary non-zero palette #
 
-  @Test
-  fun `renders background patterns for palette #0`() {
-    val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
+      initAttributeMemory(attrEntries)
+      initPatternMemory(mapOf(0 to pattern))
 
-    initPatternEntryMemory(0, pattern)
-
-    render()
-
-    val expected = (0 until SCREEN_WIDTH).map { x ->
-      colors[paletteEntries[pattern[x % TILE_SIZE]]]
+      assertRendersAs((0 until SCREEN_WIDTH).map { x ->
+        colors[paletteEntries[pattern[x % TILE_SIZE].let { if (it == 0) 0 else (it + NUM_ENTRIES_PER_PALETTE) }]]
+      })
     }
 
-    assertEquals(expected, buffer.array().toList())
-  }
+    @Test
+    fun `uses location-based attributes`() {
+      val pattern = List(TILE_SIZE) { 1 } // Arbitrary non-zero pixel
+      val attrEntries = listOf(0, 1, 2, 3, 2, 3, 0, 1, 3, 2, 1, 0, 1, 0, 3, 2)
 
-  @Test
-  fun `renders background patterns for higher palettes using universal background color`() {
-    val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
-    val attrEntries = List(NUM_METATILE_COLUMNS) { 1 }  // Arbitrary non-zero palette #
+      initAttributeMemory(attrEntries)
+      initPatternMemory(mapOf(0 to pattern))
 
-    initAttributeMemory(attrEntries)
-    initPatternEntryMemory(0, pattern)
-
-    render()
-
-    val expected = (0 until SCREEN_WIDTH).map { x ->
-      colors[paletteEntries[pattern[x % TILE_SIZE].let { if (it == 0) 0 else (it + 4) }]]
+      assertRendersAs((0 until SCREEN_WIDTH).map { x ->
+        colors[paletteEntries[1 + attrEntries[x / METATILE_SIZE] * NUM_ENTRIES_PER_PALETTE]]
+      })
     }
 
-    assertEquals(expected, buffer.array().toList())
+    @Test
+    fun `uses location-based patterns`() {
+      val patterns = mapOf(
+        11 to List(TILE_SIZE) { 1 },
+        22 to List(TILE_SIZE) { 2 },
+        33 to List(TILE_SIZE) { 3 },
+        44 to List(TILE_SIZE) { 0 }
+      )
+
+      val nametableEntries = (0 until NUM_TILE_COLUMNS / 4).flatMap { listOf(11, 22, 33, 44) }
+
+      initNametableMemory(nametableEntries)
+      initPatternMemory(patterns)
+
+      assertRendersAs((0 until SCREEN_WIDTH).map { x ->
+        val xTile = x / TILE_SIZE
+        val xPixel = x % TILE_SIZE
+        colors[paletteEntries[patterns[nametableEntries[xTile]]!![xPixel]]]
+      })
+    }
   }
 
-
-  private fun render() {
+  private fun assertRendersAs(expected: List<Int>) {
     renderer.renderScanlineTo(
       buffer,
       ctx = Renderer.Context(
@@ -114,7 +116,9 @@ class RendererTest {
         sprPatternTableAddr = sprPatternTableAddr
       ),
       y = (yTile * TILE_SIZE) + yPixel
-      )
+    )
+
+    assertEquals(expected, buffer.array().toList())
   }
 
   private fun initNametableMemory(nametableEntries: List<Int>) {
@@ -133,24 +137,19 @@ class RendererTest {
       whenever(memory.load(
         nametableAddr + (NUM_TILE_COLUMNS * NUM_TILE_ROWS) + ((yTile / 4) * (NUM_METATILE_COLUMNS / 2)) + idx)
       ) doReturn attr
-      }
-  }
-
-  private fun initPatternMemory(patternEntries: List<List<Int>>) {
-    patternEntries.forEachIndexed(this::initPatternEntryMemory)
-  }
-
-  private fun initPatternEntryMemory(idx: Int, entry: List<Int>) {
-    // Calculate bit-planes
-    var lo = 0
-    var hi = 0
-    entry.forEach {
-      lo = (lo shl 1) or (it and 1)
-      hi = (hi shl 1) or ((it / 2) and 1)
     }
+  }
 
-    // Separate bit planes
-    whenever(memory.load(bgPatternTableAddr + (idx * PATTERN_SIZE_BYTES) + yPixel)) doReturn lo
-    whenever(memory.load(bgPatternTableAddr + (idx * PATTERN_SIZE_BYTES) + yPixel + TILE_SIZE)) doReturn hi
+  private fun initPatternMemory(patterns: Map<Int, List<Int>>) {
+    patterns.forEach { (idx, v) ->
+      var lo = 0
+      var hi = 0
+      v.forEach {
+        lo = (lo shl 1) or (it and 1)
+        hi = (hi shl 1) or ((it / 2) and 1)
+      }
+      whenever(memory.load(bgPatternTableAddr + (idx * PATTERN_SIZE_BYTES) + yPixel)) doReturn lo
+      whenever(memory.load(bgPatternTableAddr + (idx * PATTERN_SIZE_BYTES) + yPixel + TILE_SIZE)) doReturn hi
+    }
   }
 }

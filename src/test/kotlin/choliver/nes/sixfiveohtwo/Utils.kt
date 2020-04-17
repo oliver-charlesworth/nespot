@@ -142,10 +142,8 @@ fun assertCpuEffects(
     on { load(any()) } doAnswer { memoryMap[it.getArgument(0)] ?: 0xCC } // Easier to spot during debugging than 0x00
   }
 
-  val cpu = Cpu(memory)
-  cpu.reset()
-  repeat(trampoline.size) { cpu.step() }
-  repeat(instructions.size) { cpu.step() }
+  val cpu = Cpu(memory, pollReset = ImmediateOneShot()::poll)
+  cpu.runSteps(1 + trampoline.size + instructions.size)  // 1 for reset
 
   if (expectedState != null) {
     assertEquals(expectedState, cpu.state, "Unexpected state for [${name}]")
@@ -193,5 +191,10 @@ private fun List<Instruction>.memoryMap(base: Address) = map { it.encode() }
   .flatten()
   .withIndex()
   .associate { (base + it.index).addr() to it.value }
+
+private class ImmediateOneShot {
+  private var b = true
+  fun poll() = b.also { b = false }
+}
 
 fun addrToMem(addr: Address, data: Int) = mapOf(addr to data.lo(), (addr + 1) to data.hi())

@@ -8,6 +8,10 @@ import choliver.nes.sixfiveohtwo.model.ProgramCounter
 import java.nio.IntBuffer
 
 class Nes(rom: ByteArray) {
+  private val reset = InterruptSource()
+  private val irq = InterruptSource()
+  private val nmi = InterruptSource()
+
   private val cartridge = Cartridge(rom)
 
   private val cpuRam = Ram(CPU_RAM_SIZE)
@@ -43,21 +47,26 @@ class Nes(rom: ByteArray) {
 
   private val interceptor = InterceptingMemory(cpuMapper)
 
-  private val cpu = Cpu(interceptor)
+  private val cpu = Cpu(
+    interceptor,
+    pollReset = reset::poll,
+    pollIrq = irq::poll,
+    pollNmi = nmi::poll
+  )
 
   val instrumentation = Instrumentation()
 
   inner class Instrumentation internal constructor() {
     fun reset() {
-      cpu.reset()
+      reset.set()
     }
 
     fun nmi() {
-      cpu.nmi()
+      nmi.set()
     }
 
     fun irq() {
-      cpu.irq()
+      irq.set()
     }
 
     fun stepFrame() {
@@ -68,7 +77,7 @@ class Nes(rom: ByteArray) {
 
     fun step(): List<Pair<Address, Data>> {
       interceptor.reset()
-      cpu.step()
+      cpu.runSteps(1)
       return interceptor.stores
     }
 
@@ -84,6 +93,12 @@ class Nes(rom: ByteArray) {
     // TODO - combine
     fun decodeAt(pc: ProgramCounter) = cpu.decodeAt(pc)
     fun calcAddr(instruction: Instruction) = cpu.calcAddr(instruction)
+  }
+
+  private class InterruptSource {
+    private var b = false
+    fun poll() = b.also { b = false }
+    fun set() { b = true }
   }
 
   companion object {

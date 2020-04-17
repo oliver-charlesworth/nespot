@@ -31,7 +31,7 @@ class Debugger(
   )
 
   private val screen = Screen()
-  private val nes = Nes(rom).instrumentation
+  private val nes = Nes(rom, screen.buffer).instrumentation
   private var points = PointManager()
   private var stack = CallStackManager(nes)
   private var stats = Stats(0)
@@ -318,7 +318,7 @@ class Debugger(
 
   private fun render() {
     screen.show()
-    nes.renderTo(screen.buffer)
+    nes.renderFrame()
     screen.redraw()
   }
 

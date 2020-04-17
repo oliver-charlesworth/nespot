@@ -1,30 +1,30 @@
 package choliver.nes.ppu
 
 import choliver.nes.*
-import mu.KotlinLogging
 import java.nio.IntBuffer
 
 class Ppu(
-  private val memory: Memory
+  private val memory: Memory,
+  screen: IntBuffer
 ) {
-  private val logger = KotlinLogging.logger {}
   private var state = State()
   private val palette = Palette()
   private val oam = Ram(256)
-  private val renderer = Renderer(memory, palette, oam)
+  private val renderer = Renderer(memory, palette, oam, screen)
+  private var nextScanline = 0
 
   private var gross = false
 
-  // Oh god oh god
-  fun renderTo(buffer: IntBuffer) {
-    renderer.renderTo(
-      buffer,
+  fun renderNextScanline() {
+    renderer.renderScanline(
       ctx = Renderer.Context(
         nametableAddr = state.nametableAddr,
         bgPatternTableAddr = state.bgPatternTableAddr,
         sprPatternTableAddr = state.sprPatternTableAddr
-      )
+      ),
+      y = nextScanline
     )
+    nextScanline = (nextScanline + 1) % SCREEN_HEIGHT // TODO - should we account for VBL here?
   }
 
   fun readReg(reg: Int): Int {
@@ -59,7 +59,7 @@ class Ppu(
       }
       else -> 0x00
     }
-  } // TODO
+  }
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {

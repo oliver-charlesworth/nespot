@@ -23,14 +23,14 @@ class RendererTest {
     }
   }
   private val oam = mock<Memory>()
+  private val screen = IntBuffer.allocate(SCREEN_WIDTH) // Single scanline
   private val renderer = Renderer(
     memory = memory,
     palette = palette,
     oam = oam,
+    screen = screen,
     colors = colors
   )
-
-  private val buffer = IntBuffer.allocate(SCREEN_WIDTH)
 
   private val nametableAddr = 0x2000
   private val bgPatternTableAddr = 0x1000
@@ -183,8 +183,7 @@ class RendererTest {
   }
 
   private fun assertRendersAs(yTile: Int = this.yTile, yPixel: Int = this.yPixel, expected: (Int) -> Int) {
-    renderer.renderScanlineTo(
-      buffer,
+    renderer.renderScanline(
       ctx = Renderer.Context(
         nametableAddr = nametableAddr,
         bgPatternTableAddr = bgPatternTableAddr,
@@ -195,7 +194,7 @@ class RendererTest {
 
     assertEquals(
       (0 until SCREEN_WIDTH).map { colors[paletteEntries[expected(it)]] },
-      buffer.array().toList()
+      screen.array().toList()
     )
   }
 

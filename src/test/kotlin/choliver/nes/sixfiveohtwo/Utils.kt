@@ -136,7 +136,7 @@ fun assertCpuEffects(
     val memoryMap = addrToMem(VECTOR_RESET, BASE_TRAMPOLINE) +
       trampoline.memoryMap(BASE_TRAMPOLINE) +
       instructions.memoryMap(BASE_USER) +
-      mapOf((initState.S + 0x100) to initState.P.data()) +
+      mapOf((initState.S + BASE_STACK) to initState.P.data()) +
       initStores
 
     on { load(any()) } doAnswer { memoryMap[it.getArgument(0)] ?: 0xCC } // Easier to spot during debugging than 0x00
@@ -176,7 +176,7 @@ private fun Instruction.encode(): List<Data> {
   }
 }
 
-/** Instructions that sets AXYS, loads P from stack, and trampolines to the user code. */
+/** Instructions that sets A/X/Y/S, loads P from stack, and trampolines to the user code. */
 private fun trampolineFor(state: State) = listOf(
   Instruction(LDX, Immediate((state.S - 1).addr8())),
   Instruction(TXS),

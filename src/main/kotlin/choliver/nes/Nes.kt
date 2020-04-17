@@ -2,12 +2,16 @@ package choliver.nes
 
 import choliver.nes.cartridge.Cartridge
 import choliver.nes.ppu.Ppu
+import choliver.nes.ppu.SCREEN_HEIGHT
 import choliver.nes.sixfiveohtwo.Cpu
 import choliver.nes.sixfiveohtwo.model.Instruction
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
 import java.nio.IntBuffer
 
-class Nes(rom: ByteArray) {
+class Nes(
+  rom: ByteArray,
+  screen: IntBuffer
+) {
   private val reset = InterruptSource()
   private val irq = InterruptSource()
   private val nmi = InterruptSource()
@@ -22,7 +26,7 @@ class Nes(rom: ByteArray) {
     ram = ppuRam
   )
 
-  private val ppu = Ppu(ppuMapper)
+  private val ppu = Ppu(ppuMapper, screen)
 
   private val cpuMapper = CpuMapper(
     prg = cartridge.prg,
@@ -81,8 +85,8 @@ class Nes(rom: ByteArray) {
       return interceptor.stores
     }
 
-    fun renderTo(buffer: IntBuffer) {
-      ppu.renderTo(buffer)
+    fun renderFrame() {
+      repeat(SCREEN_HEIGHT) { ppu.renderNextScanline() }
     }
 
     fun peek(addr: Address) = cpuMapper.load(addr)

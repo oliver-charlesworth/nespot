@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test
 
 class PpuTest {
   private val memory = mock<Memory>()
-  private val ppu = Ppu(memory = memory)
+  private val ppu = Ppu(memory = memory, screen = mock())
 
   @Nested
   inner class ExternalMemory {

@@ -23,19 +23,20 @@ class Cpu(
   private val alu = Alu()
   private val addrCalc = AddressCalculator(memory)
 
-  fun runSteps(num: Int) {
+  fun runSteps(num: Int): Int {
     var n = 0
-    while (n < num) {
-      handleInterruptOrStep()
-      n++
+    repeat(num) {
+      n += handleInterruptOrStep()
     }
+    return n
   }
 
-  fun runCycles(num: Int) {
+  fun runCycles(num: Int): Int {
     var n = 0
     while (n < num) {
       n += handleInterruptOrStep()
     }
+    return n
   }
 
   // TODO - should have tests that cover the interrupt paths

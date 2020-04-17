@@ -61,6 +61,8 @@ class Nes(
   val instrumentation = Instrumentation()
 
   inner class Instrumentation internal constructor() {
+    private var numCycles = 0
+
     fun reset() {
       reset.set()
     }
@@ -73,15 +75,16 @@ class Nes(
       irq.set()
     }
 
-    fun stepFrame() {
-      // TODO - for each scanline:
-      //  - render that scanline to buffer
-      //  - run CPU for NUM_CYCLES_PER_FRAME / NUM_SCANLINES
-    }
-
     fun step(): List<Pair<Address, Data>> {
+      // TODO - where does this magic number come from?
+      if (numCycles >= 124) {
+        ppu.renderNextScanline()
+        nmi.set()
+        numCycles -= 124
+      }
+
       interceptor.reset()
-      cpu.runSteps(1)
+      numCycles += cpu.runSteps(1)
       return interceptor.stores
     }
 

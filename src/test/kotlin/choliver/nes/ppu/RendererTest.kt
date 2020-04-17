@@ -113,9 +113,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
 
-      assertRendersAs {
-        if (it in 5 until TILE_SIZE+5) pattern[it - 5] + (NUM_PALETTES * NUM_ENTRIES_PER_PALETTE) else 0
-      }
+      assertRendersAs { calcPalIdx(x = it, xOffset = 5, iPalette = 0, pattern = pattern) }
     }
 
     @Test
@@ -123,9 +121,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel - 7, iPattern = 1, attrs = 0)
 
-      assertRendersAs {
-        if (it in 5 until TILE_SIZE+5) pattern[it - 5] + (NUM_PALETTES * NUM_ENTRIES_PER_PALETTE) else 0
-      }
+      assertRendersAs { calcPalIdx(x = it, xOffset = 5, iPalette = 0, pattern = pattern) }
     }
 
     @Test
@@ -133,9 +129,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x40)
 
-      assertRendersAs {
-        if (it in 5 until TILE_SIZE+5) pattern[7 - (it - 5)] + (NUM_PALETTES * NUM_ENTRIES_PER_PALETTE) else 0
-      }
+      assertRendersAs { calcPalIdx(x = it, xOffset = 5, iPalette = 0, pattern = pattern.reversed()) }
     }
 
     @Test
@@ -143,9 +137,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x80)
 
-      assertRendersAs {
-        if (it in 5 until TILE_SIZE+5) pattern[it - 5] + (NUM_PALETTES * NUM_ENTRIES_PER_PALETTE) else 0
-      }
+      assertRendersAs { calcPalIdx(x = it, xOffset = 5, iPalette = 0, pattern = pattern) }
     }
 
     @Test
@@ -155,9 +147,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 2)
 
-      assertRendersAs {
-        if (it in 5 until TILE_SIZE+5) pattern[it - 5] + ((NUM_PALETTES + 2) * NUM_ENTRIES_PER_PALETTE) else 0
-      }
+      assertRendersAs { calcPalIdx(x = it, xOffset = 5, iPalette = 2, pattern = pattern) }
     }
 
     // TODO - sprite hanging off bottom
@@ -169,6 +159,9 @@ class RendererTest {
     // TODO - conditional rendering
     // TODO - clipping
     // TODO - large sprites
+
+    private fun calcPalIdx(x: Int, xOffset: Int, iPalette: Int, pattern: List<Int>) =
+      if (x in xOffset until TILE_SIZE + xOffset) pattern[x - xOffset] + ((NUM_PALETTES + iPalette) * NUM_ENTRIES_PER_PALETTE) else 0
   }
 
   private fun assertRendersAs(yTile: Int = this.yTile, yPixel: Int = this.yPixel, expected: (Int) -> Int) {

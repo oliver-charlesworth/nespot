@@ -60,6 +60,12 @@ class Nes(rom: ByteArray) {
       cpu.irq()
     }
 
+    fun stepFrame() {
+      // TODO - for each scanline:
+      //  - render that scanline to buffer
+      //  - run CPU for NUM_CYCLES_PER_FRAME / NUM_SCANLINES
+    }
+
     fun step(): List<Pair<Address, Data>> {
       interceptor.reset()
       cpu.step()

@@ -155,7 +155,8 @@ fun assertCpuEffects(
 }
 
 private fun Instruction.encode(): List<Data> {
-  fun opEnc(mode: AddressMode) = OPCODES_TO_ENCODINGS[opcode]!![mode] ?: error("Unsupported mode ${mode}")
+  fun opEnc(mode: AddressMode) =
+    OPCODES_TO_ENCODINGS[opcode]!![mode]?.encoding ?: error("Unsupported mode ${mode}")
   return when (val o = operand) {
     is Accumulator -> listOf(opEnc(ACCUMULATOR))
     is Implied -> listOf(opEnc(IMPLIED))

@@ -15,16 +15,19 @@ class Cpu(
 ) {
   private var _state: State = State()
   val state get() = _state
+  var numCycles = 0
 
   private val decoder = InstructionDecoder()
   private val alu = Alu()
   private val addrCalc = AddressCalculator(memory)
 
+  // TODO - should this reset numCycles?
   fun reset() = vector(VECTOR_RESET, updateStack = false, disableIrq = true)
   fun irq() = vector(VECTOR_IRQ, updateStack = true, disableIrq = false)  // TODO - only if I = _1
   fun nmi() = vector(VECTOR_NMI, updateStack = true, disableIrq = false)
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean) {
+    // TODO - how many cycles is this?
     val context = Ctx(
       _state,
       Operand.Implied,
@@ -39,6 +42,7 @@ class Cpu(
 
   fun step() {
     val decoded = decodeAt(_state.PC)
+    numCycles += decoded.numCycles
     _state = _state.with(PC = decoded.nextPc)
     val context = Ctx(
       _state,

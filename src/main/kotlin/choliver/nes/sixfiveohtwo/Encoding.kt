@@ -1,132 +1,142 @@
 package choliver.nes.sixfiveohtwo
 
 import choliver.nes.Data
-import choliver.nes.data
 import choliver.nes.sixfiveohtwo.model.AddressMode
 import choliver.nes.sixfiveohtwo.model.AddressMode.*
 import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.Opcode.*
+import choliver.nes.sixfiveohtwo.model.Operand.IndexSource
+import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
+import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
 
-private val ENCS_STANDARD = mapOf(
-  INDEXED_INDIRECT to 0x01,
-  ZERO_PAGE to 0x05,
-  IMMEDIATE to 0x09,
-  ABSOLUTE to 0x0D,
-  INDIRECT_INDEXED to 0x11,
-  ZERO_PAGE_X to 0x15,
-  ABSOLUTE_Y to 0x19,
-  ABSOLUTE_X to 0x1D
+data class EncodingInfo(
+  val encoding: Data,
+  val numCycles: Int
 )
 
-private val ENCS_INC_DEC = mapOf(
-  ZERO_PAGE to 0x06,
-  ABSOLUTE to 0x0E,
-  ZERO_PAGE_X to 0x16,
-  ABSOLUTE_X to 0x1E
-)
-
-private val ENCS_SHIFT = ENCS_INC_DEC + mapOf(
-  ACCUMULATOR to 0x0A
-)
-
-val OPCODES_TO_ENCODINGS: Map<Opcode, Map<AddressMode, Data>> = mapOf(
+val OPCODES_TO_ENCODINGS: Map<Opcode, Map<AddressMode, EncodingInfo>> = mapOf(
   ADC to standard(0x60),
   AND to standard(0x20),
   ASL to shift(0x00),
-  BCC to mapOf(RELATIVE to 0x90),
-  BCS to mapOf(RELATIVE to 0xB0),
-  BEQ to mapOf(RELATIVE to 0xF0),
+  BCC to branch(0x90),
+  BCS to branch(0xB0),
+  BEQ to branch(0xF0),
   BIT to mapOf(
-    ZERO_PAGE to 0x24,
-    ABSOLUTE to 0x2C
+    ZERO_PAGE to e(0x24, 3),
+    ABSOLUTE to e(0x2C, 4)
   ),
-  BMI to mapOf(RELATIVE to 0x30),
-  BNE to mapOf(RELATIVE to 0xD0),
-  BPL to mapOf(RELATIVE to 0x10),
-  BRK to mapOf(IMPLIED to 0x00),
-  BVC to mapOf(RELATIVE to 0x50),
-  BVS to mapOf(RELATIVE to 0x70),
-  CLC to mapOf(IMPLIED to 0x18),
-  CLD to mapOf(IMPLIED to 0xD8),
-  CLI to mapOf(IMPLIED to 0x58),
-  CLV to mapOf(IMPLIED to 0xB8),
+  BMI to branch(0x30),
+  BNE to branch(0xD0),
+  BPL to branch(0x10),
+  BRK to implied(0x00, 7),
+  BVC to branch(0x50),
+  BVS to branch(0x70),
+  CLC to implied(0x18, 2),
+  CLD to implied(0xD8, 2),
+  CLI to implied(0x58, 2),
+  CLV to implied(0xB8, 2),
   CMP to standard(0xC0),
-  CPX to mapOf(
-    IMMEDIATE to 0xE0,
-    ZERO_PAGE to 0xE4,
-    ABSOLUTE to 0xEC
-  ),
-  CPY to mapOf(
-    IMMEDIATE to 0xC0,
-    ZERO_PAGE to 0xC4,
-    ABSOLUTE to 0xCC
-  ),
+  CPX to cmp(0xE0),
+  CPY to cmp(0xC0),
   DEC to incDec(0xC0),
-  DEX to mapOf(IMPLIED to 0xCA),
-  DEY to mapOf(IMPLIED to 0x88),
+  DEX to implied(0xCA, 2),
+  DEY to implied(0x88, 2),
   EOR to standard(0x40),
   INC to incDec(0xE0),
-  INX to mapOf(IMPLIED to 0xE8),
-  INY to mapOf(IMPLIED to 0xC8),
+  INX to implied(0xE8, 2),
+  INY to implied(0xC8, 2),
   JMP to mapOf(
-    ABSOLUTE to 0x4C,
-    INDIRECT to 0x6C
+    ABSOLUTE to e(0x4C, 3),
+    INDIRECT to e(0x6C, 5)
   ),
-  JSR to mapOf(ABSOLUTE to 0x20),
+  JSR to absolute(0x20, 6),
   LDA to standard(0xA0),
-  LDX to mapOf(
-    IMMEDIATE to 0xA2,
-    ZERO_PAGE to 0xA6,
-    ABSOLUTE to 0xAE,
-    ZERO_PAGE_Y to 0xB6,
-    ABSOLUTE_Y to 0xBE
-  ),
-  LDY to mapOf(
-    IMMEDIATE to 0xA0,
-    ZERO_PAGE to 0xA4,
-    ABSOLUTE to 0xAC,
-    ZERO_PAGE_X to 0xB4,
-    ABSOLUTE_X to 0xBC
-  ),
+  LDX to load(0xA2, Y),
+  LDY to load(0xA0, X),
   LSR to shift(0x40),
-  NOP to mapOf(IMPLIED to 0xEA),
+  NOP to implied(0xEA, 2),
   ORA to standard(0x00),
-  PHA to mapOf(IMPLIED to 0x48),
-  PHP to mapOf(IMPLIED to 0x08),
-  PLA to mapOf(IMPLIED to 0x68),
-  PLP to mapOf(IMPLIED to 0x28),
+  PHA to implied(0x48, 3),
+  PHP to implied(0x08, 3),
+  PLA to implied(0x68, 4),
+  PLP to implied(0x28, 4),
   ROL to shift(0x20),
   ROR to shift(0x60),
-  RTI to mapOf(IMPLIED to 0x40),
-  RTS to mapOf(IMPLIED to 0x60),
+  RTI to implied(0x40, 6),
+  RTS to implied(0x60, 6),
   SBC to standard(0xE0),
-  SEC to mapOf(IMPLIED to 0x38),
-  SED to mapOf(IMPLIED to 0xF8),
-  SEI to mapOf(IMPLIED to 0x78),
+  SEC to implied(0x38, 2),
+  SED to implied(0xF8, 2),
+  SEI to implied(0x78, 2),
   STA to standard(0x80) - IMMEDIATE,
-  STX to mapOf(
-    ZERO_PAGE to 0x86,
-    ABSOLUTE to 0x8E,
-    ZERO_PAGE_Y to 0x96
-  ),
-  STY to mapOf(
-    ZERO_PAGE to 0x84,
-    ABSOLUTE to 0x8C,
-    ZERO_PAGE_X to 0x94
-  ),
-  TAX to mapOf(IMPLIED to 0xAA),
-  TAY to mapOf(IMPLIED to 0xA8),
-  TSX to mapOf(IMPLIED to 0xBA),
-  TXA to mapOf(IMPLIED to 0x8A),
-  TXS to mapOf(IMPLIED to 0x9A),
-  TYA to mapOf(IMPLIED to 0x98)
+  STX to store(0x86, Y),
+  STY to store(0x84, X),
+  TAX to implied(0xAA, 2),
+  TAY to implied(0xA8, 2),
+  TSX to implied(0xBA, 2),
+  TXA to implied(0x8A, 2),
+  TXS to implied(0x9A, 2),
+  TYA to implied(0x98, 2)
 )
 
-private fun standard(base: Int) = ENCS_STANDARD.encode(base)
+private fun standard(base: Int) = mapOf(
+  INDEXED_INDIRECT to e(0x01, 6),
+  ZERO_PAGE to e(0x05, 3),
+  IMMEDIATE to e(0x09, 2),
+  ABSOLUTE to e(0x0D, 4),
+  INDIRECT_INDEXED to e(0x11, 5), // TODO: +1 if page boundary crossed
+  ZERO_PAGE_X to e(0x15, 4),
+  ABSOLUTE_Y to e(0x19, 4),  // TODO: +1 if page boundary crossed
+  ABSOLUTE_X to e(0x1D, 4)   // TODO: +1 if page boundary crossed
+).encode(base)
 
-private fun incDec(base: Int) = ENCS_INC_DEC.encode(base)
+private fun incDec(base: Int) = mapOf(
+  ZERO_PAGE to e(0x06, 5),
+  ABSOLUTE to e(0x0E, 6),
+  ZERO_PAGE_X to e(0x16, 6),
+  ABSOLUTE_X to e(0x1E, 7)
+).encode(base)
 
-private fun shift(base: Int) = ENCS_SHIFT.encode(base)
+private fun shift(base: Int) = incDec(base) + mapOf(
+  ACCUMULATOR to e(0x0A, 2)
+).encode(base)
 
-private fun Map<AddressMode, Data>.encode(base: Data) = entries
-  .associate { (k, v) -> k to (v + base).data() }
+private fun cmp(base: Int) = mapOf(
+  IMMEDIATE to e(0x00, 2),
+  ZERO_PAGE to e(0x04, 3),
+  ABSOLUTE to e(0x0C, 4)
+).encode(base)
+
+private fun load(base: Int, source: IndexSource) = mapOf(
+  IMMEDIATE to e(0x00, 2),
+  ZERO_PAGE to e(0x04, 3),
+  ABSOLUTE to e(0x0C, 4),
+  zeroPageIndexedMode(source) to e(0x14, 4),
+  absoluteIndexedMode(source) to e(0x1C, 4)  // TODO: +1 if page boundary crossed
+).encode(base)
+
+private fun store(base: Int, source: IndexSource) = mapOf(
+  ZERO_PAGE to e(0x00, 3),
+  ABSOLUTE to e(0x08, 4),
+  zeroPageIndexedMode(source) to e(0x10, 4)
+).encode(base)
+
+private fun absoluteIndexedMode(source: IndexSource) = when (source) {
+  X -> ABSOLUTE_X
+  Y -> ABSOLUTE_Y
+}
+private fun zeroPageIndexedMode(source: IndexSource) = when (source) {
+  X -> ZERO_PAGE_X
+  Y -> ZERO_PAGE_Y
+}
+
+private fun branch(enc: Int) = mapOf(RELATIVE to e(enc, 2)) // TODO: +1 if branch succeeds, +2 if to a new page
+
+private fun implied(enc: Int, numCycles: Int) = mapOf(IMPLIED to e(enc, numCycles))
+
+private fun absolute(enc: Int, numCycles: Int) = mapOf(ABSOLUTE to e(enc, numCycles))
+
+private fun e(encoding: Data, numCycles: Int) = EncodingInfo(encoding, numCycles)
+
+private fun Map<AddressMode, EncodingInfo>.encode(base: Data) = entries
+  .associate { (k, v) -> k to v.copy(encoding = v.encoding + base) }

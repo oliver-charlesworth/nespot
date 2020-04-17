@@ -15,7 +15,8 @@ import choliver.nes.sixfiveohtwo.model.ProgramCounter
 class InstructionDecoder {
   data class Decoded(
     val instruction: Instruction,
-    val nextPc: ProgramCounter
+    val nextPc: ProgramCounter,
+    val numCycles: Int
   )
 
   fun decode(memory: Memory, pc: ProgramCounter): Decoded {
@@ -49,17 +50,20 @@ class InstructionDecoder {
       load()  // Special case
     }
 
-    return Decoded(Instruction(found.op, mode), nextPc)
+    return Decoded(Instruction(found.op, mode), nextPc, found.numCycles)
   }
 
   private data class OpAndMode(
     val op: Opcode,
-    val addressMode: AddressMode = IMPLIED
+    val addressMode: AddressMode,
+    val numCycles: Int
   )
 
   companion object {
     private val ENCODINGS = OPCODES_TO_ENCODINGS
-      .flatMap { (op, modes) -> modes.map { (mode, enc) -> enc to OpAndMode(op, mode) } }
+      .flatMap { (op, modes) ->
+        modes.map { (mode, enc) -> enc.encoding to OpAndMode(op, mode, enc.numCycles) }
+      }
       .toMap()
   }
 }

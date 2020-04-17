@@ -43,7 +43,7 @@ class Renderer(
     y: Int
   ) {
     renderBackground(ctx, y)
-//    renderSprites(ctx, y)
+    renderSprites(ctx, y)
     scanline.forEach { buffer.put(it) }
   }
 
@@ -68,7 +68,7 @@ class Renderer(
     for (iSprite in 0 until NUM_SPRITES) {
       val ySprite = oam.load(iSprite * 4 + 0) + 1   // Offset of one scanline
       val xSprite = oam.load(iSprite * 4 + 3)
-      val iTile = oam.load(iSprite * 4 + 1)
+      val iPattern = oam.load(iSprite * 4 + 1)
       val attrs = oam.load(iSprite * 4 + 2)
       val iPalette = (attrs and 0x03) + 4
       val flipX = attrs.isBitSet(6)
@@ -78,7 +78,7 @@ class Renderer(
       if (yPixel in 0 until TILE_SIZE) {
         val pattern = getPattern(
           ctx.sprPatternTableAddr,
-          iTile,
+          iPattern,
           if (flipY) (7 - yPixel) else yPixel
         )
 

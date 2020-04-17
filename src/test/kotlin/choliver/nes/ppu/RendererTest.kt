@@ -1,5 +1,6 @@
 package choliver.nes.ppu
 
+import choliver.nes.Address
 import choliver.nes.Memory
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
@@ -8,17 +9,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.nio.IntBuffer
-import kotlin.random.Random
 
 class RendererTest {
-  // TODO - correct base addresses
-  // TODO - nametable calculation
-  // TODO - scrolling / offset
-  // TODO - universal background colour - sprites
-  // TODO - conditional rendering
-
   private val colors = (0..63).toList()
-  private val paletteEntries = (0..15).map { it + 5 }
+  private val paletteEntries = (0..31).map { it + 5 }
 
   private val memory = mock<Memory>()
   private val palette = mock<Memory> {
@@ -35,7 +29,6 @@ class RendererTest {
   )
 
   private val buffer = IntBuffer.allocate(SCREEN_WIDTH)
-  private val random = Random(12345)
 
   private val nametableAddr = 0x2000
   private val bgPatternTableAddr = 0x1000
@@ -51,11 +44,9 @@ class RendererTest {
     fun `renders patterns for palette #0`() {
       val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
 
-      initPatternMemory(mapOf(0 to pattern))
+      initBgPatternMemory(mapOf(0 to pattern))
 
-      assertRendersAs((0 until SCREEN_WIDTH).map { x ->
-        colors[paletteEntries[pattern[x % TILE_SIZE]]]
-      })
+      assertRendersAs { pattern[it % TILE_SIZE] }
     }
 
     @Test
@@ -64,11 +55,9 @@ class RendererTest {
       val attrEntries = List(NUM_METATILE_COLUMNS) { 1 }  // Arbitrary non-zero palette #
 
       initAttributeMemory(attrEntries)
-      initPatternMemory(mapOf(0 to pattern))
+      initBgPatternMemory(mapOf(0 to pattern))
 
-      assertRendersAs((0 until SCREEN_WIDTH).map { x ->
-        colors[paletteEntries[pattern[x % TILE_SIZE].let { if (it == 0) 0 else (it + NUM_ENTRIES_PER_PALETTE) }]]
-      })
+      assertRendersAs { pattern[it % TILE_SIZE].let { if (it == 0) 0 else (it + NUM_ENTRIES_PER_PALETTE) } }
     }
 
     @Test
@@ -77,11 +66,9 @@ class RendererTest {
       val attrEntries = listOf(0, 1, 2, 3, 2, 3, 0, 1, 3, 2, 1, 0, 1, 0, 3, 2)
 
       initAttributeMemory(attrEntries)
-      initPatternMemory(mapOf(0 to pattern))
+      initBgPatternMemory(mapOf(0 to pattern))
 
-      assertRendersAs((0 until SCREEN_WIDTH).map { x ->
-        colors[paletteEntries[1 + attrEntries[x / METATILE_SIZE] * NUM_ENTRIES_PER_PALETTE]]
-      })
+      assertRendersAs { 1 + attrEntries[it / METATILE_SIZE] * NUM_ENTRIES_PER_PALETTE }
     }
 
     @Test
@@ -90,11 +77,9 @@ class RendererTest {
       val attrEntries = listOf(0, 1, 2, 3, 2, 3, 0, 1, 3, 2, 1, 0, 1, 0, 3, 2)
 
       initAttributeMemory(attrEntries, yTile = 13)
-      initPatternMemory(mapOf(0 to pattern))
+      initBgPatternMemory(mapOf(0 to pattern))
 
-      assertRendersAs((0 until SCREEN_WIDTH).map { x ->
-        colors[paletteEntries[1 + attrEntries[x / METATILE_SIZE] * NUM_ENTRIES_PER_PALETTE]]
-      }, yTile = 13)
+      assertRendersAs(yTile = 13) { 1 + attrEntries[it / METATILE_SIZE] * NUM_ENTRIES_PER_PALETTE }
     }
 
     @Test
@@ -109,17 +94,84 @@ class RendererTest {
       val nametableEntries = (0 until NUM_TILE_COLUMNS / 4).flatMap { listOf(11, 22, 33, 44) }
 
       initNametableMemory(nametableEntries)
-      initPatternMemory(patterns)
+      initBgPatternMemory(patterns)
 
-      assertRendersAs((0 until SCREEN_WIDTH).map { x ->
-        val xTile = x / TILE_SIZE
-        val xPixel = x % TILE_SIZE
-        colors[paletteEntries[patterns[nametableEntries[xTile]]!![xPixel]]]
-      })
+      assertRendersAs { patterns[nametableEntries[it / TILE_SIZE]]!![it % TILE_SIZE] }
     }
+
+    // TODO - conditional rendering
+    // TODO - clipping
+    // TODO - scrolling / offset (inc. nametable calculations)
   }
 
-  private fun assertRendersAs(expected: List<Int>, yTile: Int = this.yTile, yPixel: Int = this.yPixel) {
+  @Nested
+  inner class Sprite {
+    private val pattern = listOf(1, 2, 3, 3, 2, 1, 1, 2)  // No zero values
+
+    @Test
+    fun `renders top row`() {
+      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+
+      assertRendersAs {
+        if (it in 5 until TILE_SIZE+5) pattern[it - 5] + (NUM_PALETTES * NUM_ENTRIES_PER_PALETTE) else 0
+      }
+    }
+
+    @Test
+    fun `renders bottom row`() {
+      initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel - 7, iPattern = 1, attrs = 0)
+
+      assertRendersAs {
+        if (it in 5 until TILE_SIZE+5) pattern[it - 5] + (NUM_PALETTES * NUM_ENTRIES_PER_PALETTE) else 0
+      }
+    }
+
+    @Test
+    fun `renders horizontally-flipped`() {
+      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x40)
+
+      assertRendersAs {
+        if (it in 5 until TILE_SIZE+5) pattern[7 - (it - 5)] + (NUM_PALETTES * NUM_ENTRIES_PER_PALETTE) else 0
+      }
+    }
+
+    @Test
+    fun `renders vertically-flipped`() {
+      initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x80)
+
+      assertRendersAs {
+        if (it in 5 until TILE_SIZE+5) pattern[it - 5] + (NUM_PALETTES * NUM_ENTRIES_PER_PALETTE) else 0
+      }
+    }
+
+    @Test
+    fun `renders with different palette`() {
+      val pattern = listOf(1, 2, 3, 3, 2, 1, 1, 2)  // Worry about 0 values in a different test case
+
+      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 2)
+
+      assertRendersAs {
+        if (it in 5 until TILE_SIZE+5) pattern[it - 5] + ((NUM_PALETTES + 2) * NUM_ENTRIES_PER_PALETTE) else 0
+      }
+    }
+
+    // TODO - sprite hanging off bottom
+    // TODO - sprite hanging off right
+    // TODO - sprite completely off-screen
+    // TODO - transparency
+    // TODO - priority
+    // TODO - max sprites per scanline
+    // TODO - conditional rendering
+    // TODO - clipping
+    // TODO - large sprites
+  }
+
+  private fun assertRendersAs(yTile: Int = this.yTile, yPixel: Int = this.yPixel, expected: (Int) -> Int) {
     renderer.renderScanlineTo(
       buffer,
       ctx = Renderer.Context(
@@ -130,7 +182,10 @@ class RendererTest {
       y = (yTile * TILE_SIZE) + yPixel
     )
 
-    assertEquals(expected, buffer.array().toList())
+    assertEquals(
+      (0 until SCREEN_WIDTH).map { colors[paletteEntries[expected(it)]] },
+      buffer.array().toList()
+    )
   }
 
   private fun initNametableMemory(nametableEntries: List<Int>, yTile: Int = this.yTile) {
@@ -152,7 +207,15 @@ class RendererTest {
     }
   }
 
-  private fun initPatternMemory(patterns: Map<Int, List<Int>>, yPixel: Int = this.yPixel) {
+  private fun initBgPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int = this.yPixel) {
+    initPatternMemory(patterns, yRow, bgPatternTableAddr)
+  }
+
+  private fun initSprPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int = this.yPixel) {
+    initPatternMemory(patterns, yRow, sprPatternTableAddr)
+  }
+
+  private fun initPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int, baseAddr: Address) {
     patterns.forEach { (idx, v) ->
       var lo = 0
       var hi = 0
@@ -160,8 +223,15 @@ class RendererTest {
         lo = (lo shl 1) or (it and 1)
         hi = (hi shl 1) or ((it / 2) and 1)
       }
-      whenever(memory.load(bgPatternTableAddr + (idx * PATTERN_SIZE_BYTES) + yPixel)) doReturn lo
-      whenever(memory.load(bgPatternTableAddr + (idx * PATTERN_SIZE_BYTES) + yPixel + TILE_SIZE)) doReturn hi
-    }
+      whenever(memory.load(baseAddr + (idx * PATTERN_SIZE_BYTES) + yRow)) doReturn lo
+      whenever(memory.load(baseAddr + (idx * PATTERN_SIZE_BYTES) + yRow + TILE_SIZE)) doReturn hi
+      }
+  }
+
+  private fun initSpriteMemory(x: Int, y: Int, iPattern: Int, attrs: Int) {
+    whenever(oam.load(0)) doReturn y - 1
+    whenever(oam.load(1)) doReturn iPattern
+    whenever(oam.load(2)) doReturn attrs
+    whenever(oam.load(3)) doReturn x
   }
 }

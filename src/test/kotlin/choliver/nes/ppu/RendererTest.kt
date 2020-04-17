@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.nio.IntBuffer
 
+// TODO - greyscale
+// TODO - colour emphasis
 class RendererTest {
   private val colors = (0..63).toList()
   private val paletteEntries = (0..31).map { it + 5 }
@@ -41,7 +43,7 @@ class RendererTest {
   @Nested
   inner class Background {
     @Test
-    fun `renders patterns for palette #0`() {
+    fun `patterns for palette #0`() {
       val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
 
       initBgPatternMemory(mapOf(0 to pattern))
@@ -50,7 +52,7 @@ class RendererTest {
     }
 
     @Test
-    fun `renders patterns for higher palettes using universal background color`() {
+    fun `patterns for higher palettes use universal background color`() {
       val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
       val attrEntries = List(NUM_METATILE_COLUMNS) { 1 }  // Arbitrary non-zero palette #
 
@@ -61,7 +63,7 @@ class RendererTest {
     }
 
     @Test
-    fun `uses location-based attributes - bottom metatile`() {
+    fun `location-based attributes - bottom metatile`() {
       val pattern = List(TILE_SIZE) { 1 } // Arbitrary non-zero pixel
       val attrEntries = listOf(0, 1, 2, 3, 2, 3, 0, 1, 3, 2, 1, 0, 1, 0, 3, 2)
 
@@ -72,7 +74,7 @@ class RendererTest {
     }
 
     @Test
-    fun `uses location-based attributes - top metatile`() {
+    fun `location-based attributes - top metatile`() {
       val pattern = List(TILE_SIZE) { 1 } // Arbitrary non-zero pixel
       val attrEntries = listOf(0, 1, 2, 3, 2, 3, 0, 1, 3, 2, 1, 0, 1, 0, 3, 2)
 
@@ -83,7 +85,7 @@ class RendererTest {
     }
 
     @Test
-    fun `uses location-based patterns`() {
+    fun `location-based patterns`() {
       val patterns = mapOf(
         11 to List(TILE_SIZE) { 1 },
         22 to List(TILE_SIZE) { 2 },
@@ -109,7 +111,7 @@ class RendererTest {
     private val pattern = listOf(1, 2, 3, 3, 2, 1, 1, 2)  // No zero values
 
     @Test
-    fun `renders top row`() {
+    fun `top row`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
 
@@ -117,7 +119,7 @@ class RendererTest {
     }
 
     @Test
-    fun `renders bottom row`() {
+    fun `bottom row`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel - 7, iPattern = 1, attrs = 0)
 
@@ -125,7 +127,7 @@ class RendererTest {
     }
 
     @Test
-    fun `renders horizontally-flipped`() {
+    fun `horizontally-flipped`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x40)
 
@@ -133,7 +135,7 @@ class RendererTest {
     }
 
     @Test
-    fun `renders vertically-flipped`() {
+    fun `vertically-flipped`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x80)
 
@@ -141,19 +143,33 @@ class RendererTest {
     }
 
     @Test
-    fun `renders with different palette`() {
-      val pattern = listOf(1, 2, 3, 3, 2, 1, 1, 2)  // Worry about 0 values in a different test case
-
+    fun `with different palette`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 2)
 
       assertRendersAs { calcPalIdx(x = it, xOffset = 5, iPalette = 2, pattern = pattern) }
     }
 
-    // TODO - sprite hanging off bottom
-    // TODO - sprite hanging off right
-    // TODO - sprite completely off-screen
-    // TODO - transparency
+    @Test
+    fun `zero-valued pattern values are transparent`() {
+      val paletteSpr = 1
+      val paletteBg = 2 // Non-zero palette different to that of sprite
+      val patternSpr = listOf(0, 1, 0, 1, 0, 1, 0, 1) // Involves zeros!
+
+      initAttributeMemory(List(NUM_METATILE_COLUMNS) { paletteBg })
+      initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { 1 }))  // Arbitrary non-zero pixel
+      initSprPatternMemory(mapOf(1 to patternSpr), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = paletteSpr)
+
+      assertRendersAs {
+        if ((it in 5 until TILE_SIZE + 5) && (patternSpr[it - 5] != 0)) {
+          patternSpr[it - 5] + ((NUM_PALETTES + paletteSpr) * NUM_ENTRIES_PER_PALETTE)
+        } else {
+          1 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
+        }
+      }
+    }
+
     // TODO - priority
     // TODO - max sprites per scanline
     // TODO - conditional rendering
@@ -161,7 +177,9 @@ class RendererTest {
     // TODO - large sprites
 
     private fun calcPalIdx(x: Int, xOffset: Int, iPalette: Int, pattern: List<Int>) =
-      if (x in xOffset until TILE_SIZE + xOffset) pattern[x - xOffset] + ((NUM_PALETTES + iPalette) * NUM_ENTRIES_PER_PALETTE) else 0
+      if (x in xOffset until TILE_SIZE + xOffset) {
+        pattern[x - xOffset] + ((NUM_PALETTES + iPalette) * NUM_ENTRIES_PER_PALETTE)
+      } else 0
   }
 
   private fun assertRendersAs(yTile: Int = this.yTile, yPixel: Int = this.yPixel, expected: (Int) -> Int) {
@@ -218,7 +236,7 @@ class RendererTest {
       }
       whenever(memory.load(baseAddr + (idx * PATTERN_SIZE_BYTES) + yRow)) doReturn lo
       whenever(memory.load(baseAddr + (idx * PATTERN_SIZE_BYTES) + yRow + TILE_SIZE)) doReturn hi
-      }
+    }
   }
 
   private fun initSpriteMemory(x: Int, y: Int, iPattern: Int, attrs: Int) {

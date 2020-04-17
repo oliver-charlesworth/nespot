@@ -5,7 +5,7 @@ import choliver.nes.ppu.Ppu
 import choliver.nes.sixfiveohtwo.Cpu
 import choliver.nes.sixfiveohtwo.model.Instruction
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
-import java.nio.ByteBuffer
+import java.nio.IntBuffer
 
 class Nes(rom: ByteArray) {
   private val cartridge = Cartridge(rom)
@@ -66,7 +66,7 @@ class Nes(rom: ByteArray) {
       return interceptor.stores
     }
 
-    fun renderTo(buffer: ByteBuffer) {
+    fun renderTo(buffer: IntBuffer) {
       ppu.renderTo(buffer)
     }
 

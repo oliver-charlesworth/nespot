@@ -11,25 +11,27 @@ import javafx.scene.image.PixelFormat
 import javafx.scene.image.WritableImage
 import javafx.stage.Stage
 import java.nio.ByteBuffer
+import java.nio.IntBuffer
 
 
 class Screen(private val onClose: () -> Unit = {}) {
   companion object {
-    const val SCALE = 4
+    private const val SCALE = 4.0
   }
 
   private var isStarted = false
   private lateinit var stage: Stage
-  val buffer: ByteBuffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4 * SCALE * SCALE)
+  private val _buffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
+  val buffer: IntBuffer = _buffer.asIntBuffer()
   private val pixelBuffer = PixelBuffer(
-    SCREEN_WIDTH * SCALE,
-    SCREEN_HEIGHT * SCALE,
-    buffer,
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    _buffer,
     PixelFormat.getByteBgraPreInstance() // Mac native format
   )
 
   fun redraw() {
-    buffer.position(0)
+    _buffer.position(0)
     Platform.runLater { pixelBuffer.updateBuffer { null } }
   }
 
@@ -55,7 +57,10 @@ class Screen(private val onClose: () -> Unit = {}) {
       stage = Stage()
       stage.title = "Wat"
       stage.scene = Scene(Group().apply {
-        children.add(ImageView(WritableImage(pixelBuffer)))
+        children.add(ImageView(WritableImage(pixelBuffer)).apply {
+          fitWidth = SCREEN_WIDTH * SCALE
+          fitHeight = SCREEN_HEIGHT * SCALE
+        })
       })
       stage.isResizable = false
       stage.setOnCloseRequest {

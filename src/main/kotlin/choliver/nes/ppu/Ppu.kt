@@ -2,7 +2,7 @@ package choliver.nes.ppu
 
 import choliver.nes.*
 import mu.KotlinLogging
-import java.nio.ByteBuffer
+import java.nio.IntBuffer
 
 class Ppu(
   private val memory: Memory
@@ -16,12 +16,14 @@ class Ppu(
   private var gross = false
 
   // Oh god oh god
-  fun renderTo(buffer: ByteBuffer) {
+  fun renderTo(buffer: IntBuffer) {
     renderer.renderTo(
       buffer,
-      nametableAddr = state.nametableAddr,
-      bgPatternTableAddr = state.bgPatternTableAddr,
-      sprPatternTableAddr = state.sprPatternTableAddr
+      ctx = Renderer.Context(
+        nametableAddr = state.nametableAddr,
+        bgPatternTableAddr = state.bgPatternTableAddr,
+        sprPatternTableAddr = state.sprPatternTableAddr
+      )
     )
   }
 

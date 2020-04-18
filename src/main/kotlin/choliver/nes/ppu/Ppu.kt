@@ -6,47 +6,64 @@ import java.nio.IntBuffer
 class Ppu(
   private val memory: Memory,
   screen: IntBuffer,
-  private val onVbl: () -> Unit
+  private val onVbl: () -> Unit,
+  private val oam: Memory = Ram(256),
+  private val palette: Memory = Palette(),
+  private val renderer: Renderer = Renderer(memory, palette, oam, screen)
 ) {
   private var state = State()
-  private val palette = Palette()
-  private val oam = Ram(256)
-  private val renderer = Renderer(memory, palette, oam, screen)
-  private var nextScanline = 0
+  private var scanline = 0
+  private var inVbl = false
 
   private var gross = false
 
   // TODO - add a reset (to clean up counters and stuff)
 
+  // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   fun renderNextScanline() {
-    renderer.renderScanline(
-      y = nextScanline,
-      ctx = Renderer.Context(
-        nametableAddr = state.nametableAddr,
-        bgPatternTableAddr = state.bgPatternTableAddr,
-        sprPatternTableAddr = state.sprPatternTableAddr
+    when (scanline) {
+      in (0 until SCREEN_HEIGHT) -> renderer.renderScanline(
+        y = scanline,
+        ctx = Renderer.Context(
+          nametableAddr = state.nametableAddr,
+          bgPatternTableAddr = state.bgPatternTableAddr,
+          sprPatternTableAddr = state.sprPatternTableAddr
+        )
       )
-    )
-    nextScanline++
-    if (nextScanline == SCREEN_HEIGHT) {
-      if (state.isVblEnabled) {
-        onVbl()
+
+      (SCREEN_HEIGHT + 1) -> {
+        inVbl = true
+
+        // TODO - this is set if isVblEnabled *becomes* true during VBL phase
+        if (state.isVblEnabled) {
+          onVbl()
+        }
       }
-      nextScanline = 0
+
+      (NUM_SCANLINES - 1) -> {
+        inVbl = false
+      }
     }
-    // TODO - should we account for VBL timing somewhere?
+
+    scanline = (scanline + 1) % NUM_SCANLINES
   }
 
   fun readReg(reg: Int): Int {
     return when (reg) {
       REG_PPUSTATUS -> {
+        val ret =
+          (if (inVbl) 0x80 else 0x00) +
+            (if (gross) 0x40 else 0x00)
+
         // Reset stuff
         state = state.copy(
           addrWriteLo = false,
           addr = 0
         )
+        inVbl = false
         gross = !gross
-        0x80 + if (gross) 0x40 else 0x00 // TODO - remove debug hack that emulates VBL
+
+        ret
       }
 
       REG_OAMDATA -> {
@@ -164,5 +181,7 @@ class Ppu(
     const val REG_PPUDATA = 7
 
     const val BASE_PALETTE: Address = 0x3F00
+
+    const val NUM_SCANLINES = 262
   }
 }

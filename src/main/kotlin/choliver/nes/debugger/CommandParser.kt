@@ -1,5 +1,6 @@
 package choliver.nes.debugger
 
+import choliver.nes.Joypads
 import choliver.nes.debugger.Command.*
 import choliver.nes.debugger.Command.CreatePoint.Break
 import choliver.nes.debugger.Command.CreatePoint.Watch
@@ -62,7 +63,7 @@ class CommandParser(
           tokens[1] == "nmi" -> UntilNmi
           tokens[1].startsWith("+") -> tokens[1].removePrefix("+").toIntOrNull()?.let(::UntilOffset)
           tokens[1].startsWith("0x") -> tokens[1].toPcOrNull()?.let(::Until)
-          else -> tokens[1].toOpcodeOrNull()?.let(::UntilOpcode)
+          else -> tokens[1].toEnumOrNull<Opcode>()?.let(::UntilOpcode)
         }
         else -> null
       }
@@ -138,6 +139,16 @@ class CommandParser(
       "nmi" -> noArgs(Event.Nmi)
       "irq" -> noArgs(Event.Irq)
 
+      "up" -> when (tokens.size) {
+        3 -> parseButtonArgs(tokens, Button::Up)
+        else -> null
+      }
+
+      "down" -> when (tokens.size) {
+        3 -> parseButtonArgs(tokens, Button::Down)
+        else -> null
+      }
+
       "screen" -> noArgs(ShowScreen)
 
       "q", "quit" -> noArgs(Quit)
@@ -146,8 +157,14 @@ class CommandParser(
     }
   }
 
-  private fun String.toOpcodeOrNull() = try {
-    Opcode.valueOf(this.toUpperCase())
+  private fun parseButtonArgs(tokens: List<String>, create: (Int, Joypads.Button) -> Button): Button? {
+    val which = tokens[1].toIntOrNull()?.let { if (it == 1 || it == 2) it else null }
+    val button = tokens[2].toEnumOrNull<Joypads.Button>()
+    return if (which != null && button != null) create(which, button) else null
+  }
+
+  private inline fun <reified E : Enum<E>> String.toEnumOrNull() = try {
+    enumValueOf<E>(this.toUpperCase())
   } catch (_: IllegalArgumentException) {
     null
   }

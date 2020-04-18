@@ -11,6 +11,7 @@ import java.nio.IntBuffer
 class Nes(
   rom: ByteArray,
   screen: IntBuffer,
+  joypads: Joypads,
   onReset: () -> Unit = {},
   onNmi: () -> Unit = {},
   onIrq: () -> Unit = {},
@@ -51,19 +52,7 @@ class Nes(
     prg = cartridge.prg,
     ram = cpuRam,
     ppu = ppu,
-    joypads = object : Joypads {
-      override fun write(data: Data) {
-        TODO("not implemented")
-      }
-
-      override fun read1(): Data {
-        TODO("not implemented")
-      }
-
-      override fun read2(): Data {
-        TODO("not implemented")
-      }
-    }
+    joypads = joypads
   )
 
   private val cpu = Cpu(

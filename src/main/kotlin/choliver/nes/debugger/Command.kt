@@ -1,6 +1,7 @@
 package choliver.nes.debugger
 
 import choliver.nes.Address
+import choliver.nes.Joypads
 import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
 
@@ -55,6 +56,11 @@ sealed class Command {
     object Reset : Event()
     object Nmi : Event()
     object Irq : Event()
+  }
+
+  sealed class Button : Command() {
+    data class Up(val which: Int, val button: Joypads.Button) : Button()
+    data class Down(val which: Int, val button: Joypads.Button) : Button()
   }
 
   object ShowScreen : Command()

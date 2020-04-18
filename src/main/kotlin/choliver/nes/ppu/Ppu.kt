@@ -126,7 +126,7 @@ class Ppu(
   }
 
   private fun State.withincrementedOamAddr() = copy(oamAddr = (state.oamAddr + 1).addr8())
-  private fun State.withIncrementedPpuAddr() = copy(addr = (state.addr + addrInc).addr()) // TODO - add test for addIncr = 32
+  private fun State.withIncrementedPpuAddr() = copy(addr = (state.addr + addrInc).addr())
 
   private data class State(
     val addrInc: Int = 1,
@@ -151,8 +151,6 @@ class Ppu(
 
     val oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
   )
-
-  val isNmiEnabled get() = state.isVblEnabled // TODO - Gross
 
   companion object {
     // http://wiki.nesdev.com/w/index.php/PPU_registers

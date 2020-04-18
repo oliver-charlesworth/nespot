@@ -187,8 +187,8 @@ class RendererTest {
   inner class Collisions {
     @Test
     fun `triggers hit if opaque sprite #0 overlaps opaque background`() {
-      initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { 1 }))
-      initSprPatternMemory(mapOf(1 to List(TILE_SIZE) { 1 }), yRow = 0)
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
 
       render()
@@ -198,8 +198,8 @@ class RendererTest {
 
     @Test
     fun `doesn't trigger hit if opaque sprite #0 overlaps transparent background`() {
-      initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { 0 }))
-      initSprPatternMemory(mapOf(1 to List(TILE_SIZE) { 1 }), yRow = 0)
+      initBgPatternMemory(mapOf(0 to listOf(0, 0, 0, 0, 0, 0, 0, 0)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
 
       render()
@@ -209,14 +209,49 @@ class RendererTest {
 
     @Test
     fun `doesn't trigger hit if transparent sprite #0 overlaps opaque background`() {
-      initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { 1 }))
-      initSprPatternMemory(mapOf(1 to List(TILE_SIZE) { 0 }), yRow = 0)
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(0, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
       initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
 
       render()
 
       verifyZeroInteractions(onSprite0Hit)
     }
+
+    @Test
+    fun `triggers single hit even when multiple sprite #0 overlaps`() {
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 1, 0, 1, 0, 1, 0)), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+
+      render()
+
+      verify(onSprite0Hit)()
+    }
+
+    @Test
+    fun `doesn't trigger from overlap from sprites other than #0`() {
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0, iSprite = 1)
+
+      render()
+
+      verifyZeroInteractions(onSprite0Hit)
+    }
+
+    @Test
+    fun `doesn't trigger from overlap at x == 255`() {
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
+      initSpriteMemory(x = 255, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+
+      render()
+
+      verifyZeroInteractions(onSprite0Hit)
+    }
+
+    // TODO - not detected in active clipping region (background or sprite)
   }
 
   private fun assertRendersAs(yTile: Int = this.yTile, yPixel: Int = this.yPixel, expected: (Int) -> Int) {
@@ -264,7 +299,7 @@ class RendererTest {
     initPatternMemory(patterns, yRow, bgPatternTableAddr)
   }
 
-  private fun initSprPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int = this.yPixel) {
+  private fun initSprPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int) {
     initPatternMemory(patterns, yRow, sprPatternTableAddr)
   }
 
@@ -281,10 +316,11 @@ class RendererTest {
     }
   }
 
-  private fun initSpriteMemory(x: Int, y: Int, iPattern: Int, attrs: Int) {
-    whenever(oam.load(0)) doReturn y - 1
-    whenever(oam.load(1)) doReturn iPattern
-    whenever(oam.load(2)) doReturn attrs
-    whenever(oam.load(3)) doReturn x
+  private fun initSpriteMemory(x: Int, y: Int, iPattern: Int, attrs: Int, iSprite: Int = 0) {
+    val base = iSprite * SPRITE_SIZE_BYTES
+    whenever(oam.load(base + 0)) doReturn y - 1
+    whenever(oam.load(base + 1)) doReturn iPattern
+    whenever(oam.load(base + 2)) doReturn attrs
+    whenever(oam.load(base + 3)) doReturn x
   }
 }

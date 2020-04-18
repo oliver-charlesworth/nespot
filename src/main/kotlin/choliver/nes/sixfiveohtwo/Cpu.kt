@@ -14,9 +14,10 @@ class Cpu(
   private val memory: Memory,
   private val pollReset: () -> Boolean = { _0 },
   private val pollIrq: () -> Boolean = { _0 },
-  private val pollNmi: () -> Boolean = { _0 }
+  private val pollNmi: () -> Boolean = { _0 },
+  initialState: State = State()
 ) {
-  private var _state: State = State()
+  private var _state = initialState
   val state get() = _state
 
   private val decoder = InstructionDecoder()
@@ -39,11 +40,10 @@ class Cpu(
     return n
   }
 
-  // TODO - should have tests that cover the interrupt paths
   private fun handleInterruptOrStep() = when {
     pollReset() -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
     pollNmi() -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
-    pollIrq() -> if (_state.P.I) vector(VECTOR_IRQ, updateStack = true, disableIrq = false) else step()
+    pollIrq() -> if (_state.P.I) step() else vector(VECTOR_IRQ, updateStack = true, disableIrq = false)
     else -> step()
   }
 
@@ -56,7 +56,7 @@ class Cpu(
     )
     _state = context
       .interrupt(addr, updateStack = updateStack, setBreakFlag = false)
-      .updateI { disableIrq }
+      .updateI { disableIrq || P.I }
       .state
     return NUM_INTERRUPT_CYCLES
   }

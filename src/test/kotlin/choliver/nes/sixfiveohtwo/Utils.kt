@@ -1,10 +1,8 @@
 package choliver.nes.sixfiveohtwo
 
 import choliver.nes.*
-import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
 import choliver.nes.sixfiveohtwo.model.*
 import choliver.nes.sixfiveohtwo.model.AddressMode.*
-import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
@@ -37,7 +35,6 @@ const val BASE_STACK: Address = 0x0100
 const val BASE_RAM: Address = 0x0200
 const val BASE_ROM: Address = 0x8000
 
-const val BASE_TRAMPOLINE: Address = BASE_ROM
 const val BASE_USER: Address = BASE_ROM + 0x1000
 /** Chosen to straddle a page boundary. */
 const val SCARY_ADDR: Address = BASE_RAM + 0x10FF
@@ -109,7 +106,7 @@ fun assertForAddressModes(
 
       assertCpuEffects(
         instructions = listOf(instruction),
-        initState = case.state(proto).with(PC = BASE_USER.toPC()).initState(),
+        initState = case.state(proto).initState(),
         initStores = case.mem +             // Indirection / pointer
           (case.targetAddr to target) +     // Target (user-defined value, case-defined location)
           initStores,                       // User-defined
@@ -129,21 +126,10 @@ fun assertCpuEffects(
   expectedStores: Map<Address, Data> = emptyMap(),
   name: String = ""
 ) {
-  // Set up memory so PC jumps from reset vector to trampoline to user instructions
-  val trampoline = trampolineFor(initState)
+  val memory = mockMemory(instructions.memoryMap(BASE_USER) + initStores)
 
-  val memory = mock<Memory> {
-    val memoryMap = addrToMem(VECTOR_RESET, BASE_TRAMPOLINE) +
-      trampoline.memoryMap(BASE_TRAMPOLINE) +
-      instructions.memoryMap(BASE_USER) +
-      mapOf((initState.S + BASE_STACK) to initState.P.data()) +
-      initStores
-
-    on { load(any()) } doAnswer { memoryMap[it.getArgument(0)] ?: 0xCC } // Easier to spot during debugging than 0x00
-  }
-
-  val cpu = Cpu(memory, pollReset = ImmediateOneShot()::poll)
-  cpu.runSteps(1 + trampoline.size + instructions.size)  // 1 for reset
+  val cpu = Cpu(memory, initialState = initState.with(PC = BASE_USER.toPC()))
+  cpu.runSteps(instructions.size)
 
   if (expectedState != null) {
     assertEquals(expectedState, cpu.state, "Unexpected state for [${name}]")
@@ -151,6 +137,17 @@ fun assertCpuEffects(
   expectedStores.forEach { (addr, data) -> verify(memory).store(addr, data) }
   verify(memory, times(expectedStores.size)).store(any(), any())
 }
+
+fun List<Instruction>.memoryMap(base: Address) = map { it.encode() }
+  .flatten()
+  .withIndex()
+  .associate { (base + it.index).addr() to it.value }
+
+fun mockMemory(init: Map<Address, Data>) = mock<Memory> {
+  on { load(any()) } doAnswer { init[it.getArgument(0)] ?: 0xCC } // Easier to spot during debugging than 0x00
+}
+
+fun addrToMem(addr: Address, data: Int) = mapOf(addr to data.lo(), (addr + 1) to data.hi())
 
 private fun Instruction.encode(): List<Data> {
   fun opEnc(mode: AddressMode) =
@@ -175,26 +172,3 @@ private fun Instruction.encode(): List<Data> {
     is IndirectIndexed -> listOf(opEnc(INDIRECT_INDEXED), o.addr)
   }
 }
-
-/** Instructions that sets A/X/Y/S, loads P from stack, and trampolines to the user code. */
-private fun trampolineFor(state: State) = listOf(
-  Instruction(LDX, Immediate((state.S - 1).addr8())),
-  Instruction(TXS),
-  Instruction(LDA, Immediate(state.A)),
-  Instruction(LDX, Immediate(state.X)),
-  Instruction(LDY, Immediate(state.Y)),
-  Instruction(PLP),
-  Instruction(JMP, Absolute(BASE_USER))
-)
-
-private fun List<Instruction>.memoryMap(base: Address) = map { it.encode() }
-  .flatten()
-  .withIndex()
-  .associate { (base + it.index).addr() to it.value }
-
-private class ImmediateOneShot {
-  private var b = true
-  fun poll() = b.also { b = false }
-}
-
-fun addrToMem(addr: Address, data: Int) = mapOf(addr to data.lo(), (addr + 1) to data.hi())

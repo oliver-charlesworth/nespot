@@ -37,13 +37,24 @@ class Debugger(
     IRQ
   }
 
+  private var nextStep = NextStep.INSTRUCTION
+
   private val screen = Screen()
-  private val nes = Nes(rom, screen.buffer).instrumentation
-  private var points = PointManager()
-  private var stack = CallStackManager(nes)
+
+  private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
+
+  private val nes = Nes(
+    rom,
+    screen.buffer,
+    onReset = { nextStep = NextStep.RESET },
+    onNmi = { nextStep = NextStep.NMI; screen.redraw() },
+    onIrq = { nextStep = NextStep.IRQ },
+    onStore = { addr, data -> stores += (addr to data) }
+  ).inspection
+  private val points = PointManager()
+  private val stack = CallStackManager(nes)
   private var stats = Stats(0)
   private var isVerbose = true
-  private var nextStep = NextStep.INSTRUCTION
   private var macro: Command = Next(1)
 
   // Displays
@@ -51,10 +62,7 @@ class Debugger(
   private val displays = mutableMapOf<Int, Address>()
 
   fun start() {
-    nes.onReset = this::onReset
-    nes.onNmi = this::onNmi
-    nes.onIrq = this::onIrq
-    event(Reset) // TODO - this is cheating
+    event(Reset)
     consume(CommandParser(stdin), true)
   }
 
@@ -97,64 +105,57 @@ class Debugger(
   }
 
   private fun execute(cmd: Execute) {
+    fun until(cond: () -> Boolean) {
+      while (cond()) {
+        if (!step()) return
+      }
+    }
+
+    fun oneThenUntil(cond: () -> Boolean) {
+      var first = true
+      until { (first || cond()).also { first = false } }
+    }
+
+    fun untilThenOne(cond: () -> Boolean) {
+      var incomplete = true
+      until { incomplete.also { incomplete = incomplete && cond() } }
+    }
+
     when (cmd) {
-      is Step -> for (i in 0 until cmd.num) {
-        if (!step()) break
+      is Step -> {
+        var i = 0
+        until { ++i <= cmd.num }
       }
 
+      // Perform specified number of instructions, but only within this stack frame
       is Next -> {
-        // Perform specified number of instructions, but only within this stack frame
         val myDepth = stack.depth
-        var n = cmd.num
-        while ((n > 0) && (stack.depth >= myDepth)) {
-          if (!step()) break
-          if (stack.depth == myDepth) {
-            n--
-          }
+        var i = 0
+        until {
+          if (stack.depth == myDepth) i++
+          (i <= cmd.num) && (stack.depth >= myDepth)
         }
       }
 
-      is Until -> {
-        // Prevent Until(currentPC) from doing nothing
-        var first = true
-        while (first || (nes.state.PC != cmd.pc)) {
-          first = false
-          if (!step()) break
-        }
-      }
+      // Prevent Until(currentPC) from doing nothing
+      is Until -> oneThenUntil { nes.state.PC != cmd.pc }
 
       is UntilOffset -> {
         val target = nextPc(cmd.offset)
-        while (nes.state.PC != target) {
-          if (!step()) break
-        }
+        until { nes.state.PC != target }
       }
 
-      is UntilOpcode -> {
-        // Prevent UntilOpcode(currentOpcode) from doing nothing
-        var first = true
-        while (first || (instAt(nes.state.PC).opcode != cmd.op)) {
-          first = false
-          if (!step()) break
-        }
-      }
+      // Prevent UntilOpcode(currentOpcode) from doing nothing
+      is UntilOpcode -> oneThenUntil { instAt(nes.state.PC).opcode != cmd.op }
 
-      is UntilNmi -> {
-        while (nextStep != NextStep.NMI) {
-          if (!step()) break
-        }
-        step()  // One more so that it's handled
-      }
+      // One more so that the interrupt actually occurs
+      is UntilNmi -> untilThenOne { nextStep != NextStep.NMI }
 
-      is Continue -> while (true) {
-        if (!step()) break
-      }
+      is Continue -> until { true }
 
       is Finish -> {
         val myDepth = stack.depth
-        while (stack.depth >= myDepth) {
-          if (!step()) break
-        }
+        until { stack.depth >= myDepth }
       }
     }
 
@@ -242,7 +243,7 @@ class Debugger(
 
       is Info.CpuRam -> displayDump((0 until CPU_RAM_SIZE).map { nes.peek(it) })
 
-      is Info.PpuRam -> displayDump((0 until PPU_RAM_SIZE).map { nes.peekV(it) })
+      is Info.PpuRam -> displayDump((0 until PPU_RAM_SIZE).map { nes.peekV(it + 0x4000) })
 
       is Info.Print -> stdout.println(nes.peek(cmd.addr).format8())
 
@@ -259,9 +260,9 @@ class Debugger(
 
   private fun event(cmd: Event) {
     when (cmd) {
-      is Reset -> nes.reset()
-      is Nmi -> nes.nmi()
-      is Irq -> nes.irq()
+      is Reset -> nes.fireReset()
+      is Nmi -> nes.fireNmi()
+      is Irq -> nes.fireIrq()
     }
     step()  // Perform one step so the interrupt actually gets handled
   }
@@ -288,8 +289,10 @@ class Debugger(
       }
     }
 
-    val stores = nes.step()
-    maybeTraceStores(stores)
+    stores.clear()
+    nes.step()
+
+    maybeTraceStores()
 
     when (thisStep) {
       NextStep.INSTRUCTION -> {
@@ -299,7 +302,7 @@ class Debugger(
       else -> nextStep = NextStep.INSTRUCTION
     }
 
-    return isWatchpointHit(stores) && isBreakpointHit()
+    return isWatchpointHit() && isBreakpointHit()
   }
 
   private fun maybeTraceInstruction() {
@@ -308,7 +311,7 @@ class Debugger(
     }
   }
 
-  private fun maybeTraceStores(stores: List<Pair<Address, Data>>) {
+  private fun maybeTraceStores() {
     if (isVerbose) {
       stores.forEach { (addr, data) ->
         stdout.println("    ${addr.format()} <- ${data.format8()}")
@@ -316,7 +319,7 @@ class Debugger(
     }
   }
 
-  private fun isWatchpointHit(stores: List<Pair<Address, Data>>) =
+  private fun isWatchpointHit() =
     when (val wp = stores.map { points.watchpoints[it.first] }.firstOrNull { it != null }) {
       null -> true
       else -> {
@@ -374,19 +377,6 @@ class Debugger(
 
   private fun showScreen() {
     screen.show()
-  }
-
-  private fun onReset() {
-    nextStep = NextStep.RESET
-  }
-
-  private fun onNmi() {
-    nextStep = NextStep.NMI
-    screen.redraw()
-  }
-
-  private fun onIrq() {
-    nextStep = NextStep.IRQ
   }
 
   private fun Address.format() = "0x%04x".format(this)

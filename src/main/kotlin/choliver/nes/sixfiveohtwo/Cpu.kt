@@ -20,21 +20,12 @@ class Cpu(
   private var _state = initialState
   val state get() = _state
 
-  private val decoder = InstructionDecoder()
+  private val decoder = InstructionDecoder(memory)
   private val alu = Alu()
-  private val addrCalc = AddressCalculator(memory)
 
   fun runSteps(num: Int): Int {
     var n = 0
     repeat(num) {
-      n += handleInterruptOrStep()
-    }
-    return n
-  }
-
-  fun runCycles(num: Int): Int {
-    var n = 0
-    while (n < num) {
       n += handleInterruptOrStep()
     }
     return n
@@ -67,16 +58,14 @@ class Cpu(
     val context = Ctx(
       _state,
       decoded.instruction.operand,
-      calcAddr(decoded.instruction),
+      decoded.addr,
       null
     )
     _state = context.execute(decoded.instruction.opcode).state
     return decoded.numCycles
   }
 
-  // TODO - combine
-  fun decodeAt(pc: ProgramCounter) = decoder.decode(memory, pc)
-  fun calcAddr(instruction: Instruction) = addrCalc.calculate(instruction.operand, _state)
+  fun decodeAt(pc: ProgramCounter) = decoder.decode(_state, pc)
 
   private fun <T> Ctx<T>.execute(op: Opcode) = when (op) {
     ADC -> resolve().add { it }

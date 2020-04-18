@@ -6,10 +6,14 @@ import choliver.nes.sixfiveohtwo.Cpu.Companion.NUM_INTERRUPT_CYCLES
 import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_IRQ
 import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_NMI
 import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
-import choliver.nes.sixfiveohtwo.model.*
-import choliver.nes.sixfiveohtwo.model.Opcode.*
-import choliver.nes.sixfiveohtwo.model.Operand.*
+import choliver.nes.sixfiveohtwo.model.Flags
+import choliver.nes.sixfiveohtwo.model.Instruction
+import choliver.nes.sixfiveohtwo.model.Opcode.ADC
+import choliver.nes.sixfiveohtwo.model.Opcode.NOP
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
+import choliver.nes.sixfiveohtwo.model.Operand.ZeroPageIndexed
+import choliver.nes.sixfiveohtwo.model.State
+import choliver.nes.sixfiveohtwo.model.toPC
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Nested

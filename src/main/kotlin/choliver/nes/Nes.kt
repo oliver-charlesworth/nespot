@@ -2,16 +2,16 @@ package choliver.nes
 
 import choliver.nes.cartridge.Cartridge
 import choliver.nes.ppu.Ppu
-import choliver.nes.ppu.SCREEN_HEIGHT
 import choliver.nes.sixfiveohtwo.Cpu
-import choliver.nes.sixfiveohtwo.model.Instruction
+import choliver.nes.sixfiveohtwo.InstructionDecoder
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
 import choliver.nes.sixfiveohtwo.model.State
 import java.nio.IntBuffer
 
 class Nes(
   rom: ByteArray,
-  screen: IntBuffer
+  screen: IntBuffer,
+  private val wat: Wat
 ) {
   interface Hooks {
     val state: State
@@ -20,11 +20,20 @@ class Nes(
     fun fireReset()
     fun fireNmi()
     fun fireIrq()
+    fun step()
+    fun decodeAt(pc: ProgramCounter): InstructionDecoder.Decoded
   }
 
-  private val reset = InterruptSource()
-  private val irq = InterruptSource()
-  private val nmi = InterruptSource()
+  interface Wat {
+    fun onReset()
+    fun onNmi()
+    fun onIrq()
+    fun onStore(addr: Address, data: Data)
+  }
+
+  private val reset = InterruptSource(wat::onReset)
+  private val nmi = InterruptSource(wat::onNmi)
+  private val irq = InterruptSource(wat::onIrq)
 
   private val cartridge = Cartridge(rom)
 
@@ -48,19 +57,11 @@ class Nes(
     ppu = ppu
   )
 
-  private class InterceptingMemory(private val mem: Memory) : Memory by mem {
-    private val _stores = mutableListOf<Pair<Address, Data>>()
-
+  private inner class InterceptingMemory(private val mem: Memory) : Memory by mem {
     override fun store(addr: Address, data: Data) {
       mem.store(addr, data)
-      _stores += (addr to data)
+      wat.onStore(addr, data)
     }
-
-    fun reset() {
-      _stores.clear()
-    }
-
-    val stores get() = _stores.toList()
   }
 
   private val interceptor = InterceptingMemory(cpuMapper)
@@ -84,59 +85,24 @@ class Nes(
     }
   }
 
-  private inner class HooksImpl : Hooks {
+  val hooks = object : Hooks {
     override val state get() = cpu.state
     override fun peek(addr: Address) = cpuMapper.load(addr)
     override fun peekV(addr: Address) = ppuMapper.load(addr)
     override fun fireReset() = reset.set()
     override fun fireNmi() = nmi.set()
     override fun fireIrq() = irq.set()
+    override fun step() = this@Nes.step()
+    override fun decodeAt(pc: ProgramCounter) = cpu.decodeAt(pc)
   }
 
-  val instrumentation = Instrumentation(HooksImpl())
-
-  inner class Instrumentation(private val hooks: Hooks) {
-    // TODO - ugh mutable
-    var onReset: () -> Unit = {}
-    var onNmi: () -> Unit = {}
-    var onIrq: () -> Unit = {}
-
-    init {
-      // Callbacks are mutable, so we have to invoke them via lambdas
-      reset.addListener { onReset() }
-      nmi.addListener { onNmi() }
-      irq.addListener { onIrq() }
-    }
-
-    fun reset() = hooks.fireReset()
-
-    fun nmi()  = hooks.fireNmi()
-
-    fun irq() = hooks.fireNmi()
-
-    fun step(): List<Pair<Address, Data>> {
-      interceptor.reset()
-      this@Nes.step()
-      return interceptor.stores
-    }
-
-    fun peek(addr: Address) = hooks.peek(addr)
-    fun peekV(addr: Address) = hooks.peekV(addr)
-
-    val state get() = hooks.state
-
-    fun decodeAt(pc: ProgramCounter) = cpu.decodeAt(pc)
-  }
-
-  private class InterruptSource {
-    private val listeners = mutableListOf<() -> Unit>()
+  private class InterruptSource(private val listener: () -> Unit) {
     private var b = false
     fun poll() = b.also { b = false }
     fun set() {
       b = true
-      listeners.forEach { it() }
+      listener()
     }
-    fun addListener(listener: () -> Unit) { listeners += listener } // TODO - eliminate this mutable weirdness
   }
 
   // TODO - consolidate all the constants

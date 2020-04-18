@@ -1,8 +1,6 @@
 package choliver.nes.debugger
 
-import choliver.nes.Address
-import choliver.nes.Data
-import choliver.nes.Nes
+import choliver.nes.*
 import choliver.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nes.Nes.Companion.PPU_RAM_SIZE
 import choliver.nes.debugger.CallStackManager.FrameType.IRQ
@@ -38,7 +36,15 @@ class Debugger(
   }
 
   private val screen = Screen()
-  private val nes = Nes(rom, screen.buffer).instrumentation
+  private val yeah = Yeah(
+    onReset = ::onReset,
+    onNmi = ::onNmi,
+    onIrq = ::onIrq
+  )
+  private val nes = Instrumentation(
+    Nes(rom, screen.buffer, yeah).hooks,
+    yeah
+  )
   private var points = PointManager()
   private var stack = CallStackManager(nes)
   private var stats = Stats(0)
@@ -51,9 +57,6 @@ class Debugger(
   private val displays = mutableMapOf<Int, Address>()
 
   fun start() {
-    nes.onReset = this::onReset
-    nes.onNmi = this::onNmi
-    nes.onIrq = this::onIrq
     event(Reset) // TODO - this is cheating
     consume(CommandParser(stdin), true)
   }
@@ -259,9 +262,9 @@ class Debugger(
 
   private fun event(cmd: Event) {
     when (cmd) {
-      is Reset -> nes.reset()
-      is Nmi -> nes.nmi()
-      is Irq -> nes.irq()
+      is Reset -> nes.fireReset()
+      is Nmi -> nes.fireNmi()
+      is Irq -> nes.fireIrq()
     }
     step()  // Perform one step so the interrupt actually gets handled
   }

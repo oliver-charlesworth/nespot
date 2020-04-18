@@ -50,7 +50,20 @@ class Nes(
   private val cpuMapper = CpuMapper(
     prg = cartridge.prg,
     ram = cpuRam,
-    ppu = ppu
+    ppu = ppu,
+    joypads = object : Joypads {
+      override fun write(data: Data) {
+        TODO("not implemented")
+      }
+
+      override fun read1(): Data {
+        TODO("not implemented")
+      }
+
+      override fun read2(): Data {
+        TODO("not implemented")
+      }
+    }
   )
 
   private val cpu = Cpu(
@@ -104,6 +117,9 @@ class Nes(
 
     const val ADDR_OAMDATA: Address = 0x2004
     const val ADDR_OAMDMA: Address = 0x4014
+    const val ADDR_JOYPADS: Address = 0x4016
+    const val ADDR_JOYPAD1: Address = 0x4016
+    const val ADDR_JOYPAD2: Address = 0x4017
 
     // See http://wiki.nesdev.com/w/index.php/Cycle_reference_chart#Clock_rates
     const val NUM_CYCLES_PER_SCANLINE = 113

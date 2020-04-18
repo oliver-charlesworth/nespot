@@ -11,9 +11,12 @@ import java.nio.IntBuffer
 class Nes(
   rom: ByteArray,
   screen: IntBuffer,
-  private val wat: Wat
+  onReset: () -> Unit = {},
+  onNmi: () -> Unit = {},
+  onIrq: () -> Unit = {},
+  private val onStore: (Address, Data) -> Unit = { _: Address, _: Data -> }
 ) {
-  interface Hooks {
+  interface Inspection {
     val state: State
     fun peek(addr: Address): Data
     fun peekV(addr: Address): Data
@@ -24,16 +27,9 @@ class Nes(
     fun decodeAt(pc: ProgramCounter): InstructionDecoder.Decoded
   }
 
-  interface Wat {
-    fun onReset()
-    fun onNmi()
-    fun onIrq()
-    fun onStore(addr: Address, data: Data)
-  }
-
-  private val reset = InterruptSource(wat::onReset)
-  private val nmi = InterruptSource(wat::onNmi)
-  private val irq = InterruptSource(wat::onIrq)
+  private val reset = InterruptSource(onReset)
+  private val nmi = InterruptSource(onNmi)
+  private val irq = InterruptSource(onIrq)
 
   private val cartridge = Cartridge(rom)
 
@@ -57,17 +53,14 @@ class Nes(
     ppu = ppu
   )
 
-  private inner class InterceptingMemory(private val mem: Memory) : Memory by mem {
-    override fun store(addr: Address, data: Data) {
-      mem.store(addr, data)
-      wat.onStore(addr, data)
-    }
-  }
-
-  private val interceptor = InterceptingMemory(cpuMapper)
-
   private val cpu = Cpu(
-    interceptor,
+    object : Memory {
+      override fun load(addr: Address) = cpuMapper.load(addr)
+      override fun store(addr: Address, data: Data) {
+        cpuMapper.store(addr, data)
+        onStore(addr, data)
+      }
+    },
     pollReset = reset::poll,
     pollIrq = irq::poll,
     pollNmi = nmi::poll
@@ -85,7 +78,7 @@ class Nes(
     }
   }
 
-  val hooks = object : Hooks {
+  val inspection = object : Inspection {
     override val state get() = cpu.state
     override fun peek(addr: Address) = cpuMapper.load(addr)
     override fun peekV(addr: Address) = ppuMapper.load(addr)

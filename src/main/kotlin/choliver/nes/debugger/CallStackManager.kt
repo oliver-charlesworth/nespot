@@ -1,7 +1,6 @@
 package choliver.nes.debugger
 
 import choliver.nes.Address
-import choliver.nes.Instrumentation
 import choliver.nes.Nes
 import choliver.nes.addr
 import choliver.nes.debugger.CallStackManager.Entry.Frame
@@ -17,7 +16,7 @@ import choliver.nes.sixfiveohtwo.model.toPC
 import java.util.*
 
 class CallStackManager(
-  private val nes: Instrumentation
+  private val nes: Nes.Inspection
 ) {
   enum class FrameType {
     JSR,

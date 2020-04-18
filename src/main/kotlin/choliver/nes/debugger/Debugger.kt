@@ -1,6 +1,8 @@
 package choliver.nes.debugger
 
-import choliver.nes.*
+import choliver.nes.Address
+import choliver.nes.Data
+import choliver.nes.Nes
 import choliver.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nes.Nes.Companion.PPU_RAM_SIZE
 import choliver.nes.debugger.CallStackManager.FrameType.IRQ
@@ -35,21 +37,24 @@ class Debugger(
     IRQ
   }
 
+  private var nextStep = NextStep.INSTRUCTION
+
   private val screen = Screen()
-  private val yeah = Yeah(
-    onReset = ::onReset,
-    onNmi = ::onNmi,
-    onIrq = ::onIrq
-  )
-  private val nes = Instrumentation(
-    Nes(rom, screen.buffer, yeah).hooks,
-    yeah
-  )
-  private var points = PointManager()
-  private var stack = CallStackManager(nes)
+
+  private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
+
+  private val nes = Nes(
+    rom,
+    screen.buffer,
+    onReset = { nextStep = NextStep.RESET },
+    onNmi = { nextStep = NextStep.NMI; screen.redraw() },
+    onIrq = { nextStep = NextStep.IRQ },
+    onStore = { addr, data -> stores += (addr to data) }
+  ).inspection
+  private val points = PointManager()
+  private val stack = CallStackManager(nes)
   private var stats = Stats(0)
   private var isVerbose = true
-  private var nextStep = NextStep.INSTRUCTION
   private var macro: Command = Next(1)
 
   // Displays
@@ -291,8 +296,10 @@ class Debugger(
       }
     }
 
-    val stores = nes.step()
-    maybeTraceStores(stores)
+    stores.clear()
+    nes.step()
+
+    maybeTraceStores()
 
     when (thisStep) {
       NextStep.INSTRUCTION -> {
@@ -302,7 +309,7 @@ class Debugger(
       else -> nextStep = NextStep.INSTRUCTION
     }
 
-    return isWatchpointHit(stores) && isBreakpointHit()
+    return isWatchpointHit() && isBreakpointHit()
   }
 
   private fun maybeTraceInstruction() {
@@ -311,7 +318,7 @@ class Debugger(
     }
   }
 
-  private fun maybeTraceStores(stores: List<Pair<Address, Data>>) {
+  private fun maybeTraceStores() {
     if (isVerbose) {
       stores.forEach { (addr, data) ->
         stdout.println("    ${addr.format()} <- ${data.format8()}")
@@ -319,7 +326,7 @@ class Debugger(
     }
   }
 
-  private fun isWatchpointHit(stores: List<Pair<Address, Data>>) =
+  private fun isWatchpointHit() =
     when (val wp = stores.map { points.watchpoints[it.first] }.firstOrNull { it != null }) {
       null -> true
       else -> {
@@ -377,19 +384,6 @@ class Debugger(
 
   private fun showScreen() {
     screen.show()
-  }
-
-  private fun onReset() {
-    nextStep = NextStep.RESET
-  }
-
-  private fun onNmi() {
-    nextStep = NextStep.NMI
-    screen.redraw()
-  }
-
-  private fun onIrq() {
-    nextStep = NextStep.IRQ
   }
 
   private fun Address.format() = "0x%04x".format(this)

@@ -18,6 +18,7 @@ class Renderer(
   private val palette: Memory,
   private val oam: Memory,
   private val screen: IntBuffer,
+  private val onSprite0Hit: () -> Unit = {},
   private val colors: List<Int> = COLORS
 ) {
   data class Context(

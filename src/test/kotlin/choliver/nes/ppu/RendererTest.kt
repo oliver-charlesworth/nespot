@@ -2,9 +2,7 @@ package choliver.nes.ppu
 
 import choliver.nes.Address
 import choliver.nes.Memory
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -24,11 +22,13 @@ class RendererTest {
   }
   private val oam = mock<Memory>()
   private val screen = IntBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT)
+  private val onSprite0Hit = mock<() -> Unit>()
   private val renderer = Renderer(
     memory = memory,
     palette = palette,
     oam = oam,
     screen = screen,
+    onSprite0Hit = onSprite0Hit,
     colors = colors
   )
 
@@ -183,21 +183,61 @@ class RendererTest {
       } else 0
   }
 
+  @Nested
+  inner class Collisions {
+    @Test
+    fun `triggers hit if opaque sprite #0 overlaps opaque background`() {
+      initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { 1 }))
+      initSprPatternMemory(mapOf(1 to List(TILE_SIZE) { 1 }), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+
+      render()
+
+      verify(onSprite0Hit)()
+    }
+
+    @Test
+    fun `doesn't trigger hit if opaque sprite #0 overlaps transparent background`() {
+      initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { 0 }))
+      initSprPatternMemory(mapOf(1 to List(TILE_SIZE) { 1 }), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+
+      render()
+
+      verifyZeroInteractions(onSprite0Hit)
+    }
+
+    @Test
+    fun `doesn't trigger hit if transparent sprite #0 overlaps opaque background`() {
+      initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { 1 }))
+      initSprPatternMemory(mapOf(1 to List(TILE_SIZE) { 0 }), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+
+      render()
+
+      verifyZeroInteractions(onSprite0Hit)
+    }
+  }
+
   private fun assertRendersAs(yTile: Int = this.yTile, yPixel: Int = this.yPixel, expected: (Int) -> Int) {
     val y = (yTile * TILE_SIZE) + yPixel
 
+    render(yTile, yPixel)
+
+    assertEquals(
+      (0 until SCREEN_WIDTH).map { colors[paletteEntries[expected(it)]] },
+      screen.array().toList().subList(y * SCREEN_WIDTH, (y + 1) * SCREEN_WIDTH)
+    )
+  }
+
+  private fun render(yTile: Int = this.yTile, yPixel: Int = this.yPixel) {
     renderer.renderScanline(
-      y = y,
+      y = (yTile * TILE_SIZE) + yPixel,
       ctx = Renderer.Context(
         nametableAddr = nametableAddr,
         bgPatternTableAddr = bgPatternTableAddr,
         sprPatternTableAddr = sprPatternTableAddr
       )
-    )
-
-    assertEquals(
-      (0 until SCREEN_WIDTH).map { colors[paletteEntries[expected(it)]] },
-      screen.array().toList().subList(y * SCREEN_WIDTH, (y + 1) * SCREEN_WIDTH)
     )
   }
 

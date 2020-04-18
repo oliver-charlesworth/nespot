@@ -40,12 +40,14 @@ class Debugger(
   private var nextStep = NextStep.INSTRUCTION
 
   private val screen = Screen()
+  private val joypads = FakeJoypads()
 
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
 
   private val nes = Nes(
     rom,
     screen.buffer,
+    joypads,
     onReset = { nextStep = NextStep.RESET },
     onNmi = { nextStep = NextStep.NMI; screen.redraw() },
     onIrq = { nextStep = NextStep.IRQ },
@@ -90,6 +92,7 @@ class Debugger(
       is Info -> info(cmd)
       is ToggleVerbosity -> isVerbose = !isVerbose
       is Event -> event(cmd)
+      is Button -> button(cmd)
       is ShowScreen -> showScreen()
       is Quit -> return false
       is Error -> stdout.println(cmd.msg)
@@ -265,6 +268,13 @@ class Debugger(
       is Irq -> nes.fireIrq()
     }
     step()  // Perform one step so the interrupt actually gets handled
+  }
+
+  private fun button(cmd: Button) {
+    when (cmd) {
+      is Button.Up -> joypads.up(cmd.which, cmd.button)
+      is Button.Down -> joypads.down(cmd.which, cmd.button)
+    }
   }
 
   private fun step(): Boolean {

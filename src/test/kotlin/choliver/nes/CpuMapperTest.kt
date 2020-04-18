@@ -1,5 +1,8 @@
 package choliver.nes
 
+import choliver.nes.Nes.Companion.ADDR_JOYPAD1
+import choliver.nes.Nes.Companion.ADDR_JOYPAD2
+import choliver.nes.Nes.Companion.ADDR_JOYPADS
 import choliver.nes.Nes.Companion.ADDR_OAMDMA
 import choliver.nes.cartridge.PrgMemory
 import choliver.nes.ppu.Ppu
@@ -7,17 +10,26 @@ import choliver.nes.ppu.Ppu.Companion.REG_OAMDATA
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class CpuMapperTest {
+  private val prg = mock<PrgMemory>()
+  private val ram = mock<Memory>()
+  private val ppu = mock<Ppu>()
+  private val joypads = mock<Joypads>()
+  private val mapper = CpuMapper(
+    prg = prg,
+    ram = ram,
+    ppu = ppu,
+    joypads = joypads
+  )
+
   @Test
   fun `maps to prg`() {
-    val prg = mock<PrgMemory> {
-      on { load(0x4020) } doReturn 0x10
-      on { load(0xFFFF) } doReturn 0x20
-    }
-    val mapper = CpuMapper(prg = prg, ram = mock(), ppu = mock())
+    whenever(prg.load(0x4020)) doReturn 0x10
+    whenever(prg.load(0xFFFF)) doReturn 0x20
 
     assertEquals(0x10, mapper.load(0x4020))
     assertEquals(0x20, mapper.load(0xFFFF))
@@ -31,11 +43,8 @@ class CpuMapperTest {
 
   @Test
   fun `maps to ppu`() {
-    val ppu = mock<Ppu> {
-      on { readReg(0) } doReturn 0x10
-      on { readReg(7) } doReturn 0x20
-    }
-    val mapper = CpuMapper(prg = mock(), ram = mock(), ppu = ppu)
+    whenever(ppu.readReg(0)) doReturn 0x10
+    whenever(ppu.readReg(7)) doReturn 0x20
 
     assertEquals(0x10, mapper.load(0x2000))
     assertEquals(0x20, mapper.load(0x2007))
@@ -55,11 +64,8 @@ class CpuMapperTest {
 
   @Test
   fun `maps to ram`() {
-    val ram = mock<Memory> {
-      on { load(0x0000) } doReturn 0x10
-      on { load(0x07FF) } doReturn 0x20
-    }
-    val mapper = CpuMapper(prg = mock(), ram = ram, ppu = mock())
+    whenever(ram.load(0x0000)) doReturn 0x10
+    whenever(ram.load(0x07FF)) doReturn 0x20
 
     assertEquals(0x10, mapper.load(0x0000))
     assertEquals(0x20, mapper.load(0x07FF))
@@ -78,16 +84,21 @@ class CpuMapperTest {
   }
 
   @Test
+  fun `maps to joypads`() {
+    whenever(joypads.read1()) doReturn 0x10
+    whenever(joypads.read2()) doReturn 0x20
+
+    assertEquals(0x10, mapper.load(ADDR_JOYPAD1))
+    assertEquals(0x20, mapper.load(ADDR_JOYPAD2))
+
+    mapper.store(ADDR_JOYPADS, 0x30)
+
+    verify(joypads).write(0x30)
+  }
+
+  @Test
   fun `performs oam dma`() {
-    val ppu = mock<Ppu>()
-    val ram = mock<Memory> {
-      (0..255).forEach { on { load(0x0500 + it) } doReturn (0xFF - it) }
-    }
-    val mapper = CpuMapper(
-      prg = mock(),
-      ram = ram,
-      ppu = ppu
-    )
+    (0..255).forEach { whenever(ram.load(0x0500 + it)) doReturn (0xFF - it) }
 
     mapper.store(ADDR_OAMDMA, 0x05)
 

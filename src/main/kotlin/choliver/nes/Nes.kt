@@ -11,6 +11,7 @@ import java.nio.IntBuffer
 class Nes(
   rom: ByteArray,
   screen: IntBuffer,
+  joypads: Joypads,
   onReset: () -> Unit = {},
   onNmi: () -> Unit = {},
   onIrq: () -> Unit = {},
@@ -50,7 +51,8 @@ class Nes(
   private val cpuMapper = CpuMapper(
     prg = cartridge.prg,
     ram = cpuRam,
-    ppu = ppu
+    ppu = ppu,
+    joypads = joypads
   )
 
   private val cpu = Cpu(
@@ -104,6 +106,9 @@ class Nes(
 
     const val ADDR_OAMDATA: Address = 0x2004
     const val ADDR_OAMDMA: Address = 0x4014
+    const val ADDR_JOYPADS: Address = 0x4016
+    const val ADDR_JOYPAD1: Address = 0x4016
+    const val ADDR_JOYPAD2: Address = 0x4017
 
     // See http://wiki.nesdev.com/w/index.php/Cycle_reference_chart#Clock_rates
     const val NUM_CYCLES_PER_SCANLINE = 113

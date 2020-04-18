@@ -29,7 +29,7 @@ class Renderer(
   private val scanline = IntArray(SCREEN_WIDTH)
 
   fun renderScanline(y: Int, ctx: Context) {
-    screen.position(y * SCREEN_WIDTH)  // TODO - test case for this
+    screen.position(y * SCREEN_WIDTH)
     renderBackground(y, ctx)
     renderSprites(y, ctx)
     scanline.forEach { screen.put(it) }

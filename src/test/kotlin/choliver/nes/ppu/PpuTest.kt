@@ -11,20 +11,16 @@ import choliver.nes.ppu.Ppu.Companion.REG_PPUADDR
 import choliver.nes.ppu.Ppu.Companion.REG_PPUCTRL
 import choliver.nes.ppu.Ppu.Companion.REG_PPUDATA
 import choliver.nes.ppu.Ppu.Companion.REG_PPUSTATUS
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class PpuTest {
   private val memory = mock<Memory>()
-  private val ppu = Ppu(memory = memory, screen = mock(), onVbl = {})
+  private val onVbl = mock<() -> Unit>()
+  private val ppu = Ppu(memory = memory, screen = mock(), onVbl = onVbl)
 
-  // TODO - test case for onVbl
-  
   @Nested
   inner class ExternalMemory {
     @Test
@@ -143,5 +139,21 @@ class PpuTest {
     ppu.writeReg(REG_PPUADDR, addr.lo())
   }
 
+  @Nested
+  inner class Vblank {
+    @Test
+    fun `not fired if disabled`() {
+      repeat(SCREEN_HEIGHT) { ppu.renderNextScanline() }
+      verifyZeroInteractions(onVbl)
+    }
 
+    @Test
+    fun `fired after final scanline if enabled`() {
+      ppu.writeReg(REG_PPUCTRL, 0x80)
+      repeat(SCREEN_HEIGHT - 1) { ppu.renderNextScanline() }
+      verifyZeroInteractions(onVbl)
+      ppu.renderNextScanline()
+      verify(onVbl)()
+    }
+  }
 }

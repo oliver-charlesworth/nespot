@@ -1,4 +1,4 @@
-package choliver.nes.sixfiveohtwo.cpu
+package choliver.nes.sixfiveohtwo.instructions
 
 import choliver.nes.sixfiveohtwo.BASE_USER
 import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_IRQ

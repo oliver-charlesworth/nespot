@@ -17,6 +17,7 @@ class Renderer(
   private val memory: Memory,
   private val palette: Memory,
   private val oam: Memory,
+  private val screen: IntBuffer,
   private val colors: List<Int> = COLORS
 ) {
   data class Context(
@@ -27,27 +28,14 @@ class Renderer(
 
   private val scanline = IntArray(SCREEN_WIDTH)
 
-  // TODO - move to orchestration layer
-  fun renderTo(
-    buffer: IntBuffer,
-    ctx: Context
-  ) {
-    for (y in 0 until SCREEN_HEIGHT) {
-      renderScanlineTo(buffer, ctx, y)
-    }
+  fun renderScanline(y: Int, ctx: Context) {
+    screen.position(y * SCREEN_WIDTH)
+    renderBackground(y, ctx)
+    renderSprites(y, ctx)
+    scanline.forEach { screen.put(it) }
   }
 
-  fun renderScanlineTo(
-    buffer: IntBuffer,
-    ctx: Context,
-    y: Int
-  ) {
-    renderBackground(ctx, y)
-    renderSprites(ctx, y)
-    scanline.forEach { buffer.put(it) }
-  }
-
-  private fun renderBackground(ctx: Context, y: Int) {
+  private fun renderBackground(y: Int, ctx: Context) {
     val yTile = y / TILE_SIZE
     val yPixel = y % TILE_SIZE
     for (xTile in 0 until NUM_TILE_COLUMNS) {
@@ -64,7 +52,7 @@ class Renderer(
     }
   }
 
-  private fun renderSprites(ctx: Context, y: Int) {
+  private fun renderSprites(y: Int, ctx: Context) {
     for (iSprite in 0 until NUM_SPRITES) {
       val ySprite = oam.load(iSprite * 4 + 0) + 1   // Offset of one scanline
       val xSprite = oam.load(iSprite * 4 + 3)

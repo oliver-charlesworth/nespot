@@ -54,7 +54,7 @@ sealed class Command {
     object Irq : Event()
   }
 
-  object Render : Command()
+  object ShowScreen : Command()
 
   object Quit : Command()
   data class Error(val msg: String) : Command()

@@ -1,30 +1,40 @@
 package choliver.nes.ppu
 
 import choliver.nes.*
-import mu.KotlinLogging
 import java.nio.IntBuffer
 
 class Ppu(
-  private val memory: Memory
+  private val memory: Memory,
+  screen: IntBuffer,
+  private val onVbl: () -> Unit
 ) {
-  private val logger = KotlinLogging.logger {}
   private var state = State()
   private val palette = Palette()
   private val oam = Ram(256)
-  private val renderer = Renderer(memory, palette, oam)
+  private val renderer = Renderer(memory, palette, oam, screen)
+  private var nextScanline = 0
 
   private var gross = false
 
-  // Oh god oh god
-  fun renderTo(buffer: IntBuffer) {
-    renderer.renderTo(
-      buffer,
+  // TODO - add a reset (to clean up counters and stuff)
+
+  fun renderNextScanline() {
+    renderer.renderScanline(
+      y = nextScanline,
       ctx = Renderer.Context(
         nametableAddr = state.nametableAddr,
         bgPatternTableAddr = state.bgPatternTableAddr,
         sprPatternTableAddr = state.sprPatternTableAddr
       )
     )
+    nextScanline++
+    if (nextScanline == SCREEN_HEIGHT) {
+      if (state.isVblEnabled) {
+        onVbl()
+      }
+      nextScanline = 0
+    }
+    // TODO - should we account for VBL timing somewhere?
   }
 
   fun readReg(reg: Int): Int {
@@ -59,7 +69,7 @@ class Ppu(
       }
       else -> 0x00
     }
-  } // TODO
+  }
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
@@ -70,7 +80,7 @@ class Ppu(
         bgPatternTableAddr = if (data.isBitSet(4)) 0x1000 else 0x0000,
         isLargeSprites = data.isBitSet(5),
         // TODO - is master/slave important?
-        isNmiEnabled = data.isBitSet(7)
+        isVblEnabled = data.isBitSet(7)
       )
 
       REG_PPUMASK -> state = state.copy(
@@ -116,7 +126,7 @@ class Ppu(
   }
 
   private fun State.withincrementedOamAddr() = copy(oamAddr = (state.oamAddr + 1).addr8())
-  private fun State.withIncrementedPpuAddr() = copy(addr = (state.addr + addrInc).addr()) // TODO - add test for addIncr = 32
+  private fun State.withIncrementedPpuAddr() = copy(addr = (state.addr + addrInc).addr())
 
   private data class State(
     val addrInc: Int = 1,
@@ -124,7 +134,7 @@ class Ppu(
     val sprPatternTableAddr: Address = 0x0000,
     val bgPatternTableAddr: Address = 0x0000,
     val isLargeSprites: Boolean = false,
-    val isNmiEnabled: Boolean = false,
+    val isVblEnabled: Boolean = false,
 
     val isGreyscale: Boolean = false,
     val isLeftmostBackgroundShown: Boolean = false,

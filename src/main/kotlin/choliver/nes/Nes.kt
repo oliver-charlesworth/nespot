@@ -2,12 +2,20 @@ package choliver.nes
 
 import choliver.nes.cartridge.Cartridge
 import choliver.nes.ppu.Ppu
+import choliver.nes.ppu.SCREEN_HEIGHT
 import choliver.nes.sixfiveohtwo.Cpu
 import choliver.nes.sixfiveohtwo.model.Instruction
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
 import java.nio.IntBuffer
 
-class Nes(rom: ByteArray) {
+class Nes(
+  rom: ByteArray,
+  screen: IntBuffer
+) {
+  private val reset = InterruptSource()
+  private val irq = InterruptSource()
+  private val nmi = InterruptSource()
+
   private val cartridge = Cartridge(rom)
 
   private val cpuRam = Ram(CPU_RAM_SIZE)
@@ -18,7 +26,11 @@ class Nes(rom: ByteArray) {
     ram = ppuRam
   )
 
-  private val ppu = Ppu(ppuMapper)
+  private val ppu = Ppu(
+    memory = ppuMapper,
+    screen = screen,
+    onVbl = nmi::set
+  )
 
   private val cpuMapper = CpuMapper(
     prg = cartridge.prg,
@@ -43,31 +55,55 @@ class Nes(rom: ByteArray) {
 
   private val interceptor = InterceptingMemory(cpuMapper)
 
-  private val cpu = Cpu(interceptor)
+  private val cpu = Cpu(
+    interceptor,
+    pollReset = reset::poll,
+    pollIrq = irq::poll,
+    pollNmi = nmi::poll
+  )
+
+  private var numCycles = 0
+
+  private fun step() {
+    // TODO - where does this magic number come from?
+    if (numCycles >= 124) {
+      numCycles -= 124
+      ppu.renderNextScanline()
+    }
+    numCycles += cpu.runSteps(1)
+  }
 
   val instrumentation = Instrumentation()
 
-  inner class Instrumentation internal constructor() {
+  inner class Instrumentation {
+    // TODO - ugh mutable
+    var onReset: () -> Unit = {}
+    var onNmi: () -> Unit = {}
+    var onIrq: () -> Unit = {}
+
+    init {
+      // Callbacks are mutable, so we have to invoke them via lambdas
+      reset.addListener { onReset() }
+      nmi.addListener { onNmi() }
+      irq.addListener { onIrq() }
+    }
+
     fun reset() {
-      cpu.reset()
+      reset.set()
     }
 
     fun nmi() {
-      cpu.nmi()
+      nmi.set()
     }
 
     fun irq() {
-      cpu.irq()
+      irq.set()
     }
 
     fun step(): List<Pair<Address, Data>> {
       interceptor.reset()
-      cpu.step()
+      this@Nes.step()
       return interceptor.stores
-    }
-
-    fun renderTo(buffer: IntBuffer) {
-      ppu.renderTo(buffer)
     }
 
     fun peek(addr: Address) = cpuMapper.load(addr)
@@ -80,6 +116,18 @@ class Nes(rom: ByteArray) {
     fun calcAddr(instruction: Instruction) = cpu.calcAddr(instruction)
   }
 
+  private class InterruptSource {
+    private val listeners = mutableListOf<() -> Unit>()
+    private var b = false
+    fun poll() = b.also { b = false }
+    fun set() {
+      b = true
+      listeners.forEach { it() }
+    }
+    fun addListener(listener: () -> Unit) { listeners += listener } // TODO - eliminate this mutable weirdness
+  }
+
+  // TODO - consolidate all the constants
   companion object {
     const val CPU_RAM_SIZE = 2048
     const val PPU_RAM_SIZE = 2048

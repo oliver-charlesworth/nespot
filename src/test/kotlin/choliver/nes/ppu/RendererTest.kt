@@ -23,14 +23,14 @@ class RendererTest {
     }
   }
   private val oam = mock<Memory>()
+  private val screen = IntBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT)
   private val renderer = Renderer(
     memory = memory,
     palette = palette,
     oam = oam,
+    screen = screen,
     colors = colors
   )
-
-  private val buffer = IntBuffer.allocate(SCREEN_WIDTH)
 
   private val nametableAddr = 0x2000
   private val bgPatternTableAddr = 0x1000
@@ -108,46 +108,47 @@ class RendererTest {
 
   @Nested
   inner class Sprite {
+    private val xOffset = 5
     private val pattern = listOf(1, 2, 3, 3, 2, 1, 1, 2)  // No zero values
 
     @Test
     fun `top row`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
 
-      assertRendersAs { calcPalIdx(x = it, xOffset = 5, iPalette = 0, pattern = pattern) }
+      assertRendersAs { calcPalIdx(x = it, iPalette = 0, pattern = pattern) }
     }
 
     @Test
     fun `bottom row`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
-      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel - 7, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel - 7, iPattern = 1, attrs = 0)
 
-      assertRendersAs { calcPalIdx(x = it, xOffset = 5, iPalette = 0, pattern = pattern) }
+      assertRendersAs { calcPalIdx(x = it, iPalette = 0, pattern = pattern) }
     }
 
     @Test
     fun `horizontally-flipped`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x40)
+      initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x40)
 
-      assertRendersAs { calcPalIdx(x = it, xOffset = 5, iPalette = 0, pattern = pattern.reversed()) }
+      assertRendersAs { calcPalIdx(x = it, iPalette = 0, pattern = pattern.reversed()) }
     }
 
     @Test
     fun `vertically-flipped`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
-      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x80)
+      initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x80)
 
-      assertRendersAs { calcPalIdx(x = it, xOffset = 5, iPalette = 0, pattern = pattern) }
+      assertRendersAs { calcPalIdx(x = it, iPalette = 0, pattern = pattern) }
     }
 
     @Test
     fun `with different palette`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 2)
+      initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 2)
 
-      assertRendersAs { calcPalIdx(x = it, xOffset = 5, iPalette = 2, pattern = pattern) }
+      assertRendersAs { calcPalIdx(x = it, iPalette = 2, pattern = pattern) }
     }
 
     @Test
@@ -159,11 +160,11 @@ class RendererTest {
       initAttributeMemory(List(NUM_METATILE_COLUMNS) { paletteBg })
       initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { 1 }))  // Arbitrary non-zero pixel
       initSprPatternMemory(mapOf(1 to patternSpr), yRow = 0)
-      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = paletteSpr)
+      initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = paletteSpr)
 
       assertRendersAs {
-        if ((it in 5 until TILE_SIZE + 5) && (patternSpr[it - 5] != 0)) {
-          patternSpr[it - 5] + ((NUM_PALETTES + paletteSpr) * NUM_ENTRIES_PER_PALETTE)
+        if ((it in 5 until TILE_SIZE + xOffset) && (patternSpr[it - xOffset] != 0)) {
+          patternSpr[it - xOffset] + ((NUM_PALETTES + paletteSpr) * NUM_ENTRIES_PER_PALETTE)
         } else {
           1 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
         }
@@ -176,26 +177,27 @@ class RendererTest {
     // TODO - clipping
     // TODO - large sprites
 
-    private fun calcPalIdx(x: Int, xOffset: Int, iPalette: Int, pattern: List<Int>) =
+    private fun calcPalIdx(x: Int, iPalette: Int, pattern: List<Int>) =
       if (x in xOffset until TILE_SIZE + xOffset) {
         pattern[x - xOffset] + ((NUM_PALETTES + iPalette) * NUM_ENTRIES_PER_PALETTE)
       } else 0
   }
 
   private fun assertRendersAs(yTile: Int = this.yTile, yPixel: Int = this.yPixel, expected: (Int) -> Int) {
-    renderer.renderScanlineTo(
-      buffer,
+    val y = (yTile * TILE_SIZE) + yPixel
+
+    renderer.renderScanline(
+      y = y,
       ctx = Renderer.Context(
         nametableAddr = nametableAddr,
         bgPatternTableAddr = bgPatternTableAddr,
         sprPatternTableAddr = sprPatternTableAddr
-      ),
-      y = (yTile * TILE_SIZE) + yPixel
+      )
     )
 
     assertEquals(
       (0 until SCREEN_WIDTH).map { colors[paletteEntries[expected(it)]] },
-      buffer.array().toList()
+      screen.array().toList().subList(y * SCREEN_WIDTH, (y + 1) * SCREEN_WIDTH)
     )
   }
 

@@ -11,20 +11,43 @@ import choliver.nes.sixfiveohtwo.utils._1
 typealias F<T, R> = State.(T) -> R
 
 class Cpu(
-  private val memory: Memory
+  private val memory: Memory,
+  private val pollReset: () -> Boolean,
+  private val pollIrq: () -> Boolean,
+  private val pollNmi: () -> Boolean,
+  initialState: State = State()
 ) {
-  private var _state: State = State()
+  private var _state = initialState
   val state get() = _state
 
   private val decoder = InstructionDecoder()
   private val alu = Alu()
   private val addrCalc = AddressCalculator(memory)
 
-  fun reset() = vector(VECTOR_RESET, updateStack = false, disableIrq = true)
-  fun irq() = vector(VECTOR_IRQ, updateStack = true, disableIrq = false)  // TODO - only if I = _1
-  fun nmi() = vector(VECTOR_NMI, updateStack = true, disableIrq = false)
+  fun runSteps(num: Int): Int {
+    var n = 0
+    repeat(num) {
+      n += handleInterruptOrStep()
+    }
+    return n
+  }
 
-  private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean) {
+  fun runCycles(num: Int): Int {
+    var n = 0
+    while (n < num) {
+      n += handleInterruptOrStep()
+    }
+    return n
+  }
+
+  private fun handleInterruptOrStep() = when {
+    pollReset() -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
+    pollNmi() -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
+    pollIrq() -> if (_state.P.I) step() else vector(VECTOR_IRQ, updateStack = true, disableIrq = false)
+    else -> step()
+  }
+
+  private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {
     val context = Ctx(
       _state,
       Operand.Implied,
@@ -33,11 +56,12 @@ class Cpu(
     )
     _state = context
       .interrupt(addr, updateStack = updateStack, setBreakFlag = false)
-      .updateI { disableIrq }
+      .updateI { disableIrq || P.I }
       .state
+    return NUM_INTERRUPT_CYCLES
   }
 
-  fun step() {
+  private fun step(): Int {
     val decoded = decodeAt(_state.PC)
     _state = _state.with(PC = decoded.nextPc)
     val context = Ctx(
@@ -47,6 +71,7 @@ class Cpu(
       null
     )
     _state = context.execute(decoded.instruction.opcode).state
+    return decoded.numCycles
   }
 
   // TODO - combine
@@ -232,5 +257,7 @@ class Cpu(
     const val VECTOR_NMI: Address = 0xFFFA
     const val VECTOR_RESET: Address = 0xFFFC
     const val VECTOR_IRQ: Address = 0xFFFE
+
+    const val NUM_INTERRUPT_CYCLES = 7
   }
 }

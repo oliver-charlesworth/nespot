@@ -31,7 +31,7 @@ class Debugger(
   )
 
   private val screen = Screen()
-  private val nes = Nes(rom).instrumentation
+  private val nes = Nes(rom, screen.buffer).instrumentation
   private var points = PointManager()
   private var stack = CallStackManager(nes)
   private var stats = Stats(0)
@@ -42,6 +42,9 @@ class Debugger(
   private val displays = mutableMapOf<Int, Address>()
 
   fun start() {
+    nes.onReset = this::onReset
+    nes.onNmi = this::onNmi
+    nes.onIrq = this::onIrq
     event(Reset) // TODO - this is cheating
     consume(CommandParser(stdin), true)
   }
@@ -58,11 +61,11 @@ class Debugger(
         is Execute -> execute(cmd)
         is CreatePoint -> createPoint(cmd)
         is DeletePoint -> deletePoint(cmd)
-        is CreateDisplay -> displays[nextDisplayNum++] = cmd.addr
+        is CreateDisplay -> createDisplay(cmd)
         is Info -> info(cmd)
         is ToggleVerbosity -> isVerbose = !isVerbose
         is Event -> event(cmd)
-        is Render -> render()
+        is ShowScreen -> showScreen()
         is Quit -> return
         is Error -> stdout.println(cmd.msg)
       }
@@ -94,8 +97,13 @@ class Debugger(
         }
       }
 
-      is Until -> while (nes.state.PC != cmd.pc) {
-        if (!step()) break
+      is Until -> {
+        // Prevent Until(currentPC) from doing nothing
+        var first = true
+        while (first || (nes.state.PC != cmd.pc)) {
+          first = false
+          if (!step()) break
+        }
       }
 
       is UntilOffset -> {
@@ -105,8 +113,13 @@ class Debugger(
         }
       }
 
-      is UntilOpcode -> while (instAt(nes.state.PC).opcode != cmd.op) {
-        if (!step()) break
+      is UntilOpcode -> {
+        // Prevent UntilOpcode(currentOpcode) from doing nothing
+        var first = true
+        while (first || (instAt(nes.state.PC).opcode != cmd.op)) {
+          first = false
+          if (!step()) break
+        }
       }
 
       is Continue -> while (true) {
@@ -155,6 +168,10 @@ class Debugger(
         stdout.println("Deleted all breakpoints & watchpoints")
       }
     }
+  }
+
+  private fun createDisplay(cmd: CreateDisplay) {
+    displays[nextDisplayNum++] = cmd.addr
   }
 
   private fun info(cmd: Info) {
@@ -216,24 +233,10 @@ class Debugger(
     }
   }
 
-  private fun event(cmd: Event) {
-    when (cmd) {
-      is Reset -> {
-        nes.reset()
-        stack.handleReset()
-        stdout.println("Triggered RESET -> ${nes.state.PC}")
-      }
-      is Nmi -> {
-        nes.nmi()
-        stack.handleNmi()
-        stdout.println("Triggered NMI -> ${nes.state.PC}")
-      }
-      is Irq -> {
-        nes.irq()
-        stack.handleIrq()
-        stdout.println("Triggered IRQ -> ${nes.state.PC}")
-      }
-    }
+  private fun event(cmd: Event) = when (cmd) {
+    is Reset -> nes.reset()
+    is Nmi -> nes.nmi()
+    is Irq -> nes.irq()
   }
 
   private fun step(): Boolean {
@@ -316,10 +319,24 @@ class Debugger(
       }
   }
 
-  private fun render() {
+  private fun showScreen() {
     screen.show()
-    nes.renderTo(screen.buffer)
+  }
+
+  private fun onReset() {
+    stdout.println("RESET triggered")
+    stack.handleReset()
+  }
+
+  private fun onNmi() {
+    stdout.println("NMI triggered")
+    stack.handleNmi()
     screen.redraw()
+  }
+
+  private fun onIrq() {
+    stdout.println("IRQ triggered")
+    stack.handleIrq()
   }
 
   private fun Address.format() = "0x%04x".format(this)

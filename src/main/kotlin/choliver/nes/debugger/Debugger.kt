@@ -62,7 +62,7 @@ class Debugger(
   private val displays = mutableMapOf<Int, Address>()
 
   fun start() {
-    event(Reset) // TODO - this is cheating
+    event(Reset)
     consume(CommandParser(stdin), true)
   }
 

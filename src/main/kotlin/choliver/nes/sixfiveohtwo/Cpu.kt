@@ -12,9 +12,9 @@ typealias F<T, R> = State.(T) -> R
 
 class Cpu(
   private val memory: Memory,
-  private val pollReset: () -> Boolean = { _0 },
-  private val pollIrq: () -> Boolean = { _0 },
-  private val pollNmi: () -> Boolean = { _0 },
+  private val pollReset: () -> Boolean,
+  private val pollIrq: () -> Boolean,
+  private val pollNmi: () -> Boolean,
   initialState: State = State()
 ) {
   private var _state = initialState

@@ -6,128 +6,126 @@ import choliver.nes.sixfiveohtwo.Cpu.Companion.NUM_INTERRUPT_CYCLES
 import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_IRQ
 import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_NMI
 import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
-import choliver.nes.sixfiveohtwo.model.Flags
-import choliver.nes.sixfiveohtwo.model.Instruction
-import choliver.nes.sixfiveohtwo.model.Opcode.NOP
-import choliver.nes.sixfiveohtwo.model.State
-import choliver.nes.sixfiveohtwo.model.toPC
+import choliver.nes.sixfiveohtwo.model.*
+import choliver.nes.sixfiveohtwo.model.Opcode.*
+import choliver.nes.sixfiveohtwo.model.Operand.*
+import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
-import com.nhaarman.mockitokotlin2.verify
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
 class CpuTest {
-  // TODO - runSteps return number of cycles
+  @Test
+  fun `calculates num cycles for executed instructions`() {
+    assertCpuEffects(
+      instructions = listOf(
+        Instruction(NOP), // 2 cycles
+        Instruction(ADC, ZeroPageIndexed(0x12, X)) // 4 cycles
+      ),
+      initState = State(),
+      expectedCycles = 6
+    )
+  }
 
   @Nested
   inner class Interrupts {
-    private val currentFrame = 0x4560
-    private val resetHandler = 0x1230
-    private val nmiHandler = 0x2340
-    private val irqHandler = 0x3450
+    private val resetHandler = BASE_USER + 0x1230
+    private val nmiHandler = BASE_USER + 0x2340
+    private val irqHandler = BASE_USER + 0x3450
 
-    private val memory = mockMemory(listOf(Instruction(NOP)).memoryMap(currentFrame) +
+    private val memory =
       addrToMem(VECTOR_RESET, resetHandler) +
       addrToMem(VECTOR_NMI, nmiHandler) +
       addrToMem(VECTOR_IRQ, irqHandler)
-    )
 
     @ParameterizedTest(name = "I == {0}")
     @ValueSource(booleans = [_0, _1])
     fun `follows reset vector and sets I`(I: Boolean) {
-      val cpu = Cpu(
-        memory = memory,
-        pollReset = { _1 },
-        initialState = State(PC = currentFrame.toPC(), P = Flags(I = I))
+      assertCpuEffects(
+        instructions = listOf(Instruction(NOP)),
+        initState = State(S = 0xFF, P = Flags(I = I)),
+        initStores = memory,
+        expectedState = State(S = 0xFF, P = Flags(I = _1), PC = resetHandler.toPC()),
+        expectedCycles = NUM_INTERRUPT_CYCLES,
+        pollReset = { _1 }
       )
-
-      val n = cpu.runSteps(1)
-
-      assertEquals(NUM_INTERRUPT_CYCLES, n)
-      assertEquals(resetHandler, cpu.state.PC.addr())
-      assertEquals(_1, cpu.state.P.I)
-      // Don't care about stack manipulation
     }
 
     @ParameterizedTest(name = "I == {0}")
     @ValueSource(booleans = [_0, _1])
     fun `follows nmi vector and leaves I unmodified`(I: Boolean) {
-      val cpu = Cpu(
-        memory = memory,
-        pollNmi = { _1 },
-        initialState = State(S = 0xFF, PC = currentFrame.toPC(), P = Flags(I = I))
+      val flags = Flags(I = I)
+      assertCpuEffects(
+        instructions = listOf(Instruction(NOP)),
+        initState = State(S = 0xFF, P = flags),
+        initStores = memory,
+        expectedState = State(S = 0xFC, P = flags, PC = nmiHandler.toPC()),
+        expectedStores = expectedStores(flags),
+        expectedCycles = NUM_INTERRUPT_CYCLES,
+        pollNmi = { _1 }
       )
-
-      val n = cpu.runSteps(1)
-
-      assertEquals(NUM_INTERRUPT_CYCLES, n)
-      assertEquals(nmiHandler, cpu.state.PC.addr())
-      assertEquals(I, cpu.state.P.I)
-      verify(memory).store(0x01FF, currentFrame.hi())
-      verify(memory).store(0x01FE, currentFrame.lo())
-      verify(memory).store(0x01FD, Flags(I = I).data())
     }
 
     @Test
     fun `follows irq vector and leaves I unmodified if I == _0`() {
-      val cpu = Cpu(
-        memory = memory,
-        pollIrq = { _1 },
-        initialState = State(PC = currentFrame.toPC(), P = Flags(I = _0))
+      val flags = Flags(I = _0)
+      assertCpuEffects(
+        instructions = listOf(Instruction(NOP)),
+        initState = State(S = 0xFF, P = flags),
+        initStores = memory,
+        expectedState = State(S = 0xFC, P = flags, PC = irqHandler.toPC()),
+        expectedStores = expectedStores(flags),
+        expectedCycles = NUM_INTERRUPT_CYCLES,
+        pollIrq = { _1 }
       )
-
-      val n = cpu.runSteps(1)
-
-      assertEquals(NUM_INTERRUPT_CYCLES, n)
-      assertEquals(irqHandler, cpu.state.PC.addr())
-      assertEquals(_0, cpu.state.P.I)
-      // TODO - assert stack
     }
 
     @Test
     fun `doesn't follow irq vector if I == _1`() {
-      val cpu = Cpu(
-        memory = memory,
-        pollIrq = { _1 },
-        initialState = State(PC = currentFrame.toPC(), P = Flags(I = _1))
+      val flags = Flags(I = _1)
+      assertCpuEffects(
+        instructions = listOf(Instruction(NOP)),
+        initState = State(S = 0xFF, P = flags),
+        initStores = memory,
+        expectedState = State(S = 0xFF, P = flags, PC = (BASE_USER + 1).toPC()),
+        pollIrq = { _1 }
       )
-
-      cpu.runSteps(1)
-
-      assertEquals(currentFrame + 1, cpu.state.PC.addr()) // Expect to have run the NOP instead
     }
 
     @Test
     fun `reset has highest priority`() {
-      val cpu = Cpu(
-        memory = memory,
+      assertCpuEffects(
+        instructions = listOf(Instruction(NOP)),
+        initState = State(S = 0xFF, P = Flags(I = _0)),
+        initStores = memory,
+        expectedState = State(S = 0xFF, P = Flags(I = _1), PC = resetHandler.toPC()),
         pollReset = { _1 },
         pollNmi = { _1 },
-        pollIrq = { _1 },
-        initialState = State(PC = currentFrame.toPC(), P = Flags(I = _0))
+        pollIrq = { _1 }
       )
-
-      cpu.runSteps(1)
-
-      assertEquals(resetHandler, cpu.state.PC.addr())
     }
 
     @Test
     fun `nmi has second highest priority`() {
-      val cpu = Cpu(
-        memory = memory,
+      val flags = Flags(I = _0)
+      assertCpuEffects(
+        instructions = listOf(Instruction(NOP)),
+        initState = State(S = 0xFF, P = flags),
+        initStores = memory,
+        expectedState = State(S = 0xFC, P = flags, PC = nmiHandler.toPC()),
+        expectedStores = expectedStores(flags),
         pollNmi = { _1 },
-        pollIrq = { _1 },
-        initialState = State(PC = currentFrame.toPC(), P = Flags(I = _0))
+        pollIrq = { _1 }
       )
-
-      cpu.runSteps(1)
-
-      assertEquals(nmiHandler, cpu.state.PC.addr())
     }
+
+    private fun expectedStores(P: Flags) = mapOf(
+      0x01FF to BASE_USER.hi(),
+      0x01FE to BASE_USER.lo(),
+      0x01FD to P.data()
+    )
   }
 }

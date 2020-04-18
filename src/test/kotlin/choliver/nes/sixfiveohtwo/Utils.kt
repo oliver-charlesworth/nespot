@@ -6,6 +6,7 @@ import choliver.nes.sixfiveohtwo.model.AddressMode.*
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
+import choliver.nes.sixfiveohtwo.utils._0
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
 
@@ -35,7 +36,7 @@ const val BASE_STACK: Address = 0x0100
 const val BASE_RAM: Address = 0x0200
 const val BASE_ROM: Address = 0x8000
 
-const val BASE_USER: Address = BASE_ROM + 0x1000
+const val BASE_USER: Address = BASE_ROM + 0x1230
 /** Chosen to straddle a page boundary. */
 const val SCARY_ADDR: Address = BASE_RAM + 0x10FF
 
@@ -124,18 +125,31 @@ fun assertCpuEffects(
   initStores: Map<Address, Data> = emptyMap(),
   expectedState: State? = null,
   expectedStores: Map<Address, Data> = emptyMap(),
+  expectedCycles: Int? = null,
+  pollReset: () -> Boolean = { _0 },
+  pollNmi: () -> Boolean = { _0 },
+  pollIrq: () -> Boolean = { _0 },
   name: String = ""
 ) {
   val memory = mockMemory(instructions.memoryMap(BASE_USER) + initStores)
 
-  val cpu = Cpu(memory, initialState = initState.with(PC = BASE_USER.toPC()))
-  cpu.runSteps(instructions.size)
+  val cpu = Cpu(
+    memory,
+    pollReset = pollReset,
+    pollNmi = pollNmi,
+    pollIrq = pollIrq,
+    initialState = initState.with(PC = BASE_USER.toPC())
+  )
+  val n = cpu.runSteps(instructions.size)
 
   if (expectedState != null) {
     assertEquals(expectedState, cpu.state, "Unexpected state for [${name}]")
   }
   expectedStores.forEach { (addr, data) -> verify(memory).store(addr, data) }
   verify(memory, times(expectedStores.size)).store(any(), any())
+  if (expectedCycles != null) {
+    assertEquals(expectedCycles, n, "Unexpected # cycles for [${name}]")
+  }
 }
 
 fun List<Instruction>.memoryMap(base: Address) = map { it.encode() }

@@ -105,64 +105,57 @@ class Debugger(
   }
 
   private fun execute(cmd: Execute) {
+    fun until(cond: () -> Boolean) {
+      while (cond()) {
+        if (!step()) return
+      }
+    }
+
+    fun oneThenUntil(cond: () -> Boolean) {
+      var first = true
+      until { (first || cond()).also { first = false } }
+    }
+
+    fun untilThenOne(cond: () -> Boolean) {
+      var incomplete = true
+      until { incomplete.also { incomplete = incomplete && cond() } }
+    }
+
     when (cmd) {
-      is Step -> for (i in 0 until cmd.num) {
-        if (!step()) break
+      is Step -> {
+        var i = 0
+        until { ++i <= cmd.num }
       }
 
+      // Perform specified number of instructions, but only within this stack frame
       is Next -> {
-        // Perform specified number of instructions, but only within this stack frame
         val myDepth = stack.depth
-        var n = cmd.num
-        while ((n > 0) && (stack.depth >= myDepth)) {
-          if (!step()) break
-          if (stack.depth == myDepth) {
-            n--
-          }
+        var i = 0
+        until {
+          if (stack.depth == myDepth) i++
+          (i <= cmd.num) && (stack.depth >= myDepth)
         }
       }
 
-      is Until -> {
-        // Prevent Until(currentPC) from doing nothing
-        var first = true
-        while (first || (nes.state.PC != cmd.pc)) {
-          first = false
-          if (!step()) break
-        }
-      }
+      // Prevent Until(currentPC) from doing nothing
+      is Until -> oneThenUntil { nes.state.PC != cmd.pc }
 
       is UntilOffset -> {
         val target = nextPc(cmd.offset)
-        while (nes.state.PC != target) {
-          if (!step()) break
-        }
+        until { nes.state.PC != target }
       }
 
-      is UntilOpcode -> {
-        // Prevent UntilOpcode(currentOpcode) from doing nothing
-        var first = true
-        while (first || (instAt(nes.state.PC).opcode != cmd.op)) {
-          first = false
-          if (!step()) break
-        }
-      }
+      // Prevent UntilOpcode(currentOpcode) from doing nothing
+      is UntilOpcode -> oneThenUntil { instAt(nes.state.PC).opcode != cmd.op }
 
-      is UntilNmi -> {
-        while (nextStep != NextStep.NMI) {
-          if (!step()) break
-        }
-        step()  // One more so that it's handled
-      }
+      // One more so that the interrupt actually occurs
+      is UntilNmi -> untilThenOne { nextStep != NextStep.NMI }
 
-      is Continue -> while (true) {
-        if (!step()) break
-      }
+      is Continue -> until { true }
 
       is Finish -> {
         val myDepth = stack.depth
-        while (stack.depth >= myDepth) {
-          if (!step()) break
-        }
+        until { stack.depth >= myDepth }
       }
     }
 

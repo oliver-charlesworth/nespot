@@ -30,12 +30,21 @@ class Debugger(
     val numInstructions: Int
   )
 
+  private enum class NextStep {
+    INSTRUCTION,
+    RESET,
+    NMI,
+    IRQ
+  }
+
   private val screen = Screen()
   private val nes = Nes(rom, screen.buffer).instrumentation
   private var points = PointManager()
   private var stack = CallStackManager(nes)
   private var stats = Stats(0)
   private var isVerbose = true
+  private var nextStep = NextStep.INSTRUCTION
+  private var macro: Command = Next(1)
 
   // Displays
   private var nextDisplayNum = 1
@@ -50,26 +59,34 @@ class Debugger(
   }
 
   private fun consume(parser: CommandParser, enablePrompts: Boolean) {
-    // TODO - handle Ctrl+C ?
     while (true) {
       if (enablePrompts) {
         stdout.print("[${nes.state.PC}]: ")
       }
 
-      when (val cmd = parser.next()) {
-        is Script -> script()
-        is Execute -> execute(cmd)
-        is CreatePoint -> createPoint(cmd)
-        is DeletePoint -> deletePoint(cmd)
-        is CreateDisplay -> createDisplay(cmd)
-        is Info -> info(cmd)
-        is ToggleVerbosity -> isVerbose = !isVerbose
-        is Event -> event(cmd)
-        is ShowScreen -> showScreen()
-        is Quit -> return
-        is Error -> stdout.println(cmd.msg)
+      if (!handleCommand(parser.next())) {
+        return
       }
     }
+  }
+
+  private fun handleCommand(cmd: Command): Boolean {
+    when (cmd) {
+      is Script -> script()
+      is RunMacro -> handleCommand(macro)
+      is SetMacro -> macro = cmd.cmd
+      is Execute -> execute(cmd)
+      is CreatePoint -> createPoint(cmd)
+      is DeletePoint -> deletePoint(cmd)
+      is CreateDisplay -> createDisplay(cmd)
+      is Info -> info(cmd)
+      is ToggleVerbosity -> isVerbose = !isVerbose
+      is Event -> event(cmd)
+      is ShowScreen -> showScreen()
+      is Quit -> return false
+      is Error -> stdout.println(cmd.msg)
+    }
+    return true
   }
 
   // TODO - this recursion is weird - can we combine this + stdin with flatMap magic?
@@ -120,6 +137,13 @@ class Debugger(
           first = false
           if (!step()) break
         }
+      }
+
+      is UntilNmi -> {
+        while (nextStep != NextStep.NMI) {
+          if (!step()) break
+        }
+        step()  // One more so that it's handled
       }
 
       is Continue -> while (true) {
@@ -233,19 +257,48 @@ class Debugger(
     }
   }
 
-  private fun event(cmd: Event) = when (cmd) {
-    is Reset -> nes.reset()
-    is Nmi -> nes.nmi()
-    is Irq -> nes.irq()
+  private fun event(cmd: Event) {
+    when (cmd) {
+      is Reset -> nes.reset()
+      is Nmi -> nes.nmi()
+      is Irq -> nes.irq()
+    }
+    step()  // Perform one step so the interrupt actually gets handled
   }
 
   private fun step(): Boolean {
-    maybeTraceInstruction()
-    stack.preStep()
+    val thisStep = nextStep // nextStep might be modified
+
+    when (thisStep) {
+      NextStep.INSTRUCTION -> {
+        maybeTraceInstruction()
+        stack.preInstruction()
+      }
+      NextStep.RESET -> {
+        stdout.println("RESET triggered")
+        stack.preReset()
+      }
+      NextStep.NMI -> {
+        stdout.println("NMI triggered")
+        stack.preNmi()
+      }
+      NextStep.IRQ -> {
+        stdout.println("IRQ triggered")
+        stack.preIrq()
+      }
+    }
+
     val stores = nes.step()
-    stack.postStep()
     maybeTraceStores(stores)
-    stats = stats.copy(numInstructions = stats.numInstructions + 1)
+
+    when (thisStep) {
+      NextStep.INSTRUCTION -> {
+        stack.postInstruction()
+        stats = stats.copy(numInstructions = stats.numInstructions + 1)
+      }
+      else -> nextStep = NextStep.INSTRUCTION
+    }
+
     return isWatchpointHit(stores) && isBreakpointHit()
   }
 
@@ -324,19 +377,16 @@ class Debugger(
   }
 
   private fun onReset() {
-    stdout.println("RESET triggered")
-    stack.handleReset()
+    nextStep = NextStep.RESET
   }
 
   private fun onNmi() {
-    stdout.println("NMI triggered")
-    stack.handleNmi()
+    nextStep = NextStep.NMI
     screen.redraw()
   }
 
   private fun onIrq() {
-    stdout.println("IRQ triggered")
-    stack.handleIrq()
+    nextStep = NextStep.IRQ
   }
 
   private fun Address.format() = "0x%04x".format(this)

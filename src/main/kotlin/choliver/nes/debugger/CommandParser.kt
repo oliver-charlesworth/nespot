@@ -24,75 +24,83 @@ class CommandParser(
     }
     val r = raw.trim()
     when {
-      r.isEmpty() && !ignoreBlanks -> return Next(1)
+      r.isEmpty() && !ignoreBlanks -> return RunMacro
       r.isEmpty() && ignoreBlanks -> return Nop
       r.startsWith("#") -> return Nop
     }
 
-    val bits = r.split("\\s+".toRegex())
+    val tokens = r.split("\\s+".toRegex())
 
-    val error = Error("Can't parse: ${r}")
-    fun noArgs(cmd: Command) = if (bits.size == 1) cmd else error
-    fun <T> T?.oneArg(create: (T) -> Command) = if (this != null) create(this) else error
+    return parseTokens(tokens) ?: Error("Can't parse: ${r}")
+  }
 
-    return when (bits[0]) {
+  private fun parseTokens(tokens: List<String>): Command? {
+    fun noArgs(cmd: Command) = if (tokens.size == 1) cmd else null
+
+    return when (tokens[0]) {
       "script" -> noArgs(Script)
 
-      "s", "step" -> when (bits.size) {
+      "macro" -> when (tokens.size) {
+        1 -> null
+        else -> parseTokens(tokens.drop(1))?.let(::SetMacro)
+      }
+
+      "s", "step" -> when (tokens.size) {
         1 -> Step(1)
-        2 -> bits[1].toIntOrNull().oneArg(::Step)
-        else -> error
+        2 -> tokens[1].toIntOrNull()?.let(::Step)
+        else -> null
       }
 
-      "n", "next" -> when (bits.size) {
+      "n", "next" -> when (tokens.size) {
         1 -> Next(1)
-        2 -> bits[1].toIntOrNull().oneArg(::Next)
-        else -> error
+        2 -> tokens[1].toIntOrNull()?.let(::Next)
+        else -> null
       }
 
-      "u", "until" -> when (bits.size) {
+      "u", "until" -> when (tokens.size) {
         2 -> when {
-          bits[1].startsWith("+") -> bits[1].removePrefix("+").toIntOrNull().oneArg(::UntilOffset)
-          bits[1].startsWith("0x") -> bits[1].toPcOrNull().oneArg(::Until)
-          else -> bits[1].toOpcodeOrNull().oneArg(::UntilOpcode)
+          tokens[1] == "nmi" -> UntilNmi
+          tokens[1].startsWith("+") -> tokens[1].removePrefix("+").toIntOrNull()?.let(::UntilOffset)
+          tokens[1].startsWith("0x") -> tokens[1].toPcOrNull()?.let(::Until)
+          else -> tokens[1].toOpcodeOrNull()?.let(::UntilOpcode)
         }
-        else -> error
+        else -> null
       }
 
       "c", "cont" -> noArgs(Continue)
 
       "f", "finish" -> noArgs(Finish)
 
-      "b", "break" -> when (bits.size) {
+      "b", "break" -> when (tokens.size) {
         1 -> Break.AtOffset(0)
         2 -> when {
-          bits[1].startsWith("+") -> bits[1].removePrefix("+").toIntOrNull().oneArg(Break::AtOffset)
-          else -> bits[1].toPcOrNull().oneArg(Break::At)
+          tokens[1].startsWith("+") -> tokens[1].removePrefix("+").toIntOrNull()?.let(Break::AtOffset)
+          else -> tokens[1].toPcOrNull()?.let(Break::At)
         }
-        else -> error
+        else -> null
       }
 
-      "w", "watch" -> when (bits.size) {
-        2 -> bits[1].toAddressOrNull().oneArg(::Watch)
-        else -> error
+      "w", "watch" -> when (tokens.size) {
+        2 -> tokens[1].toAddressOrNull()?.let(::Watch)
+        else -> null
       }
 
-      "display" -> when (bits.size) {
-        2 -> bits[1].toAddressOrNull().oneArg(::CreateDisplay)
-        else -> error
+      "display" -> when (tokens.size) {
+        2 -> tokens[1].toAddressOrNull()?.let(::CreateDisplay)
+        else -> null
       }
 
       // TODO - clear
 
-      "d", "delete" -> when (bits.size) {
+      "d", "delete" -> when (tokens.size) {
         1 -> DeletePoint.All
-        2 -> bits[1].toIntOrNull().oneArg(DeletePoint::ByNum)
-        else -> error
+        2 -> tokens[1].toIntOrNull()?.let(DeletePoint::ByNum)
+        else -> null
       }
 
-      "i", "info" -> when (bits.size) {
-        1 -> error
-        else -> when (bits[1]) {
+      "i", "info" -> when (tokens.size) {
+        1 -> null
+        else -> when (tokens[1]) {
           "s", "stats" -> Info.Stats
           "r", "reg" -> Info.Reg
           "b", "break" -> Info.Break
@@ -100,26 +108,26 @@ class CommandParser(
           "d", "display" -> Info.Display
           "ram" -> Info.CpuRam
           "vram" -> Info.PpuRam
-          else -> error
+          else -> null
         }
       }
 
-      "p", "print" -> when (bits.size) {
-        2 -> bits[1].toAddressOrNull().oneArg(Info::Print)
-        else -> error
+      "p", "print" -> when (tokens.size) {
+        2 -> tokens[1].toAddressOrNull()?.let(Info::Print)
+        else -> null
       }
 
-      "xi" -> when (bits.size) {
+      "xi" -> when (tokens.size) {
         2, 3 -> {
-          bits[1].toPcOrNull()?.let { pc ->
-            when (bits.size) {
+          tokens[1].toPcOrNull()?.let { pc ->
+            when (tokens.size) {
               2 -> Info.InspectInst(pc, 1)
-              3 -> bits[2].toIntOrNull()?.let { Info.InspectInst(pc, it) }
-              else -> error
+              3 -> tokens[2].toIntOrNull()?.let { Info.InspectInst(pc, it) }
+              else -> null
             }
-          } ?: error
+          }
         }
-        else -> error
+        else -> null
       }
 
       "v", "verbosity" -> noArgs(ToggleVerbosity)
@@ -134,7 +142,7 @@ class CommandParser(
 
       "q", "quit" -> noArgs(Quit)
 
-      else -> error
+      else -> null
     }
   }
 

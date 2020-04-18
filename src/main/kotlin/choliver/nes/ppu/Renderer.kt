@@ -18,7 +18,6 @@ class Renderer(
   private val palette: Memory,
   private val oam: Memory,
   private val screen: IntBuffer,
-  private val onSprite0Hit: () -> Unit = {},
   private val colors: List<Int> = COLORS
 ) {
   data class Context(
@@ -34,13 +33,11 @@ class Renderer(
 
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0) }
 
-  fun renderScanline(y: Int, ctx: Context) {
+  fun renderScanlineAndDetectHit(y: Int, ctx: Context): Boolean {
     prepareBackground(y, ctx)
     val isHit = prepareSpritesAndDetectHit(y, ctx)
     renderToBuffer(y)
-    if (isHit) {
-      onSprite0Hit()
-    }
+    return isHit
   }
 
   private fun prepareBackground(y: Int, ctx: Context) {

@@ -18,12 +18,13 @@ import org.junit.jupiter.api.Test
 
 class PpuTest {
   private val memory = mock<Memory>()
+  private val renderer = mock<Renderer>()
   private val onVbl = mock<() -> Unit>()
   private val ppu = Ppu(
     memory = memory,
     screen = mock(),
     onVbl = onVbl,
-    renderer = mock()
+    renderer = renderer
   )
 
   @Nested
@@ -212,5 +213,45 @@ class PpuTest {
     }
 
     private fun getVblStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(7)
+  }
+
+  @Nested
+  inner class SpriteHit {
+    @Test
+    fun `status flag not set if not hit`() {
+      ppu.executeScanline()
+
+      assertEquals(_0, getHitStatus())
+    }
+
+    @Test
+    fun `status flag set if hit`() {
+      whenever(renderer.renderScanlineAndDetectHit(any(), any())) doReturn true
+
+      ppu.executeScanline()
+
+      assertEquals(_1, getHitStatus())
+    }
+
+    @Test
+    fun `status flag not cleared by reading it`() {
+      whenever(renderer.renderScanlineAndDetectHit(any(), any())) doReturn true
+
+      ppu.executeScanline()
+
+      assertEquals(_1, getHitStatus())
+      assertEquals(_1, getHitStatus())
+    }
+
+    @Test
+    fun `status flag cleared on final scanline`() {
+      whenever(renderer.renderScanlineAndDetectHit(any(), any())) doReturn true
+
+      for (i in 0..(NUM_SCANLINES - 1)) { ppu.executeScanline() }
+
+      assertEquals(_0, getHitStatus())
+    }
+
+    private fun getHitStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(6)
   }
 }

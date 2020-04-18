@@ -18,13 +18,6 @@ import java.util.*
 class CallStackManager(
   private val nes: Nes.Instrumentation
 ) {
-  private enum class Next {
-    INSTRUCTION,
-    RESET,
-    NMI,
-    IRQ
-  }
-
   enum class FrameType {
     JSR,
     JSR_PARTIAL,
@@ -48,31 +41,8 @@ class CallStackManager(
   private val stack = Stack<Entry>()
   private var nextFrameIdx = 0
   private var valid = false // Becomes valid once S initialised
-  private var next = Next.INSTRUCTION
 
-  fun nextIsReset() {
-    next = Next.RESET
-  }
-
-  fun nextIsNmi() {
-    next = Next.NMI
-  }
-
-  fun nextIsIrq() {
-    next = Next.IRQ
-  }
-
-  fun preStep() {
-    when (next) {
-      Next.INSTRUCTION -> preInstruction()
-      Next.RESET -> preReset()
-      Next.NMI -> preNmi()
-      Next.IRQ -> preIrq()
-    }
-    next = Next.INSTRUCTION
-  }
-
-  private fun preInstruction() {
+  fun preInstruction() {
     val decoded = nes.decodeAt(nes.state.PC)
     val addr = nes.calcAddr(decoded.instruction)
 
@@ -137,7 +107,7 @@ class CallStackManager(
     }
   }
 
-  private fun preReset() {
+  fun preReset() {
     nextFrameIdx = 0
     valid = false
     map.clear()
@@ -145,15 +115,15 @@ class CallStackManager(
     pushFrame(RESET, peekVector(VECTOR_RESET))
   }
 
-  private fun preNmi() {
+  fun preNmi() {
     pushFrame(NMI, peekVector(VECTOR_NMI))  // TODO - check for stack overflow
   }
 
-  private fun preIrq() {
+  fun preIrq() {
     pushFrame(IRQ, peekVector(VECTOR_IRQ)) // TODO - check for stack overflow
   }
 
-  fun postStep() {
+  fun postInstruction() {
     val latest = map.entries.last()
     latest.setValue(latest.value.copy(current = nes.state.PC))
   }

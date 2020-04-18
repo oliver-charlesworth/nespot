@@ -65,12 +65,13 @@ class Nes(
   private var numCycles = 0
 
   private fun step() {
+    numCycles += cpu.runSteps(1)
+
     // TODO - where does this magic number come from?
     if (numCycles >= 124) {
       numCycles -= 124
       ppu.renderNextScanline()
     }
-    numCycles += cpu.runSteps(1)
   }
 
   val instrumentation = Instrumentation()

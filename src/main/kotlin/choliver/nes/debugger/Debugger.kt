@@ -334,18 +334,18 @@ class Debugger(
 
   private fun onReset() {
     stdout.println("RESET triggered")
-    stack.handleReset()
+    stack.nextIsReset()
   }
 
   private fun onNmi() {
     stdout.println("NMI triggered")
-    stack.handleNmi()
+    stack.nextIsNmi()
     screen.redraw()
   }
 
   private fun onIrq() {
     stdout.println("IRQ triggered")
-    stack.handleIrq()
+    stack.nextIsIrq()
   }
 
   private fun Address.format() = "0x%04x".format(this)

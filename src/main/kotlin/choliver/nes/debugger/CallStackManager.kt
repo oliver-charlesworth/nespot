@@ -18,6 +18,13 @@ import java.util.*
 class CallStackManager(
   private val nes: Nes.Instrumentation
 ) {
+  private enum class Next {
+    INSTRUCTION,
+    RESET,
+    NMI,
+    IRQ
+  }
+
   enum class FrameType {
     JSR,
     JSR_PARTIAL,
@@ -41,24 +48,31 @@ class CallStackManager(
   private val stack = Stack<Entry>()
   private var nextFrameIdx = 0
   private var valid = false // Becomes valid once S initialised
+  private var next = Next.INSTRUCTION
 
-  fun handleReset() {
-    nextFrameIdx = 0
-    valid = false
-    map.clear()
-    stack.clear()
-    pushFrame(RESET, peekVector(VECTOR_RESET))
+  fun nextIsReset() {
+    next = Next.RESET
   }
 
-  fun handleNmi() {
-    pushFrame(NMI, peekVector(VECTOR_NMI))  // TODO - check for stack overflow
+  fun nextIsNmi() {
+    next = Next.NMI
   }
 
-  fun handleIrq() {
-    pushFrame(IRQ, peekVector(VECTOR_IRQ)) // TODO - check for stack overflow
+  fun nextIsIrq() {
+    next = Next.IRQ
   }
 
   fun preStep() {
+    when (next) {
+      Next.INSTRUCTION -> preInstruction()
+      Next.RESET -> preReset()
+      Next.NMI -> preNmi()
+      Next.IRQ -> preIrq()
+    }
+    next = Next.INSTRUCTION
+  }
+
+  private fun preInstruction() {
     val decoded = nes.decodeAt(nes.state.PC)
     val addr = nes.calcAddr(decoded.instruction)
 
@@ -70,9 +84,9 @@ class CallStackManager(
       }
 
       // TODO
-//      STA, STX, STY -> if (addr in 0x0100..0x01FF) {
-//        unsupported("manual manipulation of stack content")
-//      }
+      //      STA, STX, STY -> if (addr in 0x0100..0x01FF) {
+      //        unsupported("manual manipulation of stack content")
+      //      }
 
       BRK -> unsupported("BRK")
 
@@ -113,7 +127,7 @@ class CallStackManager(
           when (it.type) {
             FrameType.JSR -> unsupported("RTI for JSR frame")
             JSR_PARTIAL -> unsupported("RTI for partially unwound JSR frame")
-            NMI, IRQ -> { } // Vanilla
+            NMI, IRQ -> {} // Vanilla
             RESET -> unsupported("stack underflow")
           }
         }
@@ -121,6 +135,22 @@ class CallStackManager(
 
       else -> {}
     }
+  }
+
+  private fun preReset() {
+    nextFrameIdx = 0
+    valid = false
+    map.clear()
+    stack.clear()
+    pushFrame(RESET, peekVector(VECTOR_RESET))
+  }
+
+  private fun preNmi() {
+    pushFrame(NMI, peekVector(VECTOR_NMI))  // TODO - check for stack overflow
+  }
+
+  private fun preIrq() {
+    pushFrame(IRQ, peekVector(VECTOR_IRQ)) // TODO - check for stack overflow
   }
 
   fun postStep() {

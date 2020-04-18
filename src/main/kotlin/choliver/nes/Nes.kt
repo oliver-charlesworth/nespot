@@ -6,12 +6,22 @@ import choliver.nes.ppu.SCREEN_HEIGHT
 import choliver.nes.sixfiveohtwo.Cpu
 import choliver.nes.sixfiveohtwo.model.Instruction
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
+import choliver.nes.sixfiveohtwo.model.State
 import java.nio.IntBuffer
 
 class Nes(
   rom: ByteArray,
   screen: IntBuffer
 ) {
+  interface Hooks {
+    val state: State
+    fun peek(addr: Address): Data
+    fun peekV(addr: Address): Data
+    fun fireReset()
+    fun fireNmi()
+    fun fireIrq()
+  }
+
   private val reset = InterruptSource()
   private val irq = InterruptSource()
   private val nmi = InterruptSource()
@@ -74,9 +84,18 @@ class Nes(
     }
   }
 
-  val instrumentation = Instrumentation()
+  private inner class HooksImpl : Hooks {
+    override val state get() = cpu.state
+    override fun peek(addr: Address) = cpuMapper.load(addr)
+    override fun peekV(addr: Address) = ppuMapper.load(addr)
+    override fun fireReset() = reset.set()
+    override fun fireNmi() = nmi.set()
+    override fun fireIrq() = irq.set()
+  }
 
-  inner class Instrumentation {
+  val instrumentation = Instrumentation(HooksImpl())
+
+  inner class Instrumentation(private val hooks: Hooks) {
     // TODO - ugh mutable
     var onReset: () -> Unit = {}
     var onNmi: () -> Unit = {}
@@ -89,17 +108,11 @@ class Nes(
       irq.addListener { onIrq() }
     }
 
-    fun reset() {
-      reset.set()
-    }
+    fun reset() = hooks.fireReset()
 
-    fun nmi() {
-      nmi.set()
-    }
+    fun nmi()  = hooks.fireNmi()
 
-    fun irq() {
-      irq.set()
-    }
+    fun irq() = hooks.fireNmi()
 
     fun step(): List<Pair<Address, Data>> {
       interceptor.reset()
@@ -107,14 +120,12 @@ class Nes(
       return interceptor.stores
     }
 
-    fun peek(addr: Address) = cpuMapper.load(addr)
-    fun peekV(addr: Address) = ppuRam.load(addr)  // TODO - use PPU mapper?
+    fun peek(addr: Address) = hooks.peek(addr)
+    fun peekV(addr: Address) = hooks.peekV(addr)
 
-    val state get() = cpu.state
+    val state get() = hooks.state
 
-    // TODO - combine
     fun decodeAt(pc: ProgramCounter) = cpu.decodeAt(pc)
-    fun calcAddr(instruction: Instruction) = cpu.calcAddr(instruction)
   }
 
   private class InterruptSource {

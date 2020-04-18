@@ -1,36 +1,37 @@
 package choliver.nes.sixfiveohtwo
 
+import choliver.nes.Address
 import choliver.nes.Memory
 import choliver.nes.addr
-import choliver.nes.sixfiveohtwo.model.AddressMode
+import choliver.nes.sixfiveohtwo.model.*
 import choliver.nes.sixfiveohtwo.model.AddressMode.*
-import choliver.nes.sixfiveohtwo.model.Instruction
-import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.Opcode.BRK
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
-import choliver.nes.sixfiveohtwo.model.ProgramCounter
 
-class InstructionDecoder {
+class InstructionDecoder(private val memory: Memory) {
   data class Decoded(
     val instruction: Instruction,
+    val addr: Address,
     val nextPc: ProgramCounter,
     val numCycles: Int
   )
 
-  fun decode(memory: Memory, pc: ProgramCounter): Decoded {
+  private val addrCalc = AddressCalculator(memory)
+
+  fun decode(state: State, pc: ProgramCounter): Decoded {
     var nextPc = pc
     fun load() = memory.load((nextPc++).addr())
 
     // TODO - error handling
     val opcode = load()
-    val found = ENCODINGS[opcode] ?: error("Unexpected opcode 0x%02x at %s".format(opcode, pc))
+    val found = ENCODINGS[opcode] ?: error("Unexpected opcode 0x%02x at %s".format(opcode, nextPc))
 
     fun operand8() = load()
     fun operand16() = addr(lo = load(), hi = load())
 
-    val mode = when (found.addressMode) {
+    val operand = when (found.addressMode) {
       ACCUMULATOR -> Accumulator
       IMMEDIATE -> Immediate(operand8())
       IMPLIED -> Implied
@@ -50,7 +51,12 @@ class InstructionDecoder {
       load()  // Special case
     }
 
-    return Decoded(Instruction(found.op, mode), nextPc, found.numCycles)
+    return Decoded(
+      instruction = Instruction(found.op, operand),
+      addr = addrCalc.calculate(operand, state.with(PC = nextPc)),
+      nextPc = nextPc,
+      numCycles = found.numCycles
+    )
   }
 
   private data class OpAndMode(

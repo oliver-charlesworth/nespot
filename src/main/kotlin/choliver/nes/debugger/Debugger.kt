@@ -242,7 +242,7 @@ class Debugger(
 
       is Info.CpuRam -> displayDump((0 until CPU_RAM_SIZE).map { nes.peek(it) })
 
-      is Info.PpuRam -> displayDump((0 until PPU_RAM_SIZE).map { nes.peekV(it) })
+      is Info.PpuRam -> displayDump((0 until PPU_RAM_SIZE).map { nes.peekV(it + 0x4000) })
 
       is Info.Print -> stdout.println(nes.peek(cmd.addr).format8())
 

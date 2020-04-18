@@ -44,7 +44,6 @@ class CallStackManager(
 
   fun preInstruction() {
     val decoded = nes.decodeAt(nes.state.PC)
-    val addr = nes.calcAddr(decoded.instruction)
 
     when (decoded.instruction.opcode) {
       TXS -> if (valid) {
@@ -76,7 +75,7 @@ class CallStackManager(
         }
       )
 
-      JSR -> pushFrame(FrameType.JSR, addr.toPC())
+      JSR -> pushFrame(FrameType.JSR, decoded.addr.toPC())
 
       RTS -> popAndHandle(
         onUserData = { unsupported("RTS for manually constructed frame") },

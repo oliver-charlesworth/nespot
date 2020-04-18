@@ -111,8 +111,13 @@ class Debugger(
         }
       }
 
-      is UntilOpcode -> while (instAt(nes.state.PC).opcode != cmd.op) {
-        if (!step()) break
+      is UntilOpcode -> {
+        // Prevent UntilOpcode(currentOpcode) from doing nothing
+        var first = true
+        while (first || (instAt(nes.state.PC).opcode != cmd.op)) {
+          first = false
+          if (!step()) break
+        }
       }
 
       is Continue -> while (true) {

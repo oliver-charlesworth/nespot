@@ -31,7 +31,6 @@ class Screen(private val onClose: () -> Unit = {}) {
   )
 
   fun redraw() {
-    buffer.position(0)
     if (isStarted) {
       Platform.runLater { pixelBuffer.updateBuffer { null } }
     }

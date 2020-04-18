@@ -63,9 +63,10 @@ class Nes(
   inner class Instrumentation {
     private var numCycles = 0
     private var scanline = 0
-    var onReset: () -> Unit = {}  // TODO - ugh
-    var onNmi: () -> Unit = {}  // TODO - ugh
-    var onIrq: () -> Unit = {}  // TODO - ugh
+    // TODO - ugh mutable
+    var onReset: () -> Unit = {}
+    var onNmi: () -> Unit = {}
+    var onIrq: () -> Unit = {}
 
     fun reset() {
       reset.set()
@@ -89,7 +90,6 @@ class Nes(
         scanline++
         if (scanline == SCREEN_HEIGHT) {
           if (ppu.isNmiEnabled) {
-            println("NMI - ${state.PC}")
             nmi.set()
             onNmi()
           }

@@ -16,16 +16,16 @@ class Ppu(
 
   private var gross = false
 
-  // TODO - add a reset (cleans up counters and stuff)
+  // TODO - add a reset (to clean up counters and stuff)
 
   fun renderNextScanline() {
     renderer.renderScanline(
+      y = nextScanline,
       ctx = Renderer.Context(
         nametableAddr = state.nametableAddr,
         bgPatternTableAddr = state.bgPatternTableAddr,
         sprPatternTableAddr = state.sprPatternTableAddr
-      ),
-      y = nextScanline
+      )
     )
     nextScanline++
     if (nextScanline == SCREEN_HEIGHT) {

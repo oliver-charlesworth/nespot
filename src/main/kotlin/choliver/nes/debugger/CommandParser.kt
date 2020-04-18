@@ -40,7 +40,10 @@ class CommandParser(
     return when (tokens[0]) {
       "script" -> noArgs(Script)
 
-      "macro" -> parseTokens(tokens.drop(1))?.let(::SetMacro)
+      "macro" -> when (tokens.size) {
+        1 -> null
+        else -> parseTokens(tokens.drop(1))?.let(::SetMacro)
+      }
 
       "s", "step" -> when (tokens.size) {
         1 -> Step(1)

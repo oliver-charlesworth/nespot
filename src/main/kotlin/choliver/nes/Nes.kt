@@ -60,8 +60,12 @@ class Nes(
 
   val instrumentation = Instrumentation()
 
-  inner class Instrumentation internal constructor() {
+  inner class Instrumentation {
     private var numCycles = 0
+    private var scanline = 0
+    var onReset: () -> Unit = {}  // TODO - ugh
+    var onNmi: () -> Unit = {}  // TODO - ugh
+    var onIrq: () -> Unit = {}  // TODO - ugh
 
     fun reset() {
       reset.set()
@@ -78,18 +82,24 @@ class Nes(
     fun step(): List<Pair<Address, Data>> {
       // TODO - where does this magic number come from?
       if (numCycles >= 124) {
-        ppu.renderNextScanline()
-        nmi.set()
         numCycles -= 124
+
+        ppu.renderNextScanline()
+
+        scanline++
+        if (scanline == SCREEN_HEIGHT) {
+          if (ppu.isNmiEnabled) {
+            println("NMI - ${state.PC}")
+            nmi.set()
+            onNmi()
+          }
+          scanline = 0
+        }
       }
 
       interceptor.reset()
       numCycles += cpu.runSteps(1)
       return interceptor.stores
-    }
-
-    fun renderFrame() {
-      repeat(SCREEN_HEIGHT) { ppu.renderNextScanline() }
     }
 
     fun peek(addr: Address) = cpuMapper.load(addr)

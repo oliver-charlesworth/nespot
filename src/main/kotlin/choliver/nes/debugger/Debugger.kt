@@ -42,6 +42,7 @@ class Debugger(
   private val displays = mutableMapOf<Int, Address>()
 
   fun start() {
+    nes.onNmi = this::onNmi
     event(Reset) // TODO - this is cheating
     consume(CommandParser(stdin), true)
   }
@@ -62,7 +63,7 @@ class Debugger(
         is Info -> info(cmd)
         is ToggleVerbosity -> isVerbose = !isVerbose
         is Event -> event(cmd)
-        is Render -> render()
+        is ShowScreen -> showScreen()
         is Quit -> return
         is Error -> stdout.println(cmd.msg)
       }
@@ -94,8 +95,13 @@ class Debugger(
         }
       }
 
-      is Until -> while (nes.state.PC != cmd.pc) {
-        if (!step()) break
+      is Until -> {
+        // Prevent Until(currentPC) from doing nothing
+        var first = true
+        while (first || (nes.state.PC != cmd.pc)) {
+          first = false
+          if (!step()) break
+        }
       }
 
       is UntilOffset -> {
@@ -221,17 +227,13 @@ class Debugger(
       is Reset -> {
         nes.reset()
         stack.handleReset()
-        stdout.println("Triggered RESET -> ${nes.state.PC}")
       }
       is Nmi -> {
         nes.nmi()
-        stack.handleNmi()
-        stdout.println("Triggered NMI -> ${nes.state.PC}")
       }
       is Irq -> {
         nes.irq()
         stack.handleIrq()
-        stdout.println("Triggered IRQ -> ${nes.state.PC}")
       }
     }
   }
@@ -316,9 +318,13 @@ class Debugger(
       }
   }
 
-  private fun render() {
+  private fun showScreen() {
     screen.show()
-    nes.renderFrame()
+  }
+
+  private fun onNmi() {
+    stdout.println("NMI triggered")
+    stack.handleNmi()
     screen.redraw()
   }
 

@@ -130,7 +130,7 @@ class CommandParser(
       "nmi" -> noArgs(Event.Nmi)
       "irq" -> noArgs(Event.Irq)
 
-      "render" -> noArgs(Render)
+      "screen" -> noArgs(ShowScreen)
 
       "q", "quit" -> noArgs(Quit)
 

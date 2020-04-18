@@ -5,7 +5,7 @@ import java.nio.IntBuffer
 
 class Ppu(
   private val memory: Memory,
-  screen: IntBuffer
+  private val screen: IntBuffer
 ) {
   private var state = State()
   private val palette = Palette()
@@ -24,7 +24,12 @@ class Ppu(
       ),
       y = nextScanline
     )
-    nextScanline = (nextScanline + 1) % SCREEN_HEIGHT // TODO - should we account for VBL here?
+    nextScanline++
+    if (nextScanline == SCREEN_HEIGHT) {
+      screen.position(0)  // TODO - this is grotesque
+      nextScanline = 0
+    }
+    // TODO - should we account for VBL here?
   }
 
   fun readReg(reg: Int): Int {
@@ -141,6 +146,8 @@ class Ppu(
 
     val oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
   )
+
+  val isNmiEnabled get() = state.isNmiEnabled // TODO - Gross
 
   companion object {
     // http://wiki.nesdev.com/w/index.php/PPU_registers

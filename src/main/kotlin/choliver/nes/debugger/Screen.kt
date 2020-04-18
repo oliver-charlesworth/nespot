@@ -31,8 +31,10 @@ class Screen(private val onClose: () -> Unit = {}) {
   )
 
   fun redraw() {
-    _buffer.position(0)
-    Platform.runLater { pixelBuffer.updateBuffer { null } }
+    buffer.position(0)
+    if (isStarted) {
+      Platform.runLater { pixelBuffer.updateBuffer { null } }
+    }
   }
 
   fun show() {
@@ -46,8 +48,8 @@ class Screen(private val onClose: () -> Unit = {}) {
   }
 
   fun hide() {
-    Platform.runLater {
-      stage.hide()
+    if (isStarted) {
+      Platform.runLater { stage.hide() }
     }
   }
 

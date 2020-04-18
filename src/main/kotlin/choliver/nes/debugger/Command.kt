@@ -7,6 +7,8 @@ import choliver.nes.sixfiveohtwo.model.ProgramCounter
 sealed class Command {
   object Script : Command()
   object Nop : Command()
+  object RunMacro : Command()
+  data class SetMacro(val cmd: Command): Command()
 
   sealed class Execute : Command() {
     data class Step(val num: Int) : Execute()

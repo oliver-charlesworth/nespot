@@ -36,6 +36,7 @@ class Debugger(
   private var stack = CallStackManager(nes)
   private var stats = Stats(0)
   private var isVerbose = true
+  private var macro: Command = Next(1)
 
   // Displays
   private var nextDisplayNum = 1
@@ -50,26 +51,34 @@ class Debugger(
   }
 
   private fun consume(parser: CommandParser, enablePrompts: Boolean) {
-    // TODO - handle Ctrl+C ?
     while (true) {
       if (enablePrompts) {
         stdout.print("[${nes.state.PC}]: ")
       }
 
-      when (val cmd = parser.next()) {
-        is Script -> script()
-        is Execute -> execute(cmd)
-        is CreatePoint -> createPoint(cmd)
-        is DeletePoint -> deletePoint(cmd)
-        is CreateDisplay -> createDisplay(cmd)
-        is Info -> info(cmd)
-        is ToggleVerbosity -> isVerbose = !isVerbose
-        is Event -> event(cmd)
-        is ShowScreen -> showScreen()
-        is Quit -> return
-        is Error -> stdout.println(cmd.msg)
+      if (!handleCommand(parser.next())) {
+        return
       }
     }
+  }
+
+  private fun handleCommand(cmd: Command): Boolean {
+    when (cmd) {
+      is Script -> script()
+      is RunMacro -> handleCommand(macro)
+      is SetMacro -> macro = cmd.cmd
+      is Execute -> execute(cmd)
+      is CreatePoint -> createPoint(cmd)
+      is DeletePoint -> deletePoint(cmd)
+      is CreateDisplay -> createDisplay(cmd)
+      is Info -> info(cmd)
+      is ToggleVerbosity -> isVerbose = !isVerbose
+      is Event -> event(cmd)
+      is ShowScreen -> showScreen()
+      is Quit -> return false
+      is Error -> stdout.println(cmd.msg)
+    }
+    return true
   }
 
   // TODO - this recursion is weird - can we combine this + stdin with flatMap magic?

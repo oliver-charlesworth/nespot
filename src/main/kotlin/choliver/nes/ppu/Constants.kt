@@ -15,6 +15,8 @@ const val NUM_PALETTES = 4
 const val NUM_ENTRIES_PER_PALETTE = 4
 
 const val NUM_SPRITES = 64
+const val SPRITE_SIZE_BYTES = 4
+
 const val NUM_PATTERNS = 256
 const val PATTERN_SIZE_BYTES = TILE_SIZE * 2  // 2 bit/pixel
 

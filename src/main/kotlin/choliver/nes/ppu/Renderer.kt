@@ -26,16 +26,21 @@ class Renderer(
     val sprPatternTableAddr: Address
   )
 
-  private val scanline = IntArray(SCREEN_WIDTH)
+  private data class Pixel(
+    val c: Int,
+    val p: Int
+  )
 
-  fun renderScanline(y: Int, ctx: Context) {
-    screen.position(y * SCREEN_WIDTH)
-    renderBackground(y, ctx)
-    renderSprites(y, ctx)
-    scanline.forEach { screen.put(it) }
+  private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0) }
+
+  fun renderScanlineAndDetectHit(y: Int, ctx: Context): Boolean {
+    prepareBackground(y, ctx)
+    val isHit = prepareSpritesAndDetectHit(y, ctx)
+    renderToBuffer(y)
+    return isHit
   }
 
-  private fun renderBackground(y: Int, ctx: Context) {
+  private fun prepareBackground(y: Int, ctx: Context) {
     val yTile = y / TILE_SIZE
     val yPixel = y % TILE_SIZE
     for (xTile in 0 until NUM_TILE_COLUMNS) {
@@ -46,13 +51,14 @@ class Renderer(
 
       for (xPixel in 0 until TILE_SIZE) {
         val c = patternPixel(pattern, xPixel)
-        val paletteAddr = if (c == 0) 0 else (iPalette * 4 + c) // Background colour is universal
-        scanline[xTile * TILE_SIZE + xPixel] = colors[palette.load(paletteAddr)]
+        pixels[xTile * TILE_SIZE + xPixel] = Pixel(c, iPalette)
       }
     }
   }
 
-  private fun renderSprites(y: Int, ctx: Context) {
+  private fun prepareSpritesAndDetectHit(y: Int, ctx: Context): Boolean {
+    var isHit = false
+
     for (iSprite in 0 until NUM_SPRITES) {
       val ySprite = oam.load(iSprite * 4 + 0) + 1   // Offset of one scanline
       val xSprite = oam.load(iSprite * 4 + 3)
@@ -78,11 +84,27 @@ class Renderer(
 
           // Handle transparency
           if (c != 0) {
-            val paletteAddr = (iPalette * 4 + c)
-            scanline[xSprite + xPixel] = colors[palette.load(paletteAddr)]
+            val x = xSprite + xPixel
+
+            // Collision detection
+            isHit = isHit || ((iSprite == 0) &&
+              (x < (SCREEN_WIDTH - 1)) &&   // Weird, but apparently it's a thing (note test-case)
+              (pixels[xSprite + xPixel].c != 0))
+
+            pixels[x] = Pixel(c, iPalette)
           }
         }
       }
+    }
+
+    return isHit
+  }
+
+  private fun renderToBuffer(y: Int) {
+    screen.position(y * SCREEN_WIDTH)
+    pixels.forEach {
+      val paletteAddr = if (it.c == 0) 0 else (it.p * 4 + it.c) // Background colour is universal
+      screen.put(colors[palette.load(paletteAddr)])
     }
   }
 

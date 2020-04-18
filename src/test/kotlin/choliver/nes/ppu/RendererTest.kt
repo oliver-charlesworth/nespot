@@ -5,7 +5,7 @@ import choliver.nes.Memory
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.nio.IntBuffer
@@ -183,23 +183,84 @@ class RendererTest {
       } else 0
   }
 
+  @Nested
+  inner class Collisions {
+    @Test
+    fun `triggers hit if opaque sprite #0 overlaps opaque background`() {
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+
+      assertTrue(render())
+    }
+
+    @Test
+    fun `doesn't trigger hit if opaque sprite #0 overlaps transparent background`() {
+      initBgPatternMemory(mapOf(0 to listOf(0, 0, 0, 0, 0, 0, 0, 0)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+
+      assertFalse(render())
+    }
+
+    @Test
+    fun `doesn't trigger hit if transparent sprite #0 overlaps opaque background`() {
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(0, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+
+      assertFalse(render())
+    }
+
+    @Test
+    fun `triggers single hit even when multiple sprite #0 overlaps`() {
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 1, 0, 1, 0, 1, 0)), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+
+      assertTrue(render())
+    }
+
+    @Test
+    fun `doesn't trigger from overlap from sprites other than #0`() {
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0, iSprite = 1)
+
+      assertFalse(render())
+    }
+
+    @Test
+    fun `doesn't trigger from overlap at x == 255`() {
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
+      initSpriteMemory(x = 255, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+
+      assertFalse(render())
+    }
+
+    // TODO - not detected in active clipping region (background or sprite)
+  }
+
   private fun assertRendersAs(yTile: Int = this.yTile, yPixel: Int = this.yPixel, expected: (Int) -> Int) {
     val y = (yTile * TILE_SIZE) + yPixel
 
-    renderer.renderScanline(
-      y = y,
-      ctx = Renderer.Context(
-        nametableAddr = nametableAddr,
-        bgPatternTableAddr = bgPatternTableAddr,
-        sprPatternTableAddr = sprPatternTableAddr
-      )
-    )
+    render(yTile, yPixel)
 
     assertEquals(
       (0 until SCREEN_WIDTH).map { colors[paletteEntries[expected(it)]] },
       screen.array().toList().subList(y * SCREEN_WIDTH, (y + 1) * SCREEN_WIDTH)
     )
   }
+
+  private fun render(yTile: Int = this.yTile, yPixel: Int = this.yPixel) = renderer.renderScanlineAndDetectHit(
+    y = (yTile * TILE_SIZE) + yPixel,
+    ctx = Renderer.Context(
+      nametableAddr = nametableAddr,
+      bgPatternTableAddr = bgPatternTableAddr,
+      sprPatternTableAddr = sprPatternTableAddr
+    )
+  )
 
   private fun initNametableMemory(nametableEntries: List<Int>, yTile: Int = this.yTile) {
     nametableEntries.forEachIndexed { idx, data ->
@@ -224,7 +285,7 @@ class RendererTest {
     initPatternMemory(patterns, yRow, bgPatternTableAddr)
   }
 
-  private fun initSprPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int = this.yPixel) {
+  private fun initSprPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int) {
     initPatternMemory(patterns, yRow, sprPatternTableAddr)
   }
 
@@ -241,10 +302,11 @@ class RendererTest {
     }
   }
 
-  private fun initSpriteMemory(x: Int, y: Int, iPattern: Int, attrs: Int) {
-    whenever(oam.load(0)) doReturn y - 1
-    whenever(oam.load(1)) doReturn iPattern
-    whenever(oam.load(2)) doReturn attrs
-    whenever(oam.load(3)) doReturn x
+  private fun initSpriteMemory(x: Int, y: Int, iPattern: Int, attrs: Int, iSprite: Int = 0) {
+    val base = iSprite * SPRITE_SIZE_BYTES
+    whenever(oam.load(base + 0)) doReturn y - 1
+    whenever(oam.load(base + 1)) doReturn iPattern
+    whenever(oam.load(base + 2)) doReturn attrs
+    whenever(oam.load(base + 3)) doReturn x
   }
 }

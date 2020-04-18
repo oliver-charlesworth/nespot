@@ -14,22 +14,24 @@ class Ppu(
   private var state = State()
   private var scanline = 0
   private var inVbl = false
-
-  private var gross = false
+  private var isSprite0Hit = false
 
   // TODO - add a reset (to clean up counters and stuff)
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   fun executeScanline() {
     when (scanline) {
-      in (0 until SCREEN_HEIGHT) -> renderer.renderScanline(
-        y = scanline,
-        ctx = Renderer.Context(
-          nametableAddr = state.nametableAddr,
-          bgPatternTableAddr = state.bgPatternTableAddr,
-          sprPatternTableAddr = state.sprPatternTableAddr
+      in (0 until SCREEN_HEIGHT) -> {
+        val isHit = renderer.renderScanlineAndDetectHit(
+          y = scanline,
+          ctx = Renderer.Context(
+            nametableAddr = state.nametableAddr,
+            bgPatternTableAddr = state.bgPatternTableAddr,
+            sprPatternTableAddr = state.sprPatternTableAddr
+          )
         )
-      )
+        isSprite0Hit = isSprite0Hit || isHit
+      }
 
       (SCREEN_HEIGHT + 1) -> {
         inVbl = true
@@ -42,6 +44,7 @@ class Ppu(
 
       (NUM_SCANLINES - 1) -> {
         inVbl = false
+        isSprite0Hit = false
       }
     }
 
@@ -51,9 +54,9 @@ class Ppu(
   fun readReg(reg: Int): Int {
     return when (reg) {
       REG_PPUSTATUS -> {
-        val ret =
+        val ret = 0 +
           (if (inVbl) 0x80 else 0x00) +
-            (if (gross) 0x40 else 0x00)
+          (if (isSprite0Hit) 0x40 else 0x00)
 
         // Reset stuff
         state = state.copy(
@@ -61,7 +64,6 @@ class Ppu(
           addr = 0
         )
         inVbl = false
-        gross = !gross
 
         ret
       }

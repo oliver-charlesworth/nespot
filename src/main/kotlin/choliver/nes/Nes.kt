@@ -71,10 +71,9 @@ class Nes(
   private fun step() {
     numCycles += cpu.runSteps(1)
 
-    // TODO - where does this magic number come from?
-    if (numCycles >= 124) {
-      numCycles -= 124
-      ppu.renderNextScanline()
+    if (numCycles >= NUM_CYCLES_PER_SCANLINE) {
+      numCycles -= NUM_CYCLES_PER_SCANLINE
+      ppu.executeScanline()
     }
   }
 
@@ -105,5 +104,8 @@ class Nes(
 
     const val ADDR_OAMDATA: Address = 0x2004
     const val ADDR_OAMDMA: Address = 0x4014
+
+    // See http://wiki.nesdev.com/w/index.php/Cycle_reference_chart#Clock_rates
+    const val NUM_CYCLES_PER_SCANLINE = 113
   }
 }

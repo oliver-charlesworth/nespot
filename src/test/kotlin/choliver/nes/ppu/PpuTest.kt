@@ -148,7 +148,7 @@ class PpuTest {
   inner class Vbl {
     @Test
     fun `interrupt not fired if disabled`() {
-      repeat(NUM_SCANLINES) { ppu.renderNextScanline() }
+      repeat(NUM_SCANLINES) { ppu.executeScanline() }
       verifyZeroInteractions(onVbl)
     }
 
@@ -156,13 +156,13 @@ class PpuTest {
     fun `interrupt fired only on scanline (SCREEN_HEIGHT + 1) if enabled`() {
       ppu.writeReg(REG_PPUCTRL, 0x80)
 
-      repeat(SCREEN_HEIGHT + 1) { ppu.renderNextScanline() }
+      repeat(SCREEN_HEIGHT + 1) { ppu.executeScanline() }
       verifyZeroInteractions(onVbl)
 
-      ppu.renderNextScanline()
+      ppu.executeScanline()
       verify(onVbl)()
 
-      repeat(NUM_SCANLINES - SCREEN_HEIGHT - 2) { ppu.renderNextScanline() }
+      repeat(NUM_SCANLINES - SCREEN_HEIGHT - 2) { ppu.executeScanline() }
       verifyZeroInteractions(onVbl)
     }
 
@@ -173,40 +173,40 @@ class PpuTest {
 
     @Test
     fun `status flag still not set after scanline SCREEN_HEIGHT`() {
-      for (i in 0..SCREEN_HEIGHT) { ppu.renderNextScanline() }
+      for (i in 0..SCREEN_HEIGHT) { ppu.executeScanline() }
 
       assertEquals(_0, getVblStatus())
     }
 
     @Test
     fun `status flag set after scanline (SCREEN_HEIGHT + 1)`() {
-      for (i in 0..(SCREEN_HEIGHT + 1)) { ppu.renderNextScanline() }
+      for (i in 0..(SCREEN_HEIGHT + 1)) { ppu.executeScanline() }
 
       assertEquals(_1, getVblStatus())
     }
 
     @Test
     fun `status flag still set on penultimate scanline`() {
-      for (i in 0..(NUM_SCANLINES - 2)) { ppu.renderNextScanline() }
+      for (i in 0..(NUM_SCANLINES - 2)) { ppu.executeScanline() }
 
       assertEquals(_1, getVblStatus())
     }
 
     @Test
     fun `status flag cleared on final scanline`() {
-      for (i in 0..(NUM_SCANLINES - 1)) { ppu.renderNextScanline() }
+      for (i in 0..(NUM_SCANLINES - 1)) { ppu.executeScanline() }
 
       assertEquals(_0, getVblStatus())
     }
 
     @Test
     fun `status flag cleared by reading it, and not set again on next scanline`() {
-      for (i in 0..(SCREEN_HEIGHT + 1)) { ppu.renderNextScanline() }
+      for (i in 0..(SCREEN_HEIGHT + 1)) { ppu.executeScanline() }
 
       assertEquals(_1, getVblStatus())
       assertEquals(_0, getVblStatus())
 
-      ppu.renderNextScanline()
+      ppu.executeScanline()
 
       assertEquals(_0, getVblStatus())
     }

@@ -20,7 +20,7 @@ class Ppu(
   // TODO - add a reset (to clean up counters and stuff)
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
-  fun renderNextScanline() {
+  fun executeScanline() {
     when (scanline) {
       in (0 until SCREEN_HEIGHT) -> renderer.renderScanline(
         y = scanline,

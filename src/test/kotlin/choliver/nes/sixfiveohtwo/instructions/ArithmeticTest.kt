@@ -1,4 +1,4 @@
-package choliver.nes.sixfiveohtwo.cpu
+package choliver.nes.sixfiveohtwo.instructions
 
 import choliver.nes.Data
 import choliver.nes.hi

@@ -5,7 +5,8 @@ import java.nio.IntBuffer
 
 class Ppu(
   private val memory: Memory,
-  private val screen: IntBuffer
+  screen: IntBuffer,
+  private val onVbl: () -> Unit
 ) {
   private var state = State()
   private val palette = Palette()
@@ -14,6 +15,8 @@ class Ppu(
   private var nextScanline = 0
 
   private var gross = false
+
+  // TODO - add a reset (cleans up counters and stuff)
 
   fun renderNextScanline() {
     renderer.renderScanline(
@@ -26,10 +29,12 @@ class Ppu(
     )
     nextScanline++
     if (nextScanline == SCREEN_HEIGHT) {
-      screen.position(0)  // TODO - this is grotesque
+      if (state.isVblEnabled) {
+        onVbl()
+      }
       nextScanline = 0
     }
-    // TODO - should we account for VBL here?
+    // TODO - should we account for VBL timing somewhere?
   }
 
   fun readReg(reg: Int): Int {
@@ -75,7 +80,7 @@ class Ppu(
         bgPatternTableAddr = if (data.isBitSet(4)) 0x1000 else 0x0000,
         isLargeSprites = data.isBitSet(5),
         // TODO - is master/slave important?
-        isNmiEnabled = data.isBitSet(7)
+        isVblEnabled = data.isBitSet(7)
       )
 
       REG_PPUMASK -> state = state.copy(
@@ -129,7 +134,7 @@ class Ppu(
     val sprPatternTableAddr: Address = 0x0000,
     val bgPatternTableAddr: Address = 0x0000,
     val isLargeSprites: Boolean = false,
-    val isNmiEnabled: Boolean = false,
+    val isVblEnabled: Boolean = false,
 
     val isGreyscale: Boolean = false,
     val isLeftmostBackgroundShown: Boolean = false,
@@ -147,7 +152,7 @@ class Ppu(
     val oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
   )
 
-  val isNmiEnabled get() = state.isNmiEnabled // TODO - Gross
+  val isNmiEnabled get() = state.isVblEnabled // TODO - Gross
 
   companion object {
     // http://wiki.nesdev.com/w/index.php/PPU_registers

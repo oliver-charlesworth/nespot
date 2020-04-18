@@ -26,7 +26,11 @@ class Nes(
     ram = ppuRam
   )
 
-  private val ppu = Ppu(ppuMapper, screen)
+  private val ppu = Ppu(
+    memory = ppuMapper,
+    screen = screen,
+    onVbl = nmi::set
+  )
 
   private val cpuMapper = CpuMapper(
     prg = cartridge.prg,
@@ -58,15 +62,31 @@ class Nes(
     pollNmi = nmi::poll
   )
 
+  private var numCycles = 0
+
+  private fun step() {
+    // TODO - where does this magic number come from?
+    if (numCycles >= 124) {
+      numCycles -= 124
+      ppu.renderNextScanline()
+    }
+    numCycles += cpu.runSteps(1)
+  }
+
   val instrumentation = Instrumentation()
 
   inner class Instrumentation {
-    private var numCycles = 0
-    private var scanline = 0
     // TODO - ugh mutable
     var onReset: () -> Unit = {}
     var onNmi: () -> Unit = {}
     var onIrq: () -> Unit = {}
+
+    init {
+      // Callbacks are mutable, so we have to invoke them via lambdas
+      reset.addListener { onReset() }
+      nmi.addListener { onNmi() }
+      irq.addListener { onIrq() }
+    }
 
     fun reset() {
       reset.set()
@@ -81,24 +101,8 @@ class Nes(
     }
 
     fun step(): List<Pair<Address, Data>> {
-      // TODO - where does this magic number come from?
-      if (numCycles >= 124) {
-        numCycles -= 124
-
-        ppu.renderNextScanline()
-
-        scanline++
-        if (scanline == SCREEN_HEIGHT) {
-          if (ppu.isNmiEnabled) {
-            nmi.set()
-            onNmi()
-          }
-          scanline = 0
-        }
-      }
-
       interceptor.reset()
-      numCycles += cpu.runSteps(1)
+      this@Nes.step()
       return interceptor.stores
     }
 
@@ -113,11 +117,17 @@ class Nes(
   }
 
   private class InterruptSource {
+    private val listeners = mutableListOf<() -> Unit>()
     private var b = false
     fun poll() = b.also { b = false }
-    fun set() { b = true }
+    fun set() {
+      b = true
+      listeners.forEach { it() }
+    }
+    fun addListener(listener: () -> Unit) { listeners += listener } // TODO - eliminate this mutable weirdness
   }
 
+  // TODO - consolidate all the constants
   companion object {
     const val CPU_RAM_SIZE = 2048
     const val PPU_RAM_SIZE = 2048

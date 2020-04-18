@@ -42,7 +42,9 @@ class Debugger(
   private val displays = mutableMapOf<Int, Address>()
 
   fun start() {
+    nes.onReset = this::onReset
     nes.onNmi = this::onNmi
+    nes.onIrq = this::onIrq
     event(Reset) // TODO - this is cheating
     consume(CommandParser(stdin), true)
   }
@@ -59,7 +61,7 @@ class Debugger(
         is Execute -> execute(cmd)
         is CreatePoint -> createPoint(cmd)
         is DeletePoint -> deletePoint(cmd)
-        is CreateDisplay -> displays[nextDisplayNum++] = cmd.addr
+        is CreateDisplay -> createDisplay(cmd)
         is Info -> info(cmd)
         is ToggleVerbosity -> isVerbose = !isVerbose
         is Event -> event(cmd)
@@ -168,6 +170,10 @@ class Debugger(
     }
   }
 
+  private fun createDisplay(cmd: CreateDisplay) {
+    displays[nextDisplayNum++] = cmd.addr
+  }
+
   private fun info(cmd: Info) {
     when (cmd) {
       is Info.Stats -> displayStats()
@@ -227,20 +233,10 @@ class Debugger(
     }
   }
 
-  private fun event(cmd: Event) {
-    when (cmd) {
-      is Reset -> {
-        nes.reset()
-        stack.handleReset()
-      }
-      is Nmi -> {
-        nes.nmi()
-      }
-      is Irq -> {
-        nes.irq()
-        stack.handleIrq()
-      }
-    }
+  private fun event(cmd: Event) = when (cmd) {
+    is Reset -> nes.reset()
+    is Nmi -> nes.nmi()
+    is Irq -> nes.irq()
   }
 
   private fun step(): Boolean {
@@ -327,10 +323,20 @@ class Debugger(
     screen.show()
   }
 
+  private fun onReset() {
+    stdout.println("RESET triggered")
+    stack.handleReset()
+  }
+
   private fun onNmi() {
     stdout.println("NMI triggered")
     stack.handleNmi()
     screen.redraw()
+  }
+
+  private fun onIrq() {
+    stdout.println("IRQ triggered")
+    stack.handleIrq()
   }
 
   private fun Address.format() = "0x%04x".format(this)

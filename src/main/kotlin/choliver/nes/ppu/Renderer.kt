@@ -31,6 +31,7 @@ class Renderer(
   fun renderScanline(ctx: Context, y: Int) {
     renderBackground(ctx, y)
     renderSprites(ctx, y)
+    screen.position(y * SCREEN_WIDTH)  // TODO - test case for this
     scanline.forEach { screen.put(it) }
   }
 

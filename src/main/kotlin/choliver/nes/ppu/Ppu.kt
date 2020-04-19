@@ -167,7 +167,7 @@ class Ppu(
         }
         1 -> {
           updateSecond(data)
-          state = 2
+          state = 0
         }
       }
     }

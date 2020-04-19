@@ -16,10 +16,14 @@ class Ppu(
   private var inVbl = false
   private var isSprite0Hit = false
   private var iNametable: Int = 0
-  private var addr: Address = 0
   private var scrollX: Data = 0
   private var scrollY: Data = 0
+
+  private var t: Int = 0
+  private var v: Int = 0
+  private var x: Int = 0
   private var w: Boolean = false
+
   private var readBuffer: Data = 0
 
   // TODO - model addr increment quirks during rendering (see wiki.nesdev.com/w/index.php/PPU_scrolling)
@@ -81,10 +85,10 @@ class Ppu(
 
       REG_PPUDATA -> {
         val ret = when {
-          (addr < BASE_PALETTE) -> readBuffer.also { readBuffer = memory.load(addr) }
-          else -> palette.load(addr and 0x001F)
+          (v < BASE_PALETTE) -> readBuffer.also { readBuffer = memory.load(v) }
+          else -> palette.load(v and 0x001F)
         }
-        addr = (addr + state.addrInc) and 0x7FFF
+        v = (v + state.addrInc) and 0x7FFF
         ret
       }
       else -> 0x00
@@ -95,7 +99,7 @@ class Ppu(
     when (reg) {
       REG_PPUCTRL -> {
         iNametable = data and 0x03
-        println("iNametable at #${scanline}: ${iNametable}")
+        t = (iNametable shl 10) or (t and 0x73FF)
 
         state = state.copy(
           addrInc = if (data.isBitSet(2)) 32 else 1,
@@ -127,30 +131,40 @@ class Ppu(
       }
 
       REG_PPUSCROLL -> {
+        val fine = data and 0x07
+        val coarse = (data and 0xF8) shr 3
+
         if (!w) {
           println("scrollX at #${scanline}: ${scrollX}")
+
+          x = fine
+          t = coarse or (t and 0x7FE0)
+
           scrollX = data
         } else {
+          t = (fine shl 12) or (coarse shl 5) or (t and 0x0C1F)
+
           scrollY = data
         }
         w = !w
       }
 
       REG_PPUADDR -> {
-        addr = if (!w) {
-          addr(lo = addr.lo(), hi = data)
+        if (!w) {
+          t = ((data and 0x3F) shl 8) or (t and 0x00FF)
         } else {
-          addr(lo = data, hi = addr.hi())
+          t = (data and 0xFF) or (t and 0x7F00)
+          v = t
         }
         w = !w
       }
 
       REG_PPUDATA -> {
         when {
-          addr < BASE_PALETTE -> memory.store(addr, data)
-          else -> palette.store(addr and 0x1F, data)
+          v < BASE_PALETTE -> memory.store(v, data)
+          else -> palette.store(v and 0x1F, data)
         }
-        addr = (addr + state.addrInc) and 0x7FFF
+        v = (v + state.addrInc) and 0x7FFF
       }
 
       else -> throw IllegalArgumentException("Attempt to write to reg #${reg}")   // Should never happen

@@ -5,6 +5,7 @@ import choliver.nes.Data
 import choliver.nes.Memory
 import choliver.nes.isBitSet
 import java.nio.IntBuffer
+import kotlin.math.min
 
 // TODO - eliminate all the magic numbers here
 // TODO - conditional rendering
@@ -47,9 +48,13 @@ class Renderer(
     val yTile = y / TILE_SIZE
     val yPixel = y % TILE_SIZE
     for (xTile in 0 until NUM_TILE_COLUMNS) {
-      val addrNt = ctx.nametableAddr + (yTile * NUM_TILE_COLUMNS + xTile)
-      val addrAttr = ctx.nametableAddr + 960 + ((yTile / 4) * (NUM_TILE_COLUMNS / 4) + (xTile / 4))
-      val iPalette = (memory.load(addrAttr) shr (((yTile / 2) % 2) * 4 + ((xTile / 2) % 2) * 2)) and 0x03
+      val xDash = (xTile + (ctx.scrollX / 8)) % NUM_TILE_COLUMNS
+      val xDashBig = (xTile + (ctx.scrollX / 8)) / NUM_TILE_COLUMNS
+      val yDash = yTile + (ctx.scrollY / 8) // TODO - % what?
+
+      val addrNt = ctx.nametableAddr + (xDashBig * 1024) + (yDash * NUM_TILE_COLUMNS + xDash)
+      val addrAttr = ctx.nametableAddr + (xDashBig * 1024)  + 960 + ((yDash / 4) * (NUM_TILE_COLUMNS / 4) + (xDash / 4))
+      val iPalette = (memory.load(addrAttr) shr (((yDash / 2) % 2) * 4 + ((xDash / 2) % 2) * 2)) and 0x03
       val pattern = getPattern(ctx.bgPatternTableAddr, memory.load(addrNt), yPixel)
 
       for (xPixel in 0 until TILE_SIZE) {
@@ -79,7 +84,7 @@ class Renderer(
           if (flipY) (7 - yPixel) else yPixel
         )
 
-        for (xPixel in 0 until TILE_SIZE) {
+        for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - xSprite)) {
           val c = patternPixel(
             pattern,
             if (flipX) (7 - xPixel) else xPixel

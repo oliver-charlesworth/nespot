@@ -116,7 +116,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
 
-      assertRendersAs { calcPalIdx(x = it, iPalette = 0, pattern = pattern) }
+      assertRendersAs { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
     }
 
     @Test
@@ -124,7 +124,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
       initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel - 7, iPattern = 1, attrs = 0)
 
-      assertRendersAs { calcPalIdx(x = it, iPalette = 0, pattern = pattern) }
+      assertRendersAs { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
     }
 
     @Test
@@ -132,7 +132,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x40)
 
-      assertRendersAs { calcPalIdx(x = it, iPalette = 0, pattern = pattern.reversed()) }
+      assertRendersAs { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern.reversed()) }
     }
 
     @Test
@@ -140,7 +140,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
       initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x80)
 
-      assertRendersAs { calcPalIdx(x = it, iPalette = 0, pattern = pattern) }
+      assertRendersAs { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
     }
 
     @Test
@@ -148,7 +148,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 2)
 
-      assertRendersAs { calcPalIdx(x = it, iPalette = 2, pattern = pattern) }
+      assertRendersAs { calcPalIdx(x = it, xOffset = xOffset, iPalette = 2, pattern = pattern) }
     }
 
     @Test
@@ -171,13 +171,21 @@ class RendererTest {
       }
     }
 
+    @Test
+    fun `off the right-hand-edge`() {
+      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
+      initSpriteMemory(x = 252, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
+
+      assertRendersAs { calcPalIdx(x = it, xOffset = 252, iPalette = 0, pattern = pattern) }
+    }
+
     // TODO - priority
     // TODO - max sprites per scanline
     // TODO - conditional rendering
     // TODO - clipping
     // TODO - large sprites
 
-    private fun calcPalIdx(x: Int, iPalette: Int, pattern: List<Int>) =
+    private fun calcPalIdx(x: Int, xOffset: Int, iPalette: Int, pattern: List<Int>) =
       if (x in xOffset until TILE_SIZE + xOffset) {
         pattern[x - xOffset] + ((NUM_PALETTES + iPalette) * NUM_ENTRIES_PER_PALETTE)
       } else 0

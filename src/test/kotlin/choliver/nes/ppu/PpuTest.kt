@@ -86,6 +86,17 @@ class PpuTest {
       verify(memory).store(0x1250, 0x30)
       verify(memory).store(0x1270, 0x40)
     }
+
+    @Test
+    fun `address reset works`() {
+      ppu.writeReg(REG_PPUADDR, 0x33)
+      ppu.readReg(REG_PPUSTATUS)  // Would fail without this to reset the flip-flop after the above write
+      setPpuAddress(0x1230)
+
+      ppu.writeReg(REG_PPUDATA, 0x20)
+
+      verify(memory).store(0x1230, 0x20)
+    }
   }
 
   @Nested
@@ -141,7 +152,6 @@ class PpuTest {
   }
 
   private fun setPpuAddress(addr: Address) {
-    ppu.readReg(REG_PPUSTATUS)  // Reset address latch (whatever that means)
     ppu.writeReg(REG_PPUADDR, addr.hi())
     ppu.writeReg(REG_PPUADDR, addr.lo())
   }
@@ -220,7 +230,6 @@ class PpuTest {
   inner class RendererContext {
     @Test
     fun `passes context to renderer`() {
-      ppu.readReg(REG_PPUSTATUS)  // Reset address latch (whatever that means)
       ppu.writeReg(REG_PPUSCROLL, 0x23)
       ppu.writeReg(REG_PPUSCROLL, 0x45)
 

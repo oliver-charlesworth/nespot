@@ -15,20 +15,16 @@ class Ppu(
   private var scanline = 0
   private var inVbl = false
   private var isSprite0Hit = false
+  private var iNametable: Int = 0
   private var addr: Address = 0
   private var scrollX: Data = 0
   private var scrollY: Data = 0
+  private var w: Boolean = false
+  private var readBuffer: Data = 0
 
-  private val latchScroll = Latch16(
-    { scrollX = it },
-    { scrollY = it }
-  )
-  private val latchAddr = Latch16(
-    { addr = addr(lo = addr.lo(), hi = it) },
-    { addr = addr(lo = it, hi = addr.hi()) }
-  )
-
+  // TODO - model addr increment quirks during rendering (see wiki.nesdev.com/w/index.php/PPU_scrolling)
   // TODO - add a reset (to clean up counters and stuff)
+  // TODO - only do rendering increments if rendering enabled
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   fun executeScanline() {
@@ -37,11 +33,10 @@ class Ppu(
         val isHit = renderer.renderScanlineAndDetectHit(
           y = scanline,
           ctx = Renderer.Context(
-            nametableAddr = state.nametableAddr,
             bgPatternTableAddr = state.bgPatternTableAddr,
             sprPatternTableAddr = state.sprPatternTableAddr,
-            scrollX = scrollX,
-            scrollY = scrollY
+            scrollX = scrollX + iNametable * SCREEN_WIDTH,  // TODO - this is wrong for all four nametables
+            scrollY = scrollY // TODO - just assert for non-zero scrollY for now
           )
         )
         isSprite0Hit = isSprite0Hit || isHit
@@ -72,29 +67,24 @@ class Ppu(
           (if (inVbl) 0x80 else 0x00) +
           (if (isSprite0Hit) 0x40 else 0x00)
 
-        latchScroll.reset()
-        latchAddr.reset()
         inVbl = false
+        w = false
 
         ret
       }
 
       REG_OAMDATA -> {
         val ret = oam.load(state.oamAddr)
-        state = state.withincrementedOamAddr()
+        state = state.withIncrementedOamAddr()
         ret
       }
 
       REG_PPUDATA -> {
         val ret = when {
-          addr < BASE_PALETTE -> {
-            val ret = state.ppuReadBuffered
-            state = state.copy(ppuReadBuffered = memory.load(addr))
-            ret
-          }
-          else -> palette.load(addr and 0x1F)
+          (addr < BASE_PALETTE) -> readBuffer.also { readBuffer = memory.load(addr) }
+          else -> palette.load(addr and 0x001F)
         }
-        addr = (addr + state.addrInc).addr()
+        addr = (addr + state.addrInc) and 0x7FFF
         ret
       }
       else -> 0x00
@@ -103,15 +93,20 @@ class Ppu(
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
-      REG_PPUCTRL -> state = state.copy(
-        addrInc = if (data.isBitSet(2)) 32 else 1,
-        nametableAddr = BASE_NAMETABLES + ((data and 0x03) * NAMETABLE_SIZE_BYTES),
-        sprPatternTableAddr = BASE_PATTERN_TABLES + (if (data.isBitSet(3)) PATTERN_TABLE_SIZE_BYTES else 0),
-        bgPatternTableAddr = BASE_PATTERN_TABLES + (if (data.isBitSet(4)) PATTERN_TABLE_SIZE_BYTES else 0),
-        isLargeSprites = data.isBitSet(5),
-        // TODO - is master/slave important?
-        isVblEnabled = data.isBitSet(7)
-      )
+      REG_PPUCTRL -> {
+        iNametable = data and 0x03
+        println("iNametable at #${scanline}: ${iNametable}")
+
+        state = state.copy(
+          addrInc = if (data.isBitSet(2)) 32 else 1,
+          nametableAddr = BASE_NAMETABLES + ((data and 0x03) * NAMETABLE_SIZE_BYTES),
+          sprPatternTableAddr = BASE_PATTERN_TABLES + (if (data.isBitSet(3)) PATTERN_TABLE_SIZE_BYTES else 0),
+          bgPatternTableAddr = BASE_PATTERN_TABLES + (if (data.isBitSet(4)) PATTERN_TABLE_SIZE_BYTES else 0),
+          isLargeSprites = data.isBitSet(5),
+          // TODO - is master/slave important?
+          isVblEnabled = data.isBitSet(7)
+        )
+      }
 
       REG_PPUMASK -> state = state.copy(
         isGreyscale = data.isBitSet(0),
@@ -128,50 +123,41 @@ class Ppu(
 
       REG_OAMDATA -> {
         oam.store(state.oamAddr, data)
-        state = state.withincrementedOamAddr()
+        state = state.withIncrementedOamAddr()
       }
 
-      REG_PPUSCROLL -> latchScroll.write(data)
+      REG_PPUSCROLL -> {
+        if (!w) {
+          println("scrollX at #${scanline}: ${scrollX}")
+          scrollX = data
+        } else {
+          scrollY = data
+        }
+        w = !w
+      }
 
-      REG_PPUADDR -> latchAddr.write(data)
+      REG_PPUADDR -> {
+        addr = if (!w) {
+          addr(lo = addr.lo(), hi = data)
+        } else {
+          addr(lo = data, hi = addr.hi())
+        }
+        w = !w
+      }
 
       REG_PPUDATA -> {
         when {
           addr < BASE_PALETTE -> memory.store(addr, data)
           else -> palette.store(addr and 0x1F, data)
         }
-        addr = (addr + state.addrInc).addr()
+        addr = (addr + state.addrInc) and 0x7FFF
       }
 
       else -> throw IllegalArgumentException("Attempt to write to reg #${reg}")   // Should never happen
     }
   }
 
-  private fun State.withincrementedOamAddr() = copy(oamAddr = (state.oamAddr + 1).addr8())
-
-  private class Latch16(
-    private val updateFirst: (Data) -> Unit,
-    private val updateSecond: (Data) -> Unit
-  ) {
-    private var state = 0
-
-    fun reset() {
-      state = 0
-    }
-
-    fun write(data: Data) {
-      when (state) {
-        0 -> {
-          updateFirst(data)
-          state = 1
-        }
-        1 -> {
-          updateSecond(data)
-          state = 2
-        }
-      }
-    }
-  }
+  private fun State.withIncrementedOamAddr() = copy(oamAddr = (state.oamAddr + 1).addr8())
 
   private data class State(
     val addrInc: Int = 1,
@@ -189,8 +175,6 @@ class Ppu(
     val isRedEmphasized: Boolean = false,
     val isGreenEmphasized: Boolean = false,
     val isBlueEmphasized: Boolean = false,
-
-    val ppuReadBuffered: Data = 0x00,
 
     val oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
   )

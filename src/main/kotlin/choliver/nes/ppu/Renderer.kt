@@ -48,16 +48,15 @@ class Renderer(
   // TODO - this approach does 8x too many memory loads
   // TODO - how do we combine changing both vertical *and* horizontal nametables?
   private fun prepareBackground(y: Int, ctx: Context) {
-    val yDash = y + ctx.scrollY
-    val yTile = yDash / TILE_SIZE
-    val yPixel = yDash % TILE_SIZE
+    val yOffset = y + ctx.scrollY
+    val yTile = yOffset / TILE_SIZE
+    val yPixel = yOffset % TILE_SIZE
 
     for (x in 0 until SCREEN_WIDTH) {
-      val xOff = x + ctx.scrollX
-
-      val xNametable = ((xOff / 8) / NUM_TILE_COLUMNS) % 2
-      val xTile = (xOff / 8) % NUM_TILE_COLUMNS
-      val xPixel = (xOff % 8)
+      val xOffset = x + ctx.scrollX
+      val xNametable = ((xOffset / 8) / NUM_TILE_COLUMNS) % 2
+      val xTile = (xOffset / 8) % NUM_TILE_COLUMNS
+      val xPixel = (xOffset % 8)
 
       val addrNt = BASE_NAMETABLES +
         (xNametable * NAMETABLE_SIZE_BYTES) +

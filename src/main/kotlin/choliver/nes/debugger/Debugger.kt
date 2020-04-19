@@ -16,6 +16,7 @@ import choliver.nes.debugger.Command.Event.*
 import choliver.nes.debugger.Command.Execute.*
 import choliver.nes.debugger.PointManager.Point.Breakpoint
 import choliver.nes.debugger.PointManager.Point.Watchpoint
+import choliver.nes.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nes.sixfiveohtwo.model.ProgramCounter
 import java.io.InputStream
 import java.io.PrintStream
@@ -49,7 +50,7 @@ class Debugger(
     screen.buffer,
     joypads,
     onReset = { nextStep = NextStep.RESET },
-    onNmi = { nextStep = NextStep.NMI; screen.redraw() },
+    onNmi = { nextStep = NextStep.NMI; screen.redraw(); stdout.println("Frame #${numFrames++}") },
     onIrq = { nextStep = NextStep.IRQ },
     onStore = { addr, data -> stores += (addr to data) }
   ).inspection
@@ -62,6 +63,8 @@ class Debugger(
   // Displays
   private var nextDisplayNum = 1
   private val displays = mutableMapOf<Int, Address>()
+
+  private var numFrames = 0
 
   fun start() {
     event(Reset)
@@ -247,7 +250,7 @@ class Debugger(
 
       is Info.CpuRam -> displayDump((0 until CPU_RAM_SIZE).map { nes.peek(it) })
 
-      is Info.PpuRam -> displayDump((0 until PPU_RAM_SIZE).map { nes.peekV(it + 0x4000) })
+      is Info.PpuRam -> displayDump((0 until PPU_RAM_SIZE).map { nes.peekV(it + BASE_NAMETABLES) })
 
       is Info.Print -> stdout.println(nes.peek(cmd.addr).format8())
 

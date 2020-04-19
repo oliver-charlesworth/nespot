@@ -23,4 +23,9 @@ down 1 left
 rep 50 m
 up 1 left
 
+down 1 right
+rep 100 m
+
+down 1 a
+rep 100 m
 

@@ -5,6 +5,8 @@ screen
 # Get to complete title screen
 rep 30 m
 
+q
+
 # Start !
 down 1 start
 rep 20 m

@@ -41,9 +41,14 @@ class CommandParser(
     return when (tokens[0]) {
       "script" -> noArgs(Script)
 
-      "macro" -> when (tokens.size) {
-        1 -> null
-        else -> parseTokens(tokens.drop(1))?.let(::SetMacro)
+      "rep", "repeat" -> when (tokens.size) {
+        1, 2 -> null
+        else -> cmd(::Repeat, tokens[1].toIntOrNull(), parseTokens(tokens.drop(2)))
+      }
+
+      "m", "macro" -> when (tokens.size) {
+        1 -> RunMacro
+        else -> cmd(::SetMacro, parseTokens(tokens.drop(1)))
       }
 
       "s", "step" -> when (tokens.size) {
@@ -54,16 +59,16 @@ class CommandParser(
 
       "n", "next" -> when (tokens.size) {
         1 -> Next(1)
-        2 -> tokens[1].toIntOrNull()?.let(::Next)
+        2 -> cmd(::Next, tokens[1].toIntOrNull())
         else -> null
       }
 
       "u", "until" -> when (tokens.size) {
         2 -> when {
           tokens[1] == "nmi" -> UntilNmi
-          tokens[1].startsWith("+") -> tokens[1].removePrefix("+").toIntOrNull()?.let(::UntilOffset)
-          tokens[1].startsWith("0x") -> tokens[1].toPcOrNull()?.let(::Until)
-          else -> tokens[1].toEnumOrNull<Opcode>()?.let(::UntilOpcode)
+          tokens[1].startsWith("+") -> cmd(::UntilOffset, tokens[1].removePrefix("+").toIntOrNull())
+          tokens[1].startsWith("0x") -> cmd(::Until, tokens[1].toPcOrNull())
+          else -> cmd(::UntilOpcode, tokens[1].toEnumOrNull<Opcode>())
         }
         else -> null
       }
@@ -75,19 +80,19 @@ class CommandParser(
       "b", "break" -> when (tokens.size) {
         1 -> Break.AtOffset(0)
         2 -> when {
-          tokens[1].startsWith("+") -> tokens[1].removePrefix("+").toIntOrNull()?.let(Break::AtOffset)
-          else -> tokens[1].toPcOrNull()?.let(Break::At)
+          tokens[1].startsWith("+") -> cmd(Break::AtOffset, tokens[1].removePrefix("+").toIntOrNull())
+          else -> cmd(Break::At, tokens[1].toPcOrNull())
         }
         else -> null
       }
 
       "w", "watch" -> when (tokens.size) {
-        2 -> tokens[1].toAddressOrNull()?.let(::Watch)
+        2 -> cmd(::Watch, tokens[1].toAddressOrNull())
         else -> null
       }
 
       "display" -> when (tokens.size) {
-        2 -> tokens[1].toAddressOrNull()?.let(::CreateDisplay)
+        2 -> cmd(::CreateDisplay, tokens[1].toAddressOrNull())
         else -> null
       }
 
@@ -95,7 +100,7 @@ class CommandParser(
 
       "d", "delete" -> when (tokens.size) {
         1 -> DeletePoint.All
-        2 -> tokens[1].toIntOrNull()?.let(DeletePoint::ByNum)
+        2 -> cmd(DeletePoint::ByNum, tokens[1].toIntOrNull())
         else -> null
       }
 
@@ -114,7 +119,7 @@ class CommandParser(
       }
 
       "p", "print" -> when (tokens.size) {
-        2 -> tokens[1].toAddressOrNull()?.let(Info::Print)
+        2 -> cmd(Info::Print, tokens[1].toAddressOrNull())
         else -> null
       }
 
@@ -123,7 +128,7 @@ class CommandParser(
           tokens[1].toPcOrNull()?.let { pc ->
             when (tokens.size) {
               2 -> Info.InspectInst(pc, 1)
-              3 -> tokens[2].toIntOrNull()?.let { Info.InspectInst(pc, it) }
+              3 -> cmd(Info::InspectInst, pc, tokens[2].toIntOrNull())
               else -> null
             }
           }
@@ -157,11 +162,11 @@ class CommandParser(
     }
   }
 
-  private fun parseButtonArgs(tokens: List<String>, create: (Int, Joypads.Button) -> Button): Button? {
-    val which = tokens[1].toIntOrNull()?.let { if (it == 1 || it == 2) it else null }
-    val button = tokens[2].toEnumOrNull<Joypads.Button>()
-    return if (which != null && button != null) create(which, button) else null
-  }
+  private fun parseButtonArgs(tokens: List<String>, create: (Int, Joypads.Button) -> Button): Button? = cmd(
+    create,
+    tokens[1].toIntOrNull()?.let { if (it == 1 || it == 2) it else null },
+    tokens[2].toEnumOrNull<Joypads.Button>()
+  )
 
   private inline fun <reified E : Enum<E>> String.toEnumOrNull() = try {
     enumValueOf<E>(this.toUpperCase())
@@ -174,4 +179,12 @@ class CommandParser(
   private fun String.toAddressOrNull() = removePrefix("0x")
     .toIntOrNull(16)
     ?.let { if (it in 0x0000..0xFFFF) it else null }
+
+  private fun <C : Command, T0> cmd(create: (T0) -> C, arg0: T0?): C? {
+    return if (arg0 != null) create(arg0) else null
+  }
+
+  private fun <C : Command, T0, T1> cmd(create: (T0, T1) -> C, arg0: T0?, arg1: T1?): C? {
+    return if (arg0 != null && arg1 != null) create(arg0, arg1) else null
+  }
 }

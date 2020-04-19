@@ -83,6 +83,7 @@ class Debugger(
   private fun handleCommand(cmd: Command): Boolean {
     when (cmd) {
       is Script -> script()
+      is Repeat -> repeat(cmd.times) { handleCommand(cmd.cmd) }
       is RunMacro -> handleCommand(macro)
       is SetMacro -> macro = cmd.cmd
       is Execute -> execute(cmd)

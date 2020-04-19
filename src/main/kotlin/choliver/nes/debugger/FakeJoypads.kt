@@ -21,8 +21,8 @@ class FakeJoypads : Joypads {
 
   private fun read(which: Int): Data {
     maybeLatch()
-    return (status[which]!! and 1)
-      .also { status[which] = status[which]!! shr 1 }
+    return (statusLatched[which]!! and 1)
+      .also { statusLatched[which] = statusLatched[which]!! shr 1 }
   }
 
   fun up(which: Int, button: Joypads.Button) {

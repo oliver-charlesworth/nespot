@@ -9,7 +9,8 @@ sealed class Command {
   object Script : Command()
   object Nop : Command()
   object RunMacro : Command()
-  data class SetMacro(val cmd: Command): Command()
+  data class Repeat(val times: Int, val cmd: Command) : Command()
+  data class SetMacro(val cmd: Command) : Command()
 
   sealed class Execute : Command() {
     data class Step(val num: Int) : Execute()

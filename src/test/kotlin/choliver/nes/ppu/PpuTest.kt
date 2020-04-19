@@ -8,6 +8,7 @@ import choliver.nes.ppu.Ppu.Companion.REG_OAMDATA
 import choliver.nes.ppu.Ppu.Companion.REG_PPUADDR
 import choliver.nes.ppu.Ppu.Companion.REG_PPUCTRL
 import choliver.nes.ppu.Ppu.Companion.REG_PPUDATA
+import choliver.nes.ppu.Ppu.Companion.REG_PPUSCROLL
 import choliver.nes.ppu.Ppu.Companion.REG_PPUSTATUS
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
@@ -213,6 +214,29 @@ class PpuTest {
     }
 
     private fun getVblStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(7)
+  }
+
+  @Nested
+  inner class RendererContext {
+    @Test
+    fun `passes context to renderer`() {
+      ppu.readReg(REG_PPUSTATUS)  // Reset address latch (whatever that means)
+      ppu.writeReg(REG_PPUSCROLL, 0x23)
+      ppu.writeReg(REG_PPUSCROLL, 0x45)
+
+      ppu.executeScanline()
+
+      verify(renderer).renderScanlineAndDetectHit(
+        0,
+        Renderer.Context(
+          nametableAddr = 0x2000, // TODO - this can change
+          bgPatternTableAddr = 0x0000,  // TODO - this can change
+          sprPatternTableAddr = 0x0000, // TODO - this can change
+          scrollX = 0x23,
+          scrollY = 0x45
+        )
+      )
+    }
   }
 
   @Nested

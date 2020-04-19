@@ -15,6 +15,18 @@ class Ppu(
   private var scanline = 0
   private var inVbl = false
   private var isSprite0Hit = false
+  private var addr: Address = 0
+  private var scrollX: Data = 0
+  private var scrollY: Data = 0
+
+  private val latchScroll = Latch16(
+    { scrollX = it },
+    { scrollY = it }
+  )
+  private val latchAddr = Latch16(
+    { addr = addr(lo = addr.lo(), hi = it) },
+    { addr = addr(lo = it, hi = addr.hi()) }
+  )
 
   // TODO - add a reset (to clean up counters and stuff)
 
@@ -27,7 +39,9 @@ class Ppu(
           ctx = Renderer.Context(
             nametableAddr = state.nametableAddr,
             bgPatternTableAddr = state.bgPatternTableAddr,
-            sprPatternTableAddr = state.sprPatternTableAddr
+            sprPatternTableAddr = state.sprPatternTableAddr,
+            scrollX = scrollX,
+            scrollY = scrollY
           )
         )
         isSprite0Hit = isSprite0Hit || isHit
@@ -58,11 +72,8 @@ class Ppu(
           (if (inVbl) 0x80 else 0x00) +
           (if (isSprite0Hit) 0x40 else 0x00)
 
-        // Reset stuff
-        state = state.copy(
-          addrWriteLo = false,
-          addr = 0
-        )
+        latchScroll.reset()
+        latchAddr.reset()
         inVbl = false
 
         ret
@@ -76,14 +87,14 @@ class Ppu(
 
       REG_PPUDATA -> {
         val ret = when {
-          state.addr < BASE_PALETTE -> {
+          addr < BASE_PALETTE -> {
             val ret = state.ppuReadBuffered
-            state = state.copy(ppuReadBuffered = memory.load(state.addr))
+            state = state.copy(ppuReadBuffered = memory.load(addr))
             ret
           }
-          else -> palette.load(state.addr and 0x1F)
+          else -> palette.load(addr and 0x1F)
         }
-        state = state.withIncrementedPpuAddr()
+        addr = (addr + state.addrInc).addr()
         ret
       }
       else -> 0x00
@@ -120,24 +131,16 @@ class Ppu(
         state = state.withincrementedOamAddr()
       }
 
-      REG_PPUSCROLL -> {} // TODO
+      REG_PPUSCROLL -> latchScroll.write(data)
 
-      // TODO - this probably latches the data on second write
-      REG_PPUADDR -> state = state.copy(
-        addr = if (state.addrWriteLo) {
-          addr(lo = data, hi = state.addr.hi())
-        } else {
-          addr(lo = state.addr.lo(), hi = data)
-        },
-        addrWriteLo = !state.addrWriteLo
-      )
+      REG_PPUADDR -> latchAddr.write(data)
 
       REG_PPUDATA -> {
         when {
-          state.addr < BASE_PALETTE -> memory.store(state.addr, data)
-          else -> palette.store(state.addr and 0x1F, data)
+          addr < BASE_PALETTE -> memory.store(addr, data)
+          else -> palette.store(addr and 0x1F, data)
         }
-        state = state.withIncrementedPpuAddr()
+        addr = (addr + state.addrInc).addr()
       }
 
       else -> throw IllegalArgumentException("Attempt to write to reg #${reg}")   // Should never happen
@@ -145,7 +148,30 @@ class Ppu(
   }
 
   private fun State.withincrementedOamAddr() = copy(oamAddr = (state.oamAddr + 1).addr8())
-  private fun State.withIncrementedPpuAddr() = copy(addr = (state.addr + addrInc).addr())
+
+  private class Latch16(
+    private val updateFirst: (Data) -> Unit,
+    private val updateSecond: (Data) -> Unit
+  ) {
+    private var state = 0
+
+    fun reset() {
+      state = 0
+    }
+
+    fun write(data: Data) {
+      when (state) {
+        0 -> {
+          updateFirst(data)
+          state = 1
+        }
+        1 -> {
+          updateSecond(data)
+          state = 2
+        }
+      }
+    }
+  }
 
   private data class State(
     val addrInc: Int = 1,
@@ -164,8 +190,6 @@ class Ppu(
     val isGreenEmphasized: Boolean = false,
     val isBlueEmphasized: Boolean = false,
 
-    val addrWriteLo: Boolean = false, // TODO - better name, or encapsulation
-    val addr: Address = 0x0000,
     val ppuReadBuffered: Data = 0x00,
 
     val oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering

@@ -13,6 +13,7 @@ up 1 start
 # Wait until we get to regular gamefield
 rep 150 m
 
+# Do a little dance
 down 1 right
 rep 25 m
 down 1 a
@@ -23,9 +24,20 @@ down 1 left
 rep 50 m
 up 1 left
 
+# Run
 down 1 right
 rep 100 m
 
+# Jump on the naughty
 down 1 a
 rep 100 m
+up 1 a
+
+# Run some more
+rep 100 m
+
+# Jump over the pipe
+down 1 a
+rep 100 m
+up 1 a
 

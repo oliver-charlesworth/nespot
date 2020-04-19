@@ -287,15 +287,15 @@ class Debugger(
         stack.preInstruction()
       }
       NextStep.RESET -> {
-        stdout.println("RESET triggered")
+        maybeTraceInterrupt("RESET")
         stack.preReset()
       }
       NextStep.NMI -> {
-        stdout.println("NMI triggered")
+        maybeTraceInterrupt("NMI")
         stack.preNmi()
       }
       NextStep.IRQ -> {
-        stdout.println("IRQ triggered")
+        maybeTraceInterrupt("IRQ")
         stack.preIrq()
       }
     }
@@ -319,6 +319,12 @@ class Debugger(
   private fun maybeTraceInstruction() {
     if (isVerbose) {
       stdout.println("${nes.state.PC}: ${instAt(nes.state.PC)}")  // TODO - de-dupe with InspectInst handler
+    }
+  }
+
+  private fun maybeTraceInterrupt(name: String) {
+    if (isVerbose) {
+      stdout.println("${name} triggered")
     }
   }
 

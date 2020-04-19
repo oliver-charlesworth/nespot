@@ -2,6 +2,8 @@ package choliver.nes.ppu
 
 import choliver.nes.Address
 import choliver.nes.Memory
+import choliver.nes.ppu.Ppu.Companion.BASE_NAMETABLES
+import choliver.nes.ppu.Ppu.Companion.BASE_PATTERN_TABLES
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
@@ -32,9 +34,9 @@ class RendererTest {
     colors = colors
   )
 
-  private val nametableAddr = 0x2000
-  private val bgPatternTableAddr = 0x1000
-  private val sprPatternTableAddr = 0x0000
+  private val nametableAddr = BASE_NAMETABLES
+  private val bgPatternTableAddr = BASE_PATTERN_TABLES + PATTERN_SIZE_BYTES
+  private val sprPatternTableAddr = BASE_PATTERN_TABLES
 
   // Chosen scanline
   private val yTile = 14

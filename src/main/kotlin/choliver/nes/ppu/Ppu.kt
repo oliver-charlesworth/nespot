@@ -105,9 +105,9 @@ class Ppu(
     when (reg) {
       REG_PPUCTRL -> state = state.copy(
         addrInc = if (data.isBitSet(2)) 32 else 1,
-        nametableAddr = 0x2000, // TODO
-        sprPatternTableAddr = if (data.isBitSet(3)) 0x1000 else 0x0000,
-        bgPatternTableAddr = if (data.isBitSet(4)) 0x1000 else 0x0000,
+        nametableAddr = BASE_NAMETABLES + ((data and 0x03) * NAMETABLE_SIZE_BYTES),
+        sprPatternTableAddr = BASE_PATTERN_TABLES + (if (data.isBitSet(3)) PATTERN_TABLE_SIZE_BYTES else 0),
+        bgPatternTableAddr = BASE_PATTERN_TABLES + (if (data.isBitSet(4)) PATTERN_TABLE_SIZE_BYTES else 0),
         isLargeSprites = data.isBitSet(5),
         // TODO - is master/slave important?
         isVblEnabled = data.isBitSet(7)
@@ -175,7 +175,7 @@ class Ppu(
 
   private data class State(
     val addrInc: Int = 1,
-    val nametableAddr: Address = 0x2000,
+    val nametableAddr: Address = BASE_NAMETABLES,
     val sprPatternTableAddr: Address = 0x0000,
     val bgPatternTableAddr: Address = 0x0000,
     val isLargeSprites: Boolean = false,
@@ -206,7 +206,12 @@ class Ppu(
     const val REG_PPUADDR = 6
     const val REG_PPUDATA = 7
 
+    const val BASE_PATTERN_TABLES: Address = 0x0000
+    const val BASE_NAMETABLES: Address = 0x2000
     const val BASE_PALETTE: Address = 0x3F00
+
+    const val NAMETABLE_SIZE_BYTES = 0x0400
+    const val PATTERN_TABLE_SIZE_BYTES = 0x1000
 
     const val NUM_SCANLINES = 262
   }

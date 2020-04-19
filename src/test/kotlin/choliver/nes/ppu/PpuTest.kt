@@ -1,8 +1,11 @@
 package choliver.nes.ppu
 
 import choliver.nes.*
+import choliver.nes.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nes.ppu.Ppu.Companion.BASE_PALETTE
+import choliver.nes.ppu.Ppu.Companion.NAMETABLE_SIZE_BYTES
 import choliver.nes.ppu.Ppu.Companion.NUM_SCANLINES
+import choliver.nes.ppu.Ppu.Companion.PATTERN_TABLE_SIZE_BYTES
 import choliver.nes.ppu.Ppu.Companion.REG_OAMADDR
 import choliver.nes.ppu.Ppu.Companion.REG_OAMDATA
 import choliver.nes.ppu.Ppu.Companion.REG_PPUADDR
@@ -16,6 +19,8 @@ import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class PpuTest {
   private val memory = mock<Memory>()
@@ -140,12 +145,6 @@ class PpuTest {
     }
   }
 
-  private fun setPpuAddress(addr: Address) {
-    ppu.readReg(REG_PPUSTATUS)  // Reset address latch (whatever that means)
-    ppu.writeReg(REG_PPUADDR, addr.hi())
-    ppu.writeReg(REG_PPUADDR, addr.lo())
-  }
-
   @Nested
   inner class Vbl {
     @Test
@@ -219,23 +218,66 @@ class PpuTest {
   @Nested
   inner class RendererContext {
     @Test
-    fun `passes context to renderer`() {
-      ppu.readReg(REG_PPUSTATUS)  // Reset address latch (whatever that means)
+    fun `passes consecutive scanline indexes`() {
+      ppu.executeScanline()
+      ppu.executeScanline()
+      ppu.executeScanline()
+
+      val captor = argumentCaptor<Int>()
+      verify(renderer, times(3)).renderScanlineAndDetectHit(captor.capture(), any())
+
+      assertEquals(listOf(0, 1, 2), captor.allValues)
+    }
+
+    @Test
+    fun `passes scroll values`() {
+      ppu.readReg(REG_PPUSTATUS)  // Reset address latch
       ppu.writeReg(REG_PPUSCROLL, 0x23)
       ppu.writeReg(REG_PPUSCROLL, 0x45)
 
-      ppu.executeScanline()
+      val context = executeAndCapture()
 
-      verify(renderer).renderScanlineAndDetectHit(
-        0,
-        Renderer.Context(
-          nametableAddr = 0x2000, // TODO - this can change
-          bgPatternTableAddr = 0x0000,  // TODO - this can change
-          sprPatternTableAddr = 0x0000, // TODO - this can change
-          scrollX = 0x23,
-          scrollY = 0x45
-        )
-      )
+      with(context) {
+        assertEquals(0x23, scrollX)
+        assertEquals(0x45, scrollY)
+      }
+    }
+
+    @ParameterizedTest(name = "idx = {0}")
+    @ValueSource(ints = [0, 1])
+    fun `passes bg pattern table addr`(idx: Int) {
+      ppu.writeReg(REG_PPUCTRL, idx shl 4)
+
+      with(executeAndCapture()) {
+        assertEquals(idx * PATTERN_TABLE_SIZE_BYTES, bgPatternTableAddr)
+      }
+    }
+
+    @ParameterizedTest(name = "idx = {0}")
+    @ValueSource(ints = [0, 1])
+    fun `passes spr pattern table addr`(idx: Int) {
+      ppu.writeReg(REG_PPUCTRL, idx shl 3)
+
+      with(executeAndCapture()) {
+        assertEquals(idx * PATTERN_TABLE_SIZE_BYTES, sprPatternTableAddr)
+      }
+    }
+
+    @ParameterizedTest(name = "idx = {0}")
+    @ValueSource(ints = [0, 1, 2, 3])
+    fun `passes nametable addr`(idx: Int) {
+      ppu.writeReg(REG_PPUCTRL, idx)
+
+      with(executeAndCapture()) {
+        assertEquals(BASE_NAMETABLES + (idx * NAMETABLE_SIZE_BYTES), nametableAddr)
+      }
+    }
+
+    private fun executeAndCapture(): Renderer.Context {
+      ppu.executeScanline()
+      val captor = argumentCaptor<Renderer.Context>()
+      verify(renderer).renderScanlineAndDetectHit(any(), captor.capture())
+      return captor.firstValue
     }
   }
 
@@ -277,5 +319,11 @@ class PpuTest {
     }
 
     private fun getHitStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(6)
+  }
+
+  private fun setPpuAddress(addr: Address) {
+    ppu.readReg(REG_PPUSTATUS)  // Reset address latch
+    ppu.writeReg(REG_PPUADDR, addr.hi())
+    ppu.writeReg(REG_PPUADDR, addr.lo())
   }
 }

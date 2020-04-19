@@ -152,26 +152,6 @@ class RendererTest {
     }
 
     @Test
-    fun `zero-valued pattern values are transparent`() {
-      val paletteSpr = 1
-      val paletteBg = 2 // Non-zero palette different to that of sprite
-      val patternSpr = listOf(0, 1, 0, 1, 0, 1, 0, 1) // Involves zeros!
-
-      initAttributeMemory(List(NUM_METATILE_COLUMNS) { paletteBg })
-      initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { 1 }))  // Arbitrary non-zero pixel
-      initSprPatternMemory(mapOf(1 to patternSpr), yRow = 0)
-      initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = paletteSpr)
-
-      assertRendersAs {
-        if ((it in 5 until TILE_SIZE + xOffset) && (patternSpr[it - xOffset] != 0)) {
-          patternSpr[it - xOffset] + ((NUM_PALETTES + paletteSpr) * NUM_ENTRIES_PER_PALETTE)
-        } else {
-          1 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
-        }
-      }
-    }
-
-    @Test
     fun `off the right-hand-edge`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = 252, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
@@ -179,7 +159,6 @@ class RendererTest {
       assertRendersAs { calcPalIdx(x = it, xOffset = 252, iPalette = 0, pattern = pattern) }
     }
 
-    // TODO - priority
     // TODO - max sprites per scanline
     // TODO - conditional rendering
     // TODO - clipping
@@ -189,6 +168,74 @@ class RendererTest {
       if (x in xOffset until TILE_SIZE + xOffset) {
         pattern[x - xOffset] + ((NUM_PALETTES + iPalette) * NUM_ENTRIES_PER_PALETTE)
       } else 0
+  }
+
+  @Nested
+  inner class Priority {
+    private val paletteSpr = 1  // Non-zero palette
+    private val paletteBg = 2   // Non-zero palette different to that of sprite
+
+    private val ubg = 0
+    private val bg = 1 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
+    private val spr = 1 + ((NUM_PALETTES + paletteSpr) * NUM_ENTRIES_PER_PALETTE)
+
+    @Test
+    fun `transparent bg, transparent spr, in front - ubg`() {
+      assertPixelColour(expected = ubg, bgOpaque = false, sprOpaque = false, sprBehind = false)
+    }
+
+    @Test
+    fun `transparent bg, transparent spr, behind - ubg`() {
+      assertPixelColour(expected = ubg, bgOpaque = false, sprOpaque = false, sprBehind = true)
+    }
+
+    @Test
+    fun `transparent bg, opaque spr, in front - spr`() {
+      assertPixelColour(expected = spr, bgOpaque = false, sprOpaque = true, sprBehind = false)
+    }
+
+    @Test
+    fun `transparent bg, opaque spr, behind - spr`() {
+      assertPixelColour(expected = spr, bgOpaque = false, sprOpaque = true, sprBehind = true)
+    }
+
+    @Test
+    fun `opaque bg, transparent spr, in front - bg`() {
+      assertPixelColour(expected = bg, bgOpaque = true, sprOpaque = false, sprBehind = false)
+    }
+
+    @Test
+    fun `opaque bg, transparent spr, behind - bg`() {
+      assertPixelColour(expected = bg, bgOpaque = true, sprOpaque = false, sprBehind = true)
+    }
+
+    @Test
+    fun `opaque bg, opaque spr, in front - spr`() {
+      assertPixelColour(expected = spr, bgOpaque = true, sprOpaque = true, sprBehind = false)
+    }
+
+    @Test
+    fun `opaque bg, opaque spr, behind - bg`() {
+      assertPixelColour(expected = bg, bgOpaque = true, sprOpaque = true, sprBehind = true)
+    }
+
+    private fun assertPixelColour(expected: Int, bgOpaque: Boolean, sprOpaque: Boolean, sprBehind: Boolean) {
+      val y = (yTile * TILE_SIZE) + yPixel
+
+      initAttributeMemory(List(NUM_METATILE_COLUMNS) { paletteBg })
+      initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { if (bgOpaque) 1 else 0 }))
+      initSprPatternMemory(mapOf(1 to List(TILE_SIZE) { if (sprOpaque) 1 else 0 }), yRow = 0)
+      initSpriteMemory(
+        x = 0,
+        y = y,
+        iPattern = 1,
+        attrs = (if (sprBehind) 0x20 else 0x00) or paletteSpr
+      )
+
+      render()
+
+      assertEquals(colors[paletteEntries[expected]], screen.array()[y * SCREEN_WIDTH])
+    }
   }
 
   @Nested
@@ -245,6 +292,14 @@ class RendererTest {
       initSpriteMemory(x = 255, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0)
 
       assertFalse(render())
+    }
+    @Test
+    fun `triggers hit from behind`() {
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
+      initSpriteMemory(x = 5, y = (yTile * TILE_SIZE) + yPixel, iPattern = 1, attrs = 0x20) // Behind
+
+      assertTrue(render())
     }
 
     // TODO - not detected in active clipping region (background or sprite)

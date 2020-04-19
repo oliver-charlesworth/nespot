@@ -258,7 +258,9 @@ class RendererTest {
     ctx = Renderer.Context(
       nametableAddr = nametableAddr,
       bgPatternTableAddr = bgPatternTableAddr,
-      sprPatternTableAddr = sprPatternTableAddr
+      sprPatternTableAddr = sprPatternTableAddr,
+      scrollX = 0,
+      scrollY = 0
     )
   )
 

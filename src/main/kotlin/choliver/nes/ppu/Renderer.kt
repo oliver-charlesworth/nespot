@@ -1,6 +1,7 @@
 package choliver.nes.ppu
 
 import choliver.nes.Address
+import choliver.nes.Data
 import choliver.nes.Memory
 import choliver.nes.isBitSet
 import java.nio.IntBuffer
@@ -23,7 +24,9 @@ class Renderer(
   data class Context(
     val nametableAddr: Address,
     val bgPatternTableAddr: Address,
-    val sprPatternTableAddr: Address
+    val sprPatternTableAddr: Address,
+    val scrollX: Data,
+    val scrollY: Data
   )
 
   private data class Pixel(

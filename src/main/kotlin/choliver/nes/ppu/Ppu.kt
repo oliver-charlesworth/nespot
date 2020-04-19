@@ -34,13 +34,18 @@ class Ppu(
   fun executeScanline() {
     when (scanline) {
       in (0 until SCREEN_HEIGHT) -> {
+        if (scanline > 0) {
+          updateVY()
+        }
+
         val isHit = renderer.renderScanlineAndDetectHit(
           y = scanline,
           ctx = Renderer.Context(
             bgPatternTableAddr = state.bgPatternTableAddr,
             sprPatternTableAddr = state.sprPatternTableAddr,
-            scrollX = scrollX + iNametable * SCREEN_WIDTH,  // TODO - this is wrong for all four nametables
-            scrollY = scrollY // TODO - just assert for non-zero scrollY for now
+            addrStart = (v and 0x0FFF),
+            fineX = x,
+            fineY = (v and 0x7000) shr 12
           )
         )
         isSprite0Hit = isSprite0Hit || isHit
@@ -55,13 +60,43 @@ class Ppu(
         }
       }
 
+      // Pre-render line
       (NUM_SCANLINES - 1) -> {
         inVbl = false
         isSprite0Hit = false
+        v = t // TODO - may have to move this to beginning of next scanline
       }
     }
 
     scanline = (scanline + 1) % NUM_SCANLINES
+  }
+
+  private fun updateVY() {
+    var fineY = (v and 0x7000) shr 12
+    val coarseX = (v and 0x001F)
+    var coarseY = (v and 0x03E0) shr 5
+    var iNametable = (v and 0x0C00) shr 10
+
+    if (fineY < 7) {
+      fineY++
+    } else {
+      fineY = 0
+
+      when (coarseY) {
+        29 -> {
+          coarseY = 0
+          iNametable = iNametable xor 2
+        }
+        31 -> {
+          coarseY = 0
+        }
+        else -> {
+          coarseY++
+        }
+      }
+    }
+
+    v = (fineY shl 12) or (iNametable shl 10) or (coarseY shl 5) or coarseX
   }
 
   fun readReg(reg: Int): Int {

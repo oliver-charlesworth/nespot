@@ -27,8 +27,9 @@ class Renderer(
   data class Context(
     val bgPatternTableAddr: Address,
     val sprPatternTableAddr: Address,
-    val scrollX: Data,
-    val scrollY: Data
+    val addrStart: Address,
+    val fineX: Data,
+    val fineY: Data
   )
 
   private data class Pixel(
@@ -39,7 +40,7 @@ class Renderer(
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0) }
 
   fun renderScanlineAndDetectHit(y: Int, ctx: Context): Boolean {
-    prepareBackground(y, ctx)
+    prepareBackground(ctx)
     val isHit = prepareSpritesAndDetectHit(y, ctx)
     renderToBuffer(y)
     return isHit
@@ -47,33 +48,43 @@ class Renderer(
 
   // TODO - this approach does 8x too many memory loads
   // TODO - how do we combine changing both vertical *and* horizontal nametables?
-  private fun prepareBackground(y: Int, ctx: Context) {
-    val yOffset = y + ctx.scrollY
-    val yTile = yOffset / TILE_SIZE
-    val yPixel = yOffset % TILE_SIZE
+  private fun prepareBackground(ctx: Context) {
+    var fineX = ctx.fineX
+    var coarseX = (ctx.addrStart and 0x001F)
+    val coarseY = (ctx.addrStart and 0x03E0) shr 5
+    var iNametable = (ctx.addrStart and 0x0C00) shr 10
+
+    println("iNt = ${iNametable}, cY = ${coarseY}, fY = ${ctx.fineY}, cX = ${coarseX}, fX = ${fineX}")
 
     for (x in 0 until SCREEN_WIDTH) {
-      val xOffset = x + ctx.scrollX
-      val xNametable = ((xOffset / 8) / NUM_TILE_COLUMNS) % 2
-      val xTile = (xOffset / 8) % NUM_TILE_COLUMNS
-      val xPixel = (xOffset % 8)
-
       val addrNt = BASE_NAMETABLES +
-        (xNametable * NAMETABLE_SIZE_BYTES) +
-        (yTile * NUM_TILE_COLUMNS) +
-        xTile
+        (iNametable * NAMETABLE_SIZE_BYTES) +
+        (coarseY * NUM_TILE_COLUMNS) +
+        coarseX
 
       val addrAttr = BASE_NAMETABLES +
-        (xNametable * NAMETABLE_SIZE_BYTES) +
+        (iNametable * NAMETABLE_SIZE_BYTES) +
         960 +
-        (yTile / 4) * (NUM_TILE_COLUMNS / 4) +
-        (xTile / 4)
+        (coarseY / 4) * (NUM_TILE_COLUMNS / 4) +
+        (coarseX / 4)
 
-      val iPalette = (memory.load(addrAttr) shr (((yTile / 2) % 2) * 4 + ((xTile / 2) % 2) * 2)) and 0x03
-      val pattern = getPattern(ctx.bgPatternTableAddr, memory.load(addrNt), yPixel)
+      val iPalette = (memory.load(addrAttr) shr (((coarseY / 2) % 2) * 4 + ((coarseX / 2) % 2) * 2)) and 0x03
+      val pattern = getPattern(ctx.bgPatternTableAddr, memory.load(addrNt), ctx.fineY)
 
-      val c = patternPixel(pattern, xPixel)
+      val c = patternPixel(pattern, fineX)
       pixels[x] = Pixel(c, iPalette)
+
+      if (fineX < 7) {
+        fineX++
+      } else {
+        fineX = 0
+        if (coarseX < 31) {
+          coarseX++
+        } else {
+          coarseX = 0
+          iNametable = iNametable xor 1
+        }
+      }
     }
   }
 

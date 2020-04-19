@@ -323,8 +323,9 @@ class RendererTest {
     ctx = Renderer.Context(
       bgPatternTableAddr = bgPatternTableAddr,
       sprPatternTableAddr = sprPatternTableAddr,
-      scrollX = 0,
-      scrollY = 0
+      addrStart = 0,    // TODO
+      fineX = 0,        // TODO
+      fineY = 0         // TODO
     )
   )
 

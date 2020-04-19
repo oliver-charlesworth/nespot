@@ -2,8 +2,12 @@ m u nmi
 v
 screen
 
+q
+
 # Get to complete title screen
 rep 30 m
+
+
 
 # Start !
 down 1 start

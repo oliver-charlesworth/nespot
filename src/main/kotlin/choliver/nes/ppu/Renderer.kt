@@ -4,6 +4,8 @@ import choliver.nes.Address
 import choliver.nes.Data
 import choliver.nes.Memory
 import choliver.nes.isBitSet
+import choliver.nes.ppu.Ppu.Companion.BASE_NAMETABLES
+import choliver.nes.ppu.Ppu.Companion.NAMETABLE_SIZE_BYTES
 import java.nio.IntBuffer
 import kotlin.math.min
 
@@ -23,7 +25,6 @@ class Renderer(
   private val colors: List<Int> = COLORS
 ) {
   data class Context(
-    val nametableAddr: Address,
     val bgPatternTableAddr: Address,
     val sprPatternTableAddr: Address,
     val scrollX: Data,
@@ -44,22 +45,36 @@ class Renderer(
     return isHit
   }
 
+  // TODO - this approach does 8x too many memory loads
+  // TODO - how do we combine changing both vertical *and* horizontal nametables?
   private fun prepareBackground(y: Int, ctx: Context) {
-    val yTile = y / TILE_SIZE
-    val yPixel = y % TILE_SIZE
-    for (xTile in 0 until NUM_TILE_COLUMNS) {
-      val xDash = (xTile + (ctx.scrollX / 8)) % NUM_TILE_COLUMNS
-      val xDashBig = (xTile + (ctx.scrollX / 8)) / NUM_TILE_COLUMNS
+    val yDash = y + ctx.scrollY
+    val yTile = yDash / TILE_SIZE
+    val yPixel = yDash % TILE_SIZE
 
-      val addrNt = ctx.nametableAddr + (xDashBig * 1024) + (yTile * NUM_TILE_COLUMNS + xDash)
-      val addrAttr = ctx.nametableAddr + (xDashBig * 1024)  + 960 + ((yTile / 4) * (NUM_TILE_COLUMNS / 4) + (xDash / 4))
-      val iPalette = (memory.load(addrAttr) shr (((yTile / 2) % 2) * 4 + ((xDash / 2) % 2) * 2)) and 0x03
+    for (x in 0 until SCREEN_WIDTH) {
+      val xOff = x + ctx.scrollX
+
+      val xNametable = ((xOff / 8) / NUM_TILE_COLUMNS) % 2
+      val xTile = (xOff / 8) % NUM_TILE_COLUMNS
+      val xPixel = (xOff % 8)
+
+      val addrNt = BASE_NAMETABLES +
+        (xNametable * NAMETABLE_SIZE_BYTES) +
+        (yTile * NUM_TILE_COLUMNS) +
+        xTile
+
+      val addrAttr = BASE_NAMETABLES +
+        (xNametable * NAMETABLE_SIZE_BYTES) +
+        960 +
+        (yTile / 4) * (NUM_TILE_COLUMNS / 4) +
+        (xTile / 4)
+
+      val iPalette = (memory.load(addrAttr) shr (((yTile / 2) % 2) * 4 + ((xTile / 2) % 2) * 2)) and 0x03
       val pattern = getPattern(ctx.bgPatternTableAddr, memory.load(addrNt), yPixel)
 
-      for (xPixel in 0 until TILE_SIZE) {
-        val c = patternPixel(pattern, xPixel)
-        pixels[xTile * TILE_SIZE + xPixel] = Pixel(c, iPalette)
-      }
+      val c = patternPixel(pattern, xPixel)
+      pixels[x] = Pixel(c, iPalette)
     }
   }
 
@@ -99,8 +114,7 @@ class Renderer(
           pixels[x] = if (opaqueSpr && (!isBehind || !opaqueBg)) spr else bg
 
           // Collision detection
-          isHit = isHit || ((iSprite == 0) && opaqueBg && opaqueSpr &&
-            (x < (SCREEN_WIDTH - 1)))   // Weird, but apparently it's a thing (note test-case)
+          isHit = isHit || ((iSprite == 0) && opaqueBg && opaqueSpr && (x < (SCREEN_WIDTH - 1)))
         }
       }
     }

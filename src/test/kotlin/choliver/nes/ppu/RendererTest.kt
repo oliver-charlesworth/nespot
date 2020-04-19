@@ -321,7 +321,6 @@ class RendererTest {
   private fun render(yTile: Int = this.yTile, yPixel: Int = this.yPixel) = renderer.renderScanlineAndDetectHit(
     y = (yTile * TILE_SIZE) + yPixel,
     ctx = Renderer.Context(
-      nametableAddr = nametableAddr,
       bgPatternTableAddr = bgPatternTableAddr,
       sprPatternTableAddr = sprPatternTableAddr,
       scrollX = 0,

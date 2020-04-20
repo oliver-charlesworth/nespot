@@ -18,6 +18,7 @@ import java.nio.IntBuffer
 
 
 class Screen(
+  private val title: String = "NESpot",
   private val onButtonDown: (Button) -> Unit = {},
   private val onButtonUp: (Button) -> Unit = {},
   private val onClose: () -> Unit = {}
@@ -59,18 +60,22 @@ class Screen(
     }
   }
 
+  fun exit() {
+    Platform.exit()
+  }
+
   private fun start() {
     Platform.setImplicitExit(false)
     Platform.startup {
       stage = Stage()
-      stage.title = "Wat"
+      stage.title = title
       stage.scene = Scene(Group().apply {
         children.add(ImageView(WritableImage(pixelBuffer)).apply {
           fitWidth = SCREEN_WIDTH * SCALE
           fitHeight = SCREEN_HEIGHT * SCALE
         })
       })
-      stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) { codeToButton(it)?.let(onButtonDown) }
+      stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) {codeToButton(it)?.let(onButtonDown) }
       stage.scene.addEventFilter(KeyEvent.KEY_RELEASED) { codeToButton(it)?.let(onButtonUp) }
       stage.isResizable = false
       stage.setOnCloseRequest {

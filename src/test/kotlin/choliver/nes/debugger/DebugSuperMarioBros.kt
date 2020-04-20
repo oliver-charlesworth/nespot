@@ -1,13 +1,15 @@
 package choliver.nes.debugger
 
+import java.io.File
+
 class DebugSuperMarioBros {
   companion object {
     @JvmStatic
     fun main(args: Array<String>) = Debugger(
-      rom = {}.javaClass.getResource("/smb.nes").readBytes(),
+      rom = File("roms/smb.nes").readBytes(),
       stdin = System.`in`,
       stdout = System.out,
-      script = {}.javaClass.getResource("/smb.script").readText()
+      script = File("scripts/smb.script").readText()
     ).start()
   }
 }

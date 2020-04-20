@@ -67,10 +67,16 @@ class InstructionDecoder(private val memory: Memory) {
   )
 
   companion object {
-    private val ENCODINGS = OPCODES_TO_ENCODINGS
-      .flatMap { (op, modes) ->
-        modes.map { (mode, enc) -> enc.encoding to OpAndMode(op, mode, enc.numCycles) }
-      }
-      .toMap()
+    private val ENCODINGS = createEncodingTable()
+
+    private fun createEncodingTable(): List<OpAndMode?> {
+      val map = OPCODES_TO_ENCODINGS
+        .flatMap { (op, modes) ->
+          modes.map { (mode, enc) -> enc.encoding to OpAndMode(op, mode, enc.numCycles) }
+        }
+        .toMap()
+
+      return (0x00..0xFF).map { map[it] }
+    }
   }
 }

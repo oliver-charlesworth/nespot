@@ -19,7 +19,7 @@ dependencies {
   testImplementation("org.hamcrest:hamcrest-library:2.2")
   testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
 
-  testRuntimeOnly("ch.qos.logback:logback-classic:1.2.3")
+  runtimeOnly("ch.qos.logback:logback-classic:1.2.3")
 }
 
 javafx {

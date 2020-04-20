@@ -24,7 +24,6 @@ class Cpu(
   val state get() = _state
 
   private val decoder = InstructionDecoder(memory)
-  private val alu = Alu()
 
   fun runSteps(num: Int): Int {
     var n = 0
@@ -86,10 +85,18 @@ class Cpu(
     INX -> updateX { X + 1 }
     INY -> updateY { Y + 1 }
 
-    ASL -> resolve().shift { alu.asl(q = it) }
-    LSR -> resolve().shift { alu.lsr(q = it) }
-    ROL -> resolve().shift { alu.rol(q = it, c = P.C) }
-    ROR -> resolve().shift { alu.ror(q = it, c = P.C) }
+    ASL -> resolve()
+      .storeResult { (it shl 1).data() }
+      .updateC { it.isBitSet(7) }
+    LSR -> resolve()
+      .storeResult { (it shr 1).data() }
+      .updateC { it.isBitSet(0) }
+    ROL -> resolve()
+      .storeResult { (it shl 1).data() + (if (P.C) 1 else 0) }
+      .updateC { it.isBitSet(7) }
+    ROR -> resolve()
+      .storeResult { (it shr 1).data() + (if (P.C) 0x80 else 0) }
+      .updateC { it.isBitSet(0) }
 
     AND -> resolve().updateA { A and it }
     ORA -> resolve().updateA { A or it }
@@ -167,21 +174,30 @@ class Cpu(
     else -> load { addr }
   }
 
-  private fun Ctx<Data>.add(f: F<Data, Data>) = this
-    .calc { alu.adc(a = A, b = f(it), c = P.C, d = P.D) }
-    .updateA { it.q }
-    .updateC { it.c }
-    .updateV { it.v }
+  private fun Ctx<Data>.add(f: F<Data, Data>) = apply {
+    val a = state.A
+    val b = f(state, data)
+    val c = state.P.C
+    val raw = a + b + (if (c) 1 else 0)
+    val result = raw.data()
+    val sameOperandSigns = (a.isNeg() == b.isNeg())
+    val differentResultSign = (a.isNeg() != result.isNeg())
 
-  private fun Ctx<Data>.compare(f: F<Data, Data>) = this
-    .calc { alu.adc(a = f(it), b = data xor 0xFF, c = _1, d = _0) }  // Ignores borrow and decimal mode
-    .updateZN { it.q }
-    .updateC { it.c }
+    state.A = result
+    state.P.C = raw.isBitSet(8)
+    state.P.V = sameOperandSigns && differentResultSign
+    state.P.Z = result.isZero()
+    state.P.N = result.isNeg()
+  }
 
-  private fun Ctx<Data>.shift(f: F<Data, Alu.Output>) = this
-    .calc(f)
-    .storeResult { it.q }
-    .updateC { it.c }
+  private fun Ctx<Data>.compare(f: F<Data, Data>) = apply {
+    val raw = (f(state, data) + (data xor 0xFF) + 1)
+    val result = raw.data()
+
+    state.P.C = raw.isBitSet(8)
+    state.P.Z = result.isZero()
+    state.P.N = result.isNeg()
+  }
 
   private fun <T> Ctx<T>.branch(f: F<T, Boolean>) = updatePC { if (f(state, data)) addr else PC }
 

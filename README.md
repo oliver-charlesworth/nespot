@@ -1,5 +1,48 @@
 # Six Five Oh Two
 
+## To do
+
+- Sound!
+
+- Scrolling
+
+- Rendering
+
+  - Enable / disable rendering
+  - Clipping - inc. impact on collision detection
+  - Large sprites
+  - Limit to four sprites
+  - Detect too many sprites
+  - Sprite priority
+  - Greyscale
+  - Colour emphasis
+
+- Clean-up / generalise cartridge CHR mappers
+
+- Quirks
+
+  - Sprite overflow bug
+  - t/v/x/w timing madness - inc. change of behaviour when rendering disabled
+  - OAM address reset during rendering
+  - Trigger VBL if isVblEnabled becomes true during VBL period
+
+- Model cycle counts for:
+
+  - Branches
+  - Page boundary crossings 
+  - OAM DMA
+  
+- PPU reset
+  
+- Unify where we do address clipping (e.g. inside or outside `Memory` implementations)
+  
+- Decimal mode (not really required for NES)
+
+- Constants strewn everywhere
+
+- Make `Runner` / `Debugger` nicer in terms of running different ROMs.
+
+
 ## References
 
 - http://6502.org/documents/datasheets/mos/mos_6501-6505_mpu_preliminary_aug_1975.pdf

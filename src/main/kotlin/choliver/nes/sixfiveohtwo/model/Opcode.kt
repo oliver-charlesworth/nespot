@@ -11,7 +11,7 @@ enum class Opcode {
   BMI,
   BNE,
   BPL,
-  BRK,  // TODO - test
+  BRK,
   BVC,
   BVS,
   CLC,

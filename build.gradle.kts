@@ -13,6 +13,7 @@ repositories {
 
 dependencies {
   implementation("io.github.microutils:kotlin-logging:1.7.7")
+  implementation("com.github.ajalt:clikt:2.6.0")
 
   testImplementation("org.junit.jupiter:junit-jupiter:5.5.2")
   testImplementation("org.hamcrest:hamcrest-library:2.2")
@@ -38,5 +39,5 @@ tasks.test {
 }
 
 application {
-  mainClassName = "choliver.nes.runner.Runner"
+  mainClassName = "choliver.nes.runner.RunnerKt"
 }

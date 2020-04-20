@@ -75,7 +75,7 @@ class Screen(
           fitHeight = SCREEN_HEIGHT * SCALE
         })
       })
-      stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) { codeToButton(it)?.let(onButtonDown) }
+      stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) {codeToButton(it)?.let(onButtonDown) }
       stage.scene.addEventFilter(KeyEvent.KEY_RELEASED) { codeToButton(it)?.let(onButtonUp) }
       stage.isResizable = false
       stage.setOnCloseRequest {

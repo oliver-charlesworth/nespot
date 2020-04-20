@@ -1,18 +1,21 @@
 package choliver.nes.sixfiveohtwo.model
 
-import choliver.nes.*
+import choliver.nes.Address
+import choliver.nes.Data
+import choliver.nes.MutableForPerfReasons
+import choliver.nes.isBitSet
 
 @MutableForPerfReasons
 data class State(
-  var PC: ProgramCounter = ProgramCounter(),
+  var PC: Address = 0x0000,
   var A: Data = 0x00,
   var X: Data = 0x00,
   var Y: Data = 0x00,
   var S: Data = 0x00,
   var P: Flags = Flags()
 ) {
-  override fun toString() = "(PC=%s, S=0x%02X, A=0x%02X, X=0x%02X, Y=0x%02X, P=%s)".format(
-    PC.toString(),
+  override fun toString() = "(PC=0x%04X, S=0x%02X, A=0x%02X, X=0x%02X, Y=0x%02X, P=%s)".format(
+    PC,
     S,
     A,
     X,
@@ -22,7 +25,7 @@ data class State(
 
   /** Like [copy], but allows us to also set individual status flags. */
   fun with(
-    PC: ProgramCounter = this.PC,
+    PC: Address = this.PC,
     A: Data = this.A,
     X: Data = this.X,
     Y: Data = this.Y,
@@ -42,22 +45,6 @@ data class State(
     P = Flags(N = N, V = V, D = D, I = I, Z = Z, C = C)
   )
 }
-
-@MutableForPerfReasons
-data class ProgramCounter(
-  var L: Data = 0x00,
-  var H: Data = 0x00
-) {
-  override fun toString() = "0x%02X%02X".format(H, L)
-
-  operator fun plus(rhs: Int) = (addr() + rhs).toPC()
-  operator fun minus(rhs: Int) = (addr() - rhs).toPC()
-  operator fun inc() = this + 1
-
-  fun addr(): Address = L + (H shl 8)
-}
-
-fun Address.toPC() = ProgramCounter(L = lo(), H = hi())
 
 @MutableForPerfReasons
 data class Flags(

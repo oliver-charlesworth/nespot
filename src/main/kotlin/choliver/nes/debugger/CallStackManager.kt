@@ -11,8 +11,6 @@ import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_NMI
 import choliver.nes.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
 import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.Opcode.JSR
-import choliver.nes.sixfiveohtwo.model.ProgramCounter
-import choliver.nes.sixfiveohtwo.model.toPC
 import java.util.*
 
 class CallStackManager(
@@ -28,8 +26,8 @@ class CallStackManager(
 
   data class FrameInfo(
     val type: FrameType,
-    val start: ProgramCounter,
-    val current: ProgramCounter
+    val start: Address,
+    val current: Address
   )
 
   sealed class Entry {
@@ -75,7 +73,7 @@ class CallStackManager(
         }
       )
 
-      JSR -> pushFrame(FrameType.JSR, decoded.addr.toPC())
+      JSR -> pushFrame(FrameType.JSR, decoded.addr)
 
       RTS -> popAndHandle(
         onUserData = { unsupported("RTS for manually constructed frame") },
@@ -127,7 +125,7 @@ class CallStackManager(
     latest.setValue(latest.value.copy(current = nes.state.PC))
   }
 
-  private fun pushFrame(type: FrameType, start: ProgramCounter, current: ProgramCounter = start) {
+  private fun pushFrame(type: FrameType, start: Address, current: Address = start) {
     val frame = Frame(nextFrameIdx++)
     stack.push(frame)
     map[frame] = FrameInfo(type = type, start = start, current = current)
@@ -144,7 +142,7 @@ class CallStackManager(
 
   private fun peekVector(addr: Address) = addr(
     lo = nes.peek(addr), hi = nes.peek((addr + 1).addr())
-  ).toPC()
+  )
 
   val depth get() = map.size
 

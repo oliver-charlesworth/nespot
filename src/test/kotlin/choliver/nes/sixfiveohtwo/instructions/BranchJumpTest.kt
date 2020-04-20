@@ -8,7 +8,6 @@ import choliver.nes.sixfiveohtwo.assertForAddressModes
 import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.State
-import choliver.nes.sixfiveohtwo.model.toPC
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
@@ -19,7 +18,7 @@ class BranchJumpTest {
   fun jmp() {
     assertForAddressModes(
       JMP,
-      expectedState = { with(PC = SCARY_ADDR.toPC()) }
+      expectedState = { with(PC = SCARY_ADDR) }
     )
   }
 
@@ -28,7 +27,7 @@ class BranchJumpTest {
     assertForAddressModes(
       JSR,
       initState = { with(S = 0x30) },
-      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x2E) },
+      expectedState = { with(PC = SCARY_ADDR, S = 0x2E) },
       expectedStores = { addrToMem(0x012F, BASE_USER + 2) } // JSR stores *last* byte of instruction
     )
   }
@@ -39,7 +38,7 @@ class BranchJumpTest {
       BRK,
       initState = { with(S = 0x30, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
       initStores = addrToMem(VECTOR_IRQ, SCARY_ADDR),
-      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x2D, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
+      expectedState = { with(PC = SCARY_ADDR, S = 0x2D, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
       expectedStores = {
         addrToMem(0x012F, BASE_USER + 2) + // BRK stores PC+2
         mapOf(0x12E to 0xDF)  // Note B is also set on stack
@@ -53,7 +52,7 @@ class BranchJumpTest {
       RTS,
       initState = { with(S = 0x2E) },
       initStores = addrToMem(0x012F, SCARY_ADDR - 1), // JSR stores *last* byte of instruction
-      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x30) }
+      expectedState = { with(PC = SCARY_ADDR, S = 0x30) }
     )
   }
 
@@ -63,7 +62,7 @@ class BranchJumpTest {
       RTI,
       initState = { with(S = 0x2D) },
       initStores = mapOf(0x12E to 0xCF) + addrToMem(0x012F, SCARY_ADDR),
-      expectedState = { with(PC = SCARY_ADDR.toPC(), S = 0x30, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) }
+      expectedState = { with(PC = SCARY_ADDR, S = 0x30, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) }
     )
   }
 
@@ -118,13 +117,13 @@ class BranchJumpTest {
       op,
       target = 0x30,
       initState = { state(_1) },
-      expectedState = { state(_1).with(PC = BASE_USER.toPC() + 2 + 0x30) }  // Offset from *next* instruction
+      expectedState = { state(_1).with(PC = BASE_USER + 2 + 0x30) }  // Offset from *next* instruction
     )
     assertForAddressModes(
       op,
       target = 0xD0,
       initState = { state(_1) },
-      expectedState = { state(_1).with(PC = BASE_USER.toPC() + 2 - 0x30) }  // Offset from *next* instruction
+      expectedState = { state(_1).with(PC = BASE_USER + 2 - 0x30) }  // Offset from *next* instruction
     )
   }
 }

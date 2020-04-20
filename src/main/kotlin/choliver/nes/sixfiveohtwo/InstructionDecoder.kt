@@ -4,8 +4,10 @@ import choliver.nes.Address
 import choliver.nes.Data
 import choliver.nes.Memory
 import choliver.nes.addr
-import choliver.nes.sixfiveohtwo.model.*
+import choliver.nes.sixfiveohtwo.model.AddressMode
 import choliver.nes.sixfiveohtwo.model.AddressMode.*
+import choliver.nes.sixfiveohtwo.model.Instruction
+import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.Opcode.BRK
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
@@ -15,19 +17,19 @@ class InstructionDecoder(private val memory: Memory) {
   data class Decoded(
     val instruction: Instruction,
     val addr: Address,
-    val nextPc: ProgramCounter,
+    val nextPc: Address,
     val numCycles: Int
   )
 
   private val addrCalc = AddressCalculator(memory)
 
-  fun decode(pc: ProgramCounter, x: Data, y: Data): Decoded {
+  fun decode(pc: Address, x: Data, y: Data): Decoded {
     var nextPc = pc
-    fun load() = memory.load((nextPc++).addr())
+    fun load() = memory.load(nextPc++)
 
     // TODO - error handling
     val opcode = load()
-    val found = ENCODINGS[opcode] ?: error("Unexpected opcode 0x%02x at %s".format(opcode, nextPc))
+    val found = ENCODINGS[opcode] ?: error("Unexpected opcode 0x%02x at 0x%04x".format(opcode, nextPc))
 
     fun operand8() = load()
     fun operand16() = addr(lo = load(), hi = load())

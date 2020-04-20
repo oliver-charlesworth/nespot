@@ -6,7 +6,6 @@ import choliver.nes.debugger.Command.CreatePoint.Break
 import choliver.nes.debugger.Command.CreatePoint.Watch
 import choliver.nes.debugger.Command.Execute.*
 import choliver.nes.sixfiveohtwo.model.Opcode
-import choliver.nes.sixfiveohtwo.model.toPC
 import java.io.InputStream
 
 class CommandParser(
@@ -67,7 +66,7 @@ class CommandParser(
         2 -> when {
           tokens[1] == "nmi" -> UntilNmi
           tokens[1].startsWith("+") -> cmd(::UntilOffset, tokens[1].removePrefix("+").toIntOrNull())
-          tokens[1].startsWith("0x") -> cmd(::Until, tokens[1].toPcOrNull())
+          tokens[1].startsWith("0x") -> cmd(::Until, tokens[1].toAddressOrNull())
           else -> cmd(::UntilOpcode, tokens[1].toEnumOrNull<Opcode>())
         }
         else -> null
@@ -81,7 +80,7 @@ class CommandParser(
         1 -> Break.AtOffset(0)
         2 -> when {
           tokens[1].startsWith("+") -> cmd(Break::AtOffset, tokens[1].removePrefix("+").toIntOrNull())
-          else -> cmd(Break::At, tokens[1].toPcOrNull())
+          else -> cmd(Break::At, tokens[1].toAddressOrNull())
         }
         else -> null
       }
@@ -125,7 +124,7 @@ class CommandParser(
 
       "xi" -> when (tokens.size) {
         2, 3 -> {
-          tokens[1].toPcOrNull()?.let { pc ->
+          tokens[1].toAddressOrNull()?.let { pc ->
             when (tokens.size) {
               2 -> Info.InspectInst(pc, 1)
               3 -> cmd(Info::InspectInst, pc, tokens[2].toIntOrNull())
@@ -173,8 +172,6 @@ class CommandParser(
   } catch (_: IllegalArgumentException) {
     null
   }
-
-  private fun String.toPcOrNull() = toAddressOrNull()?.toPC()
 
   private fun String.toAddressOrNull() = removePrefix("0x")
     .toIntOrNull(16)

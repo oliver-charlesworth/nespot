@@ -16,7 +16,6 @@ import choliver.nes.debugger.Command.Event.*
 import choliver.nes.debugger.Command.Execute.*
 import choliver.nes.debugger.PointManager.Point.Breakpoint
 import choliver.nes.debugger.PointManager.Point.Watchpoint
-import choliver.nes.sixfiveohtwo.model.ProgramCounter
 import java.io.InputStream
 import java.io.PrintStream
 
@@ -176,7 +175,7 @@ class Debugger(
           is Break.AtOffset -> nextPc(cmd.offset)
           is Break.At -> cmd.pc
         })
-        stdout.println("Breakpoint #${point.num}: ${point.pc} -> ${instAt(point.pc)}")
+        stdout.println("Breakpoint #${point.num}: ${point.pc.format()} -> ${instAt(point.pc)}")
       }
       is Watch -> {
         val point = points.addWatchpoint(cmd.addr)
@@ -189,7 +188,7 @@ class Debugger(
     when (cmd) {
       is ByNum -> {
         when (val removed = points.remove(cmd.num)) {
-          is Breakpoint -> stdout.println("Deleted breakpoint #${removed.num}: ${removed.pc} -> ${instAt(removed.pc)}")
+          is Breakpoint -> stdout.println("Deleted breakpoint #${removed.num}: ${removed.pc.format()} -> ${instAt(removed.pc)}")
           is Watchpoint -> stdout.println("Deleted watchpoint #${removed.num}: ${removed.addr.format()}")
           null -> stdout.println("No such breakpoint or watchpoint")
         }
@@ -216,7 +215,7 @@ class Debugger(
         stdout.println("No breakpoints")
       } else {
         println("Num  Address  Instruction")
-        points.breakpoints.forEach { (_, v) -> stdout.println("%-4d %s   %s".format(v.num, v.pc, instAt(v.pc))) }
+        points.breakpoints.forEach { (_, v) -> stdout.println("%-4d %s   %s".format(v.num, v.pc.format(), instAt(v.pc))) }
       }
 
       is Info.Watch -> if (points.watchpoints.isEmpty()) {
@@ -235,7 +234,7 @@ class Debugger(
 
       is Info.Backtrace -> {
         stack.frames.forEachIndexed { idx, frame ->
-          stdout.println("#%-4d %s  <%s>  %-20s%s".format(
+          stdout.println("#%-4d 0x%04x  <0x%04x>  %-20s%s".format(
             idx,
             frame.current,
             frame.start,
@@ -258,7 +257,7 @@ class Debugger(
         var pc = cmd.pc
         repeat(cmd.num) {
           val decoded = nes.decodeAt(pc)
-          stdout.println("${pc}: ${decoded.instruction}")
+          stdout.println("0x%04x: ${decoded.instruction}".format(pc))
           pc = decoded.nextPc
         }
       }
@@ -353,7 +352,7 @@ class Debugger(
   private fun nextPc(offset: Int = 1) =
     (0 until offset).fold(nes.state.PC) { pc, _ -> nes.decodeAt(pc).nextPc }
 
-  private fun instAt(pc: ProgramCounter) = nes.decodeAt(pc).instruction
+  private fun instAt(pc: Address) = nes.decodeAt(pc).instruction
 
   private fun displayDisplays() {
     displays.forEach { (k, v) ->

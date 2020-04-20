@@ -3,7 +3,6 @@ package choliver.nes.debugger
 import choliver.nes.Address
 import choliver.nes.Joypads
 import choliver.nes.sixfiveohtwo.model.Opcode
-import choliver.nes.sixfiveohtwo.model.ProgramCounter
 
 sealed class Command {
   object Script : Command()
@@ -15,7 +14,7 @@ sealed class Command {
   sealed class Execute : Command() {
     data class Step(val num: Int) : Execute()
     data class Next(val num: Int) : Execute()
-    data class Until(val pc: ProgramCounter) : Execute()
+    data class Until(val pc: Address) : Execute()
     data class UntilOffset(val offset: Int) : Execute()
     data class UntilOpcode(val op: Opcode) : Execute()
     object UntilNmi : Execute()
@@ -26,7 +25,7 @@ sealed class Command {
   sealed class CreatePoint : Command() {
     sealed class Break : CreatePoint() {
       data class AtOffset(val offset: Int) : Break()
-      data class At(val pc: ProgramCounter) : Break()
+      data class At(val pc: Address) : Break()
     }
     data class Watch(val addr: Address) : CreatePoint()
   }
@@ -46,7 +45,7 @@ sealed class Command {
     object Display : Info()
     object Backtrace : Info()
     data class Print(val addr: Address) : Info()
-    data class InspectInst(val pc: ProgramCounter, val num: Int) : Info()
+    data class InspectInst(val pc: Address, val num: Int) : Info()
     object CpuRam : Info()
     object PpuRam : Info()
   }

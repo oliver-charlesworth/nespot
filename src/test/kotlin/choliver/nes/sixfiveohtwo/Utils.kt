@@ -111,7 +111,7 @@ fun assertForAddressModes(
         initStores = case.mem +             // Indirection / pointer
           (case.targetAddr to target) +     // Target (user-defined value, case-defined location)
           initStores,                       // User-defined
-        expectedState = case.state(proto).with(PC = BASE_USER.toPC() + instruction.encode().size).expectedState(),
+        expectedState = case.state(proto).with(PC = BASE_USER + instruction.encode().size).expectedState(),
         expectedStores = expectedStores(case.targetAddr),
         name = instruction.toString()
       )
@@ -138,7 +138,7 @@ fun assertCpuEffects(
     pollReset = pollReset,
     pollNmi = pollNmi,
     pollIrq = pollIrq,
-    initialState = initState.with(PC = BASE_USER.toPC())
+    initialState = initState.with(PC = BASE_USER)
   )
   val n = cpu.runSteps(instructions.size)
 

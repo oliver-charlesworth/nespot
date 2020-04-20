@@ -13,7 +13,6 @@ import choliver.nes.sixfiveohtwo.model.Opcode.NOP
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nes.sixfiveohtwo.model.Operand.ZeroPageIndexed
 import choliver.nes.sixfiveohtwo.model.State
-import choliver.nes.sixfiveohtwo.model.toPC
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Nested
@@ -52,7 +51,7 @@ class CpuTest {
         instructions = listOf(Instruction(NOP)),
         initState = State(S = 0xFF, P = Flags(I = I)),
         initStores = memory,
-        expectedState = State(S = 0xFF, P = Flags(I = _1), PC = resetHandler.toPC()),
+        expectedState = State(S = 0xFF, P = Flags(I = _1), PC = resetHandler),
         expectedCycles = NUM_INTERRUPT_CYCLES,
         pollReset = { _1 }
       )
@@ -66,7 +65,7 @@ class CpuTest {
         instructions = listOf(Instruction(NOP)),
         initState = State(S = 0xFF, P = flags),
         initStores = memory,
-        expectedState = State(S = 0xFC, P = flags, PC = nmiHandler.toPC()),
+        expectedState = State(S = 0xFC, P = flags, PC = nmiHandler),
         expectedStores = expectedStores(flags),
         expectedCycles = NUM_INTERRUPT_CYCLES,
         pollNmi = { _1 }
@@ -80,7 +79,7 @@ class CpuTest {
         instructions = listOf(Instruction(NOP)),
         initState = State(S = 0xFF, P = flags),
         initStores = memory,
-        expectedState = State(S = 0xFC, P = flags, PC = irqHandler.toPC()),
+        expectedState = State(S = 0xFC, P = flags, PC = irqHandler),
         expectedStores = expectedStores(flags),
         expectedCycles = NUM_INTERRUPT_CYCLES,
         pollIrq = { _1 }
@@ -94,7 +93,7 @@ class CpuTest {
         instructions = listOf(Instruction(NOP)),
         initState = State(S = 0xFF, P = flags),
         initStores = memory,
-        expectedState = State(S = 0xFF, P = flags, PC = (BASE_USER + 1).toPC()),
+        expectedState = State(S = 0xFF, P = flags, PC = (BASE_USER + 1)),
         pollIrq = { _1 }
       )
     }
@@ -105,7 +104,7 @@ class CpuTest {
         instructions = listOf(Instruction(NOP)),
         initState = State(S = 0xFF, P = Flags(I = _0)),
         initStores = memory,
-        expectedState = State(S = 0xFF, P = Flags(I = _1), PC = resetHandler.toPC()),
+        expectedState = State(S = 0xFF, P = Flags(I = _1), PC = resetHandler),
         pollReset = { _1 },
         pollNmi = { _1 },
         pollIrq = { _1 }
@@ -119,7 +118,7 @@ class CpuTest {
         instructions = listOf(Instruction(NOP)),
         initState = State(S = 0xFF, P = flags),
         initStores = memory,
-        expectedState = State(S = 0xFC, P = flags, PC = nmiHandler.toPC()),
+        expectedState = State(S = 0xFC, P = flags, PC = nmiHandler),
         expectedStores = expectedStores(flags),
         pollNmi = { _1 },
         pollIrq = { _1 }

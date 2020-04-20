@@ -4,18 +4,17 @@ import choliver.nes.*
 import choliver.nes.sixfiveohtwo.model.Operand
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
-import choliver.nes.sixfiveohtwo.model.ProgramCounter
 
 class AddressCalculator(
   private val memory: Memory
 ) {
   fun calculate(
     operand: Operand,
-    pc: ProgramCounter = ProgramCounter(),
+    pc: Address = 0,
     x: Data = 0,
     y: Data = 0
   ): Address = when (operand) {
-    is Relative -> pc.addr() + operand.offset.sext()
+    is Relative -> pc + operand.offset.sext()
     is Absolute -> operand.addr
     is AbsoluteIndexed -> operand.addr + (if (operand.source == X) x else y)
     is ZeroPage -> operand.addr

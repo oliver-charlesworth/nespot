@@ -4,7 +4,6 @@ import choliver.nes.Memory
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
-import choliver.nes.sixfiveohtwo.model.toPC
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
@@ -22,7 +21,7 @@ class AddressCalculatorTest {
     fun positiveOffset() {
       assertEquals(
         0x1320,
-        calc.calculate(Relative(0x30), pc = 0x12F0.toPC())
+        calc.calculate(Relative(0x30), pc = 0x12F0)
       )
     }
 
@@ -30,7 +29,7 @@ class AddressCalculatorTest {
     fun negativeOffset() {
       assertEquals(
         0x12C0,
-        calc.calculate(Relative(0xD0), pc = 0x12F0.toPC())
+        calc.calculate(Relative(0xD0), pc = 0x12F0)
       )
     }
   }

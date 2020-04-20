@@ -1,10 +1,13 @@
 package choliver.nes.sixfiveohtwo
 
 import choliver.nes.*
-import choliver.nes.sixfiveohtwo.model.*
+import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.Opcode.*
+import choliver.nes.sixfiveohtwo.model.Operand
 import choliver.nes.sixfiveohtwo.model.Operand.Accumulator
 import choliver.nes.sixfiveohtwo.model.Operand.Immediate
+import choliver.nes.sixfiveohtwo.model.State
+import choliver.nes.sixfiveohtwo.model.toFlags
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
 
@@ -65,7 +68,7 @@ class Cpu(
     return decoded.numCycles
   }
 
-  fun decodeAt(pc: ProgramCounter) = decoder.decode(pc = pc, x = _state.X, y = _state.Y)
+  fun decodeAt(pc: Address) = decoder.decode(pc = pc, x = _state.X, y = _state.Y)
 
   private fun <T> Ctx<T>.execute(op: Opcode) = when (op) {
     ADC -> resolve().add { it }
@@ -114,8 +117,8 @@ class Cpu(
       .updatePCH { addr.hi() }
 
     JSR -> this
-      .push { (PC - 1).H }   // One before next instruction (note we already advanced PC)
-      .push { (PC - 1).L }
+      .push { (PC - 1).hi() }   // One before next instruction (note we already advanced PC)
+      .push { (PC - 1).lo() }
       .updatePCL { addr.lo() }
       .updatePCH { addr.hi() }
 
@@ -180,14 +183,14 @@ class Cpu(
     .storeResult { it.q }
     .updateC { it.c }
 
-  private fun <T> Ctx<T>.branch(f: F<T, Boolean>) = updatePC { if (f(state, data)) addr.toPC() else PC }
+  private fun <T> Ctx<T>.branch(f: F<T, Boolean>) = updatePC { if (f(state, data)) addr else PC }
 
   private fun <T> Ctx<T>.interrupt(vector: Address, updateStack: Boolean, setBreakFlag: Boolean) = this
     .run {
       if (updateStack) {
         this
-          .push { PC.H }
-          .push { PC.L }
+          .push { PC.hi() }
+          .push { PC.lo() }
           .push { P.data() or (if (setBreakFlag) 0x10 else 0x00) }
       } else {
         this
@@ -243,9 +246,9 @@ class Cpu(
     }
   }
   private inline fun <T> Ctx<T>.updateP(f: F<T, Data>) = updateD(f) { apply { P = it.toFlags() } }
-  private inline fun <T> Ctx<T>.updatePC(f: F<T, ProgramCounter>) = update(f) { apply { PC = it } }
-  private inline fun <T> Ctx<T>.updatePCL(f: F<T, Data>) = updateD(f) { apply { PC.L = it } }
-  private inline fun <T> Ctx<T>.updatePCH(f: F<T, Data>) = updateD(f) { apply { PC.H = it } }
+  private inline fun <T> Ctx<T>.updatePC(f: F<T, Address>) = update(f) { apply { PC = it } }
+  private inline fun <T> Ctx<T>.updatePCL(f: F<T, Data>) = updateD(f) { apply { PC = addr(lo = it, hi = PC.hi()) } }
+  private inline fun <T> Ctx<T>.updatePCH(f: F<T, Data>) = updateD(f) { apply { PC = addr(lo = PC.lo(), hi = it) } }
   private inline fun <T> Ctx<T>.updateC(f: F<T, Boolean>) = update(f) { apply { P.C = it } }
   private inline fun <T> Ctx<T>.updateD(f: F<T, Boolean>) = update(f) { apply { P.D = it } }
   private inline fun <T> Ctx<T>.updateI(f: F<T, Boolean>) = update(f) { apply { P.I = it } }

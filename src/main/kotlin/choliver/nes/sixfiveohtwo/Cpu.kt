@@ -54,7 +54,7 @@ class Cpu(
 
   private fun step(): Int {
     val decoded = decodeAt(_state.PC)
-    _state = _state.with(PC = decoded.nextPc)
+    _state.PC = decoded.nextPc
     val context = Ctx(
       _state,
       decoded.instruction.operand,
@@ -65,7 +65,7 @@ class Cpu(
     return decoded.numCycles
   }
 
-  fun decodeAt(pc: ProgramCounter) = decoder.decode(_state, pc)
+  fun decodeAt(pc: ProgramCounter) = decoder.decode(pc = pc, x = _state.X, y = _state.Y)
 
   private fun <T> Ctx<T>.execute(op: Opcode) = when (op) {
     ADC -> resolve().add { it }
@@ -160,7 +160,7 @@ class Cpu(
 
   private fun <T> Ctx<T>.resolve() = when (operand) {
     is Accumulator -> calc { A }
-    is Immediate -> calc { operand.literal }
+    is Immediate -> calc { (operand as Immediate).literal }
     else -> load { addr }
   }
 
@@ -216,30 +216,57 @@ class Cpu(
 
   private fun <T, R> Ctx<T>.calc(f: F<T, R>) = Ctx(state, operand, addr, f(state, data))
 
-  private fun <T> Ctx<T>.updateA(f: F<T, Data>) = updateD(f) { with(A = it, Z = it.isZero(), N = it.isNeg()) }
-  private fun <T> Ctx<T>.updateX(f: F<T, Data>) = updateD(f) { with(X = it, Z = it.isZero(), N = it.isNeg()) }
-  private fun <T> Ctx<T>.updateY(f: F<T, Data>) = updateD(f) { with(Y = it, Z = it.isZero(), N = it.isNeg()) }
-  private fun <T> Ctx<T>.updateS(f: F<T, Data>) = updateD(f) { with(S = it) }
-  private fun <T> Ctx<T>.updateP(f: F<T, Data>) = updateD(f) { copy(P = it.toFlags()) }
-  private fun <T> Ctx<T>.updatePC(f: F<T, ProgramCounter>) = update(f) { with(PC = it) }
-  private fun <T> Ctx<T>.updatePCL(f: F<T, Data>) = updateD(f) { with(PC = PC.copy(L = it)) }
-  private fun <T> Ctx<T>.updatePCH(f: F<T, Data>) = updateD(f) { with(PC = PC.copy(H = it)) }
-  private fun <T> Ctx<T>.updateC(f: F<T, Boolean>) = update(f) { with(C = it) }
-  private fun <T> Ctx<T>.updateD(f: F<T, Boolean>) = update(f) { with(D = it) }
-  private fun <T> Ctx<T>.updateI(f: F<T, Boolean>) = update(f) { with(I = it) }
-  private fun <T> Ctx<T>.updateV(f: F<T, Boolean>) = update(f) { with(V = it) }
-  private fun <T> Ctx<T>.updateZN(f: F<T, Data>) = updateD(f) { with(Z = it.isZero(), N = it.isNeg()) }
+  private fun <T> Ctx<T>.updateA(f: F<T, Data>) = updateD(f) {
+    apply {
+      A = it
+      P.Z = it.isZero()
+      P.N = it.isNeg()
+    }
+  }
+  private fun <T> Ctx<T>.updateX(f: F<T, Data>) = updateD(f) {
+    apply {
+      X = it
+      P.Z = it.isZero()
+      P.N = it.isNeg()
+    }
+  }
+  private fun <T> Ctx<T>.updateY(f: F<T, Data>) = updateD(f) {
+    apply {
+      Y = it
+      P.Z = it.isZero()
+      P.N = it.isNeg()
+    }
+  }
+  private fun <T> Ctx<T>.updateS(f: F<T, Data>) = updateD(f) {
+    apply {
+      S = it
+    }
+  }
+  private inline fun <T> Ctx<T>.updateP(f: F<T, Data>) = updateD(f) { apply { P = it.toFlags() } }
+  private inline fun <T> Ctx<T>.updatePC(f: F<T, ProgramCounter>) = update(f) { apply { PC = it } }
+  private inline fun <T> Ctx<T>.updatePCL(f: F<T, Data>) = updateD(f) { apply { PC.L = it } }
+  private inline fun <T> Ctx<T>.updatePCH(f: F<T, Data>) = updateD(f) { apply { PC.H = it } }
+  private inline fun <T> Ctx<T>.updateC(f: F<T, Boolean>) = update(f) { apply { P.C = it } }
+  private inline fun <T> Ctx<T>.updateD(f: F<T, Boolean>) = update(f) { apply { P.D = it } }
+  private inline fun <T> Ctx<T>.updateI(f: F<T, Boolean>) = update(f) { apply { P.I = it } }
+  private inline fun <T> Ctx<T>.updateV(f: F<T, Boolean>) = update(f) { apply { P.V = it } }
+  private inline fun <T> Ctx<T>.updateZN(f: F<T, Data>) = updateD(f) { apply { P.Z = it.isZero(); P.N = it.isNeg() } }
 
-  private fun <T> Ctx<T>.updateD(f: F<T, Data>, g: State.(Data) -> State) = copy(state = g(state, f(state, data).data()))
-  private fun <T, R> Ctx<T>.update(f: F<T, R>, g: State.(R) -> State) = copy(state = g(state, f(state, data)))
+  private inline fun <T> Ctx<T>.updateD(f: F<T, Data>, g: State.(Data) -> State) = apply {
+    state = g(state, f(state, data).data())
+  }
+  private inline fun <T, R> Ctx<T>.update(f: F<T, R>, g: State.(R) -> State) = apply {
+    state = g(state, f(state, data))
+  }
 
   private fun stackAddr(S: Data): Address = (0x0100 + S)
 
+  @MutableForPerfReasons
   private data class Ctx<T>(
-    val state: State,
-    val operand: Operand,
-    val addr: Address,
-    val data: T
+    var state: State,
+    var operand: Operand,
+    var addr: Address,
+    var data: T
   )
 
   companion object {

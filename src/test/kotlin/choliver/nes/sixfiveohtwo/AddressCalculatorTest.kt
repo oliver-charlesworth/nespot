@@ -4,7 +4,6 @@ import choliver.nes.Memory
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
-import choliver.nes.sixfiveohtwo.model.State
 import choliver.nes.sixfiveohtwo.model.toPC
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
@@ -23,7 +22,7 @@ class AddressCalculatorTest {
     fun positiveOffset() {
       assertEquals(
         0x1320,
-        calc.calculate(Relative(0x30), State(PC = 0x12F0.toPC()))
+        calc.calculate(Relative(0x30), pc = 0x12F0.toPC())
       )
     }
 
@@ -31,7 +30,7 @@ class AddressCalculatorTest {
     fun negativeOffset() {
       assertEquals(
         0x12C0,
-        calc.calculate(Relative(0xD0), State(PC = 0x12F0.toPC()))
+        calc.calculate(Relative(0xD0), pc = 0x12F0.toPC())
       )
     }
   }
@@ -40,7 +39,7 @@ class AddressCalculatorTest {
   fun absolute() {
     assertEquals(
       0x1230,
-      calc.calculate(Absolute(0x1230), State())
+      calc.calculate(Absolute(0x1230))
     )
   }
 
@@ -48,7 +47,7 @@ class AddressCalculatorTest {
   fun zeroPage() {
     assertEquals(
       0x0030,
-      calc.calculate(ZeroPage(0x30), State())
+      calc.calculate(ZeroPage(0x30))
     )
   }
 
@@ -59,7 +58,7 @@ class AddressCalculatorTest {
 
     assertEquals(
       0x1230,
-      calc.calculate(Indirect(0x40FF), State())
+      calc.calculate(Indirect(0x40FF))
     )
   }
 
@@ -69,7 +68,7 @@ class AddressCalculatorTest {
     fun basicX() {
       assertEquals(
         0x1230,
-        calc.calculate(AbsoluteIndexed(0x1220, X), State(X = 0x10))
+        calc.calculate(AbsoluteIndexed(0x1220, X), x = 0x10)
       )
     }
 
@@ -77,7 +76,7 @@ class AddressCalculatorTest {
     fun basicY() {
       assertEquals(
         0x1230,
-        calc.calculate(AbsoluteIndexed(0x1220, Y), State(Y = 0x10))
+        calc.calculate(AbsoluteIndexed(0x1220, Y), y = 0x10)
       )
     }
   }
@@ -88,7 +87,7 @@ class AddressCalculatorTest {
     fun basicX() {
       assertEquals(
         0x0030,
-        calc.calculate(ZeroPageIndexed(0x20, X), State(X = 0x10))
+        calc.calculate(ZeroPageIndexed(0x20, X), x = 0x10)
       )
     }
 
@@ -96,7 +95,7 @@ class AddressCalculatorTest {
     fun basicY() {
       assertEquals(
         0x0030,
-        calc.calculate(ZeroPageIndexed(0x20, Y), State(Y = 0x10))
+        calc.calculate(ZeroPageIndexed(0x20, Y), y = 0x10)
       )
     }
 
@@ -104,7 +103,7 @@ class AddressCalculatorTest {
     fun zeroPageWraparound() {
       assertEquals(
         0x0030,
-        calc.calculate(ZeroPageIndexed(0xF0, X), State(X = 0x40))
+        calc.calculate(ZeroPageIndexed(0xF0, X), x = 0x40)
       )
     }
   }
@@ -118,7 +117,7 @@ class AddressCalculatorTest {
 
       assertEquals(
         0x1230,
-        calc.calculate(IndexedIndirect(0x20), State(X = 0x10))
+        calc.calculate(IndexedIndirect(0x20), x = 0x10)
       )
     }
 
@@ -129,7 +128,7 @@ class AddressCalculatorTest {
 
       assertEquals(
         0x1230,
-        calc.calculate(IndexedIndirect(0xF0), State(X = 0x40))
+        calc.calculate(IndexedIndirect(0xF0), x = 0x40)
       )
     }
 
@@ -140,7 +139,7 @@ class AddressCalculatorTest {
 
       assertEquals(
         0x1230,
-        calc.calculate(IndexedIndirect(0xFF), State(X = 0x00))
+        calc.calculate(IndexedIndirect(0xFF), x = 0x00)
       )
     }
 
@@ -155,7 +154,7 @@ class AddressCalculatorTest {
 
       assertEquals(
         0x1240,
-        calc.calculate(IndirectIndexed(0x30), State(Y = 0x10))
+        calc.calculate(IndirectIndexed(0x30), y = 0x10)
       )
     }
 
@@ -166,7 +165,7 @@ class AddressCalculatorTest {
 
       assertEquals(
         0x1240,
-        calc.calculate(IndirectIndexed(0xFF), State(Y = 0x10))
+        calc.calculate(IndirectIndexed(0xFF), y = 0x10)
       )
     }
   }

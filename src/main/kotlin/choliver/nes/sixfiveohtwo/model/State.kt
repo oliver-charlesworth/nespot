@@ -2,13 +2,14 @@ package choliver.nes.sixfiveohtwo.model
 
 import choliver.nes.*
 
+@MutableForPerfReasons
 data class State(
-  val PC: ProgramCounter = ProgramCounter(),
-  val A: Data = 0x00,
-  val X: Data = 0x00,
-  val Y: Data = 0x00,
-  val S: Data = 0x00,
-  val P: Flags = Flags()
+  var PC: ProgramCounter = ProgramCounter(),
+  var A: Data = 0x00,
+  var X: Data = 0x00,
+  var Y: Data = 0x00,
+  var S: Data = 0x00,
+  var P: Flags = Flags()
 ) {
   override fun toString() = "(PC=%s, S=0x%02X, A=0x%02X, X=0x%02X, Y=0x%02X, P=%s)".format(
     PC.toString(),
@@ -42,9 +43,10 @@ data class State(
   )
 }
 
+@MutableForPerfReasons
 data class ProgramCounter(
-  val L: Data = 0x00,
-  val H: Data = 0x00
+  var L: Data = 0x00,
+  var H: Data = 0x00
 ) {
   override fun toString() = "0x%02X%02X".format(H, L)
 
@@ -57,13 +59,14 @@ data class ProgramCounter(
 
 fun Address.toPC() = ProgramCounter(L = lo(), H = hi())
 
+@MutableForPerfReasons
 data class Flags(
-  val N: Boolean = false,
-  val V: Boolean = false,
-  val D: Boolean = false,
-  val I: Boolean = false,
-  val Z: Boolean = false,
-  val C: Boolean = false
+  var N: Boolean = false,
+  var V: Boolean = false,
+  var D: Boolean = false,
+  var I: Boolean = false,
+  var Z: Boolean = false,
+  var C: Boolean = false
 ) {
   override fun toString() = "%c%c--%c%c%c%c".format(
     if (N) 'N' else '-',

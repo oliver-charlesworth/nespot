@@ -4,24 +4,25 @@ import choliver.nes.*
 import choliver.nes.sixfiveohtwo.model.Operand
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
-import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.Y
-import choliver.nes.sixfiveohtwo.model.State
+import choliver.nes.sixfiveohtwo.model.ProgramCounter
 
 class AddressCalculator(
   private val memory: Memory
 ) {
   fun calculate(
     operand: Operand,
-    state: State
+    pc: ProgramCounter = ProgramCounter(),
+    x: Data = 0,
+    y: Data = 0
   ): Address = when (operand) {
-    is Relative -> state.PC.addr() + operand.offset.sext()
+    is Relative -> pc.addr() + operand.offset.sext()
     is Absolute -> operand.addr
-    is AbsoluteIndexed -> operand.addr + select(operand.source, state)
+    is AbsoluteIndexed -> operand.addr + (if (operand.source == X) x else y)
     is ZeroPage -> operand.addr
-    is ZeroPageIndexed -> (operand.addr + select(operand.source, state)).addr8()
+    is ZeroPageIndexed -> (operand.addr + (if (operand.source == X) x else y)).addr8()
     is Indirect -> load16(operand.addr)
-    is IndexedIndirect -> load16FromZeroPage((operand.addr + state.X).addr8())
-    is IndirectIndexed -> load16FromZeroPage(operand.addr) + state.Y
+    is IndexedIndirect -> load16FromZeroPage((operand.addr + x).addr8())
+    is IndirectIndexed -> load16FromZeroPage(operand.addr) + y
     else -> 0
   }.addr()
 
@@ -34,9 +35,4 @@ class AddressCalculator(
     lo = memory.load(addr),
     hi = memory.load((addr + 1).addr8())
   )
-
-  private fun select(source: IndexSource, state: State) = when (source) {
-    X -> state.X
-    Y -> state.Y
-  }
 }

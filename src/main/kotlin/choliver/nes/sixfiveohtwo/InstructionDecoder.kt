@@ -1,6 +1,7 @@
 package choliver.nes.sixfiveohtwo
 
 import choliver.nes.Address
+import choliver.nes.Data
 import choliver.nes.Memory
 import choliver.nes.addr
 import choliver.nes.sixfiveohtwo.model.*
@@ -20,7 +21,7 @@ class InstructionDecoder(private val memory: Memory) {
 
   private val addrCalc = AddressCalculator(memory)
 
-  fun decode(state: State, pc: ProgramCounter): Decoded {
+  fun decode(pc: ProgramCounter, x: Data, y: Data): Decoded {
     var nextPc = pc
     fun load() = memory.load((nextPc++).addr())
 
@@ -53,7 +54,7 @@ class InstructionDecoder(private val memory: Memory) {
 
     return Decoded(
       instruction = Instruction(found.op, operand),
-      addr = addrCalc.calculate(operand, state.with(PC = nextPc)),
+      addr = addrCalc.calculate(operand, pc = nextPc, x = x, y = y),
       nextPc = nextPc,
       numCycles = found.numCycles
     )

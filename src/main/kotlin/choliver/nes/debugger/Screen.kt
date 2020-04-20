@@ -18,6 +18,7 @@ import java.nio.IntBuffer
 
 
 class Screen(
+  private val title: String = "NESpot",
   private val onButtonDown: (Button) -> Unit = {},
   private val onButtonUp: (Button) -> Unit = {},
   private val onClose: () -> Unit = {}
@@ -59,11 +60,15 @@ class Screen(
     }
   }
 
+  fun exit() {
+    Platform.exit()
+  }
+
   private fun start() {
     Platform.setImplicitExit(false)
     Platform.startup {
       stage = Stage()
-      stage.title = "Wat"
+      stage.title = title
       stage.scene = Scene(Group().apply {
         children.add(ImageView(WritableImage(pixelBuffer)).apply {
           fitWidth = SCREEN_WIDTH * SCALE

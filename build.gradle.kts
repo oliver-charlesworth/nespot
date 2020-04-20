@@ -2,6 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+  application
   id("nebula.kotlin") version "1.3.61"
   id("org.openjfx.javafxplugin") version "0.0.8"
 }
@@ -34,4 +35,8 @@ tasks.test {
   testLogging {
     events(PASSED, SKIPPED, FAILED)
   }
+}
+
+application {
+  mainClassName = "choliver.nes.runner.Runner"
 }

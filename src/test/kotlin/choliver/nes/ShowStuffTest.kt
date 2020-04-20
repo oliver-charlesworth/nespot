@@ -29,7 +29,7 @@ class ShowStuffTest {
   @Test
   @Disabled
   fun patterns() {
-    val cartridge = Cartridge(javaClass.getResource("/smb.nes").readBytes())
+    val cartridge = Cartridge(javaClass.getResource("").readBytes())
 
     fun getPatternData(
       patternTable: Int,    // 0 to 1

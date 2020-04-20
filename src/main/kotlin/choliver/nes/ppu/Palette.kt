@@ -7,12 +7,14 @@ import choliver.nes.Memory
 class Palette : Memory {
   private val raw = IntArray(32) { 0x00 } // Not bytes, to avoid conversion overhead
 
-  override fun load(addr: Address): Data = raw[mapMirrors(addr)]
+  override fun load(addr: Address): Data = raw[addr]
 
+  // Load is the common path, so duplicate stores for mirrors.
+  // See http://wiki.nesdev.com/w/index.php/PPU_palettes#Memory_Map for mapping.
   override fun store(addr: Address, data: Data) {
-    raw[mapMirrors(addr )] = data
+    raw[addr] = data
+    if ((addr and 0x03) == 0) {
+      raw[addr xor 0x10] = data
+    }
   }
-
-  // See http://wiki.nesdev.com/w/index.php/PPU_palettes#Memory_Map
-  private fun mapMirrors(addr: Address) = if ((addr and 0x03) == 0) (addr and 0xEF) else addr
 }

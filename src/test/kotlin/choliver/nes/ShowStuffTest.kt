@@ -6,6 +6,7 @@ import choliver.nes.debugger.Screen
 import choliver.nes.ppu.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import java.io.File
 import java.util.concurrent.CountDownLatch
 
 class ShowStuffTest {
@@ -29,7 +30,7 @@ class ShowStuffTest {
   @Test
   @Disabled
   fun patterns() {
-    val cartridge = Cartridge(javaClass.getResource("").readBytes())
+    val cartridge = Cartridge(File("roms/smb.nes").readBytes())
 
     fun getPatternData(
       patternTable: Int,    // 0 to 1

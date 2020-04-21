@@ -1,10 +1,13 @@
 package choliver.nes.sixfiveohtwo
 
 import choliver.nes.Address
+import choliver.nes.Data
 import choliver.nes.Memory
 import choliver.nes.addr
-import choliver.nes.sixfiveohtwo.model.*
+import choliver.nes.sixfiveohtwo.model.AddressMode
 import choliver.nes.sixfiveohtwo.model.AddressMode.*
+import choliver.nes.sixfiveohtwo.model.Instruction
+import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.Opcode.BRK
 import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.Operand.IndexSource.X
@@ -14,19 +17,19 @@ class InstructionDecoder(private val memory: Memory) {
   data class Decoded(
     val instruction: Instruction,
     val addr: Address,
-    val nextPc: ProgramCounter,
+    val nextPc: Address,
     val numCycles: Int
   )
 
   private val addrCalc = AddressCalculator(memory)
 
-  fun decode(state: State, pc: ProgramCounter): Decoded {
+  fun decode(pc: Address, x: Data, y: Data): Decoded {
     var nextPc = pc
-    fun load() = memory.load((nextPc++).addr())
+    fun load() = memory.load(nextPc++)
 
     // TODO - error handling
     val opcode = load()
-    val found = ENCODINGS[opcode] ?: error("Unexpected opcode 0x%02x at %s".format(opcode, nextPc))
+    val found = ENCODINGS[opcode] ?: error("Unexpected opcode 0x%02x at 0x%04x".format(opcode, nextPc))
 
     fun operand8() = load()
     fun operand16() = addr(lo = load(), hi = load())
@@ -53,7 +56,7 @@ class InstructionDecoder(private val memory: Memory) {
 
     return Decoded(
       instruction = Instruction(found.op, operand),
-      addr = addrCalc.calculate(operand, state.with(PC = nextPc)),
+      addr = addrCalc.calculate(operand, pc = nextPc, x = x, y = y),
       nextPc = nextPc,
       numCycles = found.numCycles
     )
@@ -66,10 +69,16 @@ class InstructionDecoder(private val memory: Memory) {
   )
 
   companion object {
-    private val ENCODINGS = OPCODES_TO_ENCODINGS
-      .flatMap { (op, modes) ->
-        modes.map { (mode, enc) -> enc.encoding to OpAndMode(op, mode, enc.numCycles) }
-      }
-      .toMap()
+    private val ENCODINGS = createEncodingTable()
+
+    private fun createEncodingTable(): List<OpAndMode?> {
+      val map = OPCODES_TO_ENCODINGS
+        .flatMap { (op, modes) ->
+          modes.map { (mode, enc) -> enc.encoding to OpAndMode(op, mode, enc.numCycles) }
+        }
+        .toMap()
+
+      return (0x00..0xFF).map { map[it] }
+    }
   }
 }

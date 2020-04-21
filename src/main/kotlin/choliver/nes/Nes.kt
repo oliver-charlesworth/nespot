@@ -4,7 +4,6 @@ import choliver.nes.cartridge.Cartridge
 import choliver.nes.ppu.Ppu
 import choliver.nes.sixfiveohtwo.Cpu
 import choliver.nes.sixfiveohtwo.InstructionDecoder
-import choliver.nes.sixfiveohtwo.model.ProgramCounter
 import choliver.nes.sixfiveohtwo.model.State
 import java.nio.IntBuffer
 
@@ -25,7 +24,7 @@ class Nes(
     fun fireNmi()
     fun fireIrq()
     fun step()
-    fun decodeAt(pc: ProgramCounter): InstructionDecoder.Decoded
+    fun decodeAt(pc: Address): InstructionDecoder.Decoded
   }
 
   private val reset = InterruptSource(onReset)
@@ -87,7 +86,7 @@ class Nes(
     override fun fireNmi() = nmi.set()
     override fun fireIrq() = irq.set()
     override fun step() = this@Nes.step()
-    override fun decodeAt(pc: ProgramCounter) = cpu.decodeAt(pc)
+    override fun decodeAt(pc: Address) = cpu.decodeAt(pc)
   }
 
   private class InterruptSource(private val listener: () -> Unit) {

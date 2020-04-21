@@ -3,23 +3,22 @@ package choliver.nes.debugger
 import choliver.nes.Address
 import choliver.nes.debugger.PointManager.Point.Breakpoint
 import choliver.nes.debugger.PointManager.Point.Watchpoint
-import choliver.nes.sixfiveohtwo.model.ProgramCounter
 
 class PointManager {
   sealed class Point(open val num: Int) {
-    data class Breakpoint(override val num: Int, val pc: ProgramCounter) : Point(num)
+    data class Breakpoint(override val num: Int, val pc: Address) : Point(num)
     data class Watchpoint(override val num: Int, val addr: Address) : Point(num)
   }
 
   private var nextPointNum = 1
   private val points = mutableMapOf<Int, Point>()
-  private val _breakpoints = mutableMapOf<ProgramCounter, Breakpoint>()
+  private val _breakpoints = mutableMapOf<Address, Breakpoint>()
   private val _watchpoints = mutableMapOf<Address, Watchpoint>()
 
   val breakpoints get() = _breakpoints.toMap()
   val watchpoints get() = _watchpoints.toMap()
 
-  fun addBreakpoint(pc: ProgramCounter): Breakpoint {
+  fun addBreakpoint(pc: Address): Breakpoint {
     val bp = Breakpoint(nextPointNum++, pc)
     points[bp.num] = bp
     _breakpoints[bp.pc] = bp

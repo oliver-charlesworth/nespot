@@ -4,14 +4,12 @@ import choliver.nes.*
 import choliver.nes.sixfiveohtwo.model.Opcode
 import choliver.nes.sixfiveohtwo.model.Opcode.*
 import choliver.nes.sixfiveohtwo.model.Operand
-import choliver.nes.sixfiveohtwo.model.Operand.Accumulator
-import choliver.nes.sixfiveohtwo.model.Operand.Immediate
+import choliver.nes.sixfiveohtwo.model.Operand.*
 import choliver.nes.sixfiveohtwo.model.State
 import choliver.nes.sixfiveohtwo.model.toFlags
 import choliver.nes.sixfiveohtwo.utils._0
 import choliver.nes.sixfiveohtwo.utils._1
 
-typealias F<T, R> = State.(T) -> R
 
 class Cpu(
   private val memory: Memory,
@@ -20,6 +18,9 @@ class Cpu(
   private val pollNmi: () -> Boolean,
   initialState: State = State()
 ) {
+  // This flattened mutable operating state means this is strictly non-reentrant
+  private var operand: Operand = Implied
+  private var addr: Address = 0x0000
   private var _state = initialState
   val state get() = _state
 
@@ -41,252 +42,276 @@ class Cpu(
   }
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {
-    val context = Ctx(
-      _state,
-      Operand.Implied,
-      0,
-      null
-    )
-    _state = context
-      .interrupt(addr, updateStack = updateStack, setBreakFlag = false)
-      .updateI { disableIrq || P.I }
-      .state
+    interrupt(addr, updateStack = updateStack, setBreakFlag = false)
+    state.P.I = disableIrq || state.P.I
     return NUM_INTERRUPT_CYCLES
   }
 
   private fun step(): Int {
     val decoded = decodeAt(_state.PC)
     _state.PC = decoded.nextPc
-    val context = Ctx(
-      _state,
-      decoded.instruction.operand,
-      decoded.addr,
-      null
-    )
-    _state = context.execute(decoded.instruction.opcode).state
+    operand = decoded.instruction.operand
+    addr = decoded.addr
+    execute(decoded.instruction.opcode)
     return decoded.numCycles
   }
 
   fun decodeAt(pc: Address) = decoder.decode(pc = pc, x = _state.X, y = _state.Y)
 
-  private fun <T> Ctx<T>.execute(op: Opcode) = when (op) {
-    ADC -> resolve().add { it }
-    SBC -> resolve().add { it xor 0xFF }
+  private fun execute(op: Opcode) {
+    _state.apply {
+      when (op) {
+        ADC -> add(resolve())
+        SBC -> add(resolve() xor 0xFF)
 
-    CMP -> resolve().compare { A }
-    CPX -> resolve().compare { X }
-    CPY -> resolve().compare { Y }
+        CMP -> compare(A, resolve())
+        CPX -> compare(X, resolve())
+        CPY -> compare(Y, resolve())
 
-    DEC -> resolve().storeResult { it - 1 }
-    DEX -> updateX { X - 1 }
-    DEY -> updateY { Y - 1 }
+        DEC -> storeResult(resolve() - 1) // TODO - where should masking occur?
+        DEX -> {
+          X = (X - 1).data()
+          P.Z = X.isZero()
+          P.N = X.isNeg()
+        }
+        DEY -> {
+          Y = (Y - 1).data()
+          P.Z = Y.isZero()
+          P.N = Y.isNeg()
+        }
 
-    INC -> resolve().storeResult { it + 1 }
-    INX -> updateX { X + 1 }
-    INY -> updateY { Y + 1 }
+        INC -> storeResult(resolve() + 1) // TODO - where should masking occur?
+        INX -> {
+          X = (X + 1).data()
+          P.Z = X.isZero()
+          P.N = X.isNeg()
+        }
+        INY -> {
+          Y = (Y + 1).data()
+          P.Z = Y.isZero()
+          P.N = Y.isNeg()
+        }
 
-    ASL -> resolve()
-      .storeResult { (it shl 1).data() }
-      .updateC { it.isBitSet(7) }
-    LSR -> resolve()
-      .storeResult { (it shr 1).data() }
-      .updateC { it.isBitSet(0) }
-    ROL -> resolve()
-      .storeResult { (it shl 1).data() + (if (P.C) 1 else 0) }
-      .updateC { it.isBitSet(7) }
-    ROR -> resolve()
-      .storeResult { (it shr 1).data() + (if (P.C) 0x80 else 0) }
-      .updateC { it.isBitSet(0) }
+        ASL -> {
+          val data = resolve()
+          storeResult(data shl 1) // TODO - where does masking occur?
+          P.C = data.isBitSet(7)
+        }
+        LSR -> {
+          val data = resolve()
+          storeResult(data shr 1)
+          P.C = data.isBitSet(0)
+        }
+        ROL -> {
+          val data = resolve()
+          storeResult((data shl 1) or (if (P.C) 1 else 0)) // TODO - where does masking occur?
+          P.C = data.isBitSet(7)
+        }
+        ROR -> {
+          val data = resolve()
+          storeResult((data shr 1) or (if (P.C) 0x80 else 0))
+          P.C = data.isBitSet(0)
+        }
 
-    AND -> resolve().updateA { A and it }
-    ORA -> resolve().updateA { A or it }
-    EOR -> resolve().updateA { A xor it }
+        AND -> {
+          A = A and resolve()
+          P.Z = A.isZero()
+          P.N = A.isNeg()
+        }
+        ORA -> {
+          A = A or resolve()
+          P.Z = A.isZero()
+          P.N = A.isNeg()
+        }
+        EOR -> {
+          A = A xor resolve()
+          P.Z = A.isZero()
+          P.N = A.isNeg()
+        }
 
-    BIT -> resolve()
-      .updateZN { A and it }
-      .updateV { it.isBitSet(6) }
+        BIT -> {
+          val data = resolve()
+          val tmp = A and data
+          P.Z = tmp.isZero()
+          P.N = tmp.isNeg()
+          P.V = data.isBitSet(6)
+        }
 
-    LDA -> resolve().updateA { it }
-    LDX -> resolve().updateX { it }
-    LDY -> resolve().updateY { it }
+        LDA -> {
+          A = resolve()
+          P.Z = A.isZero()
+          P.N = A.isNeg()
+        }
+        LDX -> {
+          X = resolve()
+          P.Z = X.isZero()
+          P.N = X.isNeg()
+        }
+        LDY -> {
+          Y = resolve()
+          P.Z = Y.isZero()
+          P.N = Y.isNeg()
+        }
 
-    STA -> store { A }
-    STX -> store { X }
-    STY -> store { Y }
+        STA -> memory.store(addr, A)
+        STX -> memory.store(addr, X)
+        STY -> memory.store(addr, Y)
 
-    PHP -> push { P.data() or 0x10 } // Most online references state that PHP also sets B on stack
-    PHA -> push { A }
-    PLP -> pop().updateP { it }
-    PLA -> pop().updateA { it }
+        PHP -> {
+          memory.store(stackAddr(S), P.data() or 0x10)  // Most online references state that PHP also sets B on stack
+          S = (S - 1).data()
+        }
+        PHA -> {
+          memory.store(stackAddr(S), A)
+          S = (S - 1).data()
+        }
+        PLP -> {
+          P = memory.load(stackAddr(S + 1)).toFlags()
+          S = (S + 1).data()
+        }
+        PLA -> {
+          A = memory.load(stackAddr(S + 1))
+          S = (S + 1).data()
+          P.Z = A.isZero()
+          P.N = A.isNeg()
+        }
 
-    JMP -> this
-      .updatePCL { addr.lo() }
-      .updatePCH { addr.hi() }
+        JMP -> PC = addr
 
-    JSR -> this
-      .push { (PC - 1).hi() }   // One before next instruction (note we already advanced PC)
-      .push { (PC - 1).lo() }
-      .updatePCL { addr.lo() }
-      .updatePCH { addr.hi() }
+        JSR -> {
+          // One before next instruction (note we already advanced PC)
+          memory.store(stackAddr(S), (PC - 1).hi())
+          memory.store(stackAddr(S - 1), (PC - 1).lo())
+          S = (S - 2).data()
+          PC = addr
+        }
 
-    RTS -> this
-      .pop().updatePCL { it }
-      .pop().updatePCH { it }
-      .updatePC { PC + 1 }
+        RTS -> {
+          PC = (
+            addr(
+              lo = memory.load(stackAddr(S + 1)),
+              hi = memory.load(stackAddr(S + 2))) + 1
+            ).addr()
+          S = (S + 2).data()
+        }
 
-    RTI -> this
-      .pop().updateP { it }
-      .pop().updatePCL { it }
-      .pop().updatePCH { it }
+        RTI -> {
+          P = memory.load(stackAddr(S + 1)).toFlags()
+          PC = addr(
+            lo = memory.load(stackAddr(S + 2)),
+            hi = memory.load(stackAddr(S + 3))
+          )
+          S = (S + 3).data()
+        }
 
-    BRK -> interrupt(VECTOR_IRQ, updateStack = true, setBreakFlag = true)
+        BRK -> interrupt(VECTOR_IRQ, updateStack = true, setBreakFlag = true)
 
-    BPL -> branch { !P.N }
-    BMI -> branch { P.N }
-    BVC -> branch { !P.V }
-    BVS -> branch { P.V }
-    BCC -> branch { !P.C }
-    BCS -> branch { P.C }
-    BNE -> branch { !P.Z }
-    BEQ -> branch { P.Z }
+        BPL -> PC = if (!P.N) addr else PC
+        BMI -> PC = if (P.N) addr else PC
+        BVC -> PC = if (!P.V) addr else PC
+        BVS -> PC = if (P.V) addr else PC
+        BCC -> PC = if (!P.C) addr else PC
+        BCS -> PC = if (P.C) addr else PC
+        BNE -> PC = if (!P.Z) addr else PC
+        BEQ -> PC = if (P.Z) addr else PC
 
-    TXA -> updateA { X }
-    TYA -> updateA { Y }
-    TXS -> updateS { X }
-    TAY -> updateY { A }
-    TAX -> updateX { A }
-    TSX -> updateX { S }
+        TXA -> {
+          A = X
+          P.Z = A.isZero()
+          P.N = A.isNeg()
+        }
+        TYA -> {
+          A = Y
+          P.Z = A.isZero()
+          P.N = A.isNeg()
+        }
+        TXS -> S = X
+        TAY -> {
+          Y = A
+          P.Z = Y.isZero()
+          P.N = Y.isNeg()
+        }
+        TAX -> {
+          X = A
+          P.Z = X.isZero()
+          P.N = X.isNeg()
+        }
+        TSX -> {
+          X = S
+          P.Z = X.isZero()
+          P.N = X.isNeg()
+        }
 
-    CLC -> updateC { _0 }
-    CLD -> updateD { _0 }
-    CLI -> updateI { _0 }
-    CLV -> updateV { _0 }
-    SEC -> updateC { _1 }
-    SED -> updateD { _1 }
-    SEI -> updateI { _1 }
+        CLC -> P.C = _0
+        CLD -> P.D = _0
+        CLI -> P.I = _0
+        CLV -> P.V = _0
+        SEC -> P.C = _1
+        SED -> P.D = _1
+        SEI -> P.I = _1
 
-    NOP -> this
-  }
-
-  private fun <T> Ctx<T>.resolve() = when (operand) {
-    is Accumulator -> calc { A }
-    is Immediate -> calc { (operand as Immediate).literal }
-    else -> load { addr }
-  }
-
-  private fun Ctx<Data>.add(f: F<Data, Data>) = apply {
-    val a = state.A
-    val b = f(state, data)
-    val c = state.P.C
-    val raw = a + b + (if (c) 1 else 0)
-    val result = raw.data()
-    val sameOperandSigns = (a.isNeg() == b.isNeg())
-    val differentResultSign = (a.isNeg() != result.isNeg())
-
-    state.A = result
-    state.P.C = raw.isBitSet(8)
-    state.P.V = sameOperandSigns && differentResultSign
-    state.P.Z = result.isZero()
-    state.P.N = result.isNeg()
-  }
-
-  private fun Ctx<Data>.compare(f: F<Data, Data>) = apply {
-    val raw = (f(state, data) + (data xor 0xFF) + 1)
-    val result = raw.data()
-
-    state.P.C = raw.isBitSet(8)
-    state.P.Z = result.isZero()
-    state.P.N = result.isNeg()
-  }
-
-  private fun <T> Ctx<T>.branch(f: F<T, Boolean>) = updatePC { if (f(state, data)) addr else PC }
-
-  private fun <T> Ctx<T>.interrupt(vector: Address, updateStack: Boolean, setBreakFlag: Boolean) = this
-    .run {
-      if (updateStack) {
-        this
-          .push { PC.hi() }
-          .push { PC.lo() }
-          .push { P.data() or (if (setBreakFlag) 0x10 else 0x00) }
-      } else {
-        this
+        NOP -> { }
       }
     }
-    .load { vector }.updatePCL { it }
-    .load { vector + 1 }.updatePCH { it }
+  }
 
-  private fun <T> Ctx<T>.push(f: F<T, Data>) = store(stackAddr(state.S), f).updateS { S - 1 }
+  private fun add(rhs: Data) = _state.apply {
+    val c = P.C
+    val raw = A + rhs + (if (c) 1 else 0)
+    val result = raw.data()
+    val sameOperandSigns = (A.isNeg() == rhs.isNeg())
+    val differentResultSign = (A.isNeg() != result.isNeg())
 
-  private fun <T> Ctx<T>.pop() = updateS { S + 1 }.load { stackAddr(S) }
+    A = result
+    P.C = raw.isBitSet(8)
+    P.V = sameOperandSigns && differentResultSign
+    P.Z = result.isZero()
+    P.N = result.isNeg()
+  }
 
-  private fun <T> Ctx<T>.load(f: F<T, Address>) = calc { memory.load(f(it)) }
+  private fun compare(lhs: Data, rhs: Data) = _state.apply {
+    val raw = (lhs + (rhs xor 0xFF) + 1)
+    val result = raw.data()
 
-  private fun <T> Ctx<T>.storeResult(f: F<T, Data>): Ctx<T> {
-    val data = f(state, data)
-    return if (operand is Accumulator) {
-      updateA { data }
-    } else {
-      store { data }.updateZN { data }
+    P.C = raw.isBitSet(8)
+    P.Z = result.isZero()
+    P.N = result.isNeg()
+  }
+
+  private fun interrupt(vector: Address, updateStack: Boolean, setBreakFlag: Boolean) = _state.apply {
+    if (updateStack) {
+      memory.store(stackAddr(S), PC.hi())
+      memory.store(stackAddr(S - 1), PC.lo())
+      memory.store(stackAddr(S - 2), P.data() or (if (setBreakFlag) 0x10 else 0x00))
+      S = (S - 3).data()
+    }
+
+    PC = addr(
+      lo = memory.load(vector),
+      hi = memory.load(vector + 1)
+    )
+  }
+
+  private fun resolve() = when (operand) {
+    is Accumulator -> _state.A
+    is Immediate -> (operand as Immediate).literal
+    else -> memory.load(addr)
+  }
+
+  private fun storeResult(data: Data) {
+    val data = data.data()
+    _state.apply {
+      if (operand is Accumulator) {
+        A = data
+      } else {
+        memory.store(addr, data)
+      }
+      P.Z = data.isZero()
+      P.N = data.isNeg()
     }
   }
 
-  private fun <T> Ctx<T>.store(f: F<T, Data>) = store(addr, f)
-  private fun <T> Ctx<T>.store(addr: Address, f: F<T, Data>) = also { memory.store(addr, f(state, data).data()) }
-
-  private fun <T, R> Ctx<T>.calc(f: F<T, R>) = Ctx(state, operand, addr, f(state, data))
-
-  private fun <T> Ctx<T>.updateA(f: F<T, Data>) = updateD(f) {
-    apply {
-      A = it
-      P.Z = it.isZero()
-      P.N = it.isNeg()
-    }
-  }
-  private fun <T> Ctx<T>.updateX(f: F<T, Data>) = updateD(f) {
-    apply {
-      X = it
-      P.Z = it.isZero()
-      P.N = it.isNeg()
-    }
-  }
-  private fun <T> Ctx<T>.updateY(f: F<T, Data>) = updateD(f) {
-    apply {
-      Y = it
-      P.Z = it.isZero()
-      P.N = it.isNeg()
-    }
-  }
-  private fun <T> Ctx<T>.updateS(f: F<T, Data>) = updateD(f) {
-    apply {
-      S = it
-    }
-  }
-  private inline fun <T> Ctx<T>.updateP(f: F<T, Data>) = updateD(f) { apply { P = it.toFlags() } }
-  private inline fun <T> Ctx<T>.updatePC(f: F<T, Address>) = update(f) { apply { PC = it } }
-  private inline fun <T> Ctx<T>.updatePCL(f: F<T, Data>) = updateD(f) { apply { PC = addr(lo = it, hi = PC.hi()) } }
-  private inline fun <T> Ctx<T>.updatePCH(f: F<T, Data>) = updateD(f) { apply { PC = addr(lo = PC.lo(), hi = it) } }
-  private inline fun <T> Ctx<T>.updateC(f: F<T, Boolean>) = update(f) { apply { P.C = it } }
-  private inline fun <T> Ctx<T>.updateD(f: F<T, Boolean>) = update(f) { apply { P.D = it } }
-  private inline fun <T> Ctx<T>.updateI(f: F<T, Boolean>) = update(f) { apply { P.I = it } }
-  private inline fun <T> Ctx<T>.updateV(f: F<T, Boolean>) = update(f) { apply { P.V = it } }
-  private inline fun <T> Ctx<T>.updateZN(f: F<T, Data>) = updateD(f) { apply { P.Z = it.isZero(); P.N = it.isNeg() } }
-
-  private inline fun <T> Ctx<T>.updateD(f: F<T, Data>, g: State.(Data) -> State) = apply {
-    state = g(state, f(state, data).data())
-  }
-  private inline fun <T, R> Ctx<T>.update(f: F<T, R>, g: State.(R) -> State) = apply {
-    state = g(state, f(state, data))
-  }
-
-  private fun stackAddr(S: Data): Address = (0x0100 + S)
-
-  @MutableForPerfReasons
-  private data class Ctx<T>(
-    var state: State,
-    var operand: Operand,
-    var addr: Address,
-    var data: T
-  )
+  private fun stackAddr(S: Data): Address = (0x0100 + (S and 0xFF))
 
   companion object {
     const val VECTOR_NMI: Address = 0xFFFA

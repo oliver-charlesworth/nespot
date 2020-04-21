@@ -68,33 +68,29 @@ class Cpu(
         CPX -> compare(X, resolve())
         CPY -> compare(Y, resolve())
 
-        DEC -> storeResult(resolve() - 1) // TODO - where should masking occur?
+        DEC -> storeResult(resolve() - 1)
         DEX -> {
           X = (X - 1).data()
-          P.Z = X.isZero()
-          P.N = X.isNeg()
+          updateZN(X)
         }
         DEY -> {
           Y = (Y - 1).data()
-          P.Z = Y.isZero()
-          P.N = Y.isNeg()
+          updateZN(Y)
         }
 
-        INC -> storeResult(resolve() + 1) // TODO - where should masking occur?
+        INC -> storeResult(resolve() + 1)
         INX -> {
           X = (X + 1).data()
-          P.Z = X.isZero()
-          P.N = X.isNeg()
+          updateZN(X)
         }
         INY -> {
           Y = (Y + 1).data()
-          P.Z = Y.isZero()
-          P.N = Y.isNeg()
+          updateZN(Y)
         }
 
         ASL -> {
           val data = resolve()
-          storeResult(data shl 1) // TODO - where does masking occur?
+          storeResult(data shl 1)
           P.C = data.isBitSet(7)
         }
         LSR -> {
@@ -104,7 +100,7 @@ class Cpu(
         }
         ROL -> {
           val data = resolve()
-          storeResult((data shl 1) or (if (P.C) 1 else 0)) // TODO - where does masking occur?
+          storeResult((data shl 1) or (if (P.C) 1 else 0))
           P.C = data.isBitSet(7)
         }
         ROR -> {
@@ -115,18 +111,15 @@ class Cpu(
 
         AND -> {
           A = A and resolve()
-          P.Z = A.isZero()
-          P.N = A.isNeg()
+          updateZN(A)
         }
         ORA -> {
           A = A or resolve()
-          P.Z = A.isZero()
-          P.N = A.isNeg()
+          updateZN(A)
         }
         EOR -> {
           A = A xor resolve()
-          P.Z = A.isZero()
-          P.N = A.isNeg()
+          updateZN(A)
         }
 
         BIT -> {
@@ -139,107 +132,76 @@ class Cpu(
 
         LDA -> {
           A = resolve()
-          P.Z = A.isZero()
-          P.N = A.isNeg()
+          updateZN(A)
         }
         LDX -> {
           X = resolve()
-          P.Z = X.isZero()
-          P.N = X.isNeg()
+          updateZN(X)
         }
         LDY -> {
           Y = resolve()
-          P.Z = Y.isZero()
-          P.N = Y.isNeg()
+          updateZN(Y)
         }
 
         STA -> memory.store(addr, A)
         STX -> memory.store(addr, X)
         STY -> memory.store(addr, Y)
 
-        PHP -> {
-          memory.store(stackAddr(S), P.data() or 0x10)  // Most online references state that PHP also sets B on stack
-          S = (S - 1).data()
-        }
-        PHA -> {
-          memory.store(stackAddr(S), A)
-          S = (S - 1).data()
-        }
-        PLP -> {
-          P = memory.load(stackAddr(S + 1)).toFlags()
-          S = (S + 1).data()
-        }
+        PHP -> push(P.data() or 0x10)  // Most online references state that PHP also sets B on stack
+        PHA -> push(A)
+        PLP -> P = pop().toFlags()
         PLA -> {
-          A = memory.load(stackAddr(S + 1))
-          S = (S + 1).data()
-          P.Z = A.isZero()
-          P.N = A.isNeg()
+          A = pop()
+          updateZN(A)
         }
 
         JMP -> PC = addr
 
         JSR -> {
           // One before next instruction (note we already advanced PC)
-          memory.store(stackAddr(S), (PC - 1).hi())
-          memory.store(stackAddr(S - 1), (PC - 1).lo())
-          S = (S - 2).data()
+          push((PC - 1).hi())
+          push((PC - 1).lo())
           PC = addr
         }
 
-        RTS -> {
-          PC = (
-            addr(
-              lo = memory.load(stackAddr(S + 1)),
-              hi = memory.load(stackAddr(S + 2))) + 1
-            ).addr()
-          S = (S + 2).data()
-        }
+        RTS -> PC = (addr(lo = pop(), hi = pop()) + 1).addr()
 
         RTI -> {
-          P = memory.load(stackAddr(S + 1)).toFlags()
-          PC = addr(
-            lo = memory.load(stackAddr(S + 2)),
-            hi = memory.load(stackAddr(S + 3))
-          )
-          S = (S + 3).data()
+          P = pop().toFlags()
+          PC = addr(lo = pop(), hi = pop())
         }
 
         BRK -> interrupt(VECTOR_IRQ, updateStack = true, setBreakFlag = true)
 
-        BPL -> PC = if (!P.N) addr else PC
-        BMI -> PC = if (P.N) addr else PC
-        BVC -> PC = if (!P.V) addr else PC
-        BVS -> PC = if (P.V) addr else PC
-        BCC -> PC = if (!P.C) addr else PC
-        BCS -> PC = if (P.C) addr else PC
-        BNE -> PC = if (!P.Z) addr else PC
-        BEQ -> PC = if (P.Z) addr else PC
+        BPL -> branch(!P.N)
+        BMI -> branch(P.N)
+        BVC -> branch(!P.V)
+        BVS -> branch(P.V)
+        BCC -> branch(!P.C)
+        BCS -> branch(P.C)
+        BNE -> branch(!P.Z)
+        BEQ -> branch(P.Z)
 
         TXA -> {
           A = X
-          P.Z = A.isZero()
-          P.N = A.isNeg()
+          updateZN(A)
         }
         TYA -> {
           A = Y
-          P.Z = A.isZero()
-          P.N = A.isNeg()
+          updateZN(A)
         }
         TXS -> S = X
         TAY -> {
           Y = A
-          P.Z = Y.isZero()
-          P.N = Y.isNeg()
+          updateZN(Y)
         }
         TAX -> {
           X = A
-          P.Z = X.isZero()
-          P.N = X.isNeg()
+          updateZN(X)
         }
         TSX -> {
           X = S
-          P.Z = X.isZero()
-          P.N = X.isNeg()
+          updateZN(X)
         }
 
         CLC -> P.C = _0
@@ -255,6 +217,20 @@ class Cpu(
     }
   }
 
+  private fun branch(cond: Boolean) {
+    state.PC = if (cond) addr else state.PC
+  }
+
+  private fun push(data: Data) {
+    memory.store(state.S or 0x100, data)
+    state.S = (state.S - 1).data()
+  }
+
+  private fun pop(): Data {
+    state.S = (state.S + 1).data()
+    return memory.load(state.S or 0x100)
+  }
+
   private fun add(rhs: Data) = _state.apply {
     val c = P.C
     val raw = A + rhs + (if (c) 1 else 0)
@@ -265,8 +241,7 @@ class Cpu(
     A = result
     P.C = raw.isBitSet(8)
     P.V = sameOperandSigns && differentResultSign
-    P.Z = result.isZero()
-    P.N = result.isNeg()
+    updateZN(result)
   }
 
   private fun compare(lhs: Data, rhs: Data) = _state.apply {
@@ -274,16 +249,14 @@ class Cpu(
     val result = raw.data()
 
     P.C = raw.isBitSet(8)
-    P.Z = result.isZero()
-    P.N = result.isNeg()
+    updateZN(result)
   }
 
   private fun interrupt(vector: Address, updateStack: Boolean, setBreakFlag: Boolean) = _state.apply {
     if (updateStack) {
-      memory.store(stackAddr(S), PC.hi())
-      memory.store(stackAddr(S - 1), PC.lo())
-      memory.store(stackAddr(S - 2), P.data() or (if (setBreakFlag) 0x10 else 0x00))
-      S = (S - 3).data()
+      push(PC.hi())
+      push(PC.lo())
+      push( P.data() or (if (setBreakFlag) 0x10 else 0x00))
     }
 
     PC = addr(
@@ -299,19 +272,19 @@ class Cpu(
   }
 
   private fun storeResult(data: Data) {
-    val data = data.data()
-    _state.apply {
-      if (operand is Accumulator) {
-        A = data
-      } else {
-        memory.store(addr, data)
-      }
-      P.Z = data.isZero()
-      P.N = data.isNeg()
+    val d = data.data()
+    if (operand is Accumulator) {
+      _state.A = d
+    } else {
+      memory.store(addr, d)
     }
+    updateZN(d)
   }
 
-  private fun stackAddr(S: Data): Address = (0x0100 + (S and 0xFF))
+  private fun updateZN(data: Data) {
+    state.P.Z = data.isZero()
+    state.P.N = data.isNeg()
+  }
 
   companion object {
     const val VECTOR_NMI: Address = 0xFFFA

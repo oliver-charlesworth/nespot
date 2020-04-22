@@ -39,5 +39,5 @@ tasks.test {
 }
 
 application {
-  mainClassName = "choliver.nes.runner.RunnerKt"
+  mainClassName = "choliver.nespot.runner.RunnerKt"
 }

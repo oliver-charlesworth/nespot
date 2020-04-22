@@ -1,12 +1,14 @@
-package choliver.nespot.mappers
+package choliver.nespot.nes
 
-import choliver.nespot.*
+import choliver.nespot.Address
+import choliver.nespot.Data
+import choliver.nespot.Memory
+import choliver.nespot.addr
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD1
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD2
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPADS
 import choliver.nespot.nes.Nes.Companion.ADDR_OAMDATA
 import choliver.nespot.nes.Nes.Companion.ADDR_OAMDMA
-import choliver.nespot.nes.Joypads
 import choliver.nespot.ppu.Ppu
 
 class CpuMapper(

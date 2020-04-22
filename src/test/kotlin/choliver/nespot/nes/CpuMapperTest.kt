@@ -1,6 +1,5 @@
-package choliver.nespot.mappers
+package choliver.nespot.nes
 
-import choliver.nespot.nes.Joypads
 import choliver.nespot.Memory
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD1
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD2

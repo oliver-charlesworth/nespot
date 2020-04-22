@@ -1,11 +1,11 @@
 package choliver.nespot.debugger
 
 import choliver.nespot.Address
-import choliver.nespot.nes.Nes
 import choliver.nespot.addr
 import choliver.nespot.debugger.CallStackManager.Entry.Frame
 import choliver.nespot.debugger.CallStackManager.Entry.UserData
 import choliver.nespot.debugger.CallStackManager.FrameType.*
+import choliver.nespot.nes.Nes
 import choliver.nespot.sixfiveohtwo.Cpu.Companion.VECTOR_IRQ
 import choliver.nespot.sixfiveohtwo.Cpu.Companion.VECTOR_NMI
 import choliver.nespot.sixfiveohtwo.Cpu.Companion.VECTOR_RESET

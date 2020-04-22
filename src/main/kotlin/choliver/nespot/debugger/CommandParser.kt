@@ -1,10 +1,10 @@
 package choliver.nespot.debugger
 
-import choliver.nespot.nes.Joypads
 import choliver.nespot.debugger.Command.*
 import choliver.nespot.debugger.Command.CreatePoint.Break
 import choliver.nespot.debugger.Command.CreatePoint.Watch
 import choliver.nespot.debugger.Command.Execute.*
+import choliver.nespot.nes.Joypads
 import choliver.nespot.sixfiveohtwo.model.Opcode
 import java.io.InputStream
 

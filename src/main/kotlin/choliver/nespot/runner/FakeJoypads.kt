@@ -1,9 +1,9 @@
 package choliver.nespot.runner
 
 import choliver.nespot.Data
-import choliver.nespot.nes.Joypads
 import choliver.nespot.data
 import choliver.nespot.isBitSet
+import choliver.nespot.nes.Joypads
 
 class FakeJoypads : Joypads {
   private val status = mutableMapOf(1 to 0.data(), 2 to 0.data())

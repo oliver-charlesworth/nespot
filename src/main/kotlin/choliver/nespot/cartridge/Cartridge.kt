@@ -8,7 +8,7 @@ class Cartridge(romData: ByteArray) {
 
   private val mapper = createMapper(romData)
   val prg = mapper.prg
-  val chr = mapper.chr  // Return data, VRAM addr or null
+  val chr = mapper.chr
 
   init {
     val magicNumber = romData.copyOfRange(0, 4).toList()

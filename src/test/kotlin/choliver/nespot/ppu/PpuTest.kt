@@ -238,9 +238,10 @@ class PpuTest {
       verify(renderer).renderScanlineAndDetectHit(
         0,
         Renderer.Context(
+          isLargeSprites = false, // TODO - this can change
           nametableAddr = 0x2000, // TODO - this can change
-          bgPatternTableAddr = 0x0000,  // TODO - this can change
-          sprPatternTableAddr = 0x0000, // TODO - this can change
+          bgPatternTable = 0,  // TODO - this can change
+          sprPatternTable = 0, // TODO - this can change
           scrollX = 0x23,
           scrollY = 0x45
         )

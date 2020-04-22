@@ -33,8 +33,8 @@ class RendererTest {
   )
 
   private val nametableAddr = 0x2000
-  private val bgPatternTableAddr = 0x1000
-  private val sprPatternTableAddr = 0x0000
+  private val bgPatternTable = 1
+  private val sprPatternTable = 0
 
   // Chosen scanline
   private val yTile = 14
@@ -319,9 +319,10 @@ class RendererTest {
   private fun render(yTile: Int = this.yTile, yPixel: Int = this.yPixel) = renderer.renderScanlineAndDetectHit(
     y = (yTile * TILE_SIZE) + yPixel,
     ctx = Renderer.Context(
+      isLargeSprites = false,
       nametableAddr = nametableAddr,
-      bgPatternTableAddr = bgPatternTableAddr,
-      sprPatternTableAddr = sprPatternTableAddr,
+      bgPatternTable = bgPatternTable,
+      sprPatternTable = sprPatternTable,
       scrollX = 0,
       scrollY = 0
     )
@@ -347,11 +348,11 @@ class RendererTest {
   }
 
   private fun initBgPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int = this.yPixel) {
-    initPatternMemory(patterns, yRow, bgPatternTableAddr)
+    initPatternMemory(patterns, yRow, bgPatternTable * 0x1000)
   }
 
   private fun initSprPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int) {
-    initPatternMemory(patterns, yRow, sprPatternTableAddr)
+    initPatternMemory(patterns, yRow, sprPatternTable * 0x1000)
   }
 
   private fun initPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int, baseAddr: Address) {

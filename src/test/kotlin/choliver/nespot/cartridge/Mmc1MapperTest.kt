@@ -3,7 +3,7 @@ package choliver.nespot.cartridge
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
-import choliver.nespot.cartridge.Mmc1Mapper.Companion.SR_RANGE
+import choliver.nespot.cartridge.Mmc1Mapper.Companion.BASE_SR
 import choliver.nespot.data
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
@@ -290,7 +290,7 @@ class Mmc1MapperTest {
 
   private fun Mmc1Mapper.writeReg(idx: Int, data: Data) {
     val d = data and 0x1F
-    val addr = SR_RANGE.first or ((idx and 0x03) shl 13)
+    val addr = BASE_SR or ((idx and 0x03) shl 13)
     prg.store(addr, 0x80)   // Reset
     prg.store(addr, d shr 0)
     prg.store(addr, d shr 1)

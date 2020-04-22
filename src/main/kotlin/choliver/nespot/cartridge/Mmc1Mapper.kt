@@ -26,58 +26,53 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
 
   // TODO - PRG-RAM
   override val prg = object : Memory {
-    override fun load(addr: Address) = when (addr) {
-      in PRG0_ROM_RANGE -> load(addr, when (prgMode) {
+    override fun load(addr: Address) = if (addr < BASE_PRG1_ROM) {
+      load(addr, when (prgMode) {
         0, 1 -> (prgBank and 0x0E) // 32k mode
         2 -> 0 // Fixed
         3 -> prgBank // Variable
         else -> throw IllegalArgumentException()  // Should never happen
       })
-
-      in PRG1_ROM_RANGE -> load(addr, when (prgMode) {
+    } else {
+      load(addr, when (prgMode) {
         0, 1 -> (prgBank or 0x01) // 32k mode
         2 -> prgBank  // Variable
         3 -> numPrgBanks - 1 // Fixed
         else -> throw IllegalArgumentException()  // Should never happen
       })
-
-      else -> 0xCC
     }
 
     private fun load(addr: Address, iBank: Int) = config.prgData[(addr and 0x3FFF) + 0x4000 * iBank].data()
 
     override fun store(addr: Address, data: Data) {
-      when (addr) {
-        in SR_RANGE -> updateShiftRegister(addr, data)
+      if (addr >= BASE_SR) {
+        updateShiftRegister(addr, data)
       }
     }
   }
 
   override val chr = object : ChrMemory {
     override fun intercept(ram: Memory) = object : Memory {
-      override fun load(addr: Address) = when (addr) {
-        in VRAM_RANGE -> ram.load(mapToVram(addr))
-
-        in CHR0_ROM_RANGE -> load(addr, when (chrMode) {
+      override fun load(addr: Address) = when {
+        addr >= BASE_VRAM -> ram.load(mapToVram(addr))  // This maps everything >= 0x4000 too
+        addr < BASE_CHR1_ROM -> load(addr, when (chrMode) {
           0 -> (chr0Bank and 0x1E)
           1 -> chr0Bank
           else -> throw IllegalArgumentException()  // Should never happen
         })
-
-        in CHR1_ROM_RANGE -> load(addr, when (chrMode) {
+        else -> load(addr, when (chrMode) {
           0 -> (chr0Bank or 0x01)
           1 -> chr1Bank
           else -> throw IllegalArgumentException()  // Should never happen
         })
-
-        else -> 0xCC
       }
 
       private fun load(addr: Address, iBank: Int) = config.chrData[(addr and 0x0FFF) + 0x1000 * iBank].data()
 
       override fun store(addr: Address, data: Data) {
-        when (addr) {
-          in VRAM_RANGE -> ram.store(mapToVram(addr), data)
+        // This maps everything >= 0x4000 too
+        if (addr >= BASE_VRAM) {
+          ram.store(mapToVram(addr), data)
         }
       }
 
@@ -122,12 +117,13 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
     }
   }
 
+  @Suppress("unused")
   companion object {
-    val PRG0_ROM_RANGE = 0x8000..0xBFFF
-    val PRG1_ROM_RANGE = 0xC000..0xFFFF
-    val SR_RANGE = 0x8000..0xFFFF
-    val CHR0_ROM_RANGE = 0x0000..0x0FFF
-    val CHR1_ROM_RANGE = 0x1000..0x1FFF
-    val VRAM_RANGE = 0x2000..0xFFFF
+    const val BASE_PRG0_ROM = 0x8000
+    const val BASE_PRG1_ROM = 0xC000
+    const val BASE_CHR0_ROM = 0x0000
+    const val BASE_CHR1_ROM = 0x1000
+    const val BASE_VRAM = 0x2000
+    const val BASE_SR = 0x8000
   }
 }

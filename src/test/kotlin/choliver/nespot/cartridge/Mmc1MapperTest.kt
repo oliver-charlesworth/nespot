@@ -2,7 +2,13 @@ package choliver.nespot.cartridge
 
 import choliver.nespot.Address
 import choliver.nespot.Data
+import choliver.nespot.Memory
 import choliver.nespot.cartridge.Mmc1Mapper.Companion.SR_RANGE
+import choliver.nespot.data
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -13,8 +19,6 @@ class Mmc1MapperTest {
 
   // TODO - something about startup state?
   // TODO - shift register mechanics (address range, internal address range, reset, internal address only on last write)
-  // TODO - mirroring modes
-  // TODO - CHR-ROM modes
 
   @Nested
   inner class Prg {
@@ -87,6 +91,158 @@ class Mmc1MapperTest {
       expected.forEach { (addr, data) -> assertEquals(data, mapper.prg.load(addr)) }
     }
   }
+
+  @Nested
+  inner class Chr {
+    private val chrData = ByteArray(8 * 4096)
+    private val mapper = Mmc1Mapper(MapperConfig(chrData = chrData))
+
+    @Test
+    fun `8k mode`() {
+      // bank1 set to something weird to prove we ignore it
+      configure(mode = 0, bank0 = 6, bank1 = 3, data = mapOf(
+        (6 * 4096) + 0 to 0x30,
+        (6 * 4096) + 4095 to 0x40,
+        (6 * 4096) + 4096 to 0x50,
+        (6 * 4096) + 8191 to 0x60
+      ))
+
+      assertLoads(mapOf(
+        0x0000 to 0x30,
+        0x0FFF to 0x40,
+        0x1000 to 0x50,
+        0x1FFF to 0x60
+      ))
+    }
+
+    @Test
+    fun `4k mode`() {
+      configure(mode = 1, bank0 = 6, bank1 = 3, data = mapOf(
+        (6 * 4096) + 0 to 0x30,
+        (6 * 4096) + 4095 to 0x40,
+        (3 * 4096) + 0 to 0x50,
+        (3 * 4096) + 4095 to 0x60
+      ))
+
+      assertLoads(mapOf(
+        0x0000 to 0x30,
+        0x0FFF to 0x40,
+        0x1000 to 0x50,
+        0x1FFF to 0x60
+      ))
+    }
+
+    private fun configure(mode: Int, bank0: Int, bank1: Int, data: Map<Int, Data>) {
+      data.forEach { (addr, data) -> chrData[addr] = data.toByte() }
+      mapper.writeReg(0, mode shl 4)
+      mapper.writeReg(1, bank0)
+      mapper.writeReg(2, bank1)
+    }
+
+    private fun assertLoads(expected: Map<Address, Data>) {
+      val chr = mapper.chr.intercept(mock())
+      expected.forEach { (addr, data) -> assertEquals(data, chr.load(addr)) }
+    }
+  }
+
+  @Nested
+  inner class Vram {
+    @Test
+    fun `single-screen - nametable 0`() {
+      val cases = mapOf(
+        // Nametable 0
+        0x2000 to 0x0000,
+        0x23FF to 0x03FF,
+        // Nametable 1
+        0x2400 to 0x0000,
+        0x27FF to 0x03FF,
+        // Nametable 2
+        0x2800 to 0x0000,
+        0x2BFF to 0x03FF,
+        // Nametable 3
+        0x2C00 to 0x0000,
+        0x2FFF to 0x03FF
+      )
+
+      cases.forEach { (source, target) -> assertLoadAndStore(mode = 0, source = source, target = target) }
+    }
+
+    @Test
+    fun `single-screen - nametable 1`() {
+      val cases = mapOf(
+        // Nametable 0
+        0x2000 to 0x0400,
+        0x23FF to 0x07FF,
+        // Nametable 1
+        0x2400 to 0x0400,
+        0x27FF to 0x07FF,
+        // Nametable 2
+        0x2800 to 0x0400,
+        0x2BFF to 0x07FF,
+        // Nametable 3
+        0x2C00 to 0x0400,
+        0x2FFF to 0x07FF
+      )
+
+      cases.forEach { (source, target) -> assertLoadAndStore(mode = 1, source = source, target = target) }
+    }
+
+    @Test
+    fun `vertical mirroring`() {
+      val cases = mapOf(
+        // Nametable 0
+        0x2000 to 0x0000,
+        0x23FF to 0x03FF,
+        // Nametable 1
+        0x2400 to 0x0400,
+        0x27FF to 0x07FF,
+        // Nametable 2
+        0x2800 to 0x0000,
+        0x2BFF to 0x03FF,
+        // Nametable 3
+        0x2C00 to 0x0400,
+        0x2FFF to 0x07FF
+      )
+
+      cases.forEach { (source, target) -> assertLoadAndStore(mode = 2, source = source, target = target) }
+    }
+
+    @Test
+    fun `horizontal mirroring`() {
+      val cases = mapOf(
+        // Nametable 0
+        0x2000 to 0x0000,
+        0x23FF to 0x03FF,
+        // Nametable 1
+        0x2400 to 0x0000,
+        0x27FF to 0x03FF,
+        // Nametable 2
+        0x2800 to 0x0400,
+        0x2BFF to 0x07FF,
+        // Nametable 3
+        0x2C00 to 0x0400,
+        0x2FFF to 0x07FF
+      )
+
+      cases.forEach { (source, target) -> assertLoadAndStore(mode = 3, source = source, target = target) }
+    }
+
+    private fun assertLoadAndStore(mode: Int, source: Address, target: Address) {
+      val mapper = Mmc1Mapper(MapperConfig(chrData = ByteArray(8192)))
+      val vram = mock<Memory>()
+      val chr = mapper.chr.intercept(vram)
+      mapper.writeReg(0, mode)
+
+      val data = (target + 23).data() // Arbitrary payload
+      whenever(vram.load(target)) doReturn data
+
+      assertEquals(data, chr.load(source))
+
+      chr.store(source, data)
+      verify(vram).store(target, data)
+    }
+  }
+
 
   private fun Mmc1Mapper.writeReg(idx: Int, data: Data) {
     val d = data and 0x1F

@@ -82,8 +82,8 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
       }
 
       private fun mapToVram(addr: Address): Address = when (mirrorMode) {
-        MIRROR_MODE_LOWER -> (addr and 1023)
-        MIRROR_MODE_UPPER -> (addr and 1023) + 1024
+        MIRROR_MODE_NAMETABLE_0 -> (addr and 1023)
+        MIRROR_MODE_NAMETABLE_1 -> (addr and 1023) + 1024
         MIRROR_MODE_VERTICAL -> (addr and 2047)
         MIRROR_MODE_HORIZONTAL -> (addr and 1023) or ((addr and 2048) shr 1)
         else -> throw UnsupportedOperationException()   // Should never happen
@@ -131,8 +131,8 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
     val CHR1_ROM_RANGE = 0x1000..0x1FFF
     val VRAM_RANGE = 0x2000..0xFFFF
 
-    private const val MIRROR_MODE_LOWER = 0
-    private const val MIRROR_MODE_UPPER = 1
+    private const val MIRROR_MODE_NAMETABLE_0 = 0
+    private const val MIRROR_MODE_NAMETABLE_1 = 1
     private const val MIRROR_MODE_VERTICAL = 2
     private const val MIRROR_MODE_HORIZONTAL = 3
   }

@@ -1,7 +1,7 @@
 package choliver.nespot.debugger
 
 import choliver.nespot.Address
-import choliver.nespot.Nes
+import choliver.nespot.nes.Nes
 import choliver.nespot.addr
 import choliver.nespot.debugger.CallStackManager.Entry.Frame
 import choliver.nespot.debugger.CallStackManager.Entry.UserData

@@ -1,6 +1,6 @@
 package choliver.nespot.runner
 
-import choliver.nespot.Nes
+import choliver.nespot.nes.Nes
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option

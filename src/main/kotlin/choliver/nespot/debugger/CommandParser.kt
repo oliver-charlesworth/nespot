@@ -1,6 +1,6 @@
 package choliver.nespot.debugger
 
-import choliver.nespot.Joypads
+import choliver.nespot.nes.Joypads
 import choliver.nespot.debugger.Command.*
 import choliver.nespot.debugger.Command.CreatePoint.Break
 import choliver.nespot.debugger.Command.CreatePoint.Watch

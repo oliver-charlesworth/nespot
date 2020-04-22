@@ -2,9 +2,9 @@ package choliver.nespot.debugger
 
 import choliver.nespot.Address
 import choliver.nespot.Data
-import choliver.nespot.Nes
-import choliver.nespot.Nes.Companion.CPU_RAM_SIZE
-import choliver.nespot.Nes.Companion.PPU_RAM_SIZE
+import choliver.nespot.nes.Nes
+import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
+import choliver.nespot.nes.Nes.Companion.PPU_RAM_SIZE
 import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
 import choliver.nespot.debugger.CallStackManager.FrameType.NMI
 import choliver.nespot.debugger.Command.*

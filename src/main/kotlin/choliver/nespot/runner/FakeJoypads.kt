@@ -1,7 +1,7 @@
 package choliver.nespot.runner
 
 import choliver.nespot.Data
-import choliver.nespot.Joypads
+import choliver.nespot.nes.Joypads
 import choliver.nespot.data
 import choliver.nespot.isBitSet
 

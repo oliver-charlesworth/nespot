@@ -1,6 +1,6 @@
 package choliver.nespot.runner
 
-import choliver.nespot.Joypads.Button
+import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.ppu.SCREEN_HEIGHT
 import choliver.nespot.ppu.SCREEN_WIDTH
 import javafx.application.Platform

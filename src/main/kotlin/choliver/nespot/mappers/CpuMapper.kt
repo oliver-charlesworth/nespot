@@ -1,12 +1,13 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.*
-import choliver.nespot.Nes.Companion.ADDR_JOYPAD1
-import choliver.nespot.Nes.Companion.ADDR_JOYPAD2
-import choliver.nespot.Nes.Companion.ADDR_JOYPADS
-import choliver.nespot.Nes.Companion.ADDR_OAMDATA
-import choliver.nespot.Nes.Companion.ADDR_OAMDMA
+import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD1
+import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD2
+import choliver.nespot.nes.Nes.Companion.ADDR_JOYPADS
+import choliver.nespot.nes.Nes.Companion.ADDR_OAMDATA
+import choliver.nespot.nes.Nes.Companion.ADDR_OAMDMA
 import choliver.nespot.cartridge.PrgMemory
+import choliver.nespot.nes.Joypads
 import choliver.nespot.ppu.Ppu
 
 class CpuMapper(

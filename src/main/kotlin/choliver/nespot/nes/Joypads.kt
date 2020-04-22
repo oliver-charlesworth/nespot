@@ -1,4 +1,6 @@
-package choliver.nespot
+package choliver.nespot.nes
+
+import choliver.nespot.Data
 
 interface Joypads {
   fun write(data: Data)

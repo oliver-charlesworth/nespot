@@ -1,5 +1,6 @@
-package choliver.nespot
+package choliver.nespot.nes
 
+import choliver.nespot.*
 import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.mappers.CpuMapper
 import choliver.nespot.mappers.PpuMapper

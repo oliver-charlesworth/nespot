@@ -5,12 +5,9 @@ import choliver.nespot.Data
 import choliver.nespot.Memory
 import choliver.nespot.cartridge.MapperConfig.Mirroring.*
 import choliver.nespot.data
-import mu.KotlinLogging
 
 // https://wiki.nesdev.com/w/index.php/NROM
 class NromMapper(private val config: MapperConfig) : Mapper {
-  private val logger = KotlinLogging.logger {}
-
   init {
     with(config) {
       validate(!hasPersistentMem, "Persistent memory")
@@ -22,41 +19,56 @@ class NromMapper(private val config: MapperConfig) : Mapper {
   }
 
   override val prg = object : Memory {
-    override fun load(addr: Address): Data = when (addr) {
-      in PRG_RAM_RANGE -> TODO()
-      in PRG_ROM_RANGE -> config.prgData[addr and (config.prgData.size - 1)].data()
-      else -> 0xCC
-    }
+    // Just map everything to PRG-ROM
+    override fun load(addr: Address): Data = config.prgData[addr and (config.prgData.size - 1)].data()
 
-    override fun store(addr: Address, data: Data) {
-      when (addr) {
-        in PRG_RAM_RANGE -> TODO()
-      }
-    }
+    // TODO - PRG-RAM
+    override fun store(addr: Address, data: Data) {}
   }
 
   override val chr = object : ChrMemory {
-    override fun intercept(ram: Memory) = object : Memory {
-      override fun load(addr: Address) = when (addr) {
-        in CHR_ROM_RANGE -> config.chrData[addr].data()
-        in VRAM_RANGE -> ram.load(mapToVram(addr))
-        else -> 0xCC
-      }
-
-      override fun store(addr: Address, data: Data) {
-        when (addr) {
-          in VRAM_RANGE -> ram.store(mapToVram(addr), data)
-        }
-      }
-
-      // TODO - optimise - hoist the conditional out?
-      private fun mapToVram(addr: Address): Address = when (config.mirroring) {
-        HORIZONTAL -> (addr and 1023) or ((addr and 2048) shr 1)
-        VERTICAL -> (addr and 2047)
-        IGNORED -> throw UnsupportedOperationException()
-      }
+    // Separate implementations so we're not performing the conditional in the hot path
+    override fun intercept(ram: Memory) = when (config.mirroring) {
+      HORIZONTAL -> HorizontalChr(ram)
+      VERTICAL -> VerticalChr(ram)
+      IGNORED -> throw UnsupportedOperationException()
     }
   }
+
+  private inner class HorizontalChr(private val ram: Memory) : Memory {
+    override fun load(addr: Address) = if (addr >= BASE_VRAM) {
+      ram.load(mapToVram(addr)) // This maps everything >= 0x4000 too
+    } else {
+      config.chrData[addr].data()
+    }
+
+    override fun store(addr: Address, data: Data) {
+      // This maps everything >= 0x4000 too
+      if (addr >= BASE_VRAM) {
+        ram.store(mapToVram(addr), data)
+      }
+    }
+
+    private fun mapToVram(addr: Address) = (addr and 1023) or ((addr and 2048) shr 1)
+  }
+
+  private inner class VerticalChr(private val ram: Memory) : Memory {
+    override fun load(addr: Address) = if (addr >= BASE_VRAM) {
+      ram.load(mapToVram(addr)) // This maps everything >= 0x4000 too
+    } else {
+      config.chrData[addr].data()
+    }
+
+    override fun store(addr: Address, data: Data) {
+      // This maps everything >= 0x4000 too
+      if (addr >= BASE_VRAM) {
+        ram.store(mapToVram(addr), data)
+      }
+    }
+
+    private fun mapToVram(addr: Address) = addr and 2047
+  }
+
 
   private fun validate(predicate: Boolean, message: String) {
     if (!predicate) {
@@ -64,10 +76,11 @@ class NromMapper(private val config: MapperConfig) : Mapper {
     }
   }
 
+  @Suppress("unused")
   companion object {
-    val PRG_RAM_RANGE = 0x6000..0x7FFF
-    val PRG_ROM_RANGE = 0x8000..0xFFFF
-    val CHR_ROM_RANGE = 0x0000..0x1FFF
-    val VRAM_RANGE    = 0x2000..0x3EFF
+    const val BASE_PRG_RAM = 0x6000
+    const val BASE_PRG_ROM = 0x8000
+    const val BASE_CHR_ROM = 0x0000
+    const val BASE_VRAM = 0x2000
   }
 }

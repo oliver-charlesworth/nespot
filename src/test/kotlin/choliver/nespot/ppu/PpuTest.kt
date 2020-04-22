@@ -105,15 +105,15 @@ class PpuTest {
     fun `writes and reads from incrementing palette memory locations, without garbage read`() {
       setPpuAddress(BASE_PALETTE)
 
+      ppu.writeReg(REG_PPUDATA, 0x10)
       ppu.writeReg(REG_PPUDATA, 0x20)
       ppu.writeReg(REG_PPUDATA, 0x30)
-      ppu.writeReg(REG_PPUDATA, 0x40)
 
       setPpuAddress(BASE_PALETTE)
 
+      assertEquals(0x10, ppu.readReg(REG_PPUDATA))
       assertEquals(0x20, ppu.readReg(REG_PPUDATA))
       assertEquals(0x30, ppu.readReg(REG_PPUDATA))
-      assertEquals(0x40, ppu.readReg(REG_PPUDATA))
     }
 
     @Test

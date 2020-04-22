@@ -49,7 +49,6 @@ class NromMapperTest {
 
   @Nested
   inner class Chr {
-
     @Test
     fun `maps 0x0000 to 0x1FFF`() {
       val mapper = mapper(chrData = ByteArray(8192).apply {
@@ -91,7 +90,7 @@ class NromMapperTest {
         0x3EFF to 0x06FF
       )
 
-      cases.forEach { (source, target) -> assertCase(VERTICAL, source = source, target = target) }
+      cases.forEach { (source, target) -> assertLoadAndStore(VERTICAL, source = source, target = target) }
     }
 
     @Test
@@ -123,10 +122,10 @@ class NromMapperTest {
         0x3EFF to 0x06FF
       )
 
-      cases.forEach { (source, target) -> assertCase(HORIZONTAL, source = source, target = target) }
+      cases.forEach { (source, target) -> assertLoadAndStore(HORIZONTAL, source = source, target = target) }
     }
 
-    private fun assertCase(mirroring: Mirroring, source: Address, target: Address) {
+    private fun assertLoadAndStore(mirroring: Mirroring, source: Address, target: Address) {
       val mapper = mapper(mirroring = mirroring)
       val vram = mock<Memory>()
       val chr = mapper.chr.intercept(vram)
@@ -146,9 +145,7 @@ class NromMapperTest {
     chrData: ByteArray = ByteArray(8192),
     mirroring: Mirroring = VERTICAL
   ) = NromMapper(MapperConfig(
-    hasPersistentMem = false,
     mirroring = mirroring,
-    trainerData = byteArrayOf(),
     prgData = prgData,
     chrData = chrData
   ))

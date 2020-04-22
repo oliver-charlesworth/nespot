@@ -20,7 +20,7 @@ class NromMapper(private val config: MapperConfig) : Mapper {
 
   override val prg = object : Memory {
     // Just map everything to PRG-ROM
-    override fun load(addr: Address): Data = config.prgData[addr and (config.prgData.size - 1)].data()
+    override fun load(addr: Address) = config.prgData[addr and (config.prgData.size - 1)].data()
 
     // TODO - PRG-RAM
     override fun store(addr: Address, data: Data) {}

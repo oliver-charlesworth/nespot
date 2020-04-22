@@ -37,6 +37,7 @@ class Cartridge(romData: ByteArray) {
     // https://wiki.nesdev.com/w/index.php/Mapper#iNES_1.0_mapper_grid
     return when (val mapper = ((romData[6].toInt() and 0xF0) shr 4) or ((romData[7].toInt() and 0xF0))) {
       0 -> NromMapper(config)
+      1 -> Mmc1Mapper(config)
       else -> throw UnsupportedRomException("Mapper #${mapper}")
     }
   }

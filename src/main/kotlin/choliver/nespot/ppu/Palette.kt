@@ -12,9 +12,10 @@ class Palette : Memory {
   // Load is the common path, so duplicate stores for mirrors.
   // See http://wiki.nesdev.com/w/index.php/PPU_palettes#Memory_Map for mapping.
   override fun store(addr: Address, data: Data) {
-    raw[addr] = data and 0x3F
+    val d = data and 0x3F   // Bubble Bobble relies on this
+    raw[addr] = d
     if ((addr and 0x03) == 0) {
-      raw[addr xor 0x10] = data and 0x3F
+      raw[addr xor 0x10] = d
     }
   }
 }

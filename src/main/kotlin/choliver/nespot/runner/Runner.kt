@@ -24,8 +24,6 @@ class Runner : CliktCommand() {
     onButtonUp = { joypads.up(1, it) },
     onClose = { latch.countDown() }
   )
-  private var numFrames = 0
-  private var runtimeMs = 0L
 
   override fun run() {
     val nes = Nes(
@@ -41,8 +39,6 @@ class Runner : CliktCommand() {
     } else {
       runPerfTest(nes)
     }
-
-    println("Ran ${numFrames} frames in ${runtimeMs} ms (${(numFrames * 1000.0 / runtimeMs).roundToInt()} fps)")
   }
 
   private fun runNormally(nes: Nes) {
@@ -54,23 +50,25 @@ class Runner : CliktCommand() {
       screen.redraw()
     }, 0, 17)
 
+
     latch.await()
     timer.cancel()
     screen.exit()
   }
 
   private fun runPerfTest(nes: Nes) {
-    repeat(numPerfFrames!!) { runFrame(nes) }
+    val runtimeMs = measureTimeMillis {
+      repeat(numPerfFrames!!) { runFrame(nes) }
+    }
+
+    println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")
   }
 
   private fun runFrame(nes: Nes) {
-    runtimeMs += measureTimeMillis {
-      while (!nmiOccurred) {
-        nes.inspection.step()
-      }
-      nmiOccurred = false
+    while (!nmiOccurred) {
+      nes.inspection.step()
     }
-    numFrames++
+    nmiOccurred = false
   }
 }
 

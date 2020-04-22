@@ -10,10 +10,9 @@
 
   - Enable / disable rendering
   - Clipping - inc. impact on collision detection
-  - Large sprites
   - Limit to four sprites
   - Detect too many sprites
-  - Sprite priority
+  - Sprite priority (overlap)
   - Greyscale
   - Colour emphasis
 

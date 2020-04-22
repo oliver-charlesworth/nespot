@@ -11,7 +11,6 @@ import kotlin.math.min
 // TODO - eliminate all the magic numbers here
 // TODO - conditional rendering
 // TODO - scrolling
-// TODO - large sprites
 // TODO - only select four sprites
 // TODO - priority
 // TODO - grayscale
@@ -79,36 +78,7 @@ class Renderer(
       val flipY = attrs.isBitSet(7)
       val yPixel = y - ySprite
 
-      val pattern  = if (ctx.isLargeSprites) {
-        when (yPixel) {
-          in (0 until TILE_SIZE) -> {
-            getPattern(
-              iTable = iPattern and 0x01,
-              iTile = (iPattern and 0xFE) + (if (flipY) 1 else 0),
-              iRow = yPixel,
-              flip = flipY
-            )
-          }
-          in (TILE_SIZE until TILE_SIZE * 2) -> {
-            getPattern(
-              iTable = iPattern and 0x01,
-              iTile = (iPattern and 0xFE) + (if (flipY) 0 else 1),
-              iRow = yPixel - TILE_SIZE,
-              flip = flipY
-            )
-          }
-          else -> null
-        }
-      } else {
-        if (yPixel in 0 until TILE_SIZE) {
-          getPattern(
-            iTable = ctx.sprPatternTable,
-            iTile = iPattern,
-            iRow = yPixel,
-            flip = flipY
-          )
-        } else null
-      }
+      val pattern  = getSpritePattern(ctx, iPattern, yPixel, flipY)
 
       if (pattern != null) {
         for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - xSprite)) {
@@ -135,6 +105,35 @@ class Renderer(
     return isHit
   }
 
+  private fun getSpritePattern(ctx: Context, iPattern: Data, iRow: Int, flipY: Boolean) = if (ctx.isLargeSprites) {
+    if ((iRow < 0) || (iRow >= (TILE_SIZE * 2))) {
+      null
+    } else if (iRow < TILE_SIZE) {
+      getPattern(
+        iTable = iPattern and 0x01,
+        iTile = (iPattern and 0xFE) + (if (flipY) 1 else 0),
+        iRow = iRow,
+        flipY = flipY
+      )
+    } else {
+      getPattern(
+        iTable = iPattern and 0x01,
+        iTile = (iPattern and 0xFE) + (if (flipY) 0 else 1),
+        iRow = iRow - TILE_SIZE,
+        flipY = flipY
+      )
+    }
+  } else {
+    if (iRow in 0 until TILE_SIZE) {
+      getPattern(
+        iTable = ctx.sprPatternTable,
+        iTile = iPattern,
+        iRow = iRow,
+        flipY = flipY
+      )
+    } else null
+  }
+
   private fun renderToBuffer(y: Int) {
     screen.position(y * SCREEN_WIDTH)
     pixels.forEach {
@@ -146,8 +145,8 @@ class Renderer(
   private fun patternPixel(pattern: Int, xPixel: Int) =
     ((pattern shr (7 - xPixel)) and 1) or (((pattern shr (14 - xPixel)) and 2))
 
-  private fun getPattern(iTable: Int, iTile: Int, iRow: Int, flip: Boolean = false): Int {
-    val addr = (iTable * 4096) + (iTile * 16) + (if (flip) (7 - iRow) else iRow)
+  private fun getPattern(iTable: Int, iTile: Int, iRow: Int, flipY: Boolean = false): Int {
+    val addr = (iTable * 4096) + (iTile * 16) + (if (flipY) (7 - iRow) else iRow)
     val p0 = memory.load(BASE_PATTERNS + addr)
     val p1 = memory.load(BASE_PATTERNS + addr + TILE_SIZE)
     return (p1 shl 8) or p0

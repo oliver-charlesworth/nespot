@@ -16,7 +16,7 @@
   - Greyscale
   - Colour emphasis
 
-- Clean-up / generalise cartridge CHR mappers
+- PRG-RAM
 
 - Quirks
 

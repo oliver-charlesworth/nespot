@@ -1,12 +1,9 @@
 package choliver.nespot.cartridge
 
 import choliver.nespot.*
-import mu.KotlinLogging
 
 // https://wiki.nesdev.com/w/index.php/MMC1
 class Mmc1Mapper(private val config: MapperConfig) : Mapper {
-  private val logger = KotlinLogging.logger {}
-
   private val numPrgBanks = (config.prgData.size / 16384)
   private val numChrBanks = (config.chrData.size / 4096)
   private var srCount = 0
@@ -102,21 +99,16 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
     } else {
       sr = (sr shr 1) or ((data and 1) shl 4)
       if (--srCount == 0) {
+        // TODO - range checks
         when ((addr and 0x6000) shr 13) {
           0 -> {
             mirrorMode = (sr and 0x03)
             prgMode = (sr and 0x0C) shr 2
             chrMode = (sr and 0x10) shr 4
           }
-          1 -> {
-            chr0Bank = sr  // TODO - range check
-          }
-          2 -> {
-            chr1Bank = sr  // TODO - range check
-          }
-          3 -> {
-            prgBank = (sr and 0x0F)  // TODO - range check
-          }
+          1 -> chr0Bank = sr
+          2 -> chr1Bank = sr
+          3 -> prgBank = (sr and 0x0F)
         }
         // Reset
         srCount = 5

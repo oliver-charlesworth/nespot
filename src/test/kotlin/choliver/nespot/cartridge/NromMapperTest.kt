@@ -146,9 +146,7 @@ class NromMapperTest {
     chrData: ByteArray = ByteArray(8192),
     mirroring: Mirroring = VERTICAL
   ) = NromMapper(MapperConfig(
-    hasPersistentMem = false,
     mirroring = mirroring,
-    trainerData = byteArrayOf(),
     prgData = prgData,
     chrData = chrData
   ))

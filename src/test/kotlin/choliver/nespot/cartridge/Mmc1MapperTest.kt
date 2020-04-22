@@ -16,10 +16,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
 class Mmc1MapperTest {
-
-  // TODO - something about startup state?
-  // TODO - shift register mechanics (address range, internal address range, reset, internal address only on last write)
-
   @Nested
   inner class Prg {
     private val prgData = ByteArray(8 * 16384)
@@ -81,10 +77,42 @@ class Mmc1MapperTest {
       ))
     }
 
-    private fun configure(mode: Int, bank: Int, data: Map<Int, Data>) {
+    @Test
+    fun `bank-selection wraps`() {
+      configure(mode = 0, bank = 6 + 8, data = mapOf(
+        (6 * 16384) + 0 to 0x30,
+        (6 * 16384) + 16383 to 0x40,
+        (6 * 16384) + 16384 to 0x50,
+        (6 * 16384) + 32767 to 0x60
+      ))
+
+      assertLoads(mapOf(
+        0x8000 to 0x30,
+        0xBFFF to 0x40,
+        0xC000 to 0x50,
+        0xFFFF to 0x60
+      ))
+    }
+
+    @Test
+    fun `starts up on max bank`() {
+      configure(mode = 3, bank = null, data = mapOf(
+        (7 * 16384) + 0 to 0x30,
+        (7 * 16384) + 16383 to 0x40
+      ))
+
+      assertLoads(mapOf(
+        0x8000 to 0x30,
+        0xBFFF to 0x40
+      ))
+    }
+
+    private fun configure(mode: Int, bank: Int?, data: Map<Int, Data>) {
       data.forEach { (addr, data) -> prgData[addr] = data.toByte() }
       mapper.writeReg(0, mode shl 2)
-      mapper.writeReg(3, bank)
+      if (bank != null) {
+        mapper.writeReg(3, bank)
+      }
     }
 
     private fun assertLoads(expected: Map<Address, Data>) {
@@ -118,6 +146,23 @@ class Mmc1MapperTest {
     @Test
     fun `4k mode`() {
       configure(mode = 1, bank0 = 6, bank1 = 3, data = mapOf(
+        (6 * 4096) + 0 to 0x30,
+        (6 * 4096) + 4095 to 0x40,
+        (3 * 4096) + 0 to 0x50,
+        (3 * 4096) + 4095 to 0x60
+      ))
+
+      assertLoads(mapOf(
+        0x0000 to 0x30,
+        0x0FFF to 0x40,
+        0x1000 to 0x50,
+        0x1FFF to 0x60
+      ))
+    }
+
+    @Test
+    fun `bank-selection wraps`() {
+      configure(mode = 1, bank0 = 6 + 8, bank1 = 3 + 8, data = mapOf(
         (6 * 4096) + 0 to 0x30,
         (6 * 4096) + 4095 to 0x40,
         (3 * 4096) + 0 to 0x50,
@@ -242,7 +287,6 @@ class Mmc1MapperTest {
       verify(vram).store(target, data)
     }
   }
-
 
   private fun Mmc1Mapper.writeReg(idx: Int, data: Data) {
     val d = data and 0x1F

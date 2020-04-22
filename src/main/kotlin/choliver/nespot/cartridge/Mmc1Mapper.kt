@@ -66,7 +66,7 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
 
         in CHR1_ROM_RANGE -> load(addr, when (chrMode) {
           0 -> (chr0Bank or 0x01)
-          1 -> (chr1Bank % numChrBanks) // TODO - can this be right?
+          1 -> chr1Bank
           else -> throw IllegalArgumentException()  // Should never happen
         })
 
@@ -82,10 +82,10 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
       }
 
       private fun mapToVram(addr: Address): Address = when (mirrorMode) {
-        MIRROR_MODE_NAMETABLE_0 -> (addr and 1023)
-        MIRROR_MODE_NAMETABLE_1 -> (addr and 1023) + 1024
-        MIRROR_MODE_VERTICAL -> (addr and 2047)
-        MIRROR_MODE_HORIZONTAL -> (addr and 1023) or ((addr and 2048) shr 1)
+        0 -> (addr and 1023)
+        1 -> (addr and 1023) + 1024
+        2 -> (addr and 2047)
+        3 -> (addr and 1023) or ((addr and 2048) shr 1)
         else -> throw UnsupportedOperationException()   // Should never happen
       }
     }
@@ -99,16 +99,15 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
     } else {
       sr = (sr shr 1) or ((data and 1) shl 4)
       if (--srCount == 0) {
-        // TODO - range checks
         when ((addr and 0x6000) shr 13) {
           0 -> {
             mirrorMode = (sr and 0x03)
             prgMode = (sr and 0x0C) shr 2
             chrMode = (sr and 0x10) shr 4
           }
-          1 -> chr0Bank = sr
-          2 -> chr1Bank = sr
-          3 -> prgBank = (sr and 0x0F)
+          1 -> chr0Bank = sr % numChrBanks
+          2 -> chr1Bank = sr % numChrBanks
+          3 -> prgBank = sr % numPrgBanks
         }
         // Reset
         srCount = 5
@@ -130,10 +129,5 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
     val CHR0_ROM_RANGE = 0x0000..0x0FFF
     val CHR1_ROM_RANGE = 0x1000..0x1FFF
     val VRAM_RANGE = 0x2000..0xFFFF
-
-    private const val MIRROR_MODE_NAMETABLE_0 = 0
-    private const val MIRROR_MODE_NAMETABLE_1 = 1
-    private const val MIRROR_MODE_VERTICAL = 2
-    private const val MIRROR_MODE_HORIZONTAL = 3
   }
 }

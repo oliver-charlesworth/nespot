@@ -1,4 +1,4 @@
-package choliver.nes.debugger
+package choliver.nes.runner
 
 import choliver.nes.Data
 import choliver.nes.Joypads

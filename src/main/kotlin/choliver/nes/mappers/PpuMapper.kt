@@ -1,5 +1,8 @@
-package choliver.nes
+package choliver.nes.mappers
 
+import choliver.nes.Address
+import choliver.nes.Data
+import choliver.nes.Memory
 import choliver.nes.cartridge.ChrMemory
 import choliver.nes.cartridge.ChrMemory.ChrLoadResult
 

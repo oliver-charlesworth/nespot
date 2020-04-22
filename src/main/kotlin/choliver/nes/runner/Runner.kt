@@ -1,8 +1,6 @@
 package choliver.nes.runner
 
 import choliver.nes.Nes
-import choliver.nes.debugger.FakeJoypads
-import choliver.nes.debugger.Screen
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option

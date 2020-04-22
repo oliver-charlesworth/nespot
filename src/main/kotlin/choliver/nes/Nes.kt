@@ -1,6 +1,8 @@
 package choliver.nes
 
 import choliver.nes.cartridge.Cartridge
+import choliver.nes.mappers.CpuMapper
+import choliver.nes.mappers.PpuMapper
 import choliver.nes.ppu.Ppu
 import choliver.nes.sixfiveohtwo.Cpu
 import choliver.nes.sixfiveohtwo.InstructionDecoder

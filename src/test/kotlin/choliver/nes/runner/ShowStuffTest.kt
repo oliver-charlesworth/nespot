@@ -1,8 +1,7 @@
-package choliver.nes
+package choliver.nes.runner
 
 import choliver.nes.cartridge.Cartridge
 import choliver.nes.cartridge.ChrMemory.ChrLoadResult.Data
-import choliver.nes.debugger.Screen
 import choliver.nes.ppu.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test

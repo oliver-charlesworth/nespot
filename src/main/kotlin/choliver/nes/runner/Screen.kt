@@ -1,4 +1,4 @@
-package choliver.nes.debugger
+package choliver.nes.runner
 
 import choliver.nes.Joypads.Button
 import choliver.nes.ppu.SCREEN_HEIGHT

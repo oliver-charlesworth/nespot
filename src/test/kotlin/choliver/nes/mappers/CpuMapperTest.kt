@@ -1,5 +1,7 @@
-package choliver.nes
+package choliver.nes.mappers
 
+import choliver.nes.Joypads
+import choliver.nes.Memory
 import choliver.nes.Nes.Companion.ADDR_JOYPAD1
 import choliver.nes.Nes.Companion.ADDR_JOYPAD2
 import choliver.nes.Nes.Companion.ADDR_JOYPADS

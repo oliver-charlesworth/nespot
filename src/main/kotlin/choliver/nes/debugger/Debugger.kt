@@ -16,6 +16,8 @@ import choliver.nes.debugger.Command.Event.*
 import choliver.nes.debugger.Command.Execute.*
 import choliver.nes.debugger.PointManager.Point.Breakpoint
 import choliver.nes.debugger.PointManager.Point.Watchpoint
+import choliver.nes.runner.FakeJoypads
+import choliver.nes.runner.Screen
 import java.io.InputStream
 import java.io.PrintStream
 

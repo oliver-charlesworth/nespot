@@ -12,3 +12,39 @@ const val RESIDUAL_CLOCKS_PER_SAMPLE = CLOCKS_PER_SAMPLE - INT_CLOCKS_PER_SAMPLE
 // See https://wiki.nesdev.com/w/index.php/APU_Frame_Counter
 const val FRAME_SEQUENCER_PERIOD_CYCLES = 29830
 // TODO - 5-step sequence
+
+// See http://wiki.nesdev.com/w/index.php/APU_Length_Counter
+val LENGTH_TABLE = listOf(
+  10,
+  254,
+  20,
+  2,
+  40,
+  4,
+  80,
+  6,
+  160,
+  8,
+  60,
+  10,
+  14,
+  12,
+  26,
+  14,
+  12,
+  16,
+  24,
+  18,
+  48,
+  20,
+  96,
+  22,
+  192,
+  24,
+  72,
+  26,
+  16,
+  28,
+  32,
+  30
+)

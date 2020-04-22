@@ -5,28 +5,38 @@ import kotlin.math.max
 // See http://wiki.nesdev.com/w/index.php/APU_Triangle
 class TriangleGenerator(
   timer: Int,    // 11-bit
-  private var linear: Int    // 7-bit
+  linear: Int,   // 7-bit
+  length: Int    // 5-bit
 ) {
   private val quarterFrameCounter = Counter(FRAME_SEQUENCER_PERIOD_CYCLES / 4.0)
   private val timerCounter = Counter((timer + 1).toDouble())
   private var iSeq = 0
+  private var iQuarterFrame = 0
+  private var iLinear = linear
+  private var iLength = LENGTH_TABLE[length]
 
   fun generate(num: Int) = List(num) {
     val quarterTicks = quarterFrameCounter.update()
-    updateLinear(quarterTicks)
+    updateCounters(quarterTicks)
 
     val seqTicks = timerCounter.update()
     updatePhase(seqTicks)
 
-    SEQUENCE[iSeq]   // TODO - should we do a weighted average?
+    SEQUENCE[iSeq]
   }
 
-  private fun updateLinear(inc: Int) {
-    linear = max(linear - inc, 0)
+  private fun updateCounters(inc: Int) {
+    iLinear = max(iLinear - inc, 0)
+    iQuarterFrame += inc
+    // TODO - handle multiple ticks
+    if (iQuarterFrame == 2) {
+      iQuarterFrame = 0
+      iLength = max(iLength - 1, 0)
+    }
   }
 
   private fun updatePhase(ticks: Int) {
-    if (linear != 0) {
+    if ((iLinear != 0) && (iLength != 0)) {
       iSeq = (iSeq + ticks) % SEQUENCE.size
     }
   }

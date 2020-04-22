@@ -2,8 +2,7 @@ package choliver.nespot.cartridge
 
 import choliver.nespot.Address
 import choliver.nespot.Data
-import choliver.nespot.cartridge.ChrMemory.ChrLoadResult
-import choliver.nespot.cartridge.ChrMemory.ChrStoreResult
+import choliver.nespot.Memory
 import choliver.nespot.cartridge.MapperConfig.Mirroring.*
 import choliver.nespot.data
 import mu.KotlinLogging
@@ -22,42 +21,40 @@ class NromMapper(private val config: MapperConfig) : Mapper {
     }
   }
 
-  override val prg = object : PrgMemory {
-    override fun load(addr: Address): Data? = when (addr) {
+  override val prg = object : Memory {
+    override fun load(addr: Address): Data = when (addr) {
       in PRG_RAM_RANGE -> TODO()
       in PRG_ROM_RANGE -> config.prgData[addr and (config.prgData.size - 1)].data()
-      else -> null
+      else -> 0xCC
     }
 
     override fun store(addr: Address, data: Data) {
       when (addr) {
         in PRG_RAM_RANGE -> TODO()
-        in PRG_ROM_RANGE -> logger.warn("Invalid PRG ROM store: 0x%02x -> 0x%04x".format(data, addr))
       }
     }
   }
 
   override val chr = object : ChrMemory {
-    override fun load(addr: Address) = when (addr) {
-      in CHR_ROM_RANGE -> ChrLoadResult.Data(config.chrData[addr].data())
-      in VRAM_RANGE -> ChrLoadResult.VramAddr(mapToVram(addr))
-      else -> throw IndexOutOfBoundsException(addr) // Should never happen?
-    }
-
-    override fun store(addr: Address, data: Data) = when (addr) {
-      in CHR_ROM_RANGE -> {
-        logger.warn("Invalid CHR ROM store: 0x%02x -> 0x%04x".format(data, addr))
-        ChrStoreResult.None
+    override fun intercept(ram: Memory) = object : Memory {
+      override fun load(addr: Address) = when (addr) {
+        in CHR_ROM_RANGE -> config.chrData[addr].data()
+        in VRAM_RANGE -> ram.load(mapToVram(addr))
+        else -> 0xCC
       }
-      in VRAM_RANGE -> ChrStoreResult.VramAddr(mapToVram(addr))
-      else -> throw IndexOutOfBoundsException(addr) // Should never happen?
-    }
 
-    // TODO - optimise - hoist the conditional out?
-    private fun mapToVram(addr: Address): Address = when (config.mirroring) {
-      HORIZONTAL -> (addr and 1023) or ((addr and 2048) shr 1)
-      VERTICAL -> (addr and 2047)
-      IGNORED -> throw UnsupportedOperationException()
+      override fun store(addr: Address, data: Data) {
+        when (addr) {
+          in VRAM_RANGE -> ram.store(mapToVram(addr), data)
+        }
+      }
+
+      // TODO - optimise - hoist the conditional out?
+      private fun mapToVram(addr: Address): Address = when (config.mirroring) {
+        HORIZONTAL -> (addr and 1023) or ((addr and 2048) shr 1)
+        VERTICAL -> (addr and 2047)
+        IGNORED -> throw UnsupportedOperationException()
+      }
     }
   }
 

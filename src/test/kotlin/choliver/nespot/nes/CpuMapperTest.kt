@@ -1,12 +1,10 @@
-package choliver.nespot.mappers
+package choliver.nespot.nes
 
-import choliver.nespot.nes.Joypads
 import choliver.nespot.Memory
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD1
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD2
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPADS
 import choliver.nespot.nes.Nes.Companion.ADDR_OAMDMA
-import choliver.nespot.cartridge.PrgMemory
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.ppu.Ppu.Companion.REG_OAMDATA
 import com.nhaarman.mockitokotlin2.doReturn
@@ -17,7 +15,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class CpuMapperTest {
-  private val prg = mock<PrgMemory>()
+  private val prg = mock<Memory>()
   private val ram = mock<Memory>()
   private val ppu = mock<Ppu>()
   private val joypads = mock<Joypads>()

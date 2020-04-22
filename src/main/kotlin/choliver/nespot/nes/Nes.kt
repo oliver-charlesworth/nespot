@@ -1,9 +1,10 @@
 package choliver.nespot.nes
 
-import choliver.nespot.*
+import choliver.nespot.Address
+import choliver.nespot.Data
+import choliver.nespot.Memory
+import choliver.nespot.Ram
 import choliver.nespot.cartridge.Cartridge
-import choliver.nespot.mappers.CpuMapper
-import choliver.nespot.mappers.PpuMapper
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
 import choliver.nespot.sixfiveohtwo.InstructionDecoder
@@ -39,10 +40,7 @@ class Nes(
   private val cpuRam = Ram(CPU_RAM_SIZE)
   private val ppuRam = Ram(PPU_RAM_SIZE)
 
-  private val ppuMapper = PpuMapper(
-    chr = cartridge.chr,
-    ram = ppuRam
-  )
+  private val ppuMapper = cartridge.chr.intercept(ppuRam)
 
   private val ppu = Ppu(
     memory = ppuMapper,

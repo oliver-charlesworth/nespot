@@ -2,9 +2,6 @@ package choliver.nespot.debugger
 
 import choliver.nespot.Address
 import choliver.nespot.Data
-import choliver.nespot.nes.Nes
-import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
-import choliver.nespot.nes.Nes.Companion.PPU_RAM_SIZE
 import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
 import choliver.nespot.debugger.CallStackManager.FrameType.NMI
 import choliver.nespot.debugger.Command.*
@@ -16,6 +13,9 @@ import choliver.nespot.debugger.Command.Event.*
 import choliver.nespot.debugger.Command.Execute.*
 import choliver.nespot.debugger.PointManager.Point.Breakpoint
 import choliver.nespot.debugger.PointManager.Point.Watchpoint
+import choliver.nespot.nes.Nes
+import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
+import choliver.nespot.nes.Nes.Companion.PPU_RAM_SIZE
 import choliver.nespot.runner.FakeJoypads
 import choliver.nespot.runner.Screen
 import java.io.InputStream

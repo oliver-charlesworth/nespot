@@ -33,8 +33,8 @@ class RendererTest {
   )
 
   private val nametableAddr = 0x2000
-  private val bgPatternTableAddr = 0x1000
-  private val sprPatternTableAddr = 0x0000
+  private val bgPatternTable = 1
+  private val sprPatternTable = 0
 
   // Chosen scanline
   private val yTile = 14
@@ -162,12 +162,72 @@ class RendererTest {
     // TODO - max sprites per scanline
     // TODO - conditional rendering
     // TODO - clipping
-    // TODO - large sprites
 
     private fun calcPalIdx(x: Int, xOffset: Int, iPalette: Int, pattern: List<Int>) =
       if (x in xOffset until TILE_SIZE + xOffset) {
         pattern[x - xOffset] + ((NUM_PALETTES + iPalette) * NUM_ENTRIES_PER_PALETTE)
       } else 0
+  }
+
+  @Nested
+  inner class LargeSprite {
+    private val iPalette = 0
+    private val xOffset = 5
+    private val pattern = listOf(1, 2, 3, 3, 2, 1, 1, 2)  // No zero values
+
+    @Test
+    fun `top row`() {
+      initSprPatternMemory(mapOf(2 to pattern), yRow = 0)
+      initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel, iPattern = 2, attrs = 0)
+
+      assertRendersAs(isLargeSprites = true) { calcPalIdx(x = it) }
+    }
+
+    @Test
+    fun `bottom row`() {
+      initSprPatternMemory(mapOf(3 to pattern), yRow = 7) // Note - next pattern index!
+      initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel - 15, iPattern = 2, attrs = 0)
+
+      assertRendersAs(isLargeSprites = true) { calcPalIdx(x = it) }
+    }
+
+    @Test
+    fun `top row - vertically-flipped`() {
+      initSprPatternMemory(mapOf(3 to pattern), yRow = 7) // Note - next pattern index!
+      initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel, iPattern = 2, attrs = 0x80)
+
+      assertRendersAs(isLargeSprites = true) { calcPalIdx(x = it) }
+    }
+
+    @Test
+    fun `bottom row - vertically-flipped`() {
+      initSprPatternMemory(mapOf(2 to pattern), yRow = 0)
+      initSpriteMemory(x = xOffset, y = (yTile * TILE_SIZE) + yPixel - 15, iPattern = 2, attrs = 0x80)
+
+      assertRendersAs(isLargeSprites = true) { calcPalIdx(x = it) }
+    }
+
+    @Test
+    fun `ignore sprPatternTable`() {
+      val largeIdx = 258  // Larger than one palette table
+      initSprPatternMemory(mapOf(largeIdx to pattern), yRow = 0)
+      initSpriteMemory(
+        x = xOffset,
+        y = (yTile * TILE_SIZE) + yPixel,
+        iPattern = (largeIdx and 0xFE) or (largeIdx shr 8), // Munged to fit in one byte
+        attrs = 0
+      )
+
+      assertRendersAs(isLargeSprites = true) { calcPalIdx(x = it) }
+    }
+
+    private fun calcPalIdx(x: Int) = if (x in xOffset until TILE_SIZE + xOffset) {
+      pattern[x - xOffset] + ((NUM_PALETTES + iPalette) * NUM_ENTRIES_PER_PALETTE)
+    } else 0
+
+    private fun initSprPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int) {
+      initPatternMemory(patterns, yRow, 0x0000)
+    }
   }
 
   @Nested
@@ -305,10 +365,15 @@ class RendererTest {
     // TODO - not detected in active clipping region (background or sprite)
   }
 
-  private fun assertRendersAs(yTile: Int = this.yTile, yPixel: Int = this.yPixel, expected: (Int) -> Int) {
+  private fun assertRendersAs(
+    yTile: Int = this.yTile,
+    yPixel: Int = this.yPixel,
+    isLargeSprites: Boolean = false,
+    expected: (Int) -> Int
+  ) {
     val y = (yTile * TILE_SIZE) + yPixel
 
-    render(yTile, yPixel)
+    render(yTile, yPixel, isLargeSprites)
 
     assertEquals(
       (0 until SCREEN_WIDTH).map { colors[paletteEntries[expected(it)]] },
@@ -316,12 +381,17 @@ class RendererTest {
     )
   }
 
-  private fun render(yTile: Int = this.yTile, yPixel: Int = this.yPixel) = renderer.renderScanlineAndDetectHit(
+  private fun render(
+    yTile: Int = this.yTile,
+    yPixel: Int = this.yPixel,
+    isLargeSprites: Boolean = false
+  ) = renderer.renderScanlineAndDetectHit(
     y = (yTile * TILE_SIZE) + yPixel,
     ctx = Renderer.Context(
+      isLargeSprites = isLargeSprites,
       nametableAddr = nametableAddr,
-      bgPatternTableAddr = bgPatternTableAddr,
-      sprPatternTableAddr = sprPatternTableAddr,
+      bgPatternTable = bgPatternTable,
+      sprPatternTable = sprPatternTable,
       scrollX = 0,
       scrollY = 0
     )
@@ -347,11 +417,11 @@ class RendererTest {
   }
 
   private fun initBgPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int = this.yPixel) {
-    initPatternMemory(patterns, yRow, bgPatternTableAddr)
+    initPatternMemory(patterns, yRow, bgPatternTable * 0x1000)
   }
 
   private fun initSprPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int) {
-    initPatternMemory(patterns, yRow, sprPatternTableAddr)
+    initPatternMemory(patterns, yRow, sprPatternTable * 0x1000)
   }
 
   private fun initPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int, baseAddr: Address) {

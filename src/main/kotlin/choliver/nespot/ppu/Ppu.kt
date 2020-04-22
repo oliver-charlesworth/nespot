@@ -37,9 +37,10 @@ class Ppu(
         val isHit = renderer.renderScanlineAndDetectHit(
           y = scanline,
           ctx = Renderer.Context(
+            isLargeSprites = state.isLargeSprites,
             nametableAddr = state.nametableAddr,
-            bgPatternTableAddr = state.bgPatternTableAddr,
-            sprPatternTableAddr = state.sprPatternTableAddr,
+            bgPatternTable = state.bgPatternTable,
+            sprPatternTable = state.sprPatternTable,
             scrollX = scrollX,
             scrollY = scrollY
           )
@@ -106,8 +107,8 @@ class Ppu(
       REG_PPUCTRL -> state = state.copy(
         addrInc = if (data.isBitSet(2)) 32 else 1,
         nametableAddr = 0x2000, // TODO
-        sprPatternTableAddr = if (data.isBitSet(3)) 0x1000 else 0x0000,
-        bgPatternTableAddr = if (data.isBitSet(4)) 0x1000 else 0x0000,
+        sprPatternTable = if (data.isBitSet(3)) 1 else 0,
+        bgPatternTable = if (data.isBitSet(4)) 1 else 0,
         isLargeSprites = data.isBitSet(5),
         // TODO - is master/slave important?
         isVblEnabled = data.isBitSet(7)
@@ -176,8 +177,8 @@ class Ppu(
   private data class State(
     val addrInc: Int = 1,
     val nametableAddr: Address = 0x2000,
-    val sprPatternTableAddr: Address = 0x0000,
-    val bgPatternTableAddr: Address = 0x0000,
+    val sprPatternTable: Int = 0,
+    val bgPatternTable: Int = 0,
     val isLargeSprites: Boolean = false,
     val isVblEnabled: Boolean = false,
 
@@ -206,6 +207,7 @@ class Ppu(
     const val REG_PPUADDR = 6
     const val REG_PPUDATA = 7
 
+    const val BASE_PATTERNS: Address = 0x0000
     const val BASE_PALETTE: Address = 0x3F00
 
     const val NUM_SCANLINES = 262

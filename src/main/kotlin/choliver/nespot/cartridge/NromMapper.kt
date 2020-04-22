@@ -2,6 +2,7 @@ package choliver.nespot.cartridge
 
 import choliver.nespot.Address
 import choliver.nespot.Data
+import choliver.nespot.Memory
 import choliver.nespot.cartridge.ChrMemory.ChrLoadResult
 import choliver.nespot.cartridge.ChrMemory.ChrStoreResult
 import choliver.nespot.cartridge.MapperConfig.Mirroring.*
@@ -22,11 +23,11 @@ class NromMapper(private val config: MapperConfig) : Mapper {
     }
   }
 
-  override val prg = object : PrgMemory {
-    override fun load(addr: Address): Data? = when (addr) {
+  override val prg = object : Memory {
+    override fun load(addr: Address): Data = when (addr) {
       in PRG_RAM_RANGE -> TODO()
       in PRG_ROM_RANGE -> config.prgData[addr and (config.prgData.size - 1)].data()
-      else -> null
+      else -> 0xCC
     }
 
     override fun store(addr: Address, data: Data) {

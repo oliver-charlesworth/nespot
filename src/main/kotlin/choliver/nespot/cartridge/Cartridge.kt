@@ -7,7 +7,7 @@ import choliver.nespot.isBitSet
 class Cartridge(romData: ByteArray) {
 
   private val mapper = createMapper(romData)
-  val prg = mapper.prg  // Nothing special - just log bus conflicts and all-null
+  val prg = mapper.prg
   val chr = mapper.chr  // Return data, VRAM addr or null
 
   init {

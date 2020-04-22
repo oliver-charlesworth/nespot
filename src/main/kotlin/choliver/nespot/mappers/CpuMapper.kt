@@ -6,12 +6,11 @@ import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD2
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPADS
 import choliver.nespot.nes.Nes.Companion.ADDR_OAMDATA
 import choliver.nespot.nes.Nes.Companion.ADDR_OAMDMA
-import choliver.nespot.cartridge.PrgMemory
 import choliver.nespot.nes.Joypads
 import choliver.nespot.ppu.Ppu
 
 class CpuMapper(
-  private val prg: PrgMemory,
+  private val prg: Memory,
   private val ram: Memory,
   private val ppu: Ppu,
   private val joypads: Joypads
@@ -22,7 +21,7 @@ class CpuMapper(
     addr == ADDR_JOYPAD1 -> joypads.read1()
     addr == ADDR_JOYPAD2 -> joypads.read2()
     addr < 0x4020 -> 0x00 // TODO
-    else -> prg.load(addr)!!
+    else -> prg.load(addr)
   }
 
   override fun store(addr: Address, data: Data) = when {

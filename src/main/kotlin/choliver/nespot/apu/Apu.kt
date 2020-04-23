@@ -8,15 +8,16 @@ class Apu(
   private val pulse1 = PulseGenerator()
   private val pulse2 = PulseGenerator()
   private val triangle = TriangleGenerator()
+  private val noise = NoiseGenerator()
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
       REG_SQ1_VOL -> {
         pulse1.dutyCycle = (data and 0xC0) ushr 6
+        pulse1.volume = data and 0x0F
         // TODO - halt
         // TODO - volume/envelope flag
         // TODO - envelope divider
-        pulse1.volume = data and 0x0F
       }
 
       REG_SQ1_SWEEP -> {
@@ -34,10 +35,10 @@ class Apu(
 
       REG_SQ2_VOL -> {
         pulse2.dutyCycle = (data and 0xC0) ushr 6
+        pulse2.volume = data and 0x0F
         // TODO - halt
         // TODO - volume/envelope flag
         // TODO - envelope divider
-        pulse2.volume = data and 0x0F
       }
 
       REG_SQ2_SWEEP -> {
@@ -68,18 +69,22 @@ class Apu(
       }
 
       REG_NOISE_VOL -> {
-        // TODO
+        noise.volume = data and 0x0F
+        // TODO - halt
+        // TODO - volume/envelope flag
       }
 
       REG_NOISE_LO -> {
-        // TODO
+        noise.mode = (data and 0x80) ushr 7
+        noise.period = data and 0x0F
       }
 
       REG_NOISE_HI -> {
-        // TODO
+        noise.length = (data and 0xF8) ushr 5
       }
 
       REG_DMC_FREQ -> {
+        println("Yeeeeea")
         // TODO
       }
 
@@ -109,12 +114,15 @@ class Apu(
     val samplesPulse1 = pulse1.generate(buffer.size)
     val samplesPulse2 = pulse2.generate(buffer.size)
     val samplesTriangle = triangle.generate(buffer.size)
+    val samplesNoise = noise.generate(buffer.size)
     for (i in buffer.indices) {
-      buffer[i] = ((
+      // See http://wiki.nesdev.com/w/index.php/APU_Mixer
+      buffer[i] = ((0 +
         samplesPulse1[i] * 0.00752 +
-          samplesPulse2[i] * 0.00752 +
-          samplesTriangle[i] * 0.00851
-        ) * 100).toByte()
+        samplesPulse2[i] * 0.00752 +
+        samplesTriangle[i] * 0.00851 +
+        samplesNoise[i] * 0.00335
+      ) * 100).toByte()
     }
   }
 

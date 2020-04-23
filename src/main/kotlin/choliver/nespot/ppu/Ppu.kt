@@ -5,14 +5,14 @@ import java.nio.IntBuffer
 
 class Ppu(
   private val memory: Memory,
-  screen: IntBuffer,
+  videoBuffer: IntBuffer,
   private val onVbl: () -> Unit,
   private val oam: Memory = Ram(256),
   private val palette: Memory = Palette(),
-  private val renderer: Renderer = Renderer(memory, palette, oam, screen)
+  private val renderer: Renderer = Renderer(memory, palette, oam, videoBuffer)
 ) {
   private var state = State()
-  private var scanline = 0
+  private var _scanline = 0
   private var inVbl = false
   private var isSprite0Hit = false
   private var addr: Address = 0
@@ -30,12 +30,14 @@ class Ppu(
 
   // TODO - add a reset (to clean up counters and stuff)
 
+  val scanline get() = _scanline
+
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   fun executeScanline() {
-    when (scanline) {
+    when (_scanline) {
       in (0 until SCREEN_HEIGHT) -> {
         val isHit = renderer.renderScanlineAndDetectHit(
-          y = scanline,
+          y = _scanline,
           ctx = Renderer.Context(
             isLargeSprites = state.isLargeSprites,
             nametableAddr = state.nametableAddr,
@@ -63,7 +65,7 @@ class Ppu(
       }
     }
 
-    scanline = (scanline + 1) % NUM_SCANLINES
+    _scanline = (_scanline + 1) % NUM_SCANLINES
   }
 
   fun readReg(reg: Int): Int {

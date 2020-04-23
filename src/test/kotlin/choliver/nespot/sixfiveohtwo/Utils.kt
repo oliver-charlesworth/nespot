@@ -140,7 +140,8 @@ fun assertCpuEffects(
     pollIrq = pollIrq,
     initialState = initState.with(PC = BASE_USER)
   )
-  val n = cpu.runSteps(instructions.size)
+  var numCycles = 0
+  repeat(instructions.size) { numCycles += cpu.executeStep() }
 
   if (expectedState != null) {
     assertEquals(expectedState, cpu.state, "Unexpected state for [${name}]")
@@ -148,7 +149,7 @@ fun assertCpuEffects(
   expectedStores.forEach { (addr, data) -> verify(memory).store(addr, data) }
   verify(memory, times(expectedStores.size)).store(any(), any())
   if (expectedCycles != null) {
-    assertEquals(expectedCycles, n, "Unexpected # cycles for [${name}]")
+    assertEquals(expectedCycles, numCycles, "Unexpected # cycles for [${name}]")
   }
 }
 

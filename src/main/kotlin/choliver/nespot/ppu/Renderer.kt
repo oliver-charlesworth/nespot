@@ -19,7 +19,7 @@ class Renderer(
   private val memory: Memory,
   private val palette: Memory,
   private val oam: Memory,
-  private val screen: IntBuffer,
+  private val videoBuffer: IntBuffer,
   private val colors: List<Int> = COLORS
 ) {
   data class Context(
@@ -135,10 +135,10 @@ class Renderer(
   }
 
   private fun renderToBuffer(y: Int) {
-    screen.position(y * SCREEN_WIDTH)
+    videoBuffer.position(y * SCREEN_WIDTH)
     pixels.forEach {
       val paletteAddr = if (it.c == 0) 0 else (it.p * 4 + it.c) // Background colour is universal
-      screen.put(colors[palette.load(paletteAddr)])
+      videoBuffer.put(colors[palette.load(paletteAddr)])
     }
   }
 

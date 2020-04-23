@@ -6,31 +6,30 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
-import java.util.*
-import java.util.concurrent.CountDownLatch
-import kotlin.concurrent.timerTask
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
+import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
 class Runner : CliktCommand() {
   private val rom by argument().file(mustExist = true, canBeDir = false)
   private val numPerfFrames by option("--perf", "-p").int()
 
-  private var nmiOccurred = false
-  private val latch = CountDownLatch(1)
+  private val isClosed = AtomicBoolean(false)
   private val joypads = FakeJoypads()
   private val screen = Screen(
     onButtonDown = { joypads.down(1, it) },
     onButtonUp = { joypads.up(1, it) },
-    onClose = { latch.countDown() }
+    onClose = { isClosed.set(true) }
   )
+  private val audio = Audio(frameRateHz = 60)   // TODO - move to a constant somewhere
 
   override fun run() {
     val nes = Nes(
-      rom.readBytes(),
-      screen.buffer,
-      joypads,
-      onNmi = { nmiOccurred = true }
+      rom = rom.readBytes(),
+      videoBuffer = screen.buffer,
+      audioBuffer = audio.buffer,
+      joypads = joypads
     )
     nes.inspection.fireReset()
 
@@ -42,33 +41,26 @@ class Runner : CliktCommand() {
   }
 
   private fun runNormally(nes: Nes) {
-    val timer = Timer()
     screen.show()
+    audio.start()
 
-    timer.schedule(timerTask {
-      runFrame(nes)
-      screen.redraw()
-    }, 0, 17)
+    while (!isClosed.get()) {
+      measureNanoTime {
+        nes.runFrame()
+        screen.redraw()
+        audio.play()
+      }
+    }
 
-
-    latch.await()
-    timer.cancel()
     screen.exit()
   }
 
   private fun runPerfTest(nes: Nes) {
     val runtimeMs = measureTimeMillis {
-      repeat(numPerfFrames!!) { runFrame(nes) }
+      repeat(numPerfFrames!!) { nes.runFrame() }
     }
 
     println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")
-  }
-
-  private fun runFrame(nes: Nes) {
-    while (!nmiOccurred) {
-      nes.inspection.step()
-    }
-    nmiOccurred = false
   }
 }
 

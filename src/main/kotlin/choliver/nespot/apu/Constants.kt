@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-const val SAMPLE_RATE_HZ = 44100f
+const val SAMPLE_RATE_HZ = 44100
 
 // See https://wiki.nesdev.com/w/index.php/Cycle_reference_chart
 const val CPU_FREQ_HZ = (236.25e6 / 11) / 12

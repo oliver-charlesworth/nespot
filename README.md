@@ -4,6 +4,8 @@
 
 - Sound!
 
+- Crappy keyboard responsiveness
+
 - Scrolling
 
 - Rendering

@@ -1,33 +1,27 @@
 package choliver.nespot.apu
 
+import choliver.nespot.runner.Audio
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
+import kotlin.system.measureTimeMillis
 
 
 fun main() {
-  val audioFormat = AudioFormat(SAMPLE_RATE_HZ, 8, 1, true, true)
-  val soundLine = AudioSystem.getSourceDataLine(audioFormat)
-  soundLine.open(audioFormat)
-  soundLine.start()
-
-  val bufferSize = 2205
-
-  soundLine.open(audioFormat, bufferSize)
-  soundLine.start()
-
-  val buffer = ByteArray(bufferSize)
-
+  val audio = Audio(frameRateHz = 20)
   val triangle = TriangleGenerator(
     timer = 253,  // This should be ~220Hz
-    linear = 127
+    linear = 127,
+    length = 0
   )
-  repeat(80) {
-    val samples = triangle.generate(bufferSize)
 
-    for (i in 0 until bufferSize) {
-      buffer[i] = (samples[i] * 10).toByte()
+  audio.start()
+  repeat(80) {
+    val samples = triangle.generate(audio.buffer.size)
+
+    for (i in audio.buffer.indices) {
+      audio.buffer[i] = (samples[i] * 10).toByte()
     }
-    soundLine.write(buffer, 0, bufferSize)
+    audio.play()
   }
 }
 

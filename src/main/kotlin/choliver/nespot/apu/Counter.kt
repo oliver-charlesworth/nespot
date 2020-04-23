@@ -1,22 +1,27 @@
 package choliver.nespot.apu
 
-class Counter(private val periodCpuCycles: Double) {
+class Counter {
+  var periodCpuCycles: Int = 1
   private var pos = periodCpuCycles - 1
   private var residual = 0.0
 
-  // TODO - handle case where multiple ticks per sample
+
   fun update(): Int {
+//    println("period = ${periodCpuCycles}, pos = ${pos}")
+
     pos -= INT_CLOCKS_PER_SAMPLE
     residual += RESIDUAL_CLOCKS_PER_SAMPLE
     if (residual >= 1.0) {
       pos--
       residual -= 1.0
     }
-    return if (pos <= 0) {
+
+    // TODO - do this with division please
+    var ret = 0
+    while (pos <= 0) {
       pos += periodCpuCycles
-      1
-    } else {
-      0
+      ret++
     }
+    return ret
   }
 }

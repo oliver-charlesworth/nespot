@@ -4,20 +4,27 @@ import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Triangle
 class TriangleGenerator(
-  timer: Int,    // 11-bit
-  linear: Int,   // 7-bit
-  length: Int    // 5-bit
+  linear: Int = 0,   // 7-bit
+  length: Int = 0    // 5-bit
 ) {
-  private val quarterFrameCounter = Counter(FRAME_SEQUENCER_PERIOD_CYCLES / 4.0)
-  private val timerCounter = Counter((timer + 1).toDouble())
+
+//  private val quarterFrameCounter = Counter(FRAME_SEQUENCER_PERIOD_CYCLES / 4.0)
+  private val timerCounter = Counter()
   private var iSeq = 0
   private var iQuarterFrame = 0
   private var iLinear = linear
   private var iLength = LENGTH_TABLE[length]
 
+  var timer: Int = 0
+    set(value) {
+      field = value
+      timerCounter.periodCpuCycles = value + 1
+    }
+
+
   fun generate(num: Int) = List(num) {
-    val quarterTicks = quarterFrameCounter.update()
-    updateCounters(quarterTicks)
+//    val quarterTicks = quarterFrameCounter.update()
+//    updateCounters(quarterTicks)
 
     val seqTicks = timerCounter.update()
     updatePhase(seqTicks)
@@ -36,9 +43,9 @@ class TriangleGenerator(
   }
 
   private fun updatePhase(ticks: Int) {
-    if ((iLinear != 0) && (iLength != 0)) {
+//    if ((iLinear != 0) && (iLength != 0)) {
       iSeq = (iSeq + ticks) % SEQUENCE.size
-    }
+//    }
   }
 
   companion object {

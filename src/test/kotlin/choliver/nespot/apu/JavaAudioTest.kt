@@ -9,7 +9,7 @@ import kotlin.system.measureTimeMillis
 fun main() {
   val audio = Audio(frameRateHz = 20)
   val triangle = TriangleGenerator(
-    timer = 253,  // This should be ~220Hz
+//    timer = 253,  // This should be ~220Hz
     linear = 127,
     length = 0
   )

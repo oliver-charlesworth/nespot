@@ -56,6 +56,7 @@ class Nes(
     prg = cartridge.prg,
     ram = cpuRam,
     ppu = ppu,
+    apu = apu,
     joypads = joypads
   )
 
@@ -81,6 +82,7 @@ class Nes(
     while (ppu.scanline != 0) {
       step()
     }
+    apu.generate()
   }
 
   private fun step() {

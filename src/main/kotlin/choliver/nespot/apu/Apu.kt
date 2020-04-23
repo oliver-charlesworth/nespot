@@ -6,8 +6,6 @@ class Apu(
   private val buffer: ByteArray
 ) {
   private val triangle = TriangleGenerator()
-  private var triangleTimer = 0x0000
-
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
@@ -44,20 +42,16 @@ class Apu(
       }
 
       REG_TRI_LINEAR -> {
-        println("REG_TRI_LINEAR")
+        triangle.linear = data and 0x7F
       }
 
       REG_TRI_LO -> {
-        println("REG_TRI_LO")
-        triangleTimer = (triangleTimer and 0x0700) or data
-        triangle.timer = triangleTimer
+        triangle.timer = (triangle.timer and 0x0700) or data
       }
 
       REG_TRI_HI -> {
-        println("REG_TRI_HI")
-        triangleTimer = (triangleTimer and 0x00FF) or ((data and 0x07) shl 8)
-        triangle.timer = triangleTimer
-        // TODO - update length counter
+        triangle.timer = (triangle.timer and 0x00FF) or ((data and 0x07) shl 8)
+        triangle.length = (data and 0xF8) ushr 5
       }
 
       REG_NOISE_VOL -> {
@@ -90,6 +84,10 @@ class Apu(
 
       REG_SND_CHN -> {
 
+      }
+
+      REG_FRAME_COUNTER_CTRL -> {
+        println("REG_FRAME_COUNTER_CTRL = %02x".format(data))
       }
     }
   }
@@ -127,5 +125,6 @@ class Apu(
     const val REG_DMC_LEN = 0x13
 
     const val REG_SND_CHN = 0x15
+    const val REG_FRAME_COUNTER_CTRL = 0x17
   }
 }

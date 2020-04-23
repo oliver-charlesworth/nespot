@@ -8,23 +8,35 @@ class TriangleGenerator(
   length: Int = 0    // 5-bit
 ) {
 
-//  private val quarterFrameCounter = Counter(FRAME_SEQUENCER_PERIOD_CYCLES / 4.0)
+  private val quarterFrameCounter = Counter(FRAME_SEQUENCER_PERIOD_CYCLES / 4.0)
   private val timerCounter = Counter()
   private var iSeq = 0
   private var iQuarterFrame = 0
   private var iLinear = linear
   private var iLength = LENGTH_TABLE[length]
 
+  var linear: Int = 0
+    set(value) {
+      field = value
+      iLinear = linear
+    }
+
+  var length: Int = 0
+    set(value) {
+      field = value
+      iLength = LENGTH_TABLE[value]
+    }
+
   var timer: Int = 0
     set(value) {
       field = value
-      timerCounter.periodCpuCycles = value + 1
+      timerCounter.periodCpuCycles = (value + 1).toDouble()
     }
 
 
   fun generate(num: Int) = List(num) {
-//    val quarterTicks = quarterFrameCounter.update()
-//    updateCounters(quarterTicks)
+    val quarterTicks = quarterFrameCounter.update()
+    updateCounters(quarterTicks)
 
     val seqTicks = timerCounter.update()
     updatePhase(seqTicks)
@@ -43,9 +55,9 @@ class TriangleGenerator(
   }
 
   private fun updatePhase(ticks: Int) {
-//    if ((iLinear != 0) && (iLength != 0)) {
+    if ((iLinear != 0) && (iLength != 0)) {
       iSeq = (iSeq + ticks) % SEQUENCE.size
-//    }
+    }
   }
 
   companion object {

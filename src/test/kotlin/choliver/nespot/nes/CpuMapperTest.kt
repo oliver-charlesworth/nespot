@@ -113,9 +113,9 @@ class CpuMapperTest {
   @Test
   fun `maps to apu`() {
     mapper.store(0x4000, 0x30)
-    mapper.store(0x4015, 0x40)
+    mapper.store(0x4017, 0x40)    // This is the highest APU reg
 
     verify(apu).writeReg(0, 0x30)
-    verify(apu).writeReg(21, 0x40)
+    verify(apu).writeReg(23, 0x40)
   }
 }

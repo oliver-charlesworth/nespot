@@ -3,28 +3,27 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Triangle
-class TriangleGenerator(
-  linear: Int = 0,   // 7-bit
-  length: Int = 0    // 5-bit
-) {
+class TriangleGenerator {
 
-  private val quarterFrameCounter = Counter(FRAME_SEQUENCER_PERIOD_CYCLES / 4.0)
+  private val sequencer = Sequencer()
   private val timerCounter = Counter()
   private var iSeq = 0
-  private var iQuarterFrame = 0
-  private var iLinear = linear
-  private var iLength = LENGTH_TABLE[length]
+  private var iLinear = 0
+  private var iLength = 0
+  private var linearY = 0   // TODO - needs a better name
 
   var linear: Int = 0
     set(value) {
       field = value
-      iLinear = linear
+      linearY = value
+      iLinear = value
     }
 
   var length: Int = 0
     set(value) {
       field = value
       iLength = LENGTH_TABLE[value]
+      iLinear = linearY   // Resets the linear counter too
     }
 
   var timer: Int = 0
@@ -35,26 +34,19 @@ class TriangleGenerator(
 
 
   fun generate(num: Int) = List(num) {
-    val quarterTicks = quarterFrameCounter.update()
-    updateCounters(quarterTicks)
-
-    val seqTicks = timerCounter.update()
-    updatePhase(seqTicks)
-
+    updateCounters()
+    updatePhase()
     SEQUENCE[iSeq]
   }
 
-  private fun updateCounters(inc: Int) {
-    iLinear = max(iLinear - inc, 0)
-    iQuarterFrame += inc
-    // TODO - handle multiple ticks
-    if (iQuarterFrame == 2) {
-      iQuarterFrame = 0
-      iLength = max(iLength - 1, 0)
-    }
+  private fun updateCounters() {
+    val ticks = sequencer.update()
+    iLinear = max(iLinear - ticks.quarter, 0)
+    iLength = max(iLength - ticks.half, 0)
   }
 
-  private fun updatePhase(ticks: Int) {
+  private fun updatePhase() {
+    val ticks = timerCounter.update()
     if ((iLinear != 0) && (iLength != 0)) {
       iSeq = (iSeq + ticks) % SEQUENCE.size
     }

@@ -87,7 +87,7 @@ class Apu(
       }
 
       REG_FRAME_COUNTER_CTRL -> {
-        println("REG_FRAME_COUNTER_CTRL = %02x".format(data))
+        // TODO
       }
     }
   }

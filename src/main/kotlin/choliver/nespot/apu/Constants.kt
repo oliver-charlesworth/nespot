@@ -1,9 +1,11 @@
 package choliver.nespot.apu
 
+import choliver.nespot.apu.Rational.Companion.rational
+
 const val SAMPLE_RATE_HZ = 44100
 
 // See https://wiki.nesdev.com/w/index.php/Cycle_reference_chart
-val CPU_FREQ_HZ = Rational(945e6.toInt()) / 11 / 12
+val CPU_FREQ_HZ = rational(945e6.toInt(), 4) / 11 / 12
 
 val CYCLES_PER_SAMPLE = CPU_FREQ_HZ / SAMPLE_RATE_HZ
 

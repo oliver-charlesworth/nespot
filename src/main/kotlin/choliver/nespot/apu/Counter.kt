@@ -1,13 +1,13 @@
 package choliver.nespot.apu
 
 class Counter(
-  private val cyclesPerSample: Double,
-  var periodCycles: Double = 1.0 // TODO - can't be zero
+  private val cyclesPerSample: Rational,
+  var periodCycles: Rational = Rational(1) // TODO - can't be zero
 ) {
   private var pos = periodCycles
 
   fun take(): Int {
-    pos -= cyclesPerSample  // TODO - this approach is bad for things that are definitely clean divisors of the CPU rate
+    pos -= cyclesPerSample
 
     // TODO - do this with division please
     var ret = 0

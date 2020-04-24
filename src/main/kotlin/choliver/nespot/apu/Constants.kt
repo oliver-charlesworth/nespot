@@ -3,9 +3,9 @@ package choliver.nespot.apu
 const val SAMPLE_RATE_HZ = 44100
 
 // See https://wiki.nesdev.com/w/index.php/Cycle_reference_chart
-const val CPU_FREQ_HZ = (236.25e6 / 11) / 12
+val CPU_FREQ_HZ = Rational(945e6.toInt()) / 11 / 12
 
-const val CYCLES_PER_SAMPLE = CPU_FREQ_HZ.toDouble() / SAMPLE_RATE_HZ
+val CYCLES_PER_SAMPLE = CPU_FREQ_HZ / SAMPLE_RATE_HZ
 
 // See https://wiki.nesdev.com/w/index.php/APU_Frame_Counter
 const val FRAME_SEQUENCER_PERIOD_CYCLES = 29830

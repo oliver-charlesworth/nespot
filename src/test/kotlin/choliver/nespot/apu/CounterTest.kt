@@ -2,16 +2,13 @@ package choliver.nespot.apu
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import kotlin.math.PI
 
 class CounterTest {
-
-  // TODO - how do we prove this never diverges?
   @Test
   fun `integer multiple`() {
     val counter = Counter(
-      cyclesPerSample = 4.0,
-      periodCycles = 16.0
+      cyclesPerSample = 4.toRational(),
+      periodCycles = 16.toRational()
     )
 
     assertEquals(
@@ -23,8 +20,8 @@ class CounterTest {
   @Test
   fun `rational multiple`() {
     val counter = Counter(
-      cyclesPerSample = 4.0,
-      periodCycles = 10.0
+      cyclesPerSample = 4.toRational(),
+      periodCycles = 10.toRational()
     )
 
     assertEquals(
@@ -34,23 +31,10 @@ class CounterTest {
   }
 
   @Test
-  fun `irrational multiple`() {
-    val counter = Counter(
-      cyclesPerSample = 4.0,
-      periodCycles = PI * 3
-    )
-
-    assertEquals(
-      listOf(0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0),
-      counter.take(30)
-    )
-  }
-
-  @Test
   fun `unity multiple`() {
     val counter = Counter(
-      cyclesPerSample = 4.0,
-      periodCycles = 4.0
+      cyclesPerSample = 4.toRational(),
+      periodCycles = 4.toRational()
     )
 
     assertEquals(
@@ -62,8 +46,8 @@ class CounterTest {
   @Test
   fun `sub-unity integer multiple`() {
     val counter = Counter(
-      cyclesPerSample = 4.0,
-      periodCycles = 2.0
+      cyclesPerSample = 4.toRational(),
+      periodCycles = 2.toRational()
     )
 
     assertEquals(
@@ -75,8 +59,8 @@ class CounterTest {
   @Test
   fun `sub-unity rational multiple`() {
     val counter = Counter(
-      cyclesPerSample = 10.0,
-      periodCycles = 4.0
+      cyclesPerSample = 10.toRational(),
+      periodCycles = 4.toRational()
     )
 
     assertEquals(
@@ -88,12 +72,12 @@ class CounterTest {
   @Test
   fun `drains current period before starting new period`() {
     val counter = Counter(
-      cyclesPerSample = 4.0,
-      periodCycles = 16.0
+      cyclesPerSample = 4.toRational(),
+      periodCycles = 16.toRational()
     )
 
     counter.take(1)
-    counter.periodCycles = 4.0
+    counter.periodCycles = 4.toRational()
 
     assertEquals(
       listOf(0, 0, 1, 1, 1, 1), // If the period immediately reset, then these would be all ones

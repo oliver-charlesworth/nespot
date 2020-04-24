@@ -3,7 +3,7 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // http://wiki.nesdev.com/w/index.php/APU_Noise
-class NoiseGenerator(cyclesPerSample: Double) : Generator {
+class NoiseGenerator(cyclesPerSample: Rational) : Generator {
   private val timerCounter = Counter(cyclesPerSample = cyclesPerSample)
   private var iLength = 0
   private var sr = 0x0001
@@ -20,7 +20,7 @@ class NoiseGenerator(cyclesPerSample: Double) : Generator {
   var period: Int = 0
     set(value) {
       field = value
-      timerCounter.periodCycles = PERIOD_TABLE[value].toDouble()
+      timerCounter.periodCycles = PERIOD_TABLE[value].toRational()
     }
 
   override fun generate(ticks: Sequencer.Ticks): Int {

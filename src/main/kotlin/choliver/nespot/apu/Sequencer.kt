@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-class Sequencer(cyclesPerSample: Double) {
+class Sequencer(cyclesPerSample: Rational) {
   data class Ticks(
     val quarter: Int,
     val half: Int
@@ -8,7 +8,7 @@ class Sequencer(cyclesPerSample: Double) {
 
   private val counter = Counter(
     cyclesPerSample = cyclesPerSample,
-    periodCycles = FRAME_SEQUENCER_PERIOD_CYCLES / 4.0
+    periodCycles = Rational(FRAME_SEQUENCER_PERIOD_CYCLES, 4)
   )
   private var iSeq = 0
 

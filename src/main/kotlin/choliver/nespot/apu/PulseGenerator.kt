@@ -3,7 +3,7 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
-class PulseGenerator(cyclesPerSample: Double) : Generator {
+class PulseGenerator(cyclesPerSample: Rational) : Generator {
   private val timerCounter = Counter(cyclesPerSample = cyclesPerSample)
   private var iSeq = 0
   private var iLength = 0
@@ -20,7 +20,7 @@ class PulseGenerator(cyclesPerSample: Double) : Generator {
   var timer: Int = 0
     set(value) {
       field = value
-      timerCounter.periodCycles = (value + 1).toDouble()
+      timerCounter.periodCycles = (value + 1).toRational()
     }
 
   override fun generate(ticks: Sequencer.Ticks): Int {

@@ -6,7 +6,7 @@ import choliver.nespot.Memory
 
 // See http://wiki.nesdev.com/w/index.php/APU_DMC
 class DmcGenerator(
-  cyclesPerSample: Double,
+  cyclesPerSample: Rational,
   private val memory: Memory
 ) : Generator {
   var level = 0
@@ -32,7 +32,7 @@ class DmcGenerator(
   var rate: Int = 0
     set(value) {
       field = value
-      timerCounter.periodCycles = RATE_TABLE[value].toDouble()
+      timerCounter.periodCycles = RATE_TABLE[value].toRational()
     }
 
   override fun generate(ticks: Sequencer.Ticks): Int {

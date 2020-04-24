@@ -23,7 +23,7 @@ class PulseGenerator(cyclesPerSample: Rational) : Generator {
       timerCounter.periodCycles = (value + 1).toRational()
     }
 
-  override fun generate(ticks: Sequencer.Ticks): Int {
+  override fun take(ticks: Sequencer.Ticks): Int {
     updateCounters(ticks)
     updatePhase()
     return SEQUENCES[dutyCycle][iSeq] * volume

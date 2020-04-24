@@ -143,11 +143,11 @@ class Apu(
       // See http://wiki.nesdev.com/w/index.php/APU_Mixer
       // I don't believe the "non-linear" mixing is worth it.
       val mixed = ((0 +
-        (if (pulse1Enabled) 0.00752 else 0.0) * pulse1.generate(ticks) +
-        (if (pulse2Enabled) 0.00752 else 0.0) * pulse2.generate(ticks) +
-        (if (triangleEnabled) 0.00851 else 0.0) * triangle.generate(ticks) +
-        (if (noiseEnabled) 0.00494 else 0.0) * noise.generate(ticks) +
-        (if (dmcEnabled) 0.00335 else 0.0) * dmc.generate(ticks)
+        (if (pulse1Enabled) 0.00752 else 0.0) * pulse1.take(ticks) +
+        (if (pulse2Enabled) 0.00752 else 0.0) * pulse2.take(ticks) +
+        (if (triangleEnabled) 0.00851 else 0.0) * triangle.take(ticks) +
+        (if (noiseEnabled) 0.00494 else 0.0) * noise.take(ticks) +
+        (if (dmcEnabled) 0.00335 else 0.0) * dmc.take(ticks)
       ) * 100).toInt()
 
       // TODO - filters

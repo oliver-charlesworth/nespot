@@ -23,7 +23,8 @@ class NoiseGenerator(cyclesPerSample: Rational) : Generator {
       timerCounter.periodCycles = PERIOD_TABLE[value].toRational()
     }
 
-  override fun generate(ticks: Sequencer.Ticks): Int {
+  // Not sure if should clock the LFSR before or after output.  Not sure I care.
+  override fun take(ticks: Sequencer.Ticks): Int {
     updateCounters(ticks)
     updatePhase()
     return (sr and 1) * volume

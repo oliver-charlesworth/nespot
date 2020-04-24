@@ -31,7 +31,7 @@ class TriangleGenerator(cyclesPerSample: Rational) : Generator {
     }
 
 
-  override fun generate(ticks: Sequencer.Ticks): Int {
+  override fun take(ticks: Sequencer.Ticks): Int {
     updateCounters(ticks)
     updatePhase()
     return SEQUENCE[iSeq]

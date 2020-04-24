@@ -35,7 +35,7 @@ class DmcGenerator(
       timerCounter.periodCycles = RATE_TABLE[value].toRational()
     }
 
-  override fun generate(ticks: Sequencer.Ticks): Int {
+  override fun take(ticks: Sequencer.Ticks): Int {
     val counterTicks = timerCounter.take()
     if ((counterTicks != 0) && (offset != _length)) {
       if (numBits == 0) {

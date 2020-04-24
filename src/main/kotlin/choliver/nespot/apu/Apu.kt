@@ -44,7 +44,7 @@ class Apu(
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
       REG_SQ1_VOL -> {
-        pulse1.dutyCycle = (data and 0xC0) ushr 6
+        pulse1.dutyCycle = (data and 0xC0) shr 6
         pulse1.volume = data and 0x0F
         // TODO - halt
         // TODO - volume/envelope flag
@@ -61,11 +61,11 @@ class Apu(
 
       REG_SQ1_HI -> {
         pulse1.timer = (pulse1.timer and 0x00FF) or ((data and 0x07) shl 8)
-        pulse1.length = (data and 0xF8) ushr 5
+        pulse1.length = (data and 0xF8) shr 3
       }
 
       REG_SQ2_VOL -> {
-        pulse2.dutyCycle = (data and 0xC0) ushr 6
+        pulse2.dutyCycle = (data and 0xC0) shr 6
         pulse2.volume = data and 0x0F
         // TODO - halt
         // TODO - volume/envelope flag
@@ -82,7 +82,7 @@ class Apu(
 
       REG_SQ2_HI -> {
         pulse2.timer = (pulse2.timer and 0x00FF) or ((data and 0x07) shl 8)
-        pulse2.length = (data and 0xF8) shr 5
+        pulse2.length = (data and 0xF8) shr 3
       }
 
       REG_TRI_LINEAR -> {
@@ -96,7 +96,7 @@ class Apu(
 
       REG_TRI_HI -> {
         triangle.timer = (triangle.timer and 0x00FF) or ((data and 0x07) shl 8)
-        triangle.length = (data and 0xF8) shr 5
+        triangle.length = (data and 0xF8) shr 3
       }
 
       REG_NOISE_VOL -> {
@@ -111,7 +111,7 @@ class Apu(
       }
 
       REG_NOISE_HI -> {
-        noise.length = (data and 0xF8) shr 5
+        noise.length = (data and 0xF8) shr 3
       }
 
       REG_DMC_FREQ -> {

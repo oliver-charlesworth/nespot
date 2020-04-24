@@ -2,25 +2,24 @@ package choliver.nespot.apu
 
 import choliver.nespot.apu.Sequencer.Ticks
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class NoiseGeneratorTest {
-  private val gen = NoiseGenerator(cyclesPerSample = 4.toRational())
+  private val gen = NoiseGenerator(cyclesPerSample = 4.toRational()).apply {
+    volume = 1
+    length = 1
+    period = 0  // Corresponds to actual period of 4
+  }
 
-  // TODO - volume
-  // TODO - mode
+  // TODO - something about reset behaviour
   // TODO - length
-  // TODO - period
 
   @Test
   fun `full-length sequence`() {
-    gen.volume = 1
-    gen.period = 0  // Corresponds to actual period of 4
-    gen.length = 1
-
     // Sequence is too long to test the whole thing against golden vector
-    val seq = takeable.take(  32767)
-    val seq2 = takeable.take(32767)
+    val seq = takeable().take(  32767)
+    val seq2 = takeable().take(32767)
 
     assertEquals(
       listOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0),
@@ -31,19 +30,54 @@ class NoiseGeneratorTest {
   }
 
   @Test
+  fun `short sequence`() {
+    gen.mode = 1
+
+    val seq = takeable().take(  93)
+    val seq2 = takeable().take(93)
+
+    assertEquals(seq, seq2) // Should repeat
+  }
+
+  @Test
+  fun `different period`() {
+    gen.mode = 1    // Use short sequence because easier to test
+
+    val ref = takeable().take(  93)
+
+    gen.period = 2  // Corresponds to actual period of 16
+
+    val seq = takeable().take(93 * 4)
+
+    assertEquals(
+      ref.flatMap { listOf(it).repeat(4) },
+      seq
+    ) // Long-period sequence shold match the padded short-period sequence
+  }
+
+  @Test
   fun volume() {
     gen.volume = 5
-    gen.period = 0
-    gen.length = 1
 
     assertEquals(
       listOf(0, 5),
-      takeable.take(  32767).distinct()
+      takeable().take(  32767).distinct()
     )
   }
 
+  @Test
+  fun length() {
+    gen.mode = 1    // Use short sequence because easier to test
+    gen.length = 30
 
-  private val takeable = object : Takeable<Int> {
-    override fun take() = gen.take(Ticks(0, 0))
+    val seq = takeable(Ticks(quarter = 0, half = 1)).take(93)
+
+    assertEquals(listOf(0, 1), seq.take(30).distinct())
+    assertEquals(listOf(0), seq.drop(30).distinct())  // Everything else is zeroed
+  }
+
+
+  private fun takeable(tick: Ticks = Ticks(0, 0)) = object : Takeable<Int> {
+    override fun take() = gen.take(tick)
   }
 }

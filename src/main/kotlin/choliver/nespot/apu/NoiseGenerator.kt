@@ -27,7 +27,7 @@ class NoiseGenerator(cyclesPerSample: Rational) : Generator {
   override fun take(ticks: Sequencer.Ticks): Int {
     updateCounters(ticks)
     updatePhase()
-    return (sr and 1) * volume
+    return if (iLength != 0) ((sr and 1) * volume) else 0
   }
 
   private fun updateCounters(ticks: Sequencer.Ticks) {
@@ -36,7 +36,7 @@ class NoiseGenerator(cyclesPerSample: Rational) : Generator {
 
   private fun updatePhase() {
     val ticks = timerCounter.take()
-    if ((iLength != 0) && (ticks != 0)) {
+    if (ticks != 0) {
       val fb = (sr and 0x01) xor ((if (mode == 0) (sr shr 1) else (sr shr 6)) and 0x01)
       sr = (sr shr 1) or (fb shl 14)
     }

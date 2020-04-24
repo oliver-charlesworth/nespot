@@ -18,4 +18,8 @@ class Counter(
     }
     return ret
   }
+
+  fun reset() {
+    pos = periodCycles
+  }
 }

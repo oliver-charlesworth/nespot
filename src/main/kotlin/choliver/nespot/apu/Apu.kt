@@ -61,7 +61,7 @@ class Apu(
 
       REG_SQ1_HI -> {
         pulse1.timer = (pulse1.timer and 0x00FF) or ((data and 0x07) shl 8)
-        pulse1.length = (data and 0xF8) shr 3
+        pulse1.length = LENGTH_TABLE[(data and 0xF8) shr 3]
       }
 
       REG_SQ2_VOL -> {
@@ -82,7 +82,7 @@ class Apu(
 
       REG_SQ2_HI -> {
         pulse2.timer = (pulse2.timer and 0x00FF) or ((data and 0x07) shl 8)
-        pulse2.length = (data and 0xF8) shr 3
+        pulse2.length = LENGTH_TABLE[(data and 0xF8) shr 3]
       }
 
       REG_TRI_LINEAR -> {
@@ -96,7 +96,7 @@ class Apu(
 
       REG_TRI_HI -> {
         triangle.timer = (triangle.timer and 0x00FF) or ((data and 0x07) shl 8)
-        triangle.length = (data and 0xF8) shr 3
+        triangle.length = LENGTH_TABLE[(data and 0xF8) shr 3]
       }
 
       REG_NOISE_VOL -> {
@@ -111,7 +111,7 @@ class Apu(
       }
 
       REG_NOISE_HI -> {
-        noise.length = (data and 0xF8) shr 3
+        noise.length = LENGTH_TABLE[(data and 0xF8) shr 3]
       }
 
       REG_DMC_FREQ -> {
@@ -133,7 +133,21 @@ class Apu(
       }
 
       REG_SND_CHN -> {
-        // TODO - set length bits to zero, mess with DMC stuff
+        if (!data.isBitSet(4)) {
+          // TODO - mess with DMC
+        }
+        if (!data.isBitSet(3)) {
+          noise.length = 0
+        }
+        if (!data.isBitSet(2)) {
+          triangle.length = 0
+        }
+        if (!data.isBitSet(1)) {
+          pulse2.length = 0
+        }
+        if (!data.isBitSet(0)) {
+          pulse1.length = 0
+        }
         dmcEnabled = data.isBitSet(4)
         noiseEnabled = data.isBitSet(3)
         triangleEnabled = data.isBitSet(2)

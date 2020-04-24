@@ -59,7 +59,7 @@ class PulseGeneratorTest {
   @Test
   fun `length counter`() {
     gen.dutyCycle = 3 // Easiest to see the impact on
-    gen.length = 9  // Maps to actual length of 8
+    gen.length = 8
     val seq = gen.take(16, Ticks(quarter = 0, half = 1))
 
     assertEquals(listOf(1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0), seq)

@@ -18,7 +18,7 @@ class TriangleGenerator(cyclesPerSample: Rational) : Generator {
   var length: Int = 0
     set(value) {
       field = value
-      iLength = LENGTH_TABLE[value]
+      iLength = value
       iLinear = linear   // Resets the linear counter too
     }
 

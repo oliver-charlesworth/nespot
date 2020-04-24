@@ -44,7 +44,7 @@ class TriangleGeneratorTest {
 
   @Test
   fun `length counter`() {
-    gen.length = 4  // Maps to actual length of 40
+    gen.length = 40
     val seq = gen.take(64, Ticks(quarter = 0, half = 1))
 
     assertEquals(

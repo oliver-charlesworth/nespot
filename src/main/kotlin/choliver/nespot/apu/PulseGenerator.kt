@@ -20,13 +20,14 @@ class PulseGenerator(cyclesPerSample: Rational) : Generator {
   var timer: Int = 0
     set(value) {
       field = value
-      timerCounter.periodCycles = (value + 1).toRational()
+      timerCounter.periodCycles = (value + 1).toRational() * 2 // APU clock rather than CPU clock
     }
 
   override fun take(ticks: Sequencer.Ticks): Int {
+    val ret = SEQUENCES[dutyCycle][iSeq] * volume
     updateCounters(ticks)
     updatePhase()
-    return SEQUENCES[dutyCycle][iSeq] * volume
+    return ret
   }
 
   private fun updateCounters(ticks: Sequencer.Ticks) {

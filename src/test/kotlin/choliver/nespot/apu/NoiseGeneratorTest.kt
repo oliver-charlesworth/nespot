@@ -11,6 +11,8 @@ class NoiseGeneratorTest {
     period = 0  // Corresponds to actual period of 4
   }
 
+  // TODO - should the frequency be halved (i.e. clocked by APU rather than CPU?)
+
   @Test
   fun `full-length sequence`() {
     // Sequence is too long to test the whole thing against golden vector

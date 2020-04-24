@@ -5,6 +5,9 @@ import choliver.nespot.Memory
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 import choliver.nespot.isBitSet
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sqrt
 
 // TODO - interrupts
 // TODO - read status register
@@ -28,6 +31,15 @@ class Apu(
   private var triangleEnabled = false
   private var noiseEnabled = false
   private var dmcEnabled = false
+
+  private val alpha: Double
+  private var state: Double = 0.0
+
+  init {
+    val omega = PI * 14e3 / SAMPLE_RATE_HZ
+
+    alpha = cos(omega) - 1 + sqrt(cos(omega) * cos(omega) - 4 * cos(omega) + 3)
+  }
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
@@ -142,19 +154,21 @@ class Apu(
 
       // See http://wiki.nesdev.com/w/index.php/APU_Mixer
       // I don't believe the "non-linear" mixing is worth it.
-      val mixed = ((0 +
+      val mixed = 0 +
         (if (pulse1Enabled) 0.00752 else 0.0) * pulse1.take(ticks) +
         (if (pulse2Enabled) 0.00752 else 0.0) * pulse2.take(ticks) +
         (if (triangleEnabled) 0.00851 else 0.0) * triangle.take(ticks) +
         (if (noiseEnabled) 0.00494 else 0.0) * noise.take(ticks) +
         (if (dmcEnabled) 0.00335 else 0.0) * dmc.take(ticks)
-      ) * 100).toInt()
 
-      // TODO - filters
+      // TODO - validate this filter
+      val filtered = alpha * mixed + (1 - alpha) * state
+      state = filtered
+      val rounded = (filtered * 100).toInt()
 
       // This seems to be the opposite of little-endian
-      buffer[i] = (mixed shr 8).toByte()
-      buffer[i + 1] = mixed.toByte()
+      buffer[i] = (rounded shr 8).toByte()
+      buffer[i + 1] = rounded.toByte()
     }
   }
 

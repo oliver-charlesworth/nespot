@@ -42,6 +42,7 @@ class TriangleGenerator(cyclesPerSample: Rational) : Generator {
 
   private fun updatePhase() {
     val ticks = timerCounter.take()
+    // Counters gate sequence generation, rather than muting the channel
     if ((iLinear != 0) && (iLength != 0)) {
       iSeq = (iSeq + ticks) % SEQUENCE_LENGTH
     }

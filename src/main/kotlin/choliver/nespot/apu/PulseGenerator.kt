@@ -24,7 +24,7 @@ class PulseGenerator(cyclesPerSample: Rational) : Generator {
     }
 
   override fun take(ticks: Sequencer.Ticks): Int {
-    val ret = SEQUENCES[dutyCycle][iSeq] * volume
+    val ret = if (iLength != 0) (SEQUENCES[dutyCycle][iSeq] * volume) else 0
     updateCounters(ticks)
     updatePhase()
     return ret
@@ -36,9 +36,7 @@ class PulseGenerator(cyclesPerSample: Rational) : Generator {
 
   private fun updatePhase() {
     val ticks = timerCounter.take()
-    if (iLength != 0) {
-      iSeq = (iSeq + ticks) % SEQUENCE_LENGTH
-    }
+    iSeq = (iSeq + ticks) % SEQUENCE_LENGTH
   }
 
   companion object {

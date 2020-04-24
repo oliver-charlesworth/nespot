@@ -1,5 +1,7 @@
 package choliver.nespot.apu
 
+import choliver.nespot.apu.Sequencer.*
+import choliver.nespot.apu.take
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -43,5 +45,23 @@ class PulseGeneratorTest {
     val seq = gen.take(32)
 
     assertEquals(listOf(1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1).repeat(2), seq)
+  }
+
+  @Test
+  fun volume() {
+    gen.dutyCycle = 0
+    gen.volume = 5
+    val seq = gen.take(16)
+
+    assertEquals(listOf(0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), seq)
+  }
+
+  @Test
+  fun `length counter`() {
+    gen.dutyCycle = 3 // Easiest to see the impact on
+    gen.length = 9  // Maps to actual length of 8
+    val seq = gen.take(16, Ticks(quarter = 0, half = 1))
+
+    assertEquals(listOf(1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0), seq)
   }
 }

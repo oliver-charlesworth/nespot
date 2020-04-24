@@ -6,10 +6,9 @@ import org.junit.jupiter.api.Test
 class CounterTest {
   @Test
   fun `integer multiple`() {
-    val counter = Counter(
-      cyclesPerSample = 4.toRational(),
+    val counter = Counter(cyclesPerSample = 4.toRational()).apply {
       periodCycles = 16.toRational()
-    )
+    }
 
     assertEquals(
       listOf(0, 0, 0, 1).repeat(3),
@@ -19,10 +18,9 @@ class CounterTest {
 
   @Test
   fun `rational multiple`() {
-    val counter = Counter(
-      cyclesPerSample = 4.toRational(),
+    val counter = Counter(cyclesPerSample = 4.toRational()).apply {
       periodCycles = 10.toRational()
-    )
+    }
 
     assertEquals(
       listOf(0, 0, 1, 0, 1).repeat(6),
@@ -32,10 +30,9 @@ class CounterTest {
 
   @Test
   fun `unity multiple`() {
-    val counter = Counter(
-      cyclesPerSample = 4.toRational(),
+    val counter = Counter(cyclesPerSample = 4.toRational()).apply {
       periodCycles = 4.toRational()
-    )
+    }
 
     assertEquals(
       listOf(1).repeat(20),
@@ -45,10 +42,9 @@ class CounterTest {
 
   @Test
   fun `sub-unity integer multiple`() {
-    val counter = Counter(
-      cyclesPerSample = 4.toRational(),
+    val counter = Counter(cyclesPerSample = 4.toRational()).apply {
       periodCycles = 2.toRational()
-    )
+    }
 
     assertEquals(
       listOf(2).repeat(20),
@@ -58,10 +54,9 @@ class CounterTest {
 
   @Test
   fun `sub-unity rational multiple`() {
-    val counter = Counter(
-      cyclesPerSample = 10.toRational(),
+    val counter = Counter(cyclesPerSample = 10.toRational()).apply {
       periodCycles = 4.toRational()
-    )
+    }
 
     assertEquals(
       listOf(2, 3).repeat(10),
@@ -70,17 +65,16 @@ class CounterTest {
   }
 
   @Test
-  fun `drains current period before starting new period`() {
-    val counter = Counter(
-      cyclesPerSample = 4.toRational(),
+  fun `immediately starts new period`() {
+    val counter = Counter(cyclesPerSample = 4.toRational()).apply {
       periodCycles = 16.toRational()
-    )
+    }
 
-    counter.take(1)
+    counter.take(1) // Make some progress
     counter.periodCycles = 4.toRational()
 
     assertEquals(
-      listOf(0, 0, 1, 1, 1, 1), // If the period immediately reset, then these would be all ones
+      listOf(1, 1, 1, 1, 1, 1), // If the period didn't immediately reset, then some of these would be zero
       counter.take(6)
     )
   }

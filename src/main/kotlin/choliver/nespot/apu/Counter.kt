@@ -2,11 +2,14 @@ package choliver.nespot.apu
 
 import choliver.nespot.apu.Rational.Companion.rational
 
-class Counter(
-  private val cyclesPerSample: Rational,
-  var periodCycles: Rational = rational(1) // TODO - can't be zero
-) : Takeable<Int> {
-  private var pos = periodCycles
+class Counter(private val cyclesPerSample: Rational) : Takeable<Int> {
+  private var pos = 0.toRational()
+
+  var periodCycles: Rational = rational(1)
+    set(value) {
+      field = value
+      pos = value
+    }
 
   override fun take(): Int {
     pos -= cyclesPerSample
@@ -17,9 +20,5 @@ class Counter(
       ret++
     }
     return ret
-  }
-
-  fun reset() {
-    pos = periodCycles
   }
 }

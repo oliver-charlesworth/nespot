@@ -24,10 +24,9 @@ class Sequencer(
   private val fourStepPeriod = rational(frameSequencerFourStepPeriodCycles, 4)
   private val fiveStepPeriod = rational(frameSequencerFiveStepPeriodCycles, 5)
 
-  private val counter = Counter(
-    cyclesPerSample = cyclesPerSample,
+  private val counter = Counter(cyclesPerSample = cyclesPerSample).apply {
     periodCycles = fourStepPeriod
-  )
+  }
   private var iSeq = 0
   private var justReset = false
 
@@ -38,7 +37,6 @@ class Sequencer(
         FOUR_STEP -> fourStepPeriod
         FIVE_STEP -> fiveStepPeriod
       }
-      counter.reset()
       iSeq = 0
       justReset = true
     }

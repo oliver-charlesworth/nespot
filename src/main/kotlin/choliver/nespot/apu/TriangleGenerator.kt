@@ -8,12 +8,10 @@ class TriangleGenerator(cyclesPerSample: Rational) : Generator {
   private var iSeq = 0
   private var iLinear = 0
   private var iLength = 0
-  private var linearY = 0   // TODO - needs a better name
 
   var linear: Int = 0
     set(value) {
       field = value
-      linearY = value
       iLinear = value
     }
 
@@ -21,7 +19,7 @@ class TriangleGenerator(cyclesPerSample: Rational) : Generator {
     set(value) {
       field = value
       iLength = LENGTH_TABLE[value]
-      iLinear = linearY   // Resets the linear counter too
+      iLinear = linear   // Resets the linear counter too
     }
 
   var timer: Int = 0
@@ -30,11 +28,11 @@ class TriangleGenerator(cyclesPerSample: Rational) : Generator {
       timerCounter.periodCycles = (value + 1).toRational()
     }
 
-
   override fun take(ticks: Sequencer.Ticks): Int {
+    val ret = SEQUENCE[iSeq]
     updateCounters(ticks)
     updatePhase()
-    return SEQUENCE[iSeq]
+    return ret
   }
 
   private fun updateCounters(ticks: Sequencer.Ticks) {

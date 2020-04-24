@@ -11,9 +11,6 @@ class NoiseGeneratorTest {
     period = 0  // Corresponds to actual period of 4
   }
 
-  // TODO - something about reset behaviour
-  // TODO - length
-
   @Test
   fun `full-length sequence`() {
     // Sequence is too long to test the whole thing against golden vector
@@ -21,7 +18,7 @@ class NoiseGeneratorTest {
     val seq2 = gen.take(32767)
 
     assertEquals(
-      listOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0),
+      listOf(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0),
       seq.take(32)
     )
     assertEquals(16384, seq.count { it == 1 })  // Property of LFSR
@@ -31,7 +28,6 @@ class NoiseGeneratorTest {
   @Test
   fun `short sequence`() {
     gen.mode = 1
-
     val seq = gen.take(  93)
     val seq2 = gen.take(93)
 
@@ -41,37 +37,32 @@ class NoiseGeneratorTest {
   @Test
   fun `different period`() {
     gen.mode = 1    // Use short sequence because easier to test
-
     val ref = gen.take(  93)
 
     gen.period = 2  // Corresponds to actual period of 16
-
     val seq = gen.take(93 * 4)
 
     assertEquals(
       ref.flatMap { listOf(it).repeat(4) },
       seq
-    ) // Long-period sequence shold match the padded short-period sequence
+    ) // Long-period sequence should match the padded short-period sequence
   }
 
   @Test
   fun volume() {
     gen.volume = 5
+    val seq = gen.take(  32767)
 
-    assertEquals(
-      listOf(0, 5),
-      gen.take(  32767).distinct()
-    )
+    assertEquals(setOf(0, 5), seq.distinct().toSet())
   }
 
   @Test
   fun length() {
     gen.mode = 1    // Use short sequence because easier to test
-    gen.length = 30
-
+    gen.length = 3  // Corresponds to actual length of 32
     val seq = gen.take(93, Ticks(quarter = 0, half = 1))
 
-    assertEquals(listOf(0, 1), seq.take(30).distinct())
-    assertEquals(listOf(0), seq.drop(30).distinct())  // Everything else is zeroed
+    assertEquals(setOf(0, 1), seq.take(32).distinct().toSet())
+    assertEquals(setOf(0), seq.drop(32).distinct().toSet())  // Everything else is zeroed
   }
 }

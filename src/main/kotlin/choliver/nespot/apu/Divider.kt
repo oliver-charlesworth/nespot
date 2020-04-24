@@ -5,7 +5,7 @@ class Divider(private val ratio: Int, private val counter: Counter) {
 
   // TODO - handle multiple ticks
   fun update(): Int {
-    i += counter.update()
+    i += counter.take()
     return if (i == ratio) {
       i = 0
       1

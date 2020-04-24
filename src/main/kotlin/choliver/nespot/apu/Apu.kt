@@ -5,23 +5,23 @@ import choliver.nespot.Memory
 import choliver.nespot.isBitSet
 
 // TODO - interrupts
+// TODO - read status register
 class Apu(
   private val buffer: ByteArray,
   memory: Memory
 ) {
-  private val sequencer = Sequencer()
-  private val pulse1 = PulseGenerator()
-  private val pulse2 = PulseGenerator()
-  private val triangle = TriangleGenerator()
-  private val noise = NoiseGenerator()
-  private val dmc = DmcGenerator(memory)
+  private val sequencer = Sequencer(cyclesPerSample = CYCLES_PER_SAMPLE)
+  private val pulse1 = PulseGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
+  private val pulse2 = PulseGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
+  private val triangle = TriangleGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
+  private val noise = NoiseGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
+  private val dmc = DmcGenerator(cyclesPerSample = CYCLES_PER_SAMPLE, memory = memory)
 
   private var pulse1Enabled = false
   private var pulse2Enabled = false
   private var triangleEnabled = false
   private var noiseEnabled = false
   private var dmcEnabled = false
-
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {

@@ -3,8 +3,8 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Triangle
-class TriangleGenerator : Generator {
-  private val timerCounter = Counter()
+class TriangleGenerator(cyclesPerSample: Double) : Generator {
+  private val timerCounter = Counter(cyclesPerSample = cyclesPerSample)
   private var iSeq = 0
   private var iLinear = 0
   private var iLength = 0
@@ -27,7 +27,7 @@ class TriangleGenerator : Generator {
   var timer: Int = 0
     set(value) {
       field = value
-      timerCounter.periodCpuCycles = (value + 1).toDouble()
+      timerCounter.periodCycles = (value + 1).toDouble()
     }
 
 
@@ -43,7 +43,7 @@ class TriangleGenerator : Generator {
   }
 
   private fun updatePhase() {
-    val ticks = timerCounter.update()
+    val ticks = timerCounter.take()
     if ((iLinear != 0) && (iLength != 0)) {
       iSeq = (iSeq + ticks) % SEQUENCE_LENGTH
     }

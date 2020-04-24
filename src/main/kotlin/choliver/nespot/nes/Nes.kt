@@ -39,7 +39,7 @@ class Nes(
 
   private val cartridge = Cartridge(rom)
 
-  private val apu = Apu(audioBuffer)
+  private val apu = Apu(audioBuffer, cartridge.prg)
 
   private val cpuRam = Ram(CPU_RAM_SIZE)
   private val ppuRam = Ram(PPU_RAM_SIZE)

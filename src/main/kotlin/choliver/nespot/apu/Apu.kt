@@ -1,14 +1,20 @@
 package choliver.nespot.apu
 
 import choliver.nespot.Data
+import choliver.nespot.Memory
 
+// TODO - interrupts
 class Apu(
-  private val buffer: ByteArray
+  private val buffer: ByteArray,
+  memory: Memory
 ) {
   private val pulse1 = PulseGenerator()
   private val pulse2 = PulseGenerator()
   private val triangle = TriangleGenerator()
   private val noise = NoiseGenerator()
+  private val dmc = DmcGenerator(memory)
+
+  private var wtf = 0
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
@@ -84,20 +90,21 @@ class Apu(
       }
 
       REG_DMC_FREQ -> {
-        println("Yeeeeea")
-        // TODO
+        // TODO - IRQ enabled
+        // TODO - loop enabled
+        dmc.rate = data and 0x0F
       }
 
       REG_DMC_RAW -> {
-        // TODO
+        dmc.level = data and 0x7F
       }
 
       REG_DMC_START -> {
-        // TODO
+        dmc.address = data
       }
 
       REG_DMC_LEN -> {
-        // TODO
+        dmc.length = data
       }
 
       REG_SND_CHN -> {
@@ -115,13 +122,15 @@ class Apu(
     val samplesPulse2 = pulse2.generate(buffer.size)
     val samplesTriangle = triangle.generate(buffer.size)
     val samplesNoise = noise.generate(buffer.size)
+    val samplesDmc = dmc.generate(buffer.size)
     for (i in buffer.indices) {
       // See http://wiki.nesdev.com/w/index.php/APU_Mixer
       buffer[i] = ((0 +
         samplesPulse1[i] * 0.00752 +
         samplesPulse2[i] * 0.00752 +
         samplesTriangle[i] * 0.00851 +
-        samplesNoise[i] * 0.00335
+        samplesNoise[i] * 0.00494 +
+        samplesDmc[i] * 0.00335
       ) * 100).toByte()
     }
   }

@@ -32,6 +32,7 @@
   - Branches
   - Page boundary crossings 
   - OAM DMA
+  - APU DMC stalls (see http://wiki.nesdev.com/w/index.php/APU_DMC)
   
 - PPU reset
   

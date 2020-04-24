@@ -5,7 +5,9 @@ import kotlin.math.absoluteValue
 
 data class Rational private constructor(val a: Int, val b: Int) {
   operator fun plus(rhs: Rational) = rational(a * rhs.b + b * rhs.a, b * rhs.b)
+  operator fun plus(rhs: Int) = rational(a + b * rhs, b)
   operator fun minus(rhs: Rational) = rational(a * rhs.b - b * rhs.a, b * rhs.b)
+  operator fun minus(rhs: Int) = rational(a - b * rhs, b)
   operator fun times(rhs: Rational) = rational(a * rhs.a, b * rhs.b)
   operator fun times(rhs: Int) = rational(a * rhs, b)
   operator fun div(rhs: Rational) = rational(a * rhs.b, b * rhs.a)

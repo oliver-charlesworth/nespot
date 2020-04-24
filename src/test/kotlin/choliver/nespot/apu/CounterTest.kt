@@ -84,8 +84,4 @@ class CounterTest {
       counter.take(6)
     )
   }
-
-  private fun Counter.take(num: Int) = List(num) { take() }
-
-  private fun <T> List<T>.repeat(num: Int) = (0 until num).flatMap { this }
 }

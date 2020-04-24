@@ -10,8 +10,8 @@ val CPU_FREQ_HZ = rational(945e6.toInt(), 4) / 11 / 12
 val CYCLES_PER_SAMPLE = CPU_FREQ_HZ / SAMPLE_RATE_HZ
 
 // See https://wiki.nesdev.com/w/index.php/APU_Frame_Counter
-const val FRAME_SEQUENCER_PERIOD_CYCLES = 29830
-// TODO - 5-step sequence
+const val FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES = 29830
+const val FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES = 37282
 
 // See http://wiki.nesdev.com/w/index.php/APU_Length_Counter
 val LENGTH_TABLE = listOf(

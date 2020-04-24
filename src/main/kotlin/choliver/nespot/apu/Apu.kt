@@ -2,6 +2,8 @@ package choliver.nespot.apu
 
 import choliver.nespot.Data
 import choliver.nespot.Memory
+import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
+import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 import choliver.nespot.isBitSet
 
 // TODO - interrupts
@@ -10,7 +12,11 @@ class Apu(
   private val buffer: ByteArray,
   memory: Memory
 ) {
-  private val sequencer = Sequencer(cyclesPerSample = CYCLES_PER_SAMPLE)
+  private val sequencer = Sequencer(
+    cyclesPerSample = CYCLES_PER_SAMPLE,
+    frameSequencerFourStepPeriodCycles = FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES,
+    frameSequencerFiveStepPeriodCycles = FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES
+  )
   private val pulse1 = PulseGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
   private val pulse2 = PulseGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
   private val triangle = TriangleGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
@@ -124,14 +130,15 @@ class Apu(
       }
 
       REG_FRAME_COUNTER_CTRL -> {
-        // TODO
+        sequencer.mode = if (data.isBitSet(7)) FIVE_STEP else FOUR_STEP
+        // TODO - IRQ inhibit
       }
     }
   }
 
   fun generate() {
     for (i in buffer.indices step 2) {
-      val ticks = sequencer.update()
+      val ticks = sequencer.take()
 
       // See http://wiki.nesdev.com/w/index.php/APU_Mixer
       // I don't believe the "non-linear" mixing is worth it.

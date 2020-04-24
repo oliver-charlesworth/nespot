@@ -27,11 +27,13 @@ class RationalTest {
   @Test
   fun plus() {
     assertEquals(rational(19, 12), rational(5, 6) + rational(3, 4))
+    assertEquals(rational(23, 6), rational(5, 6) + 3)
   }
 
   @Test
   fun minus() {
     assertEquals(rational(1, 12), rational(5, 6) - rational(3, 4))
+    assertEquals(rational(-13, 6), rational(5, 6) - 3)
   }
 
   @Test

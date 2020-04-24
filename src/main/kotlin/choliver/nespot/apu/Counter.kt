@@ -5,15 +5,17 @@ import choliver.nespot.apu.Rational.Companion.rational
 class Counter(
   private val cyclesPerSample: Rational,
   var periodCycles: Rational = rational(1) // TODO - can't be zero
-) {
+) : Takeable<Int> {
   private var pos = periodCycles
 
-  fun take(): Int {
+  override fun take(): Int {
     pos -= cyclesPerSample
-    return if (pos <= 0) {
-      val ret = (-pos / periodCycles).toInt()
-      pos += periodCycles * ret
-      ret
-    } else 0
+    // TODO - replace this crap with some kind of division
+    var ret = 0
+    while (pos <= 0) {
+      pos += periodCycles
+      ret++
+    }
+    return ret
   }
 }

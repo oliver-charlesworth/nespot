@@ -59,7 +59,7 @@ class NoiseGeneratorTest {
   @Test
   fun length() {
     gen.mode = 1    // Use short sequence because easier to test
-    gen.length = 3  // Corresponds to actual length of 32
+    gen.length = 30 // Maps to actual length of 32
     val seq = gen.take(93, Ticks(quarter = 0, half = 1))
 
     assertEquals(setOf(0, 1), seq.take(32).distinct().toSet())

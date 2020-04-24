@@ -2,6 +2,7 @@ package choliver.nespot.apu
 
 import choliver.nespot.Data
 import choliver.nespot.Memory
+import choliver.nespot.isBitSet
 
 // TODO - interrupts
 class Apu(
@@ -14,6 +15,13 @@ class Apu(
   private val triangle = TriangleGenerator()
   private val noise = NoiseGenerator()
   private val dmc = DmcGenerator(memory)
+
+  private var pulse1Enabled = false
+  private var pulse2Enabled = false
+  private var triangleEnabled = false
+  private var noiseEnabled = false
+  private var dmcEnabled = false
+
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
@@ -56,7 +64,7 @@ class Apu(
 
       REG_SQ2_HI -> {
         pulse2.timer = (pulse2.timer and 0x00FF) or ((data and 0x07) shl 8)
-        pulse2.length = (data and 0xF8) ushr 5
+        pulse2.length = (data and 0xF8) shr 5
       }
 
       REG_TRI_LINEAR -> {
@@ -70,7 +78,7 @@ class Apu(
 
       REG_TRI_HI -> {
         triangle.timer = (triangle.timer and 0x00FF) or ((data and 0x07) shl 8)
-        triangle.length = (data and 0xF8) ushr 5
+        triangle.length = (data and 0xF8) shr 5
       }
 
       REG_NOISE_VOL -> {
@@ -80,12 +88,12 @@ class Apu(
       }
 
       REG_NOISE_LO -> {
-        noise.mode = (data and 0x80) ushr 7
+        noise.mode = (data and 0x80) shr 7
         noise.period = data and 0x0F
       }
 
       REG_NOISE_HI -> {
-        noise.length = (data and 0xF8) ushr 5
+        noise.length = (data and 0xF8) shr 5
       }
 
       REG_DMC_FREQ -> {
@@ -107,7 +115,12 @@ class Apu(
       }
 
       REG_SND_CHN -> {
-        // TODO
+        // TODO - set length bits to zero, mess with DMC stuff
+        dmcEnabled = data.isBitSet(4)
+        noiseEnabled = data.isBitSet(3)
+        triangleEnabled = data.isBitSet(2)
+        pulse2Enabled = data.isBitSet(1)
+        pulse1Enabled = data.isBitSet(0)
       }
 
       REG_FRAME_COUNTER_CTRL -> {
@@ -117,17 +130,24 @@ class Apu(
   }
 
   fun generate() {
-    for (i in buffer.indices) {
+    for (i in buffer.indices step 2) {
       val ticks = sequencer.update()
 
       // See http://wiki.nesdev.com/w/index.php/APU_Mixer
-      buffer[i] = ((0 +
-        pulse1.generate(ticks) * 0.00752 +
-        pulse2.generate(ticks) * 0.00752 +
-        triangle.generate(ticks) * 0.00851 +
-        noise.generate(ticks) * 0.00494 +
-        dmc.generate(ticks) * 0.00335
-      ) * 100).toByte()
+      // I don't believe the "non-linear" mixing is worth it.
+      val mixed = ((0 +
+        (if (pulse1Enabled) 0.00752 else 0.0) * pulse1.generate(ticks) +
+        (if (pulse2Enabled) 0.00752 else 0.0) * pulse2.generate(ticks) +
+        (if (triangleEnabled) 0.00851 else 0.0) * triangle.generate(ticks) +
+        (if (noiseEnabled) 0.00494 else 0.0) * noise.generate(ticks) +
+        (if (dmcEnabled) 0.00335 else 0.0) * dmc.generate(ticks)
+      ) * 100).toInt()
+
+      // TODO - filters
+
+      // This seems to be the opposite of little-endian
+      buffer[i] = (mixed shr 8).toByte()
+      buffer[i + 1] = mixed.toByte()
     }
   }
 

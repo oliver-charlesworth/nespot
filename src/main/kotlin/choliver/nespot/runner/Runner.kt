@@ -15,6 +15,7 @@ class Runner : CliktCommand() {
   private val rom by argument().file(mustExist = true, canBeDir = false)
   private val numPerfFrames by option("--perf", "-p").int()
 
+  // TODO - thread-safety - need to linearise the joypad events
   private val isClosed = AtomicBoolean(false)
   private val joypads = FakeJoypads()
   private val screen = Screen(

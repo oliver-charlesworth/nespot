@@ -3,6 +3,13 @@
 ## To do
 
 - Sound!
+  - Startup clicking (NFI)
+  - Quit clicking (could taper the audio)
+  - Relative level of noise channel
+  - Envelope
+  - Interrupts
+  - Halt / disable
+  - Length-4 sequencer
 
 - Crappy keyboard responsiveness
 

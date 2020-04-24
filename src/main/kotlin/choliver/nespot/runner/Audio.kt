@@ -6,9 +6,9 @@ import javax.sound.sampled.AudioSystem
 
 class Audio(frameRateHz: Int) {
   private val bufferSize = (SAMPLE_RATE_HZ / frameRateHz)
-  private val audioFormat = AudioFormat(SAMPLE_RATE_HZ.toFloat(), 8, 1, true, true)
+  private val audioFormat = AudioFormat(SAMPLE_RATE_HZ.toFloat(), 16, 1, true, false)
   private val soundLine = AudioSystem.getSourceDataLine(audioFormat)
-  val buffer = ByteArray(bufferSize)
+  val buffer = ByteArray(bufferSize * 2)
 
   init {
     if ((bufferSize * frameRateHz) != SAMPLE_RATE_HZ) {
@@ -17,11 +17,11 @@ class Audio(frameRateHz: Int) {
   }
 
   fun start() {
-    soundLine.open(audioFormat, bufferSize)
+    soundLine.open(audioFormat, bufferSize * 4)
     soundLine.start()
   }
 
   fun play() {
-    soundLine.write(buffer, 0, bufferSize)
+    soundLine.write(buffer, 0, bufferSize * 2)
   }
 }

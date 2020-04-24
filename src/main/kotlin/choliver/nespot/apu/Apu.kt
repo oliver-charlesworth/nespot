@@ -8,13 +8,12 @@ class Apu(
   private val buffer: ByteArray,
   memory: Memory
 ) {
+  private val sequencer = Sequencer()
   private val pulse1 = PulseGenerator()
   private val pulse2 = PulseGenerator()
   private val triangle = TriangleGenerator()
   private val noise = NoiseGenerator()
   private val dmc = DmcGenerator(memory)
-
-  private var wtf = 0
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
@@ -118,19 +117,16 @@ class Apu(
   }
 
   fun generate() {
-    val samplesPulse1 = pulse1.generate(buffer.size)
-    val samplesPulse2 = pulse2.generate(buffer.size)
-    val samplesTriangle = triangle.generate(buffer.size)
-    val samplesNoise = noise.generate(buffer.size)
-    val samplesDmc = dmc.generate(buffer.size)
     for (i in buffer.indices) {
+      val ticks = sequencer.update()
+
       // See http://wiki.nesdev.com/w/index.php/APU_Mixer
       buffer[i] = ((0 +
-        samplesPulse1[i] * 0.00752 +
-        samplesPulse2[i] * 0.00752 +
-        samplesTriangle[i] * 0.00851 +
-        samplesNoise[i] * 0.00494 +
-        samplesDmc[i] * 0.00335
+        pulse1.generate(ticks) * 0.00752 +
+        pulse2.generate(ticks) * 0.00752 +
+        triangle.generate(ticks) * 0.00851 +
+        noise.generate(ticks) * 0.00494 +
+        dmc.generate(ticks) * 0.00335
       ) * 100).toByte()
     }
   }

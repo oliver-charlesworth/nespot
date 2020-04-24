@@ -3,8 +3,7 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // http://wiki.nesdev.com/w/index.php/APU_Noise
-class NoiseGenerator {
-  private val sequencer = Sequencer()
+class NoiseGenerator : Generator {
   private val timerCounter = Counter()
   private var iLength = 0
   private var sr = 0x0001
@@ -24,14 +23,13 @@ class NoiseGenerator {
       timerCounter.periodCpuCycles = PERIOD_TABLE[value].toDouble()
     }
 
-  fun generate(num: Int) = List(num) {
-    updateCounters()
+  override fun generate(ticks: Sequencer.Ticks): Int {
+    updateCounters(ticks)
     updatePhase()
-    (sr and 1) * volume
+    return (sr and 1) * volume
   }
 
-  private fun updateCounters() {
-    val ticks = sequencer.update()
+  private fun updateCounters(ticks: Sequencer.Ticks) {
     iLength = max(iLength - ticks.half, 0)
   }
 

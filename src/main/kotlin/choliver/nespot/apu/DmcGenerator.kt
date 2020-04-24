@@ -7,7 +7,7 @@ import choliver.nespot.Memory
 // See http://wiki.nesdev.com/w/index.php/APU_DMC
 class DmcGenerator(
   private val memory: Memory
-) {
+) : Generator {
   var level = 0
   private val timerCounter = Counter()
   private var addr: Address = 0
@@ -34,9 +34,9 @@ class DmcGenerator(
       timerCounter.periodCpuCycles = RATE_TABLE[value].toDouble()
     }
 
-  fun generate(num: Int) = List(num) {
-    val ticks = timerCounter.update()
-    if ((ticks != 0) && (offset != _length)) {
+  override fun generate(ticks: Sequencer.Ticks): Int {
+    val counterTicks = timerCounter.update()
+    if ((counterTicks != 0) && (offset != _length)) {
       if (numBits == 0) {
         bits = memory.load(addr + offset)
         numBits = 8
@@ -57,7 +57,7 @@ class DmcGenerator(
       bits = bits shr 1
       numBits--
     }
-    level
+    return level
   }
 
   companion object {

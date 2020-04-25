@@ -20,7 +20,9 @@
   - Greyscale
   - Colour emphasis
 
-- PRG-RAM
+- Cartridge
+  - CHR-RAM (used by Zelda)
+  - PRG-RAM
 
 - Quirks
 

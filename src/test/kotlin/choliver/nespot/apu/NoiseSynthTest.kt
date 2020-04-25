@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 class NoiseSynthTest {
   private val synth = NoiseSynth().apply {
     length = 1
+    haltLength = false
   }
 
   @Test
@@ -32,14 +33,28 @@ class NoiseSynthTest {
   }
 
   @Test
-  fun length() {
+  fun `freezes once length counter exhausted`() {
     synth.mode = 1    // Use short sequence because easier to test
     synth.length = 32
     synth.nextNonZeroOutput()
-    repeat(32) { synth.onHalfFrame() }
+    repeat(32) { synth.onHalfFrame() }    // Exhaust counter
 
     assertEquals(
-      List(16) { 0 },
+      List(16) { 0 },   // Expect to be frozen on zero
+      synth.take(16)
+    )
+  }
+
+  @Test
+  fun `length counter not exhausted if halted`() {
+    synth.haltLength = true
+    synth.mode = 1    // Use short sequence because easier to test
+    synth.length = 32
+    synth.nextNonZeroOutput()
+    repeat(32) { synth.onHalfFrame() }    // Would ordinarily exhaust counter
+
+    assertEquals(
+      listOf(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),   // We don't expect to be frozen
       synth.take(16)
     )
   }

@@ -53,6 +53,7 @@ class Apu(
     when (idx) {
       0 -> {
         synth.dutyCycle = (data and 0xC0) shr 6
+        synth.haltLength = data.isBitSet(5)
         updateEnvelope()
       }
 
@@ -81,7 +82,8 @@ class Apu(
     regs[idx] = data
     when (idx) {
       0 -> {
-        // TODO - control flag
+        synth.haltLength = data.isBitSet(7)
+        synth.preventReloadClear = data.isBitSet(7)
         synth.linear = data and 0x7F
       }
 
@@ -98,7 +100,10 @@ class Apu(
   private fun SynthContext<NoiseSynth>.updateNoise(idx: Int, data: Data) {
     regs[idx] = data
     when (idx) {
-      0 -> updateEnvelope()
+      0 -> {
+        synth.haltLength = data.isBitSet(5)
+        updateEnvelope()
+      }
 
       2 -> {
         synth.mode = (data and 0x80) shr 7

@@ -4,9 +4,8 @@
 
 - Sound!
   - Clicking
-  - Echoing notes (underworld in SMB)
+  - SMB - explosions sound wrong
   - Interrupts
-  - Halt / disable
 
 - Scrolling
 
@@ -20,7 +19,9 @@
   - Greyscale
   - Colour emphasis
 
-- PRG-RAM
+- Cartridge
+  - CHR-RAM (used by Zelda)
+  - PRG-RAM
 
 - Quirks
 

@@ -76,7 +76,7 @@ class Debugger(
   private fun consume(parser: CommandParser, enablePrompts: Boolean) {
     while (true) {
       if (enablePrompts) {
-        stdout.print("[${nes.state.PC}]: ")
+        stdout.print("[${nes.state.PC.format()}]: ")
       }
 
       if (!handleCommand(parser.next())) {

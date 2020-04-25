@@ -1,6 +1,8 @@
 package choliver.nespot.apu
 
 import choliver.nespot.apu.Sequencer.Ticks
+import choliver.nespot.sixfiveohtwo.utils._0
+import choliver.nespot.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -62,7 +64,7 @@ class NoiseSynthTest {
   fun length() {
     synth.mode = 1    // Use short sequence because easier to test
     synth.length = 32
-    val seq = synth.take(93, Ticks(quarter = 0, half = 1))
+    val seq = synth.take(93, Ticks(quarter = _0, half = _1))
 
     assertEquals(setOf(0, 1), seq.take(32).distinct().toSet())
     assertEquals(setOf(0), seq.drop(32).distinct().toSet())  // Everything else is zeroed

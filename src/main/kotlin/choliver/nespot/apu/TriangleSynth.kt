@@ -20,8 +20,12 @@ class TriangleSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
   }
 
   private fun updateCounters(ticks: Sequencer.Ticks) {
-    iLinear = max(iLinear - ticks.quarter, 0)
-    iLength = max(iLength - ticks.half, 0)
+    if (ticks.quarter) {
+      iLinear = max(iLinear - 1, 0)
+    }
+    if (ticks.half) {
+      iLength = max(iLength - 1, 0)
+    }
   }
 
   private fun updatePhase() {

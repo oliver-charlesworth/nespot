@@ -2,6 +2,8 @@ package choliver.nespot.apu
 
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
+import choliver.nespot.sixfiveohtwo.utils._0
+import choliver.nespot.sixfiveohtwo.utils._1
 
 // TODO - interrupts
 class Sequencer(
@@ -15,8 +17,8 @@ class Sequencer(
   }
 
   data class Ticks(
-    val quarter: Int,
-    val half: Int
+    val quarter: Boolean,
+    val half: Boolean
   )
 
   private val fourStepPeriod = Rational(frameSequencerFourStepPeriodCycles, 4)
@@ -43,27 +45,27 @@ class Sequencer(
         FOUR_STEP -> {
           iSeq = (iSeq + 1) % 4
           when (iSeq) {
-            0 -> Ticks(quarter = 1, half = 1)
-            1 -> Ticks(quarter = 1, half = 0)
-            2 -> Ticks(quarter = 1, half = 1)
-            3 -> Ticks(quarter = 1, half = 0)
+            0 -> Ticks(quarter = _1, half = _1)
+            1 -> Ticks(quarter = _1, half = _0)
+            2 -> Ticks(quarter = _1, half = _1)
+            3 -> Ticks(quarter = _1, half = _0)
             else -> throw IllegalStateException() // Should never happen
           }
         }
         FIVE_STEP -> {
           iSeq = (iSeq + 1) % 5
           when (iSeq) {
-            0 -> Ticks(quarter = 1, half = 1)
-            1 -> Ticks(quarter = 1, half = 0)
-            2 -> Ticks(quarter = 1, half = 1)
-            3 -> Ticks(quarter = 1, half = 0)
-            4 -> Ticks(quarter = 0, half = 0)
+            0 -> Ticks(quarter = _1, half = _1)
+            1 -> Ticks(quarter = _1, half = _0)
+            2 -> Ticks(quarter = _1, half = _1)
+            3 -> Ticks(quarter = _1, half = _0)
+            4 -> Ticks(quarter = _0, half = _0)
             else -> throw IllegalStateException() // Should never happen
           }
         }
       }
-    } else Ticks(quarter = 0, half = 0)
-    val realRet = if (justReset && mode == FIVE_STEP) Ticks(1, 1) else ret
+    } else Ticks(quarter = _0, half = _0)
+    val realRet = if (justReset && mode == FIVE_STEP) Ticks(_1, _1) else ret
     justReset = false
     return realRet
   }

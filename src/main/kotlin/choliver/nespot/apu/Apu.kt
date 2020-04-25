@@ -62,16 +62,15 @@ class Apu(
 
   // See http://wiki.nesdev.com/w/index.php/APU_Pulse
   private fun SynthContext<PulseSynth>.updatePulse(idx: Int, data: Data) {
-    fun extractPeriodCycles() = ((extractTimer(regs) + 1) * 2).toRational() // APU clock rather than CPU clock
+    fun extractPeriodCycles() = (extractTimer(regs) + 1) * 2 // APU clock rather than CPU clock
 
     regs[idx] = data
     when (idx) {
       0 -> {
         synth.dutyCycle = (data and 0xC0) shr 6
-        synth.volume = data and 0x0F
-        // TODO - halt
-        // TODO - volume/envelope flag
-        // TODO - envelope divider
+        synth.envLoop = data.isBitSet(5)
+        synth.directEnvMode = data.isBitSet(4)
+        synth.envParam = data and 0x0F
       }
 
       1 -> {

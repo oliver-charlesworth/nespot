@@ -3,42 +3,83 @@ package choliver.nespot.apu
 import choliver.nespot.apu.Sequencer.Ticks
 import kotlin.math.max
 
-// TODO - mute output if period < 8 or > 7FF
-
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
 class PulseSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
   private val counter = Counter(cyclesPerSample = cyclesPerSample)
   private var iSeq = 0
   private var iSweep = 0
   private var iLength = 0
-  var sweepEnabled: Boolean = false
+  private var iDivider = 0
+  private var iDecay = 0
+  var sweepEnabled = false
   var sweepDivider by observable(0) { iSweep = it }
-  var sweepNegate: Boolean = false
-  var sweepShift: Int = 0
+  var sweepNegate = false
+  var sweepShift = 0
   var dutyCycle = 0
-  var volume = 0
-  var periodCycles by observable(1.toRational()) { counter.periodCycles = it }
-  override var length by observable(0) { iLength = it }
+  var envLoop = false
+  var envParam = 0    // TODO - should this reload iDivider?
+  var directEnvMode = false
+  var periodCycles by observable(1) {
+    counter.periodCycles = it.toRational()
+  }
+  override var length by observable(0) {
+    iLength = it
+    iDecay = 15
+    iDivider = envParam + 1
+  }
 
   override fun take(ticks: Ticks): Int {
-    val ret = if (iLength != 0) (SEQUENCES[dutyCycle][iSeq] * volume) else 0
-    updateCounters(ticks)
+    val ret = SEQUENCES[dutyCycle][iSeq] * calcOutputLevel()
+    updateEnvelope(ticks.quarter)
     updateSweep()
     updatePhase()
+    updateCounters(ticks)
     return ret
+  }
+
+  private fun calcOutputLevel() = when {
+    (iLength == 0) -> 0
+    (periodCycles < 8 || periodCycles > 0x7FF) -> 0
+    directEnvMode -> envParam
+    else -> iDecay
+  }
+
+  private fun updateEnvelope(quarter: Boolean) {
+    if (quarter) {
+      when (iDivider) {
+        0 -> {
+
+        }
+        else -> iDivider--
+
+        }
+      }
+
+//    if (iDivider == 0) {
+//      iDecay = max(iDecay - 1, 0)
+//      if (iDecay == 0) {
+//        iDecay = 15
+//      }
+//      iDivider = envParam + 1
+//    }
   }
 
   private fun updateSweep() {
     if (iSweep == 0 && sweepEnabled) {
-//      val delta = periodCycles / (1 shl sweepShift)
-//      periodCycles += if (sweepNegate) -delta else delta
-//      iSweep = sweepDivider
+      val delta = periodCycles shr sweepShift
+      val newPeriod = periodCycles + (if (sweepNegate) -delta else delta)
+      if (newPeriod in 8..0x7FF) {
+        periodCycles = newPeriod
+        iSweep = sweepDivider
+      }
     }
   }
 
   private fun updateCounters(ticks: Ticks) {
-    iLength = max(iLength - ticks.half, 0)
-    iSweep = max(iSweep - ticks.half, 0)
+    if (ticks.half) {
+      iLength = max(iLength - 1, 0)
+      iSweep = max(iSweep - 1, 0)
+    }
   }
 
   private fun updatePhase() {

@@ -103,4 +103,45 @@ class DmcSynthTest {
 
     assertEquals(expected, synth.take(9))
   }
+
+  @Test
+  fun `changing address mid-way resets pattern, but current sample is played to completion`() {
+    synth.length = 2
+    whenever(memory.load(0x1230)) doReturn 0xFF
+    whenever(memory.load(0x1231)) doReturn 0xAA
+    whenever(memory.load(0x2340)) doReturn 0x00
+    whenever(memory.load(0x2341)) doReturn 0x55
+
+    val expected = listOf(
+      0,
+      2,  4,  6,  8,  10, 12, 14, 16,   // This sample plays to completion even though we reset mid-way
+      14, 12, 10, 8,  6,  4,  2,  2,    // Now we play the new pattern
+      4,  2,  4,  2,  4,  2,  4,  2
+    )
+
+    val seq1 = synth.take(5)
+    synth.address = 0x2340
+    val seq2 = synth.take(20)
+
+    assertEquals(expected, seq1 + seq2)
+  }
+
+  @Test
+  fun `changing length mid-way resets pattern, but current sample is played to completion`() {
+    synth.length = 2
+    whenever(memory.load(0x1230)) doReturn 0xFF
+    whenever(memory.load(0x1231)) doReturn 0xAA
+
+    val expected = listOf(
+      0,
+      2,  4,  6,  8,  10, 12, 14, 16,   // This sample plays to completion even though we reset mid-way
+      18, 20, 22, 24, 26, 28, 30, 32    // Now we start playing the shortened pattern
+    )
+
+    val seq1 = synth.take(5)
+    synth.length = 1
+    val seq2 = synth.take(12)
+
+    assertEquals(expected, seq1 + seq2)
+  }
 }

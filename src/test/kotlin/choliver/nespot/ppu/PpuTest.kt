@@ -23,7 +23,7 @@ class PpuTest {
   private val onVbl = mock<() -> Unit>()
   private val ppu = Ppu(
     memory = memory,
-    screen = mock(),
+    videoBuffer = mock(),
     onVbl = onVbl,
     renderer = renderer
   )

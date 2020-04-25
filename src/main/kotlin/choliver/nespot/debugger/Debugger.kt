@@ -49,9 +49,10 @@ class Debugger(
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
 
   private val nes = Nes(
-    rom,
-    screen.buffer,
-    joypads,
+    rom = rom,
+    videoBuffer = screen.buffer,
+    audioBuffer = ByteArray(0),
+    joypads = joypads,
     onReset = { nextStep = NextStep.RESET },
     onNmi = { nextStep = NextStep.NMI; screen.redraw() },
     onIrq = { nextStep = NextStep.IRQ },

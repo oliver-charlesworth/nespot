@@ -1,6 +1,7 @@
 package choliver.nespot.nes
 
 import choliver.nespot.Memory
+import choliver.nespot.apu.Apu
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD1
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD2
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPADS
@@ -18,11 +19,13 @@ class CpuMapperTest {
   private val prg = mock<Memory>()
   private val ram = mock<Memory>()
   private val ppu = mock<Ppu>()
+  private val apu = mock<Apu>()
   private val joypads = mock<Joypads>()
   private val mapper = CpuMapper(
     prg = prg,
     ram = ram,
     ppu = ppu,
+    apu = apu,
     joypads = joypads
   )
 
@@ -105,5 +108,14 @@ class CpuMapperTest {
     (0..255).forEach {
       verify(ppu).writeReg(REG_OAMDATA, 0xFF - it)
     }
+  }
+
+  @Test
+  fun `maps to apu`() {
+    mapper.store(0x4000, 0x30)
+    mapper.store(0x4017, 0x40)    // This is the highest APU reg
+
+    verify(apu).writeReg(0, 0x30)
+    verify(apu).writeReg(23, 0x40)
   }
 }

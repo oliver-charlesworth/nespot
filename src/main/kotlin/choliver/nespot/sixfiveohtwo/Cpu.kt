@@ -26,19 +26,11 @@ class Cpu(
 
   private val decoder = InstructionDecoder(memory)
 
-  fun runSteps(num: Int): Int {
-    var n = 0
-    repeat(num) {
-      n += handleInterruptOrStep()
-    }
-    return n
-  }
-
-  private fun handleInterruptOrStep() = when {
+  fun executeStep() = when {
     pollReset() -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
     pollNmi() -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
-    pollIrq() -> if (_state.P.I) step() else vector(VECTOR_IRQ, updateStack = true, disableIrq = false)
-    else -> step()
+    pollIrq() -> if (_state.P.I) executeInstruction() else vector(VECTOR_IRQ, updateStack = true, disableIrq = false)
+    else -> executeInstruction()
   }
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {
@@ -47,7 +39,7 @@ class Cpu(
     return NUM_INTERRUPT_CYCLES
   }
 
-  private fun step(): Int {
+  private fun executeInstruction(): Int {
     val decoded = decodeAt(_state.PC)
     _state.PC = decoded.nextPc
     operand = decoded.instruction.operand

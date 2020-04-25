@@ -3,6 +3,14 @@
 ## To do
 
 - Sound!
+  - Startup clicking (NFI)
+  - Quit clicking (could taper the audio)
+  - Envelope
+  - Sweeps
+  - Interrupts
+  - Halt / disable
+
+- Keyboard concurrency issues
 
 - Scrolling
 
@@ -30,6 +38,7 @@
   - Branches
   - Page boundary crossings 
   - OAM DMA
+  - APU DMC stalls (see http://wiki.nesdev.com/w/index.php/APU_DMC)
   
 - PPU reset
   

@@ -23,12 +23,12 @@ class RendererTest {
     }
   }
   private val oam = mock<Memory>()
-  private val screen = IntBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT)
+  private val videoBuffer = IntBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT)
   private val renderer = Renderer(
     memory = memory,
     palette = palette,
     oam = oam,
-    screen = screen,
+    videoBuffer = videoBuffer,
     colors = colors
   )
 
@@ -294,7 +294,7 @@ class RendererTest {
 
       render()
 
-      assertEquals(colors[paletteEntries[expected]], screen.array()[y * SCREEN_WIDTH])
+      assertEquals(colors[paletteEntries[expected]], videoBuffer.array()[y * SCREEN_WIDTH])
     }
   }
 
@@ -377,7 +377,7 @@ class RendererTest {
 
     assertEquals(
       (0 until SCREEN_WIDTH).map { colors[paletteEntries[expected(it)]] },
-      screen.array().toList().subList(y * SCREEN_WIDTH, (y + 1) * SCREEN_WIDTH)
+      videoBuffer.array().toList().subList(y * SCREEN_WIDTH, (y + 1) * SCREEN_WIDTH)
     )
   }
 

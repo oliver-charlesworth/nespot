@@ -4,6 +4,7 @@ import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
 import choliver.nespot.Ram
+import choliver.nespot.apu.Apu
 import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
@@ -13,7 +14,8 @@ import java.nio.IntBuffer
 
 class Nes(
   rom: ByteArray,
-  screen: IntBuffer,
+  videoBuffer: IntBuffer,
+  audioBuffer: ByteArray,
   joypads: Joypads,
   onReset: () -> Unit = {},
   onNmi: () -> Unit = {},
@@ -37,6 +39,8 @@ class Nes(
 
   private val cartridge = Cartridge(rom)
 
+  private val apu = Apu(audioBuffer, cartridge.prg)
+
   private val cpuRam = Ram(CPU_RAM_SIZE)
   private val ppuRam = Ram(PPU_RAM_SIZE)
 
@@ -44,7 +48,7 @@ class Nes(
 
   private val ppu = Ppu(
     memory = ppuMapper,
-    screen = screen,
+    videoBuffer = videoBuffer,
     onVbl = nmi::set
   )
 
@@ -52,6 +56,7 @@ class Nes(
     prg = cartridge.prg,
     ram = cpuRam,
     ppu = ppu,
+    apu = apu,
     joypads = joypads
   )
 
@@ -70,8 +75,18 @@ class Nes(
 
   private var numCycles = 0
 
+  fun runFrame() {
+    while (ppu.scanline == 0) {
+      step()
+    }
+    while (ppu.scanline != 0) {
+      step()
+    }
+    apu.generate()
+  }
+
   private fun step() {
-    numCycles += cpu.runSteps(1)
+    numCycles += cpu.executeStep()
 
     if (numCycles >= NUM_CYCLES_PER_SCANLINE) {
       numCycles -= NUM_CYCLES_PER_SCANLINE

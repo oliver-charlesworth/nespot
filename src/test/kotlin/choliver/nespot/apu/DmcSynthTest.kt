@@ -8,13 +8,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class DmcSynthTest {
+  private val memory = mock<Memory>()
+  private val synth = DmcSynth(cyclesPerSample = 4.toRational(), memory = memory)
 
   // TODO - level set
 
   @Test
-  fun name() {
-    val memory = mock<Memory>()
-    val synth = DmcSynth(cyclesPerSample = 4.toRational(), memory = memory)
+  fun `decodes delta sequence`() {
     synth.periodCycles = 4.toRational()
     synth.address = 0x1230
     synth.length = 5
@@ -23,17 +23,15 @@ class DmcSynthTest {
       whenever(memory.load(0x1230 + i)) doReturn (if (i % 2 == 0) 0xFF else 0xAA)  // Nice bit patterns
     }
 
-    println(synth.take(40))
-
     val expected = listOf(
       0,
-      2,  4,  6,  8,  10, 12, 14, 16,
-      14, 16, 14, 16, 14, 16, 14, 16,
-      18, 20, 22, 24, 26, 28, 30, 32,
-      30, 32, 30, 32, 30, 32, 30, 32,
-      34, 36, 38, 40, 42, 44, 46
+      2,  4,  6,  8,  10, 12, 14, 16,   // Up up up
+      14, 16, 14, 16, 14, 16, 14, 16,   // Down and up
+      18, 20, 22, 24, 26, 28, 30, 32,   // Up up up
+      30, 32, 30, 32, 30, 32, 30, 32,   // Down and up
+      34, 36, 38, 40, 42, 44, 46, 48    // Up up up
     )
 
-    assertEquals(expected, synth.take(40))
+    assertEquals(expected, synth.take(41))
   }
 }

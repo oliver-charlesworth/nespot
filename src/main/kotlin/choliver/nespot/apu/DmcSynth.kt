@@ -21,7 +21,7 @@ class DmcSynth(
   var loop: Boolean = false
   var level: Data = 0
   var address: Address by observable(0x0000) { resetPattern() }
-  var periodCycles by observable(0.toRational()) { counter.periodCycles = it }
+  var periodCycles by observable(1.toRational()) { counter.periodCycles = it }
   override var length by observable(0) { resetPattern() }
 
   override fun take(ticks: Sequencer.Ticks): Int {

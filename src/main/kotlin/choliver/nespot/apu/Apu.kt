@@ -2,6 +2,7 @@ package choliver.nespot.apu
 
 import choliver.nespot.Data
 import choliver.nespot.Memory
+import choliver.nespot.apu.DmcSynth.Companion.DMC_RATE_TABLE
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 import choliver.nespot.isBitSet
@@ -125,16 +126,17 @@ class Apu(
     }
   }
 
+  // See http://wiki.nesdev.com/w/index.php/APU_DMC
   private fun DmcSynth.writeReg(reg: Int, data: Data) {
     when (reg) {
       0 -> {
         // TODO - IRQ enabled
         // TODO - loop enabled
-        rate = data and 0x0F
+        periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
       }
       1 -> level = data and 0x7F
-      2 -> address = data
-      3 -> length = data
+      2 -> address = 0xC000 + (data * 64)
+      3 -> length = (data * 16) + 1
     }
   }
 

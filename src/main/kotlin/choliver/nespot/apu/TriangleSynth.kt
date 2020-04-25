@@ -4,11 +4,13 @@ import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Triangle
 internal class TriangleSynth : Synth {
+  private var reload = false  // i.e. reload the linear counter
   private var iSeq = 0
   private var iLinear = 0
   private var iLength = 0
-  var linear by observable(0) { iLinear = it }
-  override var length by observable(0) { iLength = it; iLinear = linear } // Reloads both counters
+  var control = false
+  var linear = 0
+  override var length by observable(0) { iLength = it; reload = true } // Reloads both counters
 
   override val output get() = SEQUENCE[iSeq]
 
@@ -20,11 +22,21 @@ internal class TriangleSynth : Synth {
   }
 
   override fun onQuarterFrame() {
-    iLinear = max(iLinear - 1, 0)
+    if (reload) {
+      iLinear = linear
+
+    } else if (iLinear > 0) {
+      iLinear--
+    }
+    if (!control) {
+      reload = false
+    }
   }
 
   override fun onHalfFrame() {
-    iLength = max(iLength - 1, 0)
+    if (!control) {
+      iLength = max(iLength - 1, 0)
+    }
   }
 
   companion object {

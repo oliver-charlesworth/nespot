@@ -4,7 +4,8 @@
 
 - Sound!
   - Clicking
-  - Echoing notes (underworld in SMB)
+  - SMB - echoing notes in underworld
+  - SMB - explosions sound wrong
   - Interrupts
   - Halt / disable
 

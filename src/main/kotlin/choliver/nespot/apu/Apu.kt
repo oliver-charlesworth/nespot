@@ -31,11 +31,11 @@ class Apu(
       in REG_DMC_RANGE -> channels.dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
 
       REG_SND_CHN -> {
-        channels.dmc.setStatus(data.isBitSet(4))
-        channels.noise.setStatus(data.isBitSet(3))
+//        channels.dmc.setStatus(data.isBitSet(4))
+//        channels.noise.setStatus(data.isBitSet(3))
         channels.triangle.setStatus(data.isBitSet(2))
-        channels.pulse2.setStatus(data.isBitSet(1))
-        channels.pulse1.setStatus(data.isBitSet(0))
+//        channels.pulse2.setStatus(data.isBitSet(1))
+//        channels.pulse1.setStatus(data.isBitSet(0))
       }
 
       REG_FRAME_COUNTER_CTRL -> {
@@ -81,7 +81,7 @@ class Apu(
     regs[idx] = data
     when (idx) {
       0 -> {
-        // TODO - control flag
+        synth.control = data.isBitSet(7)
         synth.linear = data and 0x7F
       }
 

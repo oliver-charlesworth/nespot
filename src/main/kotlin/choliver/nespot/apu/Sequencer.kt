@@ -2,7 +2,6 @@ package choliver.nespot.apu
 
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
-import observable
 
 // TODO - interrupts
 class Sequencer(

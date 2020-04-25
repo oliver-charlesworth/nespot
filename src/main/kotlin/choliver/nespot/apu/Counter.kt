@@ -1,7 +1,5 @@
 package choliver.nespot.apu
 
-import observable
-
 class Counter(private val cyclesPerSample: Rational) {
   private var pos = 0.toRational()
   var periodCycles by observable(0.toRational()) { pos = it }

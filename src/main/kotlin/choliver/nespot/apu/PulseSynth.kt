@@ -5,13 +5,6 @@ import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
 class PulseSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
-  private var envelope = Envelope()
-  var envLoop by observable(false) { envelope.loop = it }   // TODO - also interpret as length halt
-  var envParam by observable(0) { envelope.param = it }
-  var envDirectMode by observable(false) {
-    envelope.directMode = it
-  }
-
   // Sweep state and params
   private var iSweep = 0
   var sweepEnabled = false
@@ -25,14 +18,10 @@ class PulseSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
   private var iLength = 0
   var dutyCycle = 0
   var periodCycles by observable(1) { counter.periodCycles = it.toRational() }
-  override var length by observable(0) { iLength = it; envelope.reset() }
+  override var length by observable(0) { iLength = it }
 
   override fun take(ticks: Ticks): Int {
-    if (ticks.quarter) {
-      envelope.advance()
-    }
-
-    val ret = SEQUENCES[dutyCycle][iSeq] * calcOutputLevel()
+    val ret = if (outputEnabled()) SEQUENCES[dutyCycle][iSeq] else 0
 
     updateSweep()
     updatePhase()
@@ -45,11 +34,7 @@ class PulseSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
     return ret
   }
 
-  private fun calcOutputLevel() = when {
-    (iLength == 0) -> 0
-    (periodCycles < 8 || periodCycles > 0x7FF) -> 0
-    else -> envelope.level
-  }
+  private fun outputEnabled() = (iLength > 0) && (periodCycles in 8..0x7FF)
 
   private fun updateSweep() {
     if (iSweep == 0 && sweepEnabled) {

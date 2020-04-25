@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Test
 
 class PulseSynthTest {
   private val synth = PulseSynth(cyclesPerSample = 8.toRational()).apply {
-    envDirectMode = true
-    envParam = 1
     periodCycles = 8
     dutyCycle = 0
     length = 1
@@ -57,31 +55,5 @@ class PulseSynthTest {
     val seq = synth.take(8, Ticks(quarter = _0, half = _1))
 
     assertEquals(listOf(1, 0, 0, 1, 1, 1, 1, 1), seq)
-  }
-
-  @Test
-  fun `constant volume`() {
-    synth.dutyCycle = 3
-    synth.envParam = 5
-    val seq = synth.take(8)
-
-    assertEquals(listOf(5, 0, 0, 5, 5, 5, 5, 5), seq)
-  }
-
-  // TODO - envelope loop
-
-  @Test
-  fun envelope() {
-    synth.dutyCycle = 3
-    synth.envDirectMode = false
-    synth.envParam = 3  // Equivalent to 4 quarter periods
-    val seq = synth.take(32, Ticks(quarter = _1, half = _0))
-
-    assertEquals(listOf(
-      15, 0, 0, 15, 14, 14, 14, 14,
-      13, 0, 0, 13, 12, 12, 12, 12,
-      11, 0, 0, 11, 10, 10, 10, 10,
-       9, 0, 0,  9,  8,  8,  8,  8
-    ), seq)
   }
 }

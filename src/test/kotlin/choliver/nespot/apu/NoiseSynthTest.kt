@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test
 
 class NoiseSynthTest {
   private val synth = NoiseSynth(cyclesPerSample = 4.toRational()).apply {
-    volume = 1
     length = 1
     periodCycles = 4.toRational()
   }
@@ -50,14 +49,6 @@ class NoiseSynthTest {
       ref.repeatEach(4),
       seq
     ) // Long-period sequence should match the padded short-period sequence
-  }
-
-  @Test
-  fun volume() {
-    synth.volume = 5
-    val seq = synth.take(  32767)
-
-    assertEquals(setOf(0, 5), seq.distinct().toSet())
   }
 
   @Test

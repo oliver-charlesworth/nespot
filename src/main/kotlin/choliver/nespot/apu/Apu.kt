@@ -16,17 +16,18 @@ class Apu(
   memory: Memory
 ) {
   private val sequencer = Sequencer()
-  private val pulse1 = PulseSynth()
-  private val pulse2 = PulseSynth()
-  private val triangle = TriangleSynth()
-  private val noise = NoiseSynth()
-  private val dmc = DmcSynth(memory = memory)
+  private val pulse1 = SynthContext(PulseSynth(), 0.00752)
+  private val pulse2 = SynthContext(PulseSynth(), 0.00752)
+  private val triangle = SynthContext(TriangleSynth(), 0.00851)
+  private val noise = SynthContext(NoiseSynth(), 0.00494)
+  private val dmc = SynthContext(DmcSynth(memory = memory), 0.00335)
 
-  private var pulse1Enabled = false
-  private var pulse2Enabled = false
-  private var triangleEnabled = false
-  private var noiseEnabled = false
-  private var dmcEnabled = false
+  private data class SynthContext<S : Synth>(
+    val synth: S,
+    val level: Double,
+    val regs: MutableList<Data> = mutableListOf(0, 0, 0, 0),
+    var enabled: Boolean = false
+  )
 
   private val alpha: Double
   private var state: Double = 0.0
@@ -38,23 +39,18 @@ class Apu(
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
-      in REG_PULSE1_RANGE -> pulse1.writeReg(reg - REG_PULSE1_RANGE.first, data)
-      in REG_PULSE2_RANGE -> pulse2.writeReg(reg - REG_PULSE2_RANGE.first, data)
-      in REG_TRI_RANGE -> triangle.writeReg(reg - REG_TRI_RANGE.first, data)
-      in REG_NOISE_RANGE -> noise.writeReg(reg - REG_NOISE_RANGE.first, data)
-      in REG_DMC_RANGE -> dmc.writeReg(reg - REG_DMC_RANGE.first, data)
+      in REG_PULSE1_RANGE -> pulse1.updatePulse(reg - REG_PULSE1_RANGE.first, data)
+      in REG_PULSE2_RANGE -> pulse2.updatePulse(reg - REG_PULSE2_RANGE.first, data)
+      in REG_TRI_RANGE -> triangle.updateTriangle(reg - REG_TRI_RANGE.first, data)
+      in REG_NOISE_RANGE -> noise.updateNoise(reg - REG_NOISE_RANGE.first, data)
+      in REG_DMC_RANGE -> dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
 
       REG_SND_CHN -> {
-        if (!data.isBitSet(4)) { }  // TODO - mess with DMC
-        if (!data.isBitSet(3)) { noise.length = 0 }
-        if (!data.isBitSet(2)) { triangle.length = 0 }
-        if (!data.isBitSet(1)) { pulse2.length = 0 }
-        if (!data.isBitSet(0)) { pulse1.length = 0 }
-        dmcEnabled = data.isBitSet(4)
-        noiseEnabled = data.isBitSet(3)
-        triangleEnabled = data.isBitSet(2)
-        pulse2Enabled = data.isBitSet(1)
-        pulse1Enabled = data.isBitSet(0)
+        dmc.setStatus(data.isBitSet(4))
+        noise.setStatus(data.isBitSet(3))
+        triangle.setStatus(data.isBitSet(2))
+        pulse2.setStatus(data.isBitSet(1))
+        pulse1.setStatus(data.isBitSet(0))
       }
 
       REG_FRAME_COUNTER_CTRL -> {
@@ -64,11 +60,12 @@ class Apu(
     }
   }
 
-  private fun PulseSynth.writeReg(reg: Int, data: Data) {
-    when (reg) {
+  private fun SynthContext<PulseSynth>.updatePulse(idx: Int, data: Data) {
+    regs[idx] = data
+    when (idx) {
       0 -> {
-        dutyCycle = (data and 0xC0) shr 6
-        volume = data and 0x0F
+        synth.dutyCycle = (data and 0xC0) shr 6
+        synth.volume = data and 0x0F
         // TODO - halt
         // TODO - volume/envelope flag
         // TODO - envelope divider
@@ -78,60 +75,63 @@ class Apu(
         // TODO - sweep
       }
 
-      2 -> timer = (timer and 0x0700) or data
+      2 -> synth.timer = (synth.timer and 0x0700) or data
 
       3 -> {
-        timer = (timer and 0x00FF) or ((data and 0x07) shl 8)
-        length = extractLength(data)
+        synth.timer = (synth.timer and 0x00FF) or ((data and 0x07) shl 8)
+        synth.length = extractLength(data)
       }
     }
   }
 
-  private fun TriangleSynth.writeReg(reg: Int, data: Data) {
-    when (reg) {
+  private fun SynthContext<TriangleSynth>.updateTriangle(idx: Int, data: Data) {
+    regs[idx] = data
+    when (idx) {
       0 -> {
         // TODO - control flag
-        linear = data and 0x7F
+        synth.linear = data and 0x7F
       }
 
-      2 -> timer = (timer and 0x0700) or data
+      2 -> synth.timer = (synth.timer and 0x0700) or data
 
       3 -> {
-        timer = (timer and 0x00FF) or ((data and 0x07) shl 8)
-        length = extractLength(data)
+        synth.timer = (synth.timer and 0x00FF) or ((data and 0x07) shl 8)
+        synth.length = extractLength(data)
       }
     }
   }
 
   // See https://wiki.nesdev.com/w/index.php/APU_Noise
-  private fun NoiseSynth.writeReg(reg: Int, data: Data) {
-    when (reg) {
+  private fun SynthContext<NoiseSynth>.updateNoise(idx: Int, data: Data) {
+    regs[idx] = data
+    when (idx) {
       0 -> {
-        volume = data and 0x0F
+        synth.volume = data and 0x0F
         // TODO - halt
         // TODO - volume/envelope flag
       }
 
       2 -> {
-        mode = (data and 0x80) shr 7
-        periodCycles = NOISE_PERIOD_TABLE[data and 0x0F].toRational()
+        synth.mode = (data and 0x80) shr 7
+        synth.periodCycles = NOISE_PERIOD_TABLE[data and 0x0F].toRational()
       }
 
-      3 -> length = extractLength(data)
+      3 -> synth.length = extractLength(data)
     }
   }
 
   // See http://wiki.nesdev.com/w/index.php/APU_DMC
-  private fun DmcSynth.writeReg(reg: Int, data: Data) {
-    when (reg) {
+  private fun SynthContext<DmcSynth>.updateDmc(idx: Int, data: Data) {
+    regs[idx] = data
+    when (idx) {
       0 -> {
         // TODO - IRQ enabled
-        loop = data.isBitSet(6)
-        periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
+        synth.loop = data.isBitSet(6)
+        synth.periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
       }
-      1 -> level = data and 0x7F
-      2 -> address = 0xC000 + (data * 64)
-      3 -> length = (data * 16) + 1
+      1 -> synth.level = data and 0x7F
+      2 -> synth.address = 0xC000 + (data * 64)
+      3 -> synth.length = (data * 16) + 1
     }
   }
 
@@ -144,11 +144,11 @@ class Apu(
       // See http://wiki.nesdev.com/w/index.php/APU_Mixer
       // I don't believe the "non-linear" mixing is worth it.
       val mixed = 0 +
-        (if (pulse1Enabled) 0.00752 else 0.0) * pulse1.take(ticks) +
-        (if (pulse2Enabled) 0.00752 else 0.0) * pulse2.take(ticks) +
-        (if (triangleEnabled) 0.00851 else 0.0) * triangle.take(ticks) +
-        (if (noiseEnabled) 0.00494 else 0.0) * noise.take(ticks) +
-        (if (dmcEnabled) 0.00335 else 0.0) * dmc.take(ticks)
+        pulse1.take(ticks) +
+        pulse2.take(ticks) +
+        triangle.take(ticks) +
+        noise.take(ticks) +
+        dmc.take(ticks)
 
       // TODO - validate this filter
       val filtered = alpha * mixed + (1 - alpha) * state
@@ -159,6 +159,13 @@ class Apu(
       buffer[i] = (rounded shr 8).toByte()
       buffer[i + 1] = rounded.toByte()
     }
+  }
+
+  private fun SynthContext<*>.take(ticks: Sequencer.Ticks) = synth.take(ticks) * (if (enabled) level else 0.0)
+
+  private fun SynthContext<*>.setStatus(enabled: Boolean) {
+    if (!enabled) { synth.length = 0 }
+    this.enabled = enabled
   }
 
   companion object {

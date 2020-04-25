@@ -11,7 +11,7 @@ class PulseSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
   var dutyCycle = 0
   var volume = 0
 
-  var length: Int = 0
+  override var length: Int = 0
     set(value) {
       field = value
       iLength = value

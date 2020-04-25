@@ -15,7 +15,7 @@ class TriangleSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
       iLinear = value
     }
 
-  var length: Int = 0
+  override var length: Int = 0
     set(value) {
       field = value
       iLength = value

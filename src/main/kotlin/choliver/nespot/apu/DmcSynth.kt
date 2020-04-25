@@ -27,7 +27,7 @@ class DmcSynth(
       resetPattern()
     }
 
-  var length: Int = 0
+  override var length: Int = 0
     set(value) {
       field = value
       resetPattern()

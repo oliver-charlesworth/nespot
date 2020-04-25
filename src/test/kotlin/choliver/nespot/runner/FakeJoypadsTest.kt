@@ -10,7 +10,7 @@ class FakeJoypadsTest {
   private val joypads = FakeJoypads()
 
   @Test
-  fun `state change before sample is visible`() {
+  fun `state change before sampling is visible`() {
     joypads.down(1, Button.A)
     transparent()
     opaque()
@@ -19,7 +19,7 @@ class FakeJoypadsTest {
   }
 
   @Test
-  fun `state change after sample not visible`() {
+  fun `state change after sampling not visible`() {
     transparent()
     opaque()
     joypads.down(1, Button.A)
@@ -28,7 +28,7 @@ class FakeJoypadsTest {
   }
 
   @Test
-  fun `state change during sample is visible`() {
+  fun `state change during sampling is visible`() {
     transparent()
     joypads.down(1, Button.A)
     opaque()

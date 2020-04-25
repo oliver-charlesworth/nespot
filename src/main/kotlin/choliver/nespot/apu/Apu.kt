@@ -13,30 +13,29 @@ class Apu(
   memory: Memory
 ) {
   private val sequencer = Sequencer()
-  private val pulse1 = SynthContext(PulseSynth(), 0.00752)
-  private val pulse2 = SynthContext(PulseSynth(), 0.00752)
-  private val triangle = SynthContext(TriangleSynth(), 0.00851).apply { fixEnvelope(1) }
-  private val noise = SynthContext(NoiseSynth(), 0.00494)
-  private val dmc = SynthContext(DmcSynth(memory = memory), 0.00335).apply { fixEnvelope(1) }
-  private val mixer = Mixer(
-    sequencer,
-    listOf(pulse1, pulse2, triangle, noise, dmc)
+  private val channels = Channels(
+    pulse1 = SynthContext(PulseSynth()),
+    pulse2 = SynthContext(PulseSynth()),
+    triangle = SynthContext(TriangleSynth()).apply { fixEnvelope(1) },
+    noise = SynthContext(NoiseSynth()),
+    dmc = SynthContext(DmcSynth(memory = memory)).apply { fixEnvelope(1) }
   )
+  private val mixer = Mixer(sequencer, channels)
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
-      in REG_PULSE1_RANGE -> pulse1.updatePulse(reg - REG_PULSE1_RANGE.first, data)
-      in REG_PULSE2_RANGE -> pulse2.updatePulse(reg - REG_PULSE2_RANGE.first, data)
-      in REG_TRI_RANGE -> triangle.updateTriangle(reg - REG_TRI_RANGE.first, data)
-      in REG_NOISE_RANGE -> noise.updateNoise(reg - REG_NOISE_RANGE.first, data)
-      in REG_DMC_RANGE -> dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
+      in REG_PULSE1_RANGE -> channels.pulse1.updatePulse(reg - REG_PULSE1_RANGE.first, data)
+      in REG_PULSE2_RANGE -> channels.pulse2.updatePulse(reg - REG_PULSE2_RANGE.first, data)
+      in REG_TRI_RANGE -> channels.triangle.updateTriangle(reg - REG_TRI_RANGE.first, data)
+      in REG_NOISE_RANGE -> channels.noise.updateNoise(reg - REG_NOISE_RANGE.first, data)
+      in REG_DMC_RANGE -> channels.dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
 
       REG_SND_CHN -> {
-        dmc.setStatus(data.isBitSet(4))
-        noise.setStatus(data.isBitSet(3))
-        triangle.setStatus(data.isBitSet(2))
-        pulse2.setStatus(data.isBitSet(1))
-        pulse1.setStatus(data.isBitSet(0))
+        channels.dmc.setStatus(data.isBitSet(4))
+        channels.noise.setStatus(data.isBitSet(3))
+        channels.triangle.setStatus(data.isBitSet(2))
+        channels.pulse2.setStatus(data.isBitSet(1))
+        channels.pulse1.setStatus(data.isBitSet(0))
       }
 
       REG_FRAME_COUNTER_CTRL -> {

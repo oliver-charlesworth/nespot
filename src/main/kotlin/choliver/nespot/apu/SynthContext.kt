@@ -4,14 +4,13 @@ import choliver.nespot.Data
 
 internal class SynthContext<S : Synth>(
   val synth: S,
-  val level: Double,
   val timer: Counter = Counter(),
   val envelope: Envelope = Envelope(),
   val sweep: Sweep = Sweep(timer),
   val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00),
   var enabled: Boolean = false
 ) {
-  fun take(ticks: Sequencer.Ticks): Double {
+  fun take(ticks: Sequencer.Ticks): Int {
     if (ticks.quarter) {
       envelope.advance()
       synth.onQuarterFrame()
@@ -23,6 +22,6 @@ internal class SynthContext<S : Synth>(
     repeat(timer.take()) {
       synth.onTimer()
     }
-    return synth.output * envelope.level * (if (enabled) level else 0.0)
+    return if (enabled) (synth.output * envelope.level) else 0
   }
 }

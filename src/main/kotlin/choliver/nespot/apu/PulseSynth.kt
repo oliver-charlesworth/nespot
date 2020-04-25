@@ -9,7 +9,7 @@ class PulseSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
   private var iLength = 0
   var dutyCycle = 0
   var volume = 0
-  var periodCycles by observable(0.toRational()) { counter.periodCycles = it }
+  var periodCycles by observable(1.toRational()) { counter.periodCycles = it }
   override var length by observable(0) { iLength = it }
 
   override fun take(ticks: Sequencer.Ticks): Int {

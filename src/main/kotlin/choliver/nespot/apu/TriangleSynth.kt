@@ -9,7 +9,7 @@ class TriangleSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
   private var iLinear = 0
   private var iLength = 0
   var linear by observable(0) { iLinear = it }
-  var periodCycles by observable(0.toRational()) { counter.periodCycles = it }
+  var periodCycles by observable(1.toRational()) { counter.periodCycles = it }
   override var length by observable(0) { iLength = it; iLinear = linear } // Reloads both counters
 
   override fun take(ticks: Sequencer.Ticks): Int {

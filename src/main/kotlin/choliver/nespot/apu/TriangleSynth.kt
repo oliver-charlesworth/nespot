@@ -11,7 +11,12 @@ internal class TriangleSynth : Synth {
   var preventReloadClear = false
   var haltLength = false
   var linear = 0
-  override var length by observable(0) { iLength = it; reload = true } // Reloads both counters
+  override var length: Int
+    get() = iLength
+    set(value) {
+      iLength = value
+      reload = true
+    } // Reloads both counters
 
   override val output get() = SEQUENCE[iSeq]
 

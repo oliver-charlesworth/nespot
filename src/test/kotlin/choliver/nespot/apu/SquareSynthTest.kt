@@ -3,8 +3,8 @@ package choliver.nespot.apu
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class PulseSynthTest {
-  private val synth = PulseSynth().apply {
+class SquareSynthTest {
+  private val synth = SquareSynth().apply {
     dutyCycle = 0
     length = 8
     haltLength = false

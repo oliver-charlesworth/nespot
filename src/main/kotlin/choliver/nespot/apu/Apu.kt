@@ -14,28 +14,39 @@ class Apu(
 ) {
   private val sequencer = Sequencer()
   private val channels = Channels(
-    pulse1 = SynthContext(PulseSynth()),
-    pulse2 = SynthContext(PulseSynth()),
-    triangle = SynthContext(TriangleSynth()).apply { fixEnvelope(1) },
-    noise = SynthContext(NoiseSynth()),
+    sq1 = SynthContext(SquareSynth()),
+    sq2 = SynthContext(SquareSynth()),
+    tri = SynthContext(TriangleSynth()).apply { fixEnvelope(1) },
+    noi = SynthContext(NoiseSynth()),
     dmc = SynthContext(DmcSynth(memory = memory)).apply { fixEnvelope(1) }
   )
   private val mixer = Mixer(sequencer, channels)
 
+  fun readStatus(): Data {
+    // TODO - DMC interrupt
+    // TODO - frame interrupt
+    return 0 +
+      (if (channels.dmc.synth.length != 0) 0x10 else 0x00) +
+      (if (channels.noi.synth.length != 0) 0x08 else 0x00) +
+      (if (channels.tri.synth.length != 0) 0x04 else 0x00) +
+      (if (channels.sq2.synth.length != 0) 0x02 else 0x00) +
+      (if (channels.sq1.synth.length != 0) 0x01 else 0x00)
+  }
+
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
-      in REG_PULSE1_RANGE -> channels.pulse1.updatePulse(reg - REG_PULSE1_RANGE.first, data)
-      in REG_PULSE2_RANGE -> channels.pulse2.updatePulse(reg - REG_PULSE2_RANGE.first, data)
-      in REG_TRI_RANGE -> channels.triangle.updateTriangle(reg - REG_TRI_RANGE.first, data)
-      in REG_NOISE_RANGE -> channels.noise.updateNoise(reg - REG_NOISE_RANGE.first, data)
+      in REG_SQ1_RANGE -> channels.sq1.updatePulse(reg - REG_SQ1_RANGE.first, data)
+      in REG_SQ2_RANGE -> channels.sq2.updatePulse(reg - REG_SQ2_RANGE.first, data)
+      in REG_TRI_RANGE -> channels.tri.updateTriangle(reg - REG_TRI_RANGE.first, data)
+      in REG_NOI_RANGE -> channels.noi.updateNoise(reg - REG_NOI_RANGE.first, data)
       in REG_DMC_RANGE -> channels.dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
 
       REG_SND_CHN -> {
         channels.dmc.setStatus(data.isBitSet(4))
-        channels.noise.setStatus(data.isBitSet(3))
-        channels.triangle.setStatus(data.isBitSet(2))
-        channels.pulse2.setStatus(data.isBitSet(1))
-        channels.pulse1.setStatus(data.isBitSet(0))
+        channels.noi.setStatus(data.isBitSet(3))
+        channels.tri.setStatus(data.isBitSet(2))
+        channels.sq2.setStatus(data.isBitSet(1))
+        channels.sq1.setStatus(data.isBitSet(0))
       }
 
       REG_FRAME_COUNTER_CTRL -> {
@@ -46,7 +57,7 @@ class Apu(
   }
 
   // See http://wiki.nesdev.com/w/index.php/APU_Pulse
-  private fun SynthContext<PulseSynth>.updatePulse(idx: Int, data: Data) {
+  private fun SynthContext<SquareSynth>.updatePulse(idx: Int, data: Data) {
     fun extractPeriodCycles() = (extractTimer() + 1) * 2 // APU clock rather than CPU clock
 
     regs[idx] = data
@@ -163,10 +174,10 @@ class Apu(
 
   companion object {
     // See https://wiki.nesdev.com/w/index.php/2A03
-    private val REG_PULSE1_RANGE = 0x00..0x03
-    private val REG_PULSE2_RANGE = 0x04..0x07
+    private val REG_SQ1_RANGE = 0x00..0x03
+    private val REG_SQ2_RANGE = 0x04..0x07
     private val REG_TRI_RANGE = 0x08..0x0B
-    private val REG_NOISE_RANGE = 0x0C..0x0F
+    private val REG_NOI_RANGE = 0x0C..0x0F
     private val REG_DMC_RANGE = 0x10..0x13
     private const val REG_SND_CHN = 0x15
     private const val REG_FRAME_COUNTER_CTRL = 0x17

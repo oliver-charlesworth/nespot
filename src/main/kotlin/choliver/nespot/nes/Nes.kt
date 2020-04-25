@@ -124,6 +124,7 @@ class Nes(
     const val ADDR_JOYPADS: Address = 0x4016
     const val ADDR_JOYPAD1: Address = 0x4016
     const val ADDR_JOYPAD2: Address = 0x4017
+    const val ADDR_APU_STATUS: Address = 0x4017
 
     // See http://wiki.nesdev.com/w/index.php/Cycle_reference_chart#Clock_rates
     const val NUM_CYCLES_PER_SCANLINE = 113

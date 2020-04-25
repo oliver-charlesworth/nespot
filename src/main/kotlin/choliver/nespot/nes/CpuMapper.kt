@@ -5,6 +5,7 @@ import choliver.nespot.Data
 import choliver.nespot.Memory
 import choliver.nespot.addr
 import choliver.nespot.apu.Apu
+import choliver.nespot.nes.Nes.Companion.ADDR_APU_STATUS
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD1
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD2
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPADS
@@ -24,7 +25,7 @@ class CpuMapper(
     addr < 0x4000 -> ppu.readReg(addr % 8)
     addr == ADDR_JOYPAD1 -> joypads.read1()
     addr == ADDR_JOYPAD2 -> joypads.read2()
-    addr < 0x4020 -> 0x00.also { println("Trying to read APU status") } // TODO - APU status register is readable
+    addr == ADDR_APU_STATUS -> apu.readStatus()
     else -> prg.load(addr)
   }
 

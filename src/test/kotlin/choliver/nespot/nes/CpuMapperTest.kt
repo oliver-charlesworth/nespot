@@ -2,6 +2,7 @@ package choliver.nespot.nes
 
 import choliver.nespot.Memory
 import choliver.nespot.apu.Apu
+import choliver.nespot.nes.Nes.Companion.ADDR_APU_STATUS
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD1
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD2
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPADS
@@ -112,6 +113,10 @@ class CpuMapperTest {
 
   @Test
   fun `maps to apu`() {
+    whenever(apu.readStatus()) doReturn 0x10
+
+    assertEquals(0x10, mapper.load(ADDR_APU_STATUS))
+
     mapper.store(0x4000, 0x30)
     mapper.store(0x4017, 0x40)    // This is the highest APU reg
 

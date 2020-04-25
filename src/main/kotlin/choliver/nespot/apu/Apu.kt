@@ -77,7 +77,7 @@ class Apu(
 
       1 -> {
         sweep.enabled = data.isBitSet(7)
-        sweep.divider = ((data and 0x70) shr 4) + 1
+        sweep.divider = (data and 0x70) shr 4
         sweep.negate = data.isBitSet(3)
         sweep.shift = data and 0x07
         sweep.reset()

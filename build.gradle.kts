@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   application
-  id("nebula.kotlin") version "1.3.61"
+  id("nebula.kotlin") version "1.3.72"
   id("org.openjfx.javafxplugin") version "0.0.8"
 }
 

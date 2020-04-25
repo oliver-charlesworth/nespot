@@ -3,30 +3,23 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
-class PulseSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
-  private val counter = Counter(cyclesPerSample = cyclesPerSample)
+class PulseSynth : Synth {
   private var iSeq = 0
   private var iLength = 0
   var dutyCycle = 0
-  var volume = 0
-  var periodCycles by observable(1.toRational()) { counter.periodCycles = it }
   override var length by observable(0) { iLength = it }
 
-  override fun take(ticks: Sequencer.Ticks): Int {
-    val ret = if (iLength != 0) (SEQUENCES[dutyCycle][iSeq] * volume) else 0
-    updateCounters(ticks)
-    updatePhase()
-    return ret
+  override val output get() = if (outputEnabled()) SEQUENCES[dutyCycle][iSeq] else 0
+
+  override fun onTimer() {
+    iSeq = (iSeq + 1) % SEQUENCE_LENGTH
   }
 
-  private fun updateCounters(ticks: Sequencer.Ticks) {
-    iLength = max(iLength - ticks.half, 0)
+  override fun onHalfFrame() {
+    iLength = max(iLength - 1, 0)
   }
 
-  private fun updatePhase() {
-    val ticks = counter.take()
-    iSeq = (iSeq + ticks) % SEQUENCE_LENGTH
-  }
+  private fun outputEnabled() = (iLength > 0)
 
   companion object {
     private val SEQUENCES = listOf(

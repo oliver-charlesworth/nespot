@@ -1,7 +1,10 @@
 package choliver.nespot.apu
 
 interface Synth {
+  val output: Int
   var length: Int
 
-  fun take(ticks: Sequencer.Ticks): Int
+  fun onTimer() {}
+  fun onQuarterFrame() {}
+  fun onHalfFrame() {}
 }

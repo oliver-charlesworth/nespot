@@ -18,16 +18,20 @@ class Apu(
   private data class SynthContext<S : Synth>(
     val synth: S,
     val level: Double,
+    val timer: Counter = Counter(),
+    val envelope: Envelope = Envelope(),
+    val sweep: Sweep = Sweep(timer),
     val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00),
-    var enabled: Boolean = false
+    var enabled: Boolean = false,
+    val name: String = ""
   )
 
   private val sequencer = Sequencer()
   private val pulse1 = SynthContext(PulseSynth(), 0.00752)
   private val pulse2 = SynthContext(PulseSynth(), 0.00752)
-  private val triangle = SynthContext(TriangleSynth(), 0.00851)
+  private val triangle = SynthContext(TriangleSynth(), 0.00851).apply { fixEnvelope(1) }
   private val noise = SynthContext(NoiseSynth(), 0.00494)
-  private val dmc = SynthContext(DmcSynth(memory = memory), 0.00335)
+  private val dmc = SynthContext(DmcSynth(memory = memory), 0.00335).apply { fixEnvelope(1) }
 
   private val alpha: Double
   private var state: Double = 0.0
@@ -62,34 +66,36 @@ class Apu(
 
   // See http://wiki.nesdev.com/w/index.php/APU_Pulse
   private fun SynthContext<PulseSynth>.updatePulse(idx: Int, data: Data) {
-    fun extractPeriodCycles() = ((extractTimer(regs) + 1) * 2).toRational() // APU clock rather than CPU clock
+    fun extractPeriodCycles() = (extractTimer() + 1) * 2 // APU clock rather than CPU clock
 
     regs[idx] = data
     when (idx) {
       0 -> {
         synth.dutyCycle = (data and 0xC0) shr 6
-        synth.volume = data and 0x0F
-        // TODO - halt
-        // TODO - volume/envelope flag
-        // TODO - envelope divider
+        updateEnvelope()
       }
 
       1 -> {
-        // TODO - sweep
+        sweep.enabled = data.isBitSet(7)
+        sweep.divider = (data and 0x70) shr 4
+        sweep.negate = data.isBitSet(3)
+        sweep.shift = data and 0x07
+        sweep.reset()
       }
 
-      2 -> synth.periodCycles = extractPeriodCycles()
+      2 -> timer.periodCycles = extractPeriodCycles().toRational()
 
       3 -> {
-        synth.periodCycles = extractPeriodCycles()
-        synth.length = extractLength(regs)
+        timer.periodCycles = extractPeriodCycles().toRational()
+        synth.length = extractLength()
+        envelope.reset()
       }
     }
   }
 
   // See http://wiki.nesdev.com/w/index.php/APU_Triangle
   private fun SynthContext<TriangleSynth>.updateTriangle(idx: Int, data: Data) {
-    fun extractPeriodCycles() = (extractTimer(regs) + 1).toRational()
+    fun extractPeriodCycles() = (extractTimer() + 1).toRational()
 
     regs[idx] = data
     when (idx) {
@@ -98,11 +104,11 @@ class Apu(
         synth.linear = data and 0x7F
       }
 
-      2 -> synth.periodCycles = extractPeriodCycles()
+      2 -> timer.periodCycles = extractPeriodCycles()
 
       3 -> {
-        synth.periodCycles = extractPeriodCycles()
-        synth.length = extractLength(regs)
+        timer.periodCycles = extractPeriodCycles()
+        synth.length = extractLength()
       }
     }
   }
@@ -111,18 +117,17 @@ class Apu(
   private fun SynthContext<NoiseSynth>.updateNoise(idx: Int, data: Data) {
     regs[idx] = data
     when (idx) {
-      0 -> {
-        synth.volume = data and 0x0F
-        // TODO - halt
-        // TODO - volume/envelope flag
-      }
+      0 -> updateEnvelope()
 
       2 -> {
         synth.mode = (data and 0x80) shr 7
-        synth.periodCycles = NOISE_PERIOD_TABLE[data and 0x0F].toRational()
+        timer.periodCycles = NOISE_PERIOD_TABLE[data and 0x0F].toRational()
       }
 
-      3 -> synth.length = extractLength(regs)
+      3 -> {
+        synth.length = extractLength()
+        envelope.reset()
+      }
     }
   }
 
@@ -133,7 +138,7 @@ class Apu(
       0 -> {
         // TODO - IRQ enabled
         synth.loop = data.isBitSet(6)
-        synth.periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
+        timer.periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
       }
       1 -> synth.level = data and 0x7F
       2 -> synth.address = 0xC000 + (data * 64)
@@ -141,15 +146,21 @@ class Apu(
     }
   }
 
-  private fun extractTimer(regs: List<Data>) = ((regs[3] and 0x07) shl 8) or regs[2]
-  private fun extractLength(regs: List<Data>) = LENGTH_TABLE[(regs[3] and 0xF8) shr 3]
+  private fun SynthContext<*>.updateEnvelope() {
+    envelope.loop = regs[0].isBitSet(5)
+    envelope.directMode = regs[0].isBitSet(4)
+    envelope.param = regs[0] and 0x0F
+  }
+
+  private fun SynthContext<*>.extractTimer() = ((regs[3] and 0x07) shl 8) or regs[2]
+  private fun SynthContext<*>.extractLength() = LENGTH_TABLE[(regs[3] and 0xF8) shr 3]
 
   fun generate() {
     for (i in buffer.indices step 2) {
       val ticks = sequencer.take()
 
       // See http://wiki.nesdev.com/w/index.php/APU_Mixer
-      // I don't believe the "non-linear" mixing is worth it.
+      // TODO - non-linear mixing (used by SMB to set triangle/noise level)
       val mixed = 0 +
         pulse1.take(ticks) +
         pulse2.take(ticks) +
@@ -168,11 +179,29 @@ class Apu(
     }
   }
 
-  private fun SynthContext<*>.take(ticks: Sequencer.Ticks) = synth.take(ticks) * (if (enabled) level else 0.0)
+  private fun SynthContext<*>.take(ticks: Sequencer.Ticks): Double {
+    if (ticks.quarter) {
+      envelope.advance()
+      synth.onQuarterFrame()
+    }
+    if (ticks.half) {
+      sweep.advance()
+      synth.onHalfFrame()
+    }
+    repeat(timer.take()) {
+      synth.onTimer()
+    }
+    return synth.output * envelope.level * (if (enabled) level else 0.0)
+  }
 
   private fun SynthContext<*>.setStatus(enabled: Boolean) {
     if (!enabled) { synth.length = 0 }
     this.enabled = enabled
+  }
+
+  private fun SynthContext<*>.fixEnvelope(level: Int) {
+    envelope.directMode = true
+    envelope.param = level
   }
 
   companion object {

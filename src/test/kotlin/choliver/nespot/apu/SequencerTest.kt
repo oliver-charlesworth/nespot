@@ -3,6 +3,8 @@ package choliver.nespot.apu
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 import choliver.nespot.apu.Sequencer.Ticks
+import choliver.nespot.sixfiveohtwo.utils._0
+import choliver.nespot.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -29,7 +31,7 @@ class SequencerTest {
 
     // We set the mode, so get an initial tick fire
     assertEquals(
-      expectedFiveStepSeq.repeat(2).replaceFirst(Ticks(1, 1)),
+      expectedFiveStepSeq.repeat(2).replaceFirst(Ticks(_1, _1)),
       sequencer.take(30)
     )
   }
@@ -57,27 +59,27 @@ class SequencerTest {
 
     // Sequence back to beginning, but note both ticks fire
     assertEquals(
-      expectedFiveStepSeq.repeat(2).replaceFirst(Ticks(1, 1)),
+      expectedFiveStepSeq.repeat(2).replaceFirst(Ticks(_1, _1)),
       sequencer.take(30)
     )
   }
 
   private val expectedFourStepSeq = listOf(
-    Ticks(1, 0),
-    Ticks(1, 1),
-    Ticks(1, 0),
-    Ticks(1, 1)
+    Ticks(_1, _0),
+    Ticks(_1, _1),
+    Ticks(_1, _0),
+    Ticks(_1, _1)
   ).spread()
 
   private val expectedFiveStepSeq = listOf(
-    Ticks(1, 0),
-    Ticks(1, 1),
-    Ticks(1, 0),
-    Ticks(0, 0),
-    Ticks(1, 1)
+    Ticks(_1, _0),
+    Ticks(_1, _1),
+    Ticks(_1, _0),
+    Ticks(_0, _0),
+    Ticks(_1, _1)
   ).spread()
 
-  private fun List<Ticks>.spread() = flatMap { listOf(Ticks(0, 0), Ticks(0, 0), it) }
+  private fun List<Ticks>.spread() = flatMap { listOf(Ticks(_0, _0), Ticks(_0, _0), it) }
 
   private fun List<Ticks>.replaceFirst(ticks: Ticks) = listOf(ticks) + drop(1)
 

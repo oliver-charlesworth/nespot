@@ -1,7 +1,12 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.Sequencer.Ticks
-
-internal fun Synth.take(num: Int, tick: Ticks = Ticks(0, 0)) = List(num) { take(tick) }
+internal fun Synth.take(num: Int) = List(num) { output.also { onTimer() } }
 
 internal fun <T> List<T>.repeat(num: Int) = (0 until num).flatMap { this }
+
+internal fun <T> List<T>.repeatEach(num: Int) = flatMap { v -> List(num) { v } }
+
+internal fun Synth.nextNonZeroOutput(): Int {
+  while(output == 0) { onTimer() }
+  return output
+}

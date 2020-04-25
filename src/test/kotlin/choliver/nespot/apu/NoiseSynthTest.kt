@@ -47,7 +47,7 @@ class NoiseSynthTest {
     val seq = synth.take(93 * 4)
 
     assertEquals(
-      ref.flatMap { listOf(it).repeat(4) },
+      ref.repeatEach(4),
       seq
     ) // Long-period sequence should match the padded short-period sequence
   }

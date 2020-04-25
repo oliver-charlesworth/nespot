@@ -3,7 +3,7 @@ package choliver.nespot.apu
 class Envelope {
   private var iDivider = 0
   private var iDecay = 0
-  private var start = false
+  private var start = true
   var loop = false
   var param = 0
   var directMode = false
@@ -19,7 +19,11 @@ class Envelope {
       when (iDivider) {
         0 -> {
           iDivider = param
-          iDecay = if (loop) DECAY_INIT else (iDecay - 1)
+          iDecay = when {
+            (iDecay > 0) -> iDecay - 1
+            loop -> DECAY_INIT
+            else -> iDecay
+          }
         }
         else -> iDivider--
       }

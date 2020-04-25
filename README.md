@@ -9,6 +9,7 @@
   - Sweeps
   - Interrupts
   - Halt / disable
+  - Non-linear mixing
 
 - Keyboard concurrency issues
 

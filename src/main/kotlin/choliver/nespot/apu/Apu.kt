@@ -149,7 +149,7 @@ class Apu(
       val ticks = sequencer.take()
 
       // See http://wiki.nesdev.com/w/index.php/APU_Mixer
-      // I don't believe the "non-linear" mixing is worth it.
+      // TODO - non-linear mixing (used by SMB to set triangle/noise level)
       val mixed = 0 +
         pulse1.take(ticks) +
         pulse2.take(ticks) +

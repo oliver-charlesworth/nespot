@@ -20,6 +20,7 @@ class Apu(
     frameSequencerFourStepPeriodCycles = FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES,
     frameSequencerFiveStepPeriodCycles = FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES
   )
+
   private val pulse1 = PulseSynth(cyclesPerSample = CYCLES_PER_SAMPLE)
   private val pulse2 = PulseSynth(cyclesPerSample = CYCLES_PER_SAMPLE)
   private val triangle = TriangleSynth(cyclesPerSample = CYCLES_PER_SAMPLE)
@@ -49,21 +50,11 @@ class Apu(
       in REG_DMC_RANGE -> dmc.writeReg(reg - REG_DMC_RANGE.first, data)
 
       REG_SND_CHN -> {
-        if (!data.isBitSet(4)) {
-          // TODO - mess with DMC
-        }
-        if (!data.isBitSet(3)) {
-          noise.length = 0
-        }
-        if (!data.isBitSet(2)) {
-          triangle.length = 0
-        }
-        if (!data.isBitSet(1)) {
-          pulse2.length = 0
-        }
-        if (!data.isBitSet(0)) {
-          pulse1.length = 0
-        }
+        if (!data.isBitSet(4)) { }  // TODO - mess with DMC
+        if (!data.isBitSet(3)) { noise.length = 0 }
+        if (!data.isBitSet(2)) { triangle.length = 0 }
+        if (!data.isBitSet(1)) { pulse2.length = 0 }
+        if (!data.isBitSet(0)) { pulse1.length = 0 }
         dmcEnabled = data.isBitSet(4)
         noiseEnabled = data.isBitSet(3)
         triangleEnabled = data.isBitSet(2)

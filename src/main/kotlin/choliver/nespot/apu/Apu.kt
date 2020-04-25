@@ -131,7 +131,7 @@ class Apu(
     when (reg) {
       0 -> {
         // TODO - IRQ enabled
-        // TODO - loop enabled
+        loop = data.isBitSet(6)
         periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
       }
       1 -> level = data and 0x7F

@@ -19,17 +19,11 @@ class DmcSynth(private val memory: Memory) : Synth {
   var address: Address by observable(0x0000) { resetPattern() }
   override var length by observable(0) { resetPattern() }
 
-  override fun take(counterTicks: Int, seqTicks: Sequencer.Ticks): Int {
-    val ret = level
-    updateLevel(counterTicks)
-    return ret
-  }
+  override val output get() = level
 
-  private fun updateLevel(counterTicks: Int) {
-    repeat(counterTicks) {
-      maybeLoadSample()
-      maybePlaySample()
-    }
+  override fun onTimer() {
+    maybeLoadSample()
+    maybePlaySample()
   }
 
   private fun maybeLoadSample() {

@@ -7,8 +7,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class PulseSynthTest {
-  private val synth = PulseSynth(cyclesPerSample = 8.toRational()).apply {
-    periodCycles = 8
+  private val synth = PulseSynth().apply {
     dutyCycle = 0
     length = 1
   }
@@ -52,8 +51,12 @@ class PulseSynthTest {
   fun `length counter`() {
     synth.dutyCycle = 3 // Easiest to see the impact on
     synth.length = 8
-    val seq = synth.take(8, Ticks(quarter = _0, half = _1))
+    synth.nextNonZeroOutput()
+    repeat(8) { synth.onHalfFrame() }
 
-    assertEquals(listOf(1, 0, 0, 1, 1, 1, 1, 1), seq)
+    assertEquals(
+      List(16) { 0 },
+      synth.take(16)
+    )
   }
 }

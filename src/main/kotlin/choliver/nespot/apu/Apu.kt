@@ -18,7 +18,7 @@ class Apu(
   private data class SynthContext<S : Synth>(
     val synth: S,
     val level: Double,
-    val counter: Counter = Counter(),
+    val timer: Counter = Counter(),
     val envelope: Envelope = Envelope(),
     val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00),
     var enabled: Boolean = false
@@ -80,10 +80,10 @@ class Apu(
 //        synth.sweepShift = data and 0x07
       }
 
-      2 -> counter.periodCycles = extractPeriodCycles().toRational()
+      2 -> timer.periodCycles = extractPeriodCycles().toRational()
 
       3 -> {
-        counter.periodCycles = extractPeriodCycles().toRational()
+        timer.periodCycles = extractPeriodCycles().toRational()
         synth.length = extractLength()
         envelope.reset()
       }
@@ -101,10 +101,10 @@ class Apu(
         synth.linear = data and 0x7F
       }
 
-      2 -> counter.periodCycles = extractPeriodCycles()
+      2 -> timer.periodCycles = extractPeriodCycles()
 
       3 -> {
-        counter.periodCycles = extractPeriodCycles()
+        timer.periodCycles = extractPeriodCycles()
         synth.length = extractLength()
       }
     }
@@ -118,7 +118,7 @@ class Apu(
 
       2 -> {
         synth.mode = (data and 0x80) shr 7
-        counter.periodCycles = NOISE_PERIOD_TABLE[data and 0x0F].toRational()
+        timer.periodCycles = NOISE_PERIOD_TABLE[data and 0x0F].toRational()
       }
 
       3 -> {
@@ -135,7 +135,7 @@ class Apu(
       0 -> {
         // TODO - IRQ enabled
         synth.loop = data.isBitSet(6)
-        counter.periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
+        timer.periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
       }
       1 -> synth.level = data and 0x7F
       2 -> synth.address = 0xC000 + (data * 64)
@@ -179,9 +179,15 @@ class Apu(
   private fun SynthContext<*>.take(ticks: Sequencer.Ticks): Double {
     if (ticks.quarter) {
       envelope.advance()
+      synth.onQuarterFrame()
     }
-    val counterTicks = counter.take()
-    return synth.take(counterTicks, ticks) * envelope.level * (if (enabled) level else 0.0)
+    if (ticks.half) {
+      synth.onHalfFrame()
+    }
+    repeat(timer.take()) {
+      synth.onTimer()
+    }
+    return synth.output * envelope.level * (if (enabled) level else 0.0)
   }
 
   private fun SynthContext<*>.setStatus(enabled: Boolean) {

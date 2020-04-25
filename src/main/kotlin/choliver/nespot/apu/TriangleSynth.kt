@@ -10,27 +10,21 @@ class TriangleSynth : Synth {
   var linear by observable(0) { iLinear = it }
   override var length by observable(0) { iLength = it; iLinear = linear } // Reloads both counters
 
-  override fun take(counterTicks: Int, seqTicks: Sequencer.Ticks): Int {
-    val ret = SEQUENCE[iSeq]
-    updateCounters(seqTicks)
-    updatePhase(counterTicks)
-    return ret
-  }
+  override val output get() = SEQUENCE[iSeq]
 
-  private fun updateCounters(ticks: Sequencer.Ticks) {
-    if (ticks.quarter) {
-      iLinear = max(iLinear - 1, 0)
-    }
-    if (ticks.half) {
-      iLength = max(iLength - 1, 0)
-    }
-  }
-
-  private fun updatePhase(counterTicks: Int) {
-    // Counters gate sequence generation, rather than muting the channel
+  // Counters gate sequence generation, rather than muting the channel
+  override fun onTimer() {
     if ((iLinear != 0) && (iLength != 0)) {
-      iSeq = (iSeq + counterTicks) % SEQUENCE_LENGTH
+      iSeq = (iSeq + 1) % SEQUENCE_LENGTH
     }
+  }
+
+  override fun onQuarterFrame() {
+    iLinear = max(iLinear - 1, 0)
+  }
+
+  override fun onHalfFrame() {
+    iLength = max(iLength - 1, 0)
   }
 
   companion object {

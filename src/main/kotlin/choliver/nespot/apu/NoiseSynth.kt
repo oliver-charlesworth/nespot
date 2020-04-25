@@ -9,23 +9,14 @@ class NoiseSynth : Synth {
   var mode = 0
   override var length by observable(0) { iLength = it }
 
-  override fun take(counterTicks: Int, seqTicks: Sequencer.Ticks): Int {
-    val ret = if (iLength != 0) (sr and 1) else 0
-    updateCounters(seqTicks)
-    updatePhase(counterTicks)
-    return ret
+  override val output get() = if (iLength != 0) (sr and 1) else 0
+
+  override fun onTimer() {
+    val fb = (sr and 0x01) xor ((if (mode == 0) (sr shr 1) else (sr shr 6)) and 0x01)
+    sr = (sr shr 1) or (fb shl 14)
   }
 
-  private fun updateCounters(ticks: Sequencer.Ticks) {
-    if (ticks.half) {
-      iLength = max(iLength - 1, 0)
-    }
-  }
-
-  private fun updatePhase(counterTicks: Int) {
-    if (counterTicks != 0) {
-      val fb = (sr and 0x01) xor ((if (mode == 0) (sr shr 1) else (sr shr 6)) and 0x01)
-      sr = (sr shr 1) or (fb shl 14)
-    }
+  override fun onHalfFrame() {
+    iLength = max(iLength - 1, 0)
   }
 }

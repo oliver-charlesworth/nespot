@@ -1,18 +1,12 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.Sequencer.Ticks
-import choliver.nespot.sixfiveohtwo.utils._0
-import choliver.nespot.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class NoiseSynthTest {
-  private val synth = NoiseSynth(cyclesPerSample = 4.toRational()).apply {
+  private val synth = NoiseSynth().apply {
     length = 1
-    periodCycles = 4.toRational()
   }
-
-  // TODO - should the frequency be halved (i.e. clocked by APU rather than CPU?)
 
   @Test
   fun `full-length sequence`() {
@@ -38,26 +32,15 @@ class NoiseSynthTest {
   }
 
   @Test
-  fun `different period`() {
-    synth.mode = 1    // Use short sequence because easier to test
-    val ref = synth.take(  93)
-
-    synth.periodCycles = 16.toRational()
-    val seq = synth.take(93 * 4)
-
-    assertEquals(
-      ref.repeatEach(4),
-      seq
-    ) // Long-period sequence should match the padded short-period sequence
-  }
-
-  @Test
   fun length() {
     synth.mode = 1    // Use short sequence because easier to test
     synth.length = 32
-    val seq = synth.take(93, Ticks(quarter = _0, half = _1))
+    synth.nextNonZeroOutput()
+    repeat(32) { synth.onHalfFrame() }
 
-    assertEquals(setOf(0, 1), seq.take(32).distinct().toSet())
-    assertEquals(setOf(0), seq.drop(32).distinct().toSet())  // Everything else is zeroed
+    assertEquals(
+      List(16) { 0 },
+      synth.take(16)
+    )
   }
 }

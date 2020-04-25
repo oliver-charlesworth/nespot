@@ -5,63 +5,50 @@ import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
 class PulseSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
-  private val counter = Counter(cyclesPerSample = cyclesPerSample)
-  private var iSeq = 0
+  private var envelope = Envelope()
+  var envLoop by observable(false) { envelope.loop = it }   // TODO - also interpret as length halt
+  var envParam by observable(0) { envelope.param = it }
+  var envDirectMode by observable(false) {
+    envelope.directMode = it
+  }
+
+  // Sweep state and params
   private var iSweep = 0
-  private var iLength = 0
-  private var iDivider = 0
-  private var iDecay = 0
   var sweepEnabled = false
   var sweepDivider by observable(0) { iSweep = it }
   var sweepNegate = false
   var sweepShift = 0
+
+  // Core state and params
+  private val counter = Counter(cyclesPerSample = cyclesPerSample)
+  private var iSeq = 0
+  private var iLength = 0
   var dutyCycle = 0
-  var envLoop = false
-  var envParam = 0    // TODO - should this reload iDivider?
-  var directEnvMode = false
-  var periodCycles by observable(1) {
-    counter.periodCycles = it.toRational()
-  }
-  override var length by observable(0) {
-    iLength = it
-    iDecay = 15
-    iDivider = envParam + 1
-  }
+  var periodCycles by observable(1) { counter.periodCycles = it.toRational() }
+  override var length by observable(0) { iLength = it; envelope.reset() }
 
   override fun take(ticks: Ticks): Int {
+    if (ticks.quarter) {
+      envelope.advance()
+    }
+
     val ret = SEQUENCES[dutyCycle][iSeq] * calcOutputLevel()
-    updateEnvelope(ticks.quarter)
+
     updateSweep()
     updatePhase()
-    updateCounters(ticks)
+
+    if (ticks.half) {
+      iLength = max(iLength - 1, 0)
+      iSweep = max(iSweep - 1, 0)
+    }
+
     return ret
   }
 
   private fun calcOutputLevel() = when {
     (iLength == 0) -> 0
     (periodCycles < 8 || periodCycles > 0x7FF) -> 0
-    directEnvMode -> envParam
-    else -> iDecay
-  }
-
-  private fun updateEnvelope(quarter: Boolean) {
-    if (quarter) {
-      when (iDivider) {
-        0 -> {
-
-        }
-        else -> iDivider--
-
-        }
-      }
-
-//    if (iDivider == 0) {
-//      iDecay = max(iDecay - 1, 0)
-//      if (iDecay == 0) {
-//        iDecay = 15
-//      }
-//      iDivider = envParam + 1
-//    }
+    else -> envelope.level
   }
 
   private fun updateSweep() {
@@ -72,13 +59,6 @@ class PulseSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
         periodCycles = newPeriod
         iSweep = sweepDivider
       }
-    }
-  }
-
-  private fun updateCounters(ticks: Ticks) {
-    if (ticks.half) {
-      iLength = max(iLength - 1, 0)
-      iSweep = max(iSweep - 1, 0)
     }
   }
 

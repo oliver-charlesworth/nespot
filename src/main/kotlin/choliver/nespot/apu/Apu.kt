@@ -69,7 +69,7 @@ class Apu(
       0 -> {
         synth.dutyCycle = (data and 0xC0) shr 6
         synth.envLoop = data.isBitSet(5)
-        synth.directEnvMode = data.isBitSet(4)
+        synth.envDirectMode = data.isBitSet(4)
         synth.envParam = data and 0x0F
       }
 

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 
 class PulseSynthTest {
   private val synth = PulseSynth(cyclesPerSample = 8.toRational()).apply {
-    directEnvMode = true
+    envDirectMode = true
     envParam = 1
     periodCycles = 8
     dutyCycle = 0
@@ -73,7 +73,7 @@ class PulseSynthTest {
   @Test
   fun envelope() {
     synth.dutyCycle = 3
-    synth.directEnvMode = false
+    synth.envDirectMode = false
     synth.envParam = 3  // Equivalent to 4 quarter periods
     val seq = synth.take(32, Ticks(quarter = _1, half = _0))
 

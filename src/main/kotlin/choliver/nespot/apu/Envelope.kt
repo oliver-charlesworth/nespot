@@ -10,6 +10,10 @@ class Envelope {
 
   val level get() = if (directMode) param else iDecay
 
+  fun reset() {
+    start = true
+  }
+
   fun advance() {
     if (start) {
       start = false
@@ -28,10 +32,6 @@ class Envelope {
         else -> iDivider--
       }
     }
-  }
-
-  fun reset() {
-    start = true
   }
 
   companion object {

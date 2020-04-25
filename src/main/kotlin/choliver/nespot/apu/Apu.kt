@@ -20,8 +20,10 @@ class Apu(
     val level: Double,
     val timer: Counter = Counter(),
     val envelope: Envelope = Envelope(),
+    val sweep: Sweep = Sweep(timer),
     val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00),
-    var enabled: Boolean = false
+    var enabled: Boolean = false,
+    val name: String = ""
   )
 
   private val sequencer = Sequencer()
@@ -74,10 +76,11 @@ class Apu(
       }
 
       1 -> {
-//        synth.sweepEnabled = data.isBitSet(7)
-//        synth.sweepDivider = ((data and 0x70) shr 4) + 1
-//        synth.sweepNegate = data.isBitSet(3)
-//        synth.sweepShift = data and 0x07
+        sweep.enabled = data.isBitSet(7)
+        sweep.divider = ((data and 0x70) shr 4) + 1
+        sweep.negate = data.isBitSet(3)
+        sweep.shift = data and 0x07
+        sweep.reset()
       }
 
       2 -> timer.periodCycles = extractPeriodCycles().toRational()
@@ -182,6 +185,7 @@ class Apu(
       synth.onQuarterFrame()
     }
     if (ticks.half) {
+      sweep.advance()
       synth.onHalfFrame()
     }
     repeat(timer.take()) {

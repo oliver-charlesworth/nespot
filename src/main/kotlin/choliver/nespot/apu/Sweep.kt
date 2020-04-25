@@ -1,25 +1,37 @@
 package choliver.nespot.apu
 
-class Sweep(
-  private val get: () -> Int,
-  private val set: (Int) -> Unit
-) {
+// TODO - model negate differently for pulse1 and pulse2
+// TODO - channel muting
+class Sweep(private val timer: Counter) {
   private var iDivider = 0
+  private var reload = true
   var enabled = false
-  var divider by observable(0) { iDivider = it }
+  var divider = 0
   var negate = false
   var shift = 0
 
+  fun reset() {
+    reload = true
+  }
+
   fun advance() {
-    if (iDivider == 0 && enabled) {
-      val period = get()
-      val delta = period shr shift
-      val newPeriod = period + (if (negate) -delta else delta)
-      // TODO - unify this between here and PulseSynth
-      if (newPeriod in 8..0x7FF) {
-        set(newPeriod)
-        iDivider = divider
-      }
+    if ((iDivider == 0) || reload) {
+      iDivider = divider
+      reload = false
+    } else {
+      iDivider--
+    }
+    if ((iDivider == 0) && enabled) {
+      adjustPeriod()
+    }
+  }
+
+  private fun adjustPeriod() {
+    val period = timer.periodCycles.toInt()
+    val delta = period shr shift
+    val newPeriod = period + (if (negate) -delta else delta)
+    if (newPeriod in 8..0x7FF) {
+      timer.periodCycles = newPeriod.toRational()
     }
   }
 }

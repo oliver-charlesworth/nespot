@@ -78,4 +78,6 @@ class CounterTest {
       counter.take(6)
     )
   }
+
+  private fun Counter.take(num: Int) = List(num) { take() }
 }

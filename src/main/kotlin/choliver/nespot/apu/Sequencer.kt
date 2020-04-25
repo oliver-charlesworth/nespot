@@ -1,16 +1,14 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.Rational.Companion.rational
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
-import choliver.nespot.apu.Sequencer.Ticks
 
 // TODO - interrupts
 class Sequencer(
-  cyclesPerSample: Rational,
-  frameSequencerFourStepPeriodCycles: Int,
-  frameSequencerFiveStepPeriodCycles: Int
-) : Takeable<Ticks> {
+  cyclesPerSample: Rational = CYCLES_PER_SAMPLE,
+  frameSequencerFourStepPeriodCycles: Int = FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES,
+  frameSequencerFiveStepPeriodCycles: Int = FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES
+) {
   enum class Mode {
     FOUR_STEP,
     FIVE_STEP
@@ -21,8 +19,8 @@ class Sequencer(
     val half: Int
   )
 
-  private val fourStepPeriod = rational(frameSequencerFourStepPeriodCycles, 4)
-  private val fiveStepPeriod = rational(frameSequencerFiveStepPeriodCycles, 5)
+  private val fourStepPeriod = Rational(frameSequencerFourStepPeriodCycles, 4)
+  private val fiveStepPeriod = Rational(frameSequencerFiveStepPeriodCycles, 5)
 
   private val counter = Counter(cyclesPerSample = cyclesPerSample).apply {
     periodCycles = fourStepPeriod
@@ -30,18 +28,16 @@ class Sequencer(
   private var iSeq = 0
   private var justReset = false
 
-  var mode: Mode = FOUR_STEP
-    set(value) {
-      field = value
-      counter.periodCycles = when (mode) {
-        FOUR_STEP -> fourStepPeriod
-        FIVE_STEP -> fiveStepPeriod
-      }
-      iSeq = 0
-      justReset = true
+  var mode by observable(FOUR_STEP) {
+    counter.periodCycles = when (it) {
+      FOUR_STEP -> fourStepPeriod
+      FIVE_STEP -> fiveStepPeriod
     }
+    iSeq = 0
+    justReset = true
+  }
 
-  override fun take(): Ticks {
+  fun take(): Ticks {
     val ret = if (counter.take() == 1) {
       when (mode) {
         FOUR_STEP -> {

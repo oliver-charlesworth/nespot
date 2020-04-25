@@ -15,22 +15,19 @@ class Apu(
   private val buffer: ByteArray,
   memory: Memory
 ) {
-  private val sequencer = Sequencer(
-    cyclesPerSample = CYCLES_PER_SAMPLE,
-    frameSequencerFourStepPeriodCycles = FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES,
-    frameSequencerFiveStepPeriodCycles = FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES
+  private data class SynthContext<S : Synth>(
+    val synth: S,
+    val level: Double,
+    val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00),
+    var enabled: Boolean = false
   )
-  private val pulse1 = PulseGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
-  private val pulse2 = PulseGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
-  private val triangle = TriangleGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
-  private val noise = NoiseGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
-  private val dmc = DmcGenerator(cyclesPerSample = CYCLES_PER_SAMPLE, memory = memory)
 
-  private var pulse1Enabled = false
-  private var pulse2Enabled = false
-  private var triangleEnabled = false
-  private var noiseEnabled = false
-  private var dmcEnabled = false
+  private val sequencer = Sequencer()
+  private val pulse1 = SynthContext(PulseSynth(), 0.00752)
+  private val pulse2 = SynthContext(PulseSynth(), 0.00752)
+  private val triangle = SynthContext(TriangleSynth(), 0.00851)
+  private val noise = SynthContext(NoiseSynth(), 0.00494)
+  private val dmc = SynthContext(DmcSynth(memory = memory), 0.00335)
 
   private val alpha: Double
   private var state: Double = 0.0
@@ -42,33 +39,18 @@ class Apu(
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
-      in REG_PULSE1_RANGE -> pulse1.writeReg(reg - REG_PULSE1_RANGE.first, data)
-      in REG_PULSE2_RANGE -> pulse2.writeReg(reg - REG_PULSE2_RANGE.first, data)
-      in REG_TRI_RANGE -> triangle.writeReg(reg - REG_TRI_RANGE.first, data)
-      in REG_NOISE_RANGE -> noise.writeReg(reg - REG_NOISE_RANGE.first, data)
-      in REG_DMC_RANGE -> dmc.writeReg(reg - REG_DMC_RANGE.first, data)
+      in REG_PULSE1_RANGE -> pulse1.updatePulse(reg - REG_PULSE1_RANGE.first, data)
+      in REG_PULSE2_RANGE -> pulse2.updatePulse(reg - REG_PULSE2_RANGE.first, data)
+      in REG_TRI_RANGE -> triangle.updateTriangle(reg - REG_TRI_RANGE.first, data)
+      in REG_NOISE_RANGE -> noise.updateNoise(reg - REG_NOISE_RANGE.first, data)
+      in REG_DMC_RANGE -> dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
 
       REG_SND_CHN -> {
-        if (!data.isBitSet(4)) {
-          // TODO - mess with DMC
-        }
-        if (!data.isBitSet(3)) {
-          noise.length = 0
-        }
-        if (!data.isBitSet(2)) {
-          triangle.length = 0
-        }
-        if (!data.isBitSet(1)) {
-          pulse2.length = 0
-        }
-        if (!data.isBitSet(0)) {
-          pulse1.length = 0
-        }
-        dmcEnabled = data.isBitSet(4)
-        noiseEnabled = data.isBitSet(3)
-        triangleEnabled = data.isBitSet(2)
-        pulse2Enabled = data.isBitSet(1)
-        pulse1Enabled = data.isBitSet(0)
+        dmc.setStatus(data.isBitSet(4))
+        noise.setStatus(data.isBitSet(3))
+        triangle.setStatus(data.isBitSet(2))
+        pulse2.setStatus(data.isBitSet(1))
+        pulse1.setStatus(data.isBitSet(0))
       }
 
       REG_FRAME_COUNTER_CTRL -> {
@@ -78,11 +60,15 @@ class Apu(
     }
   }
 
-  private fun PulseGenerator.writeReg(reg: Int, data: Data) {
-    when (reg) {
+  // See http://wiki.nesdev.com/w/index.php/APU_Pulse
+  private fun SynthContext<PulseSynth>.updatePulse(idx: Int, data: Data) {
+    fun extractPeriodCycles() = ((extractTimer(regs) + 1) * 2).toRational() // APU clock rather than CPU clock
+
+    regs[idx] = data
+    when (idx) {
       0 -> {
-        dutyCycle = (data and 0xC0) shr 6
-        volume = data and 0x0F
+        synth.dutyCycle = (data and 0xC0) shr 6
+        synth.volume = data and 0x0F
         // TODO - halt
         // TODO - volume/envelope flag
         // TODO - envelope divider
@@ -92,62 +78,71 @@ class Apu(
         // TODO - sweep
       }
 
-      2 -> timer = (timer and 0x0700) or data
+      2 -> synth.periodCycles = extractPeriodCycles()
 
       3 -> {
-        timer = (timer and 0x00FF) or ((data and 0x07) shl 8)
-        length = extractLength(data)
+        synth.periodCycles = extractPeriodCycles()
+        synth.length = extractLength(regs)
       }
     }
   }
 
-  private fun TriangleGenerator.writeReg(reg: Int, data: Data) {
-    when (reg) {
+  // See http://wiki.nesdev.com/w/index.php/APU_Triangle
+  private fun SynthContext<TriangleSynth>.updateTriangle(idx: Int, data: Data) {
+    fun extractPeriodCycles() = (extractTimer(regs) + 1).toRational()
+
+    regs[idx] = data
+    when (idx) {
       0 -> {
         // TODO - control flag
-        linear = data and 0x7F
+        synth.linear = data and 0x7F
       }
 
-      2 -> timer = (timer and 0x0700) or data
+      2 -> synth.periodCycles = extractPeriodCycles()
 
       3 -> {
-        timer = (timer and 0x00FF) or ((data and 0x07) shl 8)
-        length = extractLength(data)
+        synth.periodCycles = extractPeriodCycles()
+        synth.length = extractLength(regs)
       }
     }
   }
 
-  private fun NoiseGenerator.writeReg(reg: Int, data: Data) {
-    when (reg) {
+  // See https://wiki.nesdev.com/w/index.php/APU_Noise
+  private fun SynthContext<NoiseSynth>.updateNoise(idx: Int, data: Data) {
+    regs[idx] = data
+    when (idx) {
       0 -> {
-        volume = data and 0x0F
+        synth.volume = data and 0x0F
         // TODO - halt
         // TODO - volume/envelope flag
       }
 
       2 -> {
-        mode = (data and 0x80) shr 7
-        period = data and 0x0F
+        synth.mode = (data and 0x80) shr 7
+        synth.periodCycles = NOISE_PERIOD_TABLE[data and 0x0F].toRational()
       }
 
-      3 -> length = extractLength(data)
+      3 -> synth.length = extractLength(regs)
     }
   }
 
-  private fun DmcGenerator.writeReg(reg: Int, data: Data) {
-    when (reg) {
+  // See http://wiki.nesdev.com/w/index.php/APU_DMC
+  private fun SynthContext<DmcSynth>.updateDmc(idx: Int, data: Data) {
+    regs[idx] = data
+    when (idx) {
       0 -> {
         // TODO - IRQ enabled
-        // TODO - loop enabled
-        rate = data and 0x0F
+        synth.loop = data.isBitSet(6)
+        synth.periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
       }
-      1 -> level = data and 0x7F
-      2 -> address = data
-      3 -> length = data
+      1 -> synth.level = data and 0x7F
+      2 -> synth.address = 0xC000 + (data * 64)
+      3 -> synth.length = (data * 16) + 1
     }
   }
 
-  private fun extractLength(data: Data) = LENGTH_TABLE[(data and 0xF8) shr 3]
+  private fun extractTimer(regs: List<Data>) = ((regs[3] and 0x07) shl 8) or regs[2]
+  private fun extractLength(regs: List<Data>) = LENGTH_TABLE[(regs[3] and 0xF8) shr 3]
 
   fun generate() {
     for (i in buffer.indices step 2) {
@@ -156,11 +151,11 @@ class Apu(
       // See http://wiki.nesdev.com/w/index.php/APU_Mixer
       // I don't believe the "non-linear" mixing is worth it.
       val mixed = 0 +
-        (if (pulse1Enabled) 0.00752 else 0.0) * pulse1.take(ticks) +
-        (if (pulse2Enabled) 0.00752 else 0.0) * pulse2.take(ticks) +
-        (if (triangleEnabled) 0.00851 else 0.0) * triangle.take(ticks) +
-        (if (noiseEnabled) 0.00494 else 0.0) * noise.take(ticks) +
-        (if (dmcEnabled) 0.00335 else 0.0) * dmc.take(ticks)
+        pulse1.take(ticks) +
+        pulse2.take(ticks) +
+        triangle.take(ticks) +
+        noise.take(ticks) +
+        dmc.take(ticks)
 
       // TODO - validate this filter
       val filtered = alpha * mixed + (1 - alpha) * state
@@ -173,6 +168,13 @@ class Apu(
     }
   }
 
+  private fun SynthContext<*>.take(ticks: Sequencer.Ticks) = synth.take(ticks) * (if (enabled) level else 0.0)
+
+  private fun SynthContext<*>.setStatus(enabled: Boolean) {
+    if (!enabled) { synth.length = 0 }
+    this.enabled = enabled
+  }
+
   companion object {
     // See https://wiki.nesdev.com/w/index.php/2A03
     private val REG_PULSE1_RANGE = 0x00..0x03
@@ -182,5 +184,12 @@ class Apu(
     private val REG_DMC_RANGE = 0x10..0x13
     private const val REG_SND_CHN = 0x15
     private const val REG_FRAME_COUNTER_CTRL = 0x17
+
+    private val NOISE_PERIOD_TABLE = listOf(
+      4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068
+    )
+    private val DMC_RATE_TABLE = listOf(
+      428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106,  84,  72,  54
+    )
   }
 }

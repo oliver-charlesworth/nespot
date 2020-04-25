@@ -2,7 +2,7 @@ package choliver.nespot.apu
 
 import kotlin.math.absoluteValue
 
-class Rational(a: Int, b: Int) {
+internal class Rational(a: Int, b: Int) {
   val a: Int
   val b: Int
 
@@ -52,4 +52,4 @@ class Rational(a: Int, b: Int) {
   }
 }
 
-fun Int.toRational() = Rational(this, 1)
+internal fun Int.toRational() = Rational(this, 1)

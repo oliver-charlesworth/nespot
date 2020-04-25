@@ -3,7 +3,7 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Triangle
-class TriangleSynth : Synth {
+internal class TriangleSynth : Synth {
   private var iSeq = 0
   private var iLinear = 0
   private var iLength = 0

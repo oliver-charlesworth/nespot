@@ -2,7 +2,7 @@ package choliver.nespot.apu
 
 // TODO - model negate differently for pulse1 and pulse2
 // TODO - channel muting
-class Sweep(private val timer: Counter) {
+internal class Sweep(private val timer: Counter) {
   private var iDivider = 0
   private var reload = true
   var enabled = false

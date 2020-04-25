@@ -15,16 +15,6 @@ class Apu(
   private val buffer: ByteArray,
   memory: Memory
 ) {
-  private data class SynthContext<S : Synth>(
-    val synth: S,
-    val level: Double,
-    val timer: Counter = Counter(),
-    val envelope: Envelope = Envelope(),
-    val sweep: Sweep = Sweep(timer),
-    val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00),
-    var enabled: Boolean = false,
-    val name: String = ""
-  )
 
   private val sequencer = Sequencer()
   private val pulse1 = SynthContext(PulseSynth(), 0.00752)

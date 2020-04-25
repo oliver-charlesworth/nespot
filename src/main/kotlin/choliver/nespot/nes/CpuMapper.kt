@@ -24,7 +24,7 @@ class CpuMapper(
     addr < 0x4000 -> ppu.readReg(addr % 8)
     addr == ADDR_JOYPAD1 -> joypads.read1()
     addr == ADDR_JOYPAD2 -> joypads.read2()
-    addr < 0x4020 -> 0x00 // TODO - APU status register is readable
+    addr < 0x4020 -> 0x00.also { println("Trying to read APU status") } // TODO - APU status register is readable
     else -> prg.load(addr)
   }
 

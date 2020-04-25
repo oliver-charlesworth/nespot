@@ -75,7 +75,10 @@ class Apu(
       }
 
       1 -> {
-        // TODO - sweep
+        synth.sweepEnabled = data.isBitSet(7)
+        synth.sweepDivider = ((data and 0x70) shr 4) + 1
+        synth.sweepNegate = data.isBitSet(3)
+        synth.sweepShift = data and 0x07
       }
 
       2 -> synth.periodCycles = extractPeriodCycles()

@@ -1,11 +1,9 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.Rational.Companion.rational
-
 class Counter(private val cyclesPerSample: Rational) : Takeable<Int> {
   private var pos = 0.toRational()
 
-  var periodCycles: Rational = rational(1)
+  var periodCycles: Rational = Rational(1, 1)
     set(value) {
       field = value
       pos = value

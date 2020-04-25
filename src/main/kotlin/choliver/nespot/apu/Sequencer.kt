@@ -1,6 +1,5 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.Rational.Companion.rational
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 import choliver.nespot.apu.Sequencer.Ticks
@@ -21,8 +20,8 @@ class Sequencer(
     val half: Int
   )
 
-  private val fourStepPeriod = rational(frameSequencerFourStepPeriodCycles, 4)
-  private val fiveStepPeriod = rational(frameSequencerFiveStepPeriodCycles, 5)
+  private val fourStepPeriod = Rational(frameSequencerFourStepPeriodCycles, 4)
+  private val fiveStepPeriod = Rational(frameSequencerFiveStepPeriodCycles, 5)
 
   private val counter = Counter(cyclesPerSample = cyclesPerSample).apply {
     periodCycles = fourStepPeriod

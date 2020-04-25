@@ -1,13 +1,12 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.Rational.Companion.rational
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class RationalTest {
   @Test
   fun simplify() {
-    val r = rational(10, 8)
+    val r = Rational(10, 8)
 
     assertEquals(5, r.a)
     assertEquals(4, r.b)
@@ -15,8 +14,8 @@ class RationalTest {
 
   @Test
   fun `negative values`() {
-    val r = rational(-10, 8)
-    val s = rational(10, -8)
+    val r = Rational(-10, 8)
+    val s = Rational(10, -8)
 
     assertEquals(-5, r.a)
     assertEquals(4, r.b)
@@ -26,36 +25,36 @@ class RationalTest {
 
   @Test
   fun plus() {
-    assertEquals(rational(19, 12), rational(5, 6) + rational(3, 4))
-    assertEquals(rational(23, 6), rational(5, 6) + 3)
+    assertEquals(Rational(19, 12), Rational(5, 6) + Rational(3, 4))
+    assertEquals(Rational(23, 6), Rational(5, 6) + 3)
   }
 
   @Test
   fun minus() {
-    assertEquals(rational(1, 12), rational(5, 6) - rational(3, 4))
-    assertEquals(rational(-13, 6), rational(5, 6) - 3)
+    assertEquals(Rational(1, 12), Rational(5, 6) - Rational(3, 4))
+    assertEquals(Rational(-13, 6), Rational(5, 6) - 3)
   }
 
   @Test
   fun multiply() {
-    assertEquals(rational(5, 8), rational(5, 6) * rational(3, 4))
-    assertEquals(rational(5, 2), rational(5, 6) * 3)
+    assertEquals(Rational(5, 8), Rational(5, 6) * Rational(3, 4))
+    assertEquals(Rational(5, 2), Rational(5, 6) * 3)
   }
 
   @Test
   fun divide() {
-    assertEquals(rational(10, 9), rational(5, 6) / rational(3, 4))
-    assertEquals(rational(5, 18), rational(5, 6) / 3)
+    assertEquals(Rational(10, 9), Rational(5, 6) / Rational(3, 4))
+    assertEquals(Rational(5, 18), Rational(5, 6) / 3)
   }
 
   @Test
   fun negate() {
-    assertEquals(rational(-3, 4), -rational(3, 4))
+    assertEquals(Rational(-3, 4), -Rational(3, 4))
   }
 
   @Test
   fun toInt() {
-    assertEquals(2, rational(12, 5).toInt())
-    assertEquals(-2, rational(-12, 5).toInt())
+    assertEquals(2, Rational(12, 5).toInt())
+    assertEquals(-2, Rational(-12, 5).toInt())
   }
 }

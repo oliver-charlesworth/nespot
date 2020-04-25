@@ -1,5 +1,5 @@
 package choliver.nespot.apu
 
-interface Generator {
+interface Synth {
   fun take(ticks: Sequencer.Ticks): Int
 }

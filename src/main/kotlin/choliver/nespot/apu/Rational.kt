@@ -38,17 +38,16 @@ class Rational(a: Int, b: Int) {
 
   override fun toString() = "($a, $b)"
 
-
   companion object {
     private fun gcd(a: Int, b: Int): Int {
-      var a = a
-      var b = b
-      while (b != 0) {
-        val t = b
-        b = a % b
-        a = t
+      var x = a
+      var y = b
+      while (y != 0) {
+        val t = y
+        y = x % y
+        x = t
       }
-      return a
+      return x
     }
   }
 }

@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-class Counter(private val cyclesPerSample: Rational) : Takeable<Int> {
+class Counter(private val cyclesPerSample: Rational) {
   private var pos = 0.toRational()
 
   var periodCycles: Rational = Rational(1, 1)
@@ -9,7 +9,7 @@ class Counter(private val cyclesPerSample: Rational) : Takeable<Int> {
       pos = value
     }
 
-  override fun take(): Int {
+  fun take(): Int {
     pos -= cyclesPerSample
     // TODO - replace this crap with some kind of division
     var ret = 0

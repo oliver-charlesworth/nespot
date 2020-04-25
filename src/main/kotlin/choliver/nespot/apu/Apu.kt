@@ -20,11 +20,11 @@ class Apu(
     frameSequencerFourStepPeriodCycles = FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES,
     frameSequencerFiveStepPeriodCycles = FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES
   )
-  private val pulse1 = PulseGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
-  private val pulse2 = PulseGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
-  private val triangle = TriangleGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
-  private val noise = NoiseGenerator(cyclesPerSample = CYCLES_PER_SAMPLE)
-  private val dmc = DmcGenerator(cyclesPerSample = CYCLES_PER_SAMPLE, memory = memory)
+  private val pulse1 = PulseSynth(cyclesPerSample = CYCLES_PER_SAMPLE)
+  private val pulse2 = PulseSynth(cyclesPerSample = CYCLES_PER_SAMPLE)
+  private val triangle = TriangleSynth(cyclesPerSample = CYCLES_PER_SAMPLE)
+  private val noise = NoiseSynth(cyclesPerSample = CYCLES_PER_SAMPLE)
+  private val dmc = DmcSynth(cyclesPerSample = CYCLES_PER_SAMPLE, memory = memory)
 
   private var pulse1Enabled = false
   private var pulse2Enabled = false
@@ -78,7 +78,7 @@ class Apu(
     }
   }
 
-  private fun PulseGenerator.writeReg(reg: Int, data: Data) {
+  private fun PulseSynth.writeReg(reg: Int, data: Data) {
     when (reg) {
       0 -> {
         dutyCycle = (data and 0xC0) shr 6
@@ -101,7 +101,7 @@ class Apu(
     }
   }
 
-  private fun TriangleGenerator.writeReg(reg: Int, data: Data) {
+  private fun TriangleSynth.writeReg(reg: Int, data: Data) {
     when (reg) {
       0 -> {
         // TODO - control flag
@@ -117,7 +117,7 @@ class Apu(
     }
   }
 
-  private fun NoiseGenerator.writeReg(reg: Int, data: Data) {
+  private fun NoiseSynth.writeReg(reg: Int, data: Data) {
     when (reg) {
       0 -> {
         volume = data and 0x0F
@@ -134,7 +134,7 @@ class Apu(
     }
   }
 
-  private fun DmcGenerator.writeReg(reg: Int, data: Data) {
+  private fun DmcSynth.writeReg(reg: Int, data: Data) {
     when (reg) {
       0 -> {
         // TODO - IRQ enabled

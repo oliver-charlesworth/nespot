@@ -3,7 +3,7 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // http://wiki.nesdev.com/w/index.php/APU_Noise
-class NoiseGenerator(cyclesPerSample: Rational) : Generator {
+class NoiseSynth(cyclesPerSample: Rational) : Synth {
   private val timerCounter = Counter(cyclesPerSample = cyclesPerSample)
   private var iLength = 0
   private var sr = 0x0001

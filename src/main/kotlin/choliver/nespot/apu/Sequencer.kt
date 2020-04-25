@@ -2,14 +2,13 @@ package choliver.nespot.apu
 
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
-import choliver.nespot.apu.Sequencer.Ticks
 
 // TODO - interrupts
 class Sequencer(
   cyclesPerSample: Rational,
   frameSequencerFourStepPeriodCycles: Int,
   frameSequencerFiveStepPeriodCycles: Int
-) : Takeable<Ticks> {
+) {
   enum class Mode {
     FOUR_STEP,
     FIVE_STEP
@@ -40,7 +39,7 @@ class Sequencer(
       justReset = true
     }
 
-  override fun take(): Ticks {
+  fun take(): Ticks {
     val ret = if (counter.take() == 1) {
       when (mode) {
         FOUR_STEP -> {

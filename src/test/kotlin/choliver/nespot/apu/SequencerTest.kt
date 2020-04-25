@@ -80,4 +80,6 @@ class SequencerTest {
   private fun List<Ticks>.spread() = flatMap { listOf(Ticks(0, 0), Ticks(0, 0), it) }
 
   private fun List<Ticks>.replaceFirst(ticks: Ticks) = listOf(ticks) + drop(1)
+
+  private fun Sequencer.take(num: Int) = List(num) { take() }
 }

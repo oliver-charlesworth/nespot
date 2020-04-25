@@ -7,10 +7,10 @@ import choliver.nespot.Memory
 // TODO - tests
 
 // See http://wiki.nesdev.com/w/index.php/APU_DMC
-class DmcGenerator(
+class DmcSynth(
   cyclesPerSample: Rational,
   private val memory: Memory
-) : Generator {
+) : Synth {
   var level = 0
   private val timerCounter = Counter(cyclesPerSample = cyclesPerSample)
   private var addr: Address = 0

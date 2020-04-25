@@ -3,13 +3,11 @@
 ## To do
 
 - Sound!
-  - Startup clicking (NFI)
-  - Quit clicking (could taper the audio)
+  - Clicking
+  - Echoing notes (underworld in SMB)
   - Interrupts
   - Halt / disable
   - Non-linear mixing
-
-- Keyboard concurrency issues
 
 - Scrolling
 

@@ -10,28 +10,23 @@ import java.lang.Integer.min
 // TODO - interrupts
 
 // See http://wiki.nesdev.com/w/index.php/APU_DMC
-class DmcSynth(
-  cyclesPerSample: Rational = CYCLES_PER_SAMPLE,
-  private val memory: Memory
-) : Synth {
-  private val counter = Counter(cyclesPerSample = cyclesPerSample)
+class DmcSynth(private val memory: Memory) : Synth {
   private var numBitsRemaining = 0
   private var numBytesRemaining = 0
   private var sample: Data = 0
   var loop: Boolean = false
   var level: Data = 0
   var address: Address by observable(0x0000) { resetPattern() }
-  var periodCycles by observable(1.toRational()) { counter.periodCycles = it }
   override var length by observable(0) { resetPattern() }
 
-  override fun take(ticks: Sequencer.Ticks): Int {
+  override fun take(counterTicks: Int, seqTicks: Sequencer.Ticks): Int {
     val ret = level
-    updateLevel()
+    updateLevel(counterTicks)
     return ret
   }
 
-  private fun updateLevel() {
-    if (counter.take() != 0) {
+  private fun updateLevel(counterTicks: Int) {
+    repeat(counterTicks) {
       maybeLoadSample()
       maybePlaySample()
     }

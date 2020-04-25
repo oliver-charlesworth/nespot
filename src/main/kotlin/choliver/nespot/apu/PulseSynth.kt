@@ -4,52 +4,29 @@ import choliver.nespot.apu.Sequencer.Ticks
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
-class PulseSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
-  // Sweep state and params
-  private var iSweep = 0
-  var sweepEnabled = false
-  var sweepDivider by observable(0) { iSweep = it }
-  var sweepNegate = false
-  var sweepShift = 0
-
+class PulseSynth : Synth {
   // Core state and params
-  private val counter = Counter(cyclesPerSample = cyclesPerSample)
   private var iSeq = 0
   private var iLength = 0
   var dutyCycle = 0
-  var periodCycles by observable(1) { counter.periodCycles = it.toRational() }
   override var length by observable(0) { iLength = it }
 
-  override fun take(ticks: Ticks): Int {
+  override fun take(counterTicks: Int, seqTicks: Ticks): Int {
     val ret = if (outputEnabled()) SEQUENCES[dutyCycle][iSeq] else 0
 
-    updateSweep()
-    updatePhase()
+    updatePhase(counterTicks)
 
-    if (ticks.half) {
+    if (seqTicks.half) {
       iLength = max(iLength - 1, 0)
-      iSweep = max(iSweep - 1, 0)
     }
 
     return ret
   }
 
-  private fun outputEnabled() = (iLength > 0) && (periodCycles in 8..0x7FF)
+  private fun outputEnabled() = (iLength > 0)
 
-  private fun updateSweep() {
-    if (iSweep == 0 && sweepEnabled) {
-      val delta = periodCycles shr sweepShift
-      val newPeriod = periodCycles + (if (sweepNegate) -delta else delta)
-      if (newPeriod in 8..0x7FF) {
-        periodCycles = newPeriod
-        iSweep = sweepDivider
-      }
-    }
-  }
-
-  private fun updatePhase() {
-    val ticks = counter.take()
-    iSeq = (iSeq + ticks) % SEQUENCE_LENGTH
+  private fun updatePhase(counterTicks: Int) {
+    iSeq = (iSeq + counterTicks) % SEQUENCE_LENGTH
   }
 
   companion object {

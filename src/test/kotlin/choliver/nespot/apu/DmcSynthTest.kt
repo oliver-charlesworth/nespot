@@ -9,8 +9,7 @@ import org.junit.jupiter.api.Test
 
 class DmcSynthTest {
   private val memory = mock<Memory>()
-  private val synth = DmcSynth(cyclesPerSample = 4.toRational(), memory = memory).apply {
-    periodCycles = 4.toRational()
+  private val synth = DmcSynth(memory = memory).apply {
     address = 0x1230
   }
 

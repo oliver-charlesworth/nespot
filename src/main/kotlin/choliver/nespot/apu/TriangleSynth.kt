@@ -3,19 +3,17 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Triangle
-class TriangleSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
-  private val counter = Counter(cyclesPerSample = cyclesPerSample)
+class TriangleSynth : Synth {
   private var iSeq = 0
   private var iLinear = 0
   private var iLength = 0
   var linear by observable(0) { iLinear = it }
-  var periodCycles by observable(1.toRational()) { counter.periodCycles = it }
   override var length by observable(0) { iLength = it; iLinear = linear } // Reloads both counters
 
-  override fun take(ticks: Sequencer.Ticks): Int {
+  override fun take(counterTicks: Int, seqTicks: Sequencer.Ticks): Int {
     val ret = SEQUENCE[iSeq]
-    updateCounters(ticks)
-    updatePhase()
+    updateCounters(seqTicks)
+    updatePhase(counterTicks)
     return ret
   }
 
@@ -28,11 +26,10 @@ class TriangleSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
     }
   }
 
-  private fun updatePhase() {
-    val ticks = counter.take()
+  private fun updatePhase(counterTicks: Int) {
     // Counters gate sequence generation, rather than muting the channel
     if ((iLinear != 0) && (iLength != 0)) {
-      iSeq = (iSeq + ticks) % SEQUENCE_LENGTH
+      iSeq = (iSeq + counterTicks) % SEQUENCE_LENGTH
     }
   }
 

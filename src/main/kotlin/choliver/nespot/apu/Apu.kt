@@ -18,6 +18,7 @@ class Apu(
   private data class SynthContext<S : Synth>(
     val synth: S,
     val level: Double,
+    val counter: Counter = Counter(),
     val envelope: Envelope = Envelope(),
     val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00),
     var enabled: Boolean = false
@@ -73,16 +74,16 @@ class Apu(
       }
 
       1 -> {
-        synth.sweepEnabled = data.isBitSet(7)
-        synth.sweepDivider = ((data and 0x70) shr 4) + 1
-        synth.sweepNegate = data.isBitSet(3)
-        synth.sweepShift = data and 0x07
+//        synth.sweepEnabled = data.isBitSet(7)
+//        synth.sweepDivider = ((data and 0x70) shr 4) + 1
+//        synth.sweepNegate = data.isBitSet(3)
+//        synth.sweepShift = data and 0x07
       }
 
-      2 -> synth.periodCycles = extractPeriodCycles()
+      2 -> counter.periodCycles = extractPeriodCycles().toRational()
 
       3 -> {
-        synth.periodCycles = extractPeriodCycles()
+        counter.periodCycles = extractPeriodCycles().toRational()
         synth.length = extractLength()
         envelope.reset()
       }
@@ -100,10 +101,10 @@ class Apu(
         synth.linear = data and 0x7F
       }
 
-      2 -> synth.periodCycles = extractPeriodCycles()
+      2 -> counter.periodCycles = extractPeriodCycles()
 
       3 -> {
-        synth.periodCycles = extractPeriodCycles()
+        counter.periodCycles = extractPeriodCycles()
         synth.length = extractLength()
       }
     }
@@ -117,7 +118,7 @@ class Apu(
 
       2 -> {
         synth.mode = (data and 0x80) shr 7
-        synth.periodCycles = NOISE_PERIOD_TABLE[data and 0x0F].toRational()
+        counter.periodCycles = NOISE_PERIOD_TABLE[data and 0x0F].toRational()
       }
 
       3 -> {
@@ -134,7 +135,7 @@ class Apu(
       0 -> {
         // TODO - IRQ enabled
         synth.loop = data.isBitSet(6)
-        synth.periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
+        counter.periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
       }
       1 -> synth.level = data and 0x7F
       2 -> synth.address = 0xC000 + (data * 64)
@@ -179,7 +180,8 @@ class Apu(
     if (ticks.quarter) {
       envelope.advance()
     }
-    return synth.take(ticks) * envelope.level * (if (enabled) level else 0.0)
+    val counterTicks = counter.take()
+    return synth.take(counterTicks, ticks) * envelope.level * (if (enabled) level else 0.0)
   }
 
   private fun SynthContext<*>.setStatus(enabled: Boolean) {

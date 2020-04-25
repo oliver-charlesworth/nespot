@@ -4,7 +4,7 @@ import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Triangle
 class TriangleSynth(cyclesPerSample: Rational) : Synth {
-  private val timerCounter = Counter(cyclesPerSample = cyclesPerSample)
+  private val counter = Counter(cyclesPerSample = cyclesPerSample)
   private var iSeq = 0
   private var iLinear = 0
   private var iLength = 0
@@ -25,7 +25,7 @@ class TriangleSynth(cyclesPerSample: Rational) : Synth {
   var timer: Int = 0
     set(value) {
       field = value
-      timerCounter.periodCycles = (value + 1).toRational()
+      counter.periodCycles = (value + 1).toRational()
     }
 
   override fun take(ticks: Sequencer.Ticks): Int {
@@ -41,7 +41,7 @@ class TriangleSynth(cyclesPerSample: Rational) : Synth {
   }
 
   private fun updatePhase() {
-    val ticks = timerCounter.take()
+    val ticks = counter.take()
     // Counters gate sequence generation, rather than muting the channel
     if ((iLinear != 0) && (iLength != 0)) {
       iSeq = (iSeq + ticks) % SEQUENCE_LENGTH

@@ -4,7 +4,7 @@ import kotlin.math.max
 
 // http://wiki.nesdev.com/w/index.php/APU_Noise
 class NoiseSynth(cyclesPerSample: Rational) : Synth {
-  private val timerCounter = Counter(cyclesPerSample = cyclesPerSample)
+  private val counter = Counter(cyclesPerSample = cyclesPerSample)
   private var iLength = 0
   private var sr = 0x0001
 
@@ -20,7 +20,7 @@ class NoiseSynth(cyclesPerSample: Rational) : Synth {
   var period: Int = 0
     set(value) {
       field = value
-      timerCounter.periodCycles = PERIOD_TABLE[value].toRational()
+      counter.periodCycles = PERIOD_TABLE[value].toRational()
     }
 
   override fun take(ticks: Sequencer.Ticks): Int {
@@ -35,7 +35,7 @@ class NoiseSynth(cyclesPerSample: Rational) : Synth {
   }
 
   private fun updatePhase() {
-    val ticks = timerCounter.take()
+    val ticks = counter.take()
     if (ticks != 0) {
       val fb = (sr and 0x01) xor ((if (mode == 0) (sr shr 1) else (sr shr 6)) and 0x01)
       sr = (sr shr 1) or (fb shl 14)

@@ -4,7 +4,7 @@ import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
 class PulseSynth(cyclesPerSample: Rational) : Synth {
-  private val timerCounter = Counter(cyclesPerSample = cyclesPerSample)
+  private val counter = Counter(cyclesPerSample = cyclesPerSample)
   private var iSeq = 0
   private var iLength = 0
 
@@ -20,7 +20,7 @@ class PulseSynth(cyclesPerSample: Rational) : Synth {
   var timer: Int = 0
     set(value) {
       field = value
-      timerCounter.periodCycles = (value + 1).toRational() * 2 // APU clock rather than CPU clock
+      counter.periodCycles = (value + 1).toRational() * 2 // APU clock rather than CPU clock
     }
 
   override fun take(ticks: Sequencer.Ticks): Int {
@@ -35,7 +35,7 @@ class PulseSynth(cyclesPerSample: Rational) : Synth {
   }
 
   private fun updatePhase() {
-    val ticks = timerCounter.take()
+    val ticks = counter.take()
     iSeq = (iSeq + ticks) % SEQUENCE_LENGTH
   }
 

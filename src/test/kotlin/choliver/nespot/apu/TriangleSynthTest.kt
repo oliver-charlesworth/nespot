@@ -7,7 +7,8 @@ class TriangleSynthTest {
   private val synth = TriangleSynth().apply {
     length = 4
     linear = 4
-    control = false
+    haltLength = false
+    preventReloadClear = false
     onQuarterFrame()  // Reload linear counter
   }
 
@@ -40,8 +41,8 @@ class TriangleSynthTest {
   }
 
   @Test
-  fun `length counter not exhausted if control flag set`() {
-    synth.control = true
+  fun `length counter not exhausted if halted`() {
+    synth.haltLength = true
     repeat(4) { synth.onHalfFrame() }     // Would ordinarily exhaust counter
 
     assertEquals(
@@ -68,7 +69,7 @@ class TriangleSynthTest {
   }
 
   @Test
-  fun `new linear value not reloaded on next tick if control is false`() {
+  fun `new linear value not reloaded on next tick if clear permitted`() {
     reloadLinearThenSetNewValueThenExhaust()
 
     assertEquals(
@@ -78,8 +79,8 @@ class TriangleSynthTest {
   }
 
   @Test
-  fun `new linear value is reloaded on next tick if control is true`() {
-    synth.control = true
+  fun `new linear value is reloaded on next tick if clear prevented`() {
+    synth.preventReloadClear = true
     reloadLinearThenSetNewValueThenExhaust()
 
     assertEquals(

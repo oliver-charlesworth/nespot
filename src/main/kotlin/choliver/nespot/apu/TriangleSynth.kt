@@ -8,7 +8,8 @@ internal class TriangleSynth : Synth {
   private var iSeq = 0
   private var iLinear = 0
   private var iLength = 0
-  var control = false
+  var preventReloadClear = false
+  var haltLength = false
   var linear = 0
   override var length by observable(0) { iLength = it; reload = true } // Reloads both counters
 
@@ -28,13 +29,13 @@ internal class TriangleSynth : Synth {
     } else if (iLinear > 0) {
       iLinear--
     }
-    if (!control) {
+    if (!preventReloadClear) {
       reload = false
     }
   }
 
   override fun onHalfFrame() {
-    if (!control) {
+    if (!haltLength) {
       iLength = max(iLength - 1, 0)
     }
   }

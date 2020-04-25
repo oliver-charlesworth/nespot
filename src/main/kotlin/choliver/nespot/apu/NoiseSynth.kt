@@ -6,6 +6,7 @@ import kotlin.math.max
 internal class NoiseSynth : Synth {
   private var iLength = 0
   private var sr = 0x0001
+  var haltLength = false
   var mode = 0
   override var length by observable(0) { iLength = it }
 
@@ -17,6 +18,8 @@ internal class NoiseSynth : Synth {
   }
 
   override fun onHalfFrame() {
-    iLength = max(iLength - 1, 0)
+    if (!haltLength) {
+      iLength = max(iLength - 1, 0)
+    }
   }
 }

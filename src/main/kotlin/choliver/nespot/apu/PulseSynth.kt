@@ -6,20 +6,21 @@ import kotlin.math.max
 internal class PulseSynth : Synth {
   private var iSeq = 0
   private var iLength = 0
+  var haltLength = false
   var dutyCycle = 0
   override var length by observable(0) { iLength = it }
 
-  override val output get() = if (outputEnabled()) SEQUENCES[dutyCycle][iSeq] else 0
+  override val output get() = if (iLength > 0) SEQUENCES[dutyCycle][iSeq] else 0
 
   override fun onTimer() {
     iSeq = (iSeq + 1) % SEQUENCE_LENGTH
   }
 
   override fun onHalfFrame() {
-    iLength = max(iLength - 1, 0)
+    if (!haltLength) {
+      iLength = max(iLength - 1, 0)
+    }
   }
-
-  private fun outputEnabled() = (iLength > 0)
 
   companion object {
     private val SEQUENCES = listOf(

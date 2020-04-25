@@ -6,11 +6,11 @@ import org.junit.jupiter.api.Test
 class PulseSynthTest {
   private val synth = PulseSynth().apply {
     dutyCycle = 0
-    length = 1
+    length = 8
+    haltLength = false
   }
 
   // TODO - muted
-  // TODO - limited sweep
 
   @Test
   fun `12,5% duty cycle`() {
@@ -45,15 +45,27 @@ class PulseSynthTest {
   }
 
   @Test
-  fun `length counter`() {
+  fun `freezes once length counter exhausted`() {
     synth.dutyCycle = 3 // Easiest to see the impact on
-    synth.length = 8
     synth.nextNonZeroOutput()
-    repeat(8) { synth.onHalfFrame() }
+    repeat(8) { synth.onHalfFrame() }   // Exhaust counter
 
     assertEquals(
-      List(16) { 0 },
-      synth.take(16)
+      List(8) { 0 },                     // Expect to be frozen on zero
+      synth.take(8)
+    )
+  }
+
+  @Test
+  fun `length counter not exhausted if halted`() {
+    synth.haltLength = true
+    synth.dutyCycle = 3 // Easiest to see the impact on
+    synth.nextNonZeroOutput()
+    repeat(8) { synth.onHalfFrame() }   // Would ordinarily exhaust counter
+
+    assertEquals(
+      listOf(1, 0, 0, 1, 1, 1, 1, 1),          // We don't expect to be frozen
+      synth.take(8)
     )
   }
 }

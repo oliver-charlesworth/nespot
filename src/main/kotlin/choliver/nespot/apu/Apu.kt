@@ -31,11 +31,11 @@ class Apu(
       in REG_DMC_RANGE -> channels.dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
 
       REG_SND_CHN -> {
-//        channels.dmc.setStatus(data.isBitSet(4))
-//        channels.noise.setStatus(data.isBitSet(3))
+        channels.dmc.setStatus(data.isBitSet(4))
+        channels.noise.setStatus(data.isBitSet(3))
         channels.triangle.setStatus(data.isBitSet(2))
-//        channels.pulse2.setStatus(data.isBitSet(1))
-//        channels.pulse1.setStatus(data.isBitSet(0))
+        channels.pulse2.setStatus(data.isBitSet(1))
+        channels.pulse1.setStatus(data.isBitSet(0))
       }
 
       REG_FRAME_COUNTER_CTRL -> {
@@ -53,6 +53,7 @@ class Apu(
     when (idx) {
       0 -> {
         synth.dutyCycle = (data and 0xC0) shr 6
+        synth.haltLength = data.isBitSet(5)
         updateEnvelope()
       }
 
@@ -81,7 +82,8 @@ class Apu(
     regs[idx] = data
     when (idx) {
       0 -> {
-        synth.control = data.isBitSet(7)
+        synth.haltLength = data.isBitSet(7)
+        synth.preventReloadClear = data.isBitSet(7)
         synth.linear = data and 0x7F
       }
 
@@ -98,7 +100,10 @@ class Apu(
   private fun SynthContext<NoiseSynth>.updateNoise(idx: Int, data: Data) {
     regs[idx] = data
     when (idx) {
-      0 -> updateEnvelope()
+      0 -> {
+        synth.haltLength = data.isBitSet(5)
+        updateEnvelope()
+      }
 
       2 -> {
         synth.mode = (data and 0x80) shr 7

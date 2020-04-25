@@ -50,9 +50,9 @@ class DmcSynth(
 
   private fun updateLevel() {
     val counterTicks = counter.take()
-    if ((counterTicks != 0) && (offset != length)) {
+    if ((counterTicks != 0) && (offset != _length)) {
       if (numBits == 0) {
-        bits = memory.load(address + offset)
+        bits = memory.load(addr + offset)
         numBits = 8
         offset++
       }

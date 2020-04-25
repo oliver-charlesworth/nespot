@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-interface Synth {
+internal interface Synth {
   val output: Int
   var length: Int
 

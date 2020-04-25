@@ -1,8 +1,5 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.Sequencer.Ticks
-import choliver.nespot.sixfiveohtwo.utils._0
-import choliver.nespot.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

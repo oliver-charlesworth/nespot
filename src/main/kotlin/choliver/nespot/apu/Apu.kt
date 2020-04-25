@@ -5,9 +5,6 @@ import choliver.nespot.Memory
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 import choliver.nespot.isBitSet
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sqrt
 
 // TODO - interrupts
 // TODO - read status register
@@ -15,46 +12,30 @@ class Apu(
   private val buffer: ByteArray,
   memory: Memory
 ) {
-  private data class SynthContext<S : Synth>(
-    val synth: S,
-    val level: Double,
-    val timer: Counter = Counter(),
-    val envelope: Envelope = Envelope(),
-    val sweep: Sweep = Sweep(timer),
-    val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00),
-    var enabled: Boolean = false,
-    val name: String = ""
-  )
-
   private val sequencer = Sequencer()
-  private val pulse1 = SynthContext(PulseSynth(), 0.00752)
-  private val pulse2 = SynthContext(PulseSynth(), 0.00752)
-  private val triangle = SynthContext(TriangleSynth(), 0.00851).apply { fixEnvelope(1) }
-  private val noise = SynthContext(NoiseSynth(), 0.00494)
-  private val dmc = SynthContext(DmcSynth(memory = memory), 0.00335).apply { fixEnvelope(1) }
-
-  private val alpha: Double
-  private var state: Double = 0.0
-
-  init {
-    val omega = 2 * PI * 14e3 / SAMPLE_RATE_HZ
-    alpha = cos(omega) - 1 + sqrt(cos(omega) * cos(omega) - 4 * cos(omega) + 3)
-  }
+  private val channels = Channels(
+    pulse1 = SynthContext(PulseSynth()),
+    pulse2 = SynthContext(PulseSynth()),
+    triangle = SynthContext(TriangleSynth()).apply { fixEnvelope(1) },
+    noise = SynthContext(NoiseSynth()),
+    dmc = SynthContext(DmcSynth(memory = memory)).apply { fixEnvelope(1) }
+  )
+  private val mixer = Mixer(sequencer, channels)
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
-      in REG_PULSE1_RANGE -> pulse1.updatePulse(reg - REG_PULSE1_RANGE.first, data)
-      in REG_PULSE2_RANGE -> pulse2.updatePulse(reg - REG_PULSE2_RANGE.first, data)
-      in REG_TRI_RANGE -> triangle.updateTriangle(reg - REG_TRI_RANGE.first, data)
-      in REG_NOISE_RANGE -> noise.updateNoise(reg - REG_NOISE_RANGE.first, data)
-      in REG_DMC_RANGE -> dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
+      in REG_PULSE1_RANGE -> channels.pulse1.updatePulse(reg - REG_PULSE1_RANGE.first, data)
+      in REG_PULSE2_RANGE -> channels.pulse2.updatePulse(reg - REG_PULSE2_RANGE.first, data)
+      in REG_TRI_RANGE -> channels.triangle.updateTriangle(reg - REG_TRI_RANGE.first, data)
+      in REG_NOISE_RANGE -> channels.noise.updateNoise(reg - REG_NOISE_RANGE.first, data)
+      in REG_DMC_RANGE -> channels.dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
 
       REG_SND_CHN -> {
-        dmc.setStatus(data.isBitSet(4))
-        noise.setStatus(data.isBitSet(3))
-        triangle.setStatus(data.isBitSet(2))
-        pulse2.setStatus(data.isBitSet(1))
-        pulse1.setStatus(data.isBitSet(0))
+        channels.dmc.setStatus(data.isBitSet(4))
+        channels.noise.setStatus(data.isBitSet(3))
+        channels.triangle.setStatus(data.isBitSet(2))
+        channels.pulse2.setStatus(data.isBitSet(1))
+        channels.pulse1.setStatus(data.isBitSet(0))
       }
 
       REG_FRAME_COUNTER_CTRL -> {
@@ -157,41 +138,12 @@ class Apu(
 
   fun generate() {
     for (i in buffer.indices step 2) {
-      val ticks = sequencer.take()
-
-      // See http://wiki.nesdev.com/w/index.php/APU_Mixer
-      // TODO - non-linear mixing (used by SMB to set triangle/noise level)
-      val mixed = 0 +
-        pulse1.take(ticks) +
-        pulse2.take(ticks) +
-        triangle.take(ticks) +
-        noise.take(ticks) +
-        dmc.take(ticks)
-
-      // TODO - validate this filter
-      val filtered = alpha * mixed + (1 - alpha) * state
-      state = filtered
-      val rounded = (filtered * 100).toInt()
+      val rounded = mixer.take()
 
       // This seems to be the opposite of little-endian
       buffer[i] = (rounded shr 8).toByte()
       buffer[i + 1] = rounded.toByte()
     }
-  }
-
-  private fun SynthContext<*>.take(ticks: Sequencer.Ticks): Double {
-    if (ticks.quarter) {
-      envelope.advance()
-      synth.onQuarterFrame()
-    }
-    if (ticks.half) {
-      sweep.advance()
-      synth.onHalfFrame()
-    }
-    repeat(timer.take()) {
-      synth.onTimer()
-    }
-    return synth.output * envelope.level * (if (enabled) level else 0.0)
   }
 
   private fun SynthContext<*>.setStatus(enabled: Boolean) {

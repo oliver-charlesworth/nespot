@@ -3,16 +3,16 @@ package choliver.nespot.apu
 const val SAMPLE_RATE_HZ = 44100
 
 // See https://wiki.nesdev.com/w/index.php/Cycle_reference_chart
-val CPU_FREQ_HZ = Rational(945e6.toInt(), 4) / 11 / 12
+internal val CPU_FREQ_HZ = Rational(945e6.toInt(), 4) / 11 / 12
 
-val CYCLES_PER_SAMPLE = CPU_FREQ_HZ / SAMPLE_RATE_HZ
+internal val CYCLES_PER_SAMPLE = CPU_FREQ_HZ / SAMPLE_RATE_HZ
 
 // See https://wiki.nesdev.com/w/index.php/APU_Frame_Counter
-const val FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES = 29830
-const val FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES = 37282
+internal const val FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES = 29830
+internal const val FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES = 37282
 
 // See http://wiki.nesdev.com/w/index.php/APU_Length_Counter
-val LENGTH_TABLE = listOf(
+internal val LENGTH_TABLE = listOf(
   10,
   254,
   20,

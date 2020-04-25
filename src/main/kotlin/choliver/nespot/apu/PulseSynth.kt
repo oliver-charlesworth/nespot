@@ -3,7 +3,7 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
-class PulseSynth : Synth {
+internal class PulseSynth : Synth {
   private var iSeq = 0
   private var iLength = 0
   var dutyCycle = 0

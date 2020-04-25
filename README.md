@@ -7,7 +7,6 @@
   - Echoing notes (underworld in SMB)
   - Interrupts
   - Halt / disable
-  - Non-linear mixing
 
 - Scrolling
 

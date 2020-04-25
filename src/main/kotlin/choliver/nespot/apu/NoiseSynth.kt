@@ -3,7 +3,7 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // http://wiki.nesdev.com/w/index.php/APU_Noise
-class NoiseSynth : Synth {
+internal class NoiseSynth : Synth {
   private var iLength = 0
   private var sr = 0x0001
   var mode = 0

@@ -11,7 +11,7 @@ import java.lang.Integer.min
 
 // See http://wiki.nesdev.com/w/index.php/APU_DMC
 class DmcSynth(
-  cyclesPerSample: Rational,
+  cyclesPerSample: Rational = CYCLES_PER_SAMPLE,
   private val memory: Memory
 ) : Synth {
   private val counter = Counter(cyclesPerSample = cyclesPerSample)
@@ -33,7 +33,6 @@ class DmcSynth(
       resetPattern()
     }
 
-  // TODO - update other synths to take this value directly
   var periodCycles: Rational = 0.toRational()
     set(value) {
       field = value
@@ -77,11 +76,5 @@ class DmcSynth(
 
   private fun resetPattern() {
     numBytesRemaining = length
-  }
-
-  companion object {
-    val DMC_RATE_TABLE = listOf(
-      428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106,  84,  72,  54
-    )
   }
 }

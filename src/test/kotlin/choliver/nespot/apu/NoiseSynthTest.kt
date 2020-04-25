@@ -8,7 +8,7 @@ class NoiseSynthTest {
   private val synth = NoiseSynth(cyclesPerSample = 4.toRational()).apply {
     volume = 1
     length = 1
-    period = 0  // Corresponds to actual period of 4
+    periodCycles = 4.toRational()
   }
 
   // TODO - should the frequency be halved (i.e. clocked by APU rather than CPU?)
@@ -41,7 +41,7 @@ class NoiseSynthTest {
     synth.mode = 1    // Use short sequence because easier to test
     val ref = synth.take(  93)
 
-    synth.period = 2  // Corresponds to actual period of 16
+    synth.periodCycles = 16.toRational()
     val seq = synth.take(93 * 4)
 
     assertEquals(

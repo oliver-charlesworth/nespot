@@ -5,9 +5,9 @@ import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 
 // TODO - interrupts
 class Sequencer(
-  cyclesPerSample: Rational,
-  frameSequencerFourStepPeriodCycles: Int,
-  frameSequencerFiveStepPeriodCycles: Int
+  cyclesPerSample: Rational = CYCLES_PER_SAMPLE,
+  frameSequencerFourStepPeriodCycles: Int = FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES,
+  frameSequencerFiveStepPeriodCycles: Int = FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES
 ) {
   enum class Mode {
     FOUR_STEP,

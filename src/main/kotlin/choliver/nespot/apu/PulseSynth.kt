@@ -3,7 +3,7 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
-class PulseSynth(cyclesPerSample: Rational) : Synth {
+class PulseSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
   private val counter = Counter(cyclesPerSample = cyclesPerSample)
   private var iSeq = 0
   private var iLength = 0
@@ -15,6 +15,12 @@ class PulseSynth(cyclesPerSample: Rational) : Synth {
     set(value) {
       field = value
       iLength = value
+    }
+
+  var periodCycles: Rational = 0.toRational()
+    set(value) {
+      field = value
+      counter.periodCycles = value
     }
 
   var timer: Int = 0

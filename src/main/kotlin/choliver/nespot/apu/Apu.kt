@@ -2,7 +2,6 @@ package choliver.nespot.apu
 
 import choliver.nespot.Data
 import choliver.nespot.Memory
-import choliver.nespot.apu.DmcSynth.Companion.DMC_RATE_TABLE
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 import choliver.nespot.isBitSet
@@ -16,17 +15,12 @@ class Apu(
   private val buffer: ByteArray,
   memory: Memory
 ) {
-  private val sequencer = Sequencer(
-    cyclesPerSample = CYCLES_PER_SAMPLE,
-    frameSequencerFourStepPeriodCycles = FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES,
-    frameSequencerFiveStepPeriodCycles = FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES
-  )
-
-  private val pulse1 = PulseSynth(cyclesPerSample = CYCLES_PER_SAMPLE)
-  private val pulse2 = PulseSynth(cyclesPerSample = CYCLES_PER_SAMPLE)
-  private val triangle = TriangleSynth(cyclesPerSample = CYCLES_PER_SAMPLE)
-  private val noise = NoiseSynth(cyclesPerSample = CYCLES_PER_SAMPLE)
-  private val dmc = DmcSynth(cyclesPerSample = CYCLES_PER_SAMPLE, memory = memory)
+  private val sequencer = Sequencer()
+  private val pulse1 = PulseSynth()
+  private val pulse2 = PulseSynth()
+  private val triangle = TriangleSynth()
+  private val noise = NoiseSynth()
+  private val dmc = DmcSynth(memory = memory)
 
   private var pulse1Enabled = false
   private var pulse2Enabled = false
@@ -109,6 +103,7 @@ class Apu(
     }
   }
 
+  // See https://wiki.nesdev.com/w/index.php/APU_Noise
   private fun NoiseSynth.writeReg(reg: Int, data: Data) {
     when (reg) {
       0 -> {
@@ -119,7 +114,7 @@ class Apu(
 
       2 -> {
         mode = (data and 0x80) shr 7
-        period = data and 0x0F
+        periodCycles = NOISE_PERIOD_TABLE[data and 0x0F].toRational()
       }
 
       3 -> length = extractLength(data)
@@ -175,5 +170,12 @@ class Apu(
     private val REG_DMC_RANGE = 0x10..0x13
     private const val REG_SND_CHN = 0x15
     private const val REG_FRAME_COUNTER_CTRL = 0x17
+
+    private val NOISE_PERIOD_TABLE = listOf(
+      4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068
+    )
+    private val DMC_RATE_TABLE = listOf(
+      428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106,  84,  72,  54
+    )
   }
 }

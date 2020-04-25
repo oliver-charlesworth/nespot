@@ -3,7 +3,7 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // http://wiki.nesdev.com/w/index.php/APU_Noise
-class NoiseSynth(cyclesPerSample: Rational) : Synth {
+class NoiseSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
   private val counter = Counter(cyclesPerSample = cyclesPerSample)
   private var iLength = 0
   private var sr = 0x0001
@@ -17,10 +17,10 @@ class NoiseSynth(cyclesPerSample: Rational) : Synth {
       iLength = value
     }
 
-  var period: Int = 0
+  var periodCycles: Rational = 0.toRational()
     set(value) {
       field = value
-      counter.periodCycles = PERIOD_TABLE[value].toRational()
+      counter.periodCycles = value
     }
 
   override fun take(ticks: Sequencer.Ticks): Int {
@@ -40,11 +40,5 @@ class NoiseSynth(cyclesPerSample: Rational) : Synth {
       val fb = (sr and 0x01) xor ((if (mode == 0) (sr shr 1) else (sr shr 6)) and 0x01)
       sr = (sr shr 1) or (fb shl 14)
     }
-  }
-
-  companion object {
-    private val PERIOD_TABLE = listOf(
-      4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068
-    )
   }
 }

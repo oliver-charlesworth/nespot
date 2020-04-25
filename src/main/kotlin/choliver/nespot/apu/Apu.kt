@@ -5,9 +5,6 @@ import choliver.nespot.Memory
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 import choliver.nespot.isBitSet
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sqrt
 
 // TODO - interrupts
 // TODO - read status register
@@ -15,21 +12,16 @@ class Apu(
   private val buffer: ByteArray,
   memory: Memory
 ) {
-
   private val sequencer = Sequencer()
   private val pulse1 = SynthContext(PulseSynth(), 0.00752)
   private val pulse2 = SynthContext(PulseSynth(), 0.00752)
   private val triangle = SynthContext(TriangleSynth(), 0.00851).apply { fixEnvelope(1) }
   private val noise = SynthContext(NoiseSynth(), 0.00494)
   private val dmc = SynthContext(DmcSynth(memory = memory), 0.00335).apply { fixEnvelope(1) }
-
-  private val alpha: Double
-  private var state: Double = 0.0
-
-  init {
-    val omega = 2 * PI * 14e3 / SAMPLE_RATE_HZ
-    alpha = cos(omega) - 1 + sqrt(cos(omega) * cos(omega) - 4 * cos(omega) + 3)
-  }
+  private val mixer = Mixer(
+    sequencer,
+    listOf(pulse1, pulse2, triangle, noise, dmc)
+  )
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
@@ -147,41 +139,12 @@ class Apu(
 
   fun generate() {
     for (i in buffer.indices step 2) {
-      val ticks = sequencer.take()
-
-      // See http://wiki.nesdev.com/w/index.php/APU_Mixer
-      // TODO - non-linear mixing (used by SMB to set triangle/noise level)
-      val mixed = 0 +
-        pulse1.take(ticks) +
-        pulse2.take(ticks) +
-        triangle.take(ticks) +
-        noise.take(ticks) +
-        dmc.take(ticks)
-
-      // TODO - validate this filter
-      val filtered = alpha * mixed + (1 - alpha) * state
-      state = filtered
-      val rounded = (filtered * 100).toInt()
+      val rounded = mixer.take()
 
       // This seems to be the opposite of little-endian
       buffer[i] = (rounded shr 8).toByte()
       buffer[i + 1] = rounded.toByte()
     }
-  }
-
-  private fun SynthContext<*>.take(ticks: Sequencer.Ticks): Double {
-    if (ticks.quarter) {
-      envelope.advance()
-      synth.onQuarterFrame()
-    }
-    if (ticks.half) {
-      sweep.advance()
-      synth.onHalfFrame()
-    }
-    repeat(timer.take()) {
-      synth.onTimer()
-    }
-    return synth.output * envelope.level * (if (enabled) level else 0.0)
   }
 
   private fun SynthContext<*>.setStatus(enabled: Boolean) {

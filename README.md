@@ -5,7 +5,6 @@
 - Sound!
   - Startup clicking (NFI)
   - Quit clicking (could taper the audio)
-  - Envelope
   - Sweeps
   - Interrupts
   - Halt / disable

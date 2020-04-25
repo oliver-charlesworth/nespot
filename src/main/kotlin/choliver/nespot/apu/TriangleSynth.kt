@@ -1,5 +1,6 @@
 package choliver.nespot.apu
 
+import observable
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Triangle
@@ -8,25 +9,9 @@ class TriangleSynth(cyclesPerSample: Rational = CYCLES_PER_SAMPLE) : Synth {
   private var iSeq = 0
   private var iLinear = 0
   private var iLength = 0
-
-  var linear: Int = 0
-    set(value) {
-      field = value
-      iLinear = value
-    }
-
-  override var length: Int = 0
-    set(value) {
-      field = value
-      iLength = value
-      iLinear = linear   // Resets the linear counter too
-    }
-
-  var timer: Int = 0
-    set(value) {
-      field = value
-      counter.periodCycles = (value + 1).toRational()
-    }
+  var linear by observable(0) { iLinear = it }
+  var periodCycles by observable(0.toRational()) { counter.periodCycles = it }
+  override var length by observable(0) { iLength = it; iLinear = linear } // Reloads both counters
 
   override fun take(ticks: Sequencer.Ticks): Int {
     val ret = SEQUENCE[iSeq]

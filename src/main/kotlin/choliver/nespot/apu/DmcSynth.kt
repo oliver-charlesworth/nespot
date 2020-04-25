@@ -3,6 +3,7 @@ package choliver.nespot.apu
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
+import observable
 import java.lang.Integer.max
 import java.lang.Integer.min
 
@@ -20,24 +21,9 @@ class DmcSynth(
   private var sample: Data = 0
   var loop: Boolean = false
   var level: Data = 0
-
-  var address: Address = 0
-    set(value) {
-      field = value
-      resetPattern()
-    }
-
-  override var length: Int = 0
-    set(value) {
-      field = value
-      resetPattern()
-    }
-
-  var periodCycles: Rational = 0.toRational()
-    set(value) {
-      field = value
-      counter.periodCycles = value
-    }
+  var address: Address by observable(0x0000) { resetPattern() }
+  var periodCycles by observable(0.toRational()) { counter.periodCycles = it }
+  override var length by observable(0) { resetPattern() }
 
   override fun take(ticks: Sequencer.Ticks): Int {
     val ret = level

@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 
 class TriangleSynthTest {
   private val synth = TriangleSynth(cyclesPerSample = 4.toRational()).apply {
-    timer = 3  // Remember that 1 gets added to this internally
+    periodCycles = 4.toRational()
     length = 1
     linear = 1
   }

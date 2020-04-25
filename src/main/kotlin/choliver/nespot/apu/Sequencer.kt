@@ -2,6 +2,7 @@ package choliver.nespot.apu
 
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
+import observable
 
 // TODO - interrupts
 class Sequencer(
@@ -28,16 +29,14 @@ class Sequencer(
   private var iSeq = 0
   private var justReset = false
 
-  var mode: Mode = FOUR_STEP
-    set(value) {
-      field = value
-      counter.periodCycles = when (mode) {
-        FOUR_STEP -> fourStepPeriod
-        FIVE_STEP -> fiveStepPeriod
-      }
-      iSeq = 0
-      justReset = true
+  var mode by observable(FOUR_STEP) {
+    counter.periodCycles = when (it) {
+      FOUR_STEP -> fourStepPeriod
+      FIVE_STEP -> fiveStepPeriod
     }
+    iSeq = 0
+    justReset = true
+  }
 
   fun take(): Ticks {
     val ret = if (counter.take() == 1) {

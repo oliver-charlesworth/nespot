@@ -1,13 +1,13 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.Sequencer.*
+import choliver.nespot.apu.Sequencer.Ticks
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class PulseSynthTest {
   private val synth = PulseSynth(cyclesPerSample = 4.toRational()).apply {
     volume = 1
-    timer = 3   // Remember that 1 gets added to this internally
+    periodCycles = 8.toRational()
     dutyCycle = 0
     length = 1
   }

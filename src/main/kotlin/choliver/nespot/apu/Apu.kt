@@ -15,19 +15,19 @@ class Apu(
   private val buffer: ByteArray,
   memory: Memory
 ) {
+  private data class SynthContext<S : Synth>(
+    val synth: S,
+    val level: Double,
+    val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00),
+    var enabled: Boolean = false
+  )
+
   private val sequencer = Sequencer()
   private val pulse1 = SynthContext(PulseSynth(), 0.00752)
   private val pulse2 = SynthContext(PulseSynth(), 0.00752)
   private val triangle = SynthContext(TriangleSynth(), 0.00851)
   private val noise = SynthContext(NoiseSynth(), 0.00494)
   private val dmc = SynthContext(DmcSynth(memory = memory), 0.00335)
-
-  private data class SynthContext<S : Synth>(
-    val synth: S,
-    val level: Double,
-    val regs: MutableList<Data> = mutableListOf(0, 0, 0, 0),
-    var enabled: Boolean = false
-  )
 
   private val alpha: Double
   private var state: Double = 0.0
@@ -60,7 +60,10 @@ class Apu(
     }
   }
 
+  // See http://wiki.nesdev.com/w/index.php/APU_Pulse
   private fun SynthContext<PulseSynth>.updatePulse(idx: Int, data: Data) {
+    fun extractPeriodCycles() = ((extractTimer(regs) + 1) * 2).toRational() // APU clock rather than CPU clock
+
     regs[idx] = data
     when (idx) {
       0 -> {
@@ -75,16 +78,19 @@ class Apu(
         // TODO - sweep
       }
 
-      2 -> synth.timer = (synth.timer and 0x0700) or data
+      2 -> synth.periodCycles = extractPeriodCycles()
 
       3 -> {
-        synth.timer = (synth.timer and 0x00FF) or ((data and 0x07) shl 8)
-        synth.length = extractLength(data)
+        synth.periodCycles = extractPeriodCycles()
+        synth.length = extractLength(regs)
       }
     }
   }
 
+  // See http://wiki.nesdev.com/w/index.php/APU_Triangle
   private fun SynthContext<TriangleSynth>.updateTriangle(idx: Int, data: Data) {
+    fun extractPeriodCycles() = (extractTimer(regs) + 1).toRational()
+
     regs[idx] = data
     when (idx) {
       0 -> {
@@ -92,11 +98,11 @@ class Apu(
         synth.linear = data and 0x7F
       }
 
-      2 -> synth.timer = (synth.timer and 0x0700) or data
+      2 -> synth.periodCycles = extractPeriodCycles()
 
       3 -> {
-        synth.timer = (synth.timer and 0x00FF) or ((data and 0x07) shl 8)
-        synth.length = extractLength(data)
+        synth.periodCycles = extractPeriodCycles()
+        synth.length = extractLength(regs)
       }
     }
   }
@@ -116,7 +122,7 @@ class Apu(
         synth.periodCycles = NOISE_PERIOD_TABLE[data and 0x0F].toRational()
       }
 
-      3 -> synth.length = extractLength(data)
+      3 -> synth.length = extractLength(regs)
     }
   }
 
@@ -135,7 +141,8 @@ class Apu(
     }
   }
 
-  private fun extractLength(data: Data) = LENGTH_TABLE[(data and 0xF8) shr 3]
+  private fun extractTimer(regs: List<Data>) = ((regs[3] and 0x07) shl 8) or regs[2]
+  private fun extractLength(regs: List<Data>) = LENGTH_TABLE[(regs[3] and 0xF8) shr 3]
 
   fun generate() {
     for (i in buffer.indices step 2) {

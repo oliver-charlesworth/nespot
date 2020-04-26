@@ -7,8 +7,6 @@
   - SMB - explosions sound wrong
   - Interrupts
 
-- Scrolling
-
 - Rendering
 
   - Enable / disable rendering
@@ -18,6 +16,7 @@
   - Sprite priority (overlap)
   - Greyscale
   - Colour emphasis
+  - Don't display top and bottom tile rows 
 
 - Cartridge
   - CHR-RAM (used by Zelda)

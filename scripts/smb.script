@@ -1,13 +1,9 @@
 m u nmi
-#v
+v
 screen
-
-q
 
 # Get to complete title screen
 rep 30 m
-
-q
 
 # Start !
 down 1 start
@@ -37,12 +33,13 @@ down 1 a
 rep 100 m
 up 1 a
 
-# TODO - determine the badness
-rep 12 m
+## TODO - determine the badness
+#rep 12 m
 #v
 #s 1500
-q
-s
+#q
+#s
+
 # Run some more
 rep 100 m
 

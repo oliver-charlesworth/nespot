@@ -47,35 +47,40 @@ class Renderer(
     return isHit
   }
 
-  // TODO - this approach does 8x too many memory loads
-  // TODO - how do we combine changing both vertical *and* horizontal nametables?
   private fun prepareBackground(ctx: Context) {
     var fineX = ctx.fineX
     var coarseX = (ctx.addrStart and 0x001F)
     val coarseY = (ctx.addrStart and 0x03E0) shr 5
     var iNametable = (ctx.addrStart and 0x0C00) shr 10
 
+    var iPalette = 0
+    var pattern: Data = 0x00
+    var loadNeeded = true
+
     for (x in 0 until SCREEN_WIDTH) {
-      val addrNt = BASE_NAMETABLES +
-        (iNametable * NAMETABLE_SIZE_BYTES) +
-        (coarseY * NUM_TILE_COLUMNS) +
-        coarseX
+      if (loadNeeded) {
+        val addrNt = BASE_NAMETABLES +
+          (iNametable * NAMETABLE_SIZE_BYTES) +
+          (coarseY * NUM_TILE_COLUMNS) +
+          coarseX
 
-      val addrAttr = BASE_NAMETABLES +
-        (iNametable * NAMETABLE_SIZE_BYTES) +
-        960 +
-        (coarseY / 4) * (NUM_TILE_COLUMNS / 4) +
-        (coarseX / 4)
+        val addrAttr = BASE_NAMETABLES +
+          (iNametable * NAMETABLE_SIZE_BYTES) +
+          960 +
+          (coarseY / 4) * (NUM_TILE_COLUMNS / 4) +
+          (coarseX / 4)
 
-      val iPalette = (memory.load(addrAttr) shr (((coarseY / 2) % 2) * 4 + ((coarseX / 2) % 2) * 2)) and 0x03
-      val pattern = getPattern(iTable = ctx.bgPatternTable, iTile = memory.load(addrNt), iRow = ctx.fineY)
+        iPalette = (memory.load(addrAttr) shr (((coarseY / 2) % 2) * 4 + ((coarseX / 2) % 2) * 2)) and 0x03
+        pattern = getPattern(iTable = ctx.bgPatternTable, iTile = memory.load(addrNt), iRow = ctx.fineY)
+        loadNeeded = false
+      }
 
-      val c = patternPixel(pattern, fineX)
-      pixels[x] = Pixel(c, iPalette)
+      pixels[x] = Pixel(c = patternPixel(pattern, fineX), p = iPalette)
 
       if (fineX < 7) {
         fineX++
       } else {
+        loadNeeded = true
         fineX = 0
         if (coarseX < 31) {
           coarseX++

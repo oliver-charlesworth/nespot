@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class NoiseSynthTest {
@@ -57,5 +57,17 @@ class NoiseSynthTest {
       listOf(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),   // We don't expect to be frozen
       synth.take(16)
     )
+  }
+
+  @Test
+  fun `exhaustion is visible`() {
+    synth.length = 8
+    repeat(7) { synth.onHalfFrame() }
+
+    assertTrue(synth.hasRemainingOutput)
+
+    synth.onHalfFrame()
+
+    assertFalse(synth.hasRemainingOutput)
   }
 }

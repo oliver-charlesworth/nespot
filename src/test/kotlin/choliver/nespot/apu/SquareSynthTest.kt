@@ -1,10 +1,10 @@
 package choliver.nespot.apu
 
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class PulseSynthTest {
-  private val synth = PulseSynth().apply {
+class SquareSynthTest {
+  private val synth = SquareSynth().apply {
     dutyCycle = 0
     length = 8
     haltLength = false
@@ -67,5 +67,16 @@ class PulseSynthTest {
       listOf(1, 0, 0, 1, 1, 1, 1, 1),          // We don't expect to be frozen
       synth.take(8)
     )
+  }
+
+  @Test
+  fun `exhaustion is visible`() {
+    repeat(7) { synth.onHalfFrame() }
+
+    assertTrue(synth.hasRemainingOutput)
+
+    synth.onHalfFrame()
+
+    assertFalse(synth.hasRemainingOutput)
   }
 }

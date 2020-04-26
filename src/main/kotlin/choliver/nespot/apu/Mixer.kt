@@ -21,10 +21,10 @@ internal class Mixer(
   fun take(): Int {
     val ticks = sequencer.take()
 
-    val pulse1Out = channels.pulse1.take(ticks)
-    val pulse2Out = channels.pulse2.take(ticks)
-    val triangleOut = channels.triangle.take(ticks)
-    val noiseOut = channels.noise.take(ticks)
+    val pulse1Out = channels.sq1.take(ticks)
+    val pulse2Out = channels.sq2.take(ticks)
+    val triangleOut = channels.tri.take(ticks)
+    val noiseOut = channels.noi.take(ticks)
     val dmcOut = channels.dmc.take(ticks)
 
     val pulseSum = pulse1Out + pulse2Out

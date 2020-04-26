@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class TriangleSynthTest {
@@ -49,6 +49,26 @@ class TriangleSynthTest {
       (15 downTo 0).toList(),    // We don't expect to be frozen
       synth.take(16)
     )
+  }
+
+  @Test
+  fun `length exhaustion is visible`() {
+    synth.length = 8
+    repeat(7) { synth.onHalfFrame() }
+
+    assertTrue(synth.hasRemainingOutput)
+
+    synth.onHalfFrame()
+
+    assertFalse(synth.hasRemainingOutput)
+  }
+
+  @Test
+  fun `linear exhaustion is not visible`() {
+    synth.linear = 4
+    repeat(4) { synth.onQuarterFrame() }     // Exhaust counter
+
+    assertTrue(synth.hasRemainingOutput)        // Not affected
   }
 
   @Test

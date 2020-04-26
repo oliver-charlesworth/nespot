@@ -3,7 +3,7 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Triangle
-internal class TriangleSynth : Synth {
+class TriangleSynth : Synth {
   private var reload = false  // i.e. reload the linear counter
   private var iSeq = 0
   private var iLinear = 0
@@ -11,8 +11,9 @@ internal class TriangleSynth : Synth {
   var preventReloadClear = false
   var haltLength = false
   var linear = 0
-  override var length by observable(0) { iLength = it; reload = true } // Reloads both counters
 
+  override var length by observable(0) { iLength = it; reload = true } // Reloads both counters
+  override val hasRemainingOutput get() = iLength > 0   // Doesn't account for linear counter
   override val output get() = SEQUENCE[iSeq]
 
   // Counters gate sequence generation, rather than muting the channel

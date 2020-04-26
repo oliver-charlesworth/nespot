@@ -1,8 +1,9 @@
 package choliver.nespot.apu
 
 import choliver.nespot.Data
+import choliver.nespot.apu.Sequencer.Ticks
 
-internal class SynthContext<S : Synth>(
+class SynthContext<S : Synth>(
   val synth: S,
   val timer: Counter = Counter(),
   val envelope: Envelope = Envelope(),
@@ -10,7 +11,7 @@ internal class SynthContext<S : Synth>(
   val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00),
   var enabled: Boolean = false
 ) {
-  fun take(ticks: Sequencer.Ticks): Int {
+  fun take(ticks: Ticks): Int {
     if (ticks.quarter) {
       envelope.advance()
       synth.onQuarterFrame()

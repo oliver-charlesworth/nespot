@@ -10,15 +10,16 @@ import java.lang.Integer.min
 // TODO - interrupts
 
 // See http://wiki.nesdev.com/w/index.php/APU_DMC
-internal class DmcSynth(private val memory: Memory) : Synth {
+class DmcSynth(private val memory: Memory) : Synth {
   private var numBitsRemaining = 0
   private var numBytesRemaining = 0
   private var sample: Data = 0
   var loop: Boolean = false
   var level: Data = 0
   var address: Address by observable(0x0000) { resetPattern() }
-  override var length by observable(0) { resetPattern() }
 
+  override var length by observable(0) { resetPattern() }
+  override val hasRemainingOutput get() = numBytesRemaining > 0
   override val output get() = level
 
   override fun onTimer() {

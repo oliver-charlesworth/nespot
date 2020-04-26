@@ -130,7 +130,7 @@ private fun zeroPageIndexedMode(source: IndexSource) = when (source) {
   Y -> ZERO_PAGE_Y
 }
 
-private fun branch(enc: Int) = mapOf(RELATIVE to e(enc, 2)) // TODO: +1 if branch succeeds, +2 if to a new page
+private fun branch(enc: Int) = mapOf(RELATIVE to e(enc, 2))
 
 private fun implied(enc: Int, numCycles: Int) = mapOf(IMPLIED to e(enc, numCycles))
 

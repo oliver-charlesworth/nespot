@@ -167,6 +167,8 @@ class Ppu(
           addr = addr(lo = data, hi = addr.hi())
           coords.xCoarse =  (data and 0b00011111)
           coords.yCoarse = ((data and 0b11100000) shr 5) or (coords.yCoarse and 0b11000)
+          // TODO - should probably happen *after* the incrementY() above
+          coordsWorking = coords.copy()   // Propagate immediately
         }
         w = !w
       }

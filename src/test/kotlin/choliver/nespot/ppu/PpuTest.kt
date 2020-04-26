@@ -225,6 +225,10 @@ class PpuTest {
 
   @Nested
   inner class RendererContext {
+    init {
+      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
+    }
+
     @Test
     fun `propagates isLargeSprites`() {
       ppu.writeReg(REG_PPUCTRL, 0b00100000)
@@ -251,7 +255,6 @@ class PpuTest {
 
     @Test
     fun `propagates yNametable`() {
-      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
       ppu.writeReg(REG_PPUCTRL, 0b00000010)
       ppu.executeScanline()
 
@@ -260,7 +263,6 @@ class PpuTest {
 
     @Test
     fun `propagates xNametable`() {
-      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
       ppu.writeReg(REG_PPUCTRL, 0b00000001)
       ppu.executeScanline()
 
@@ -269,7 +271,6 @@ class PpuTest {
 
     @Test
     fun `propagates xCoarse, xFine, yCoarse, yFine`() {
-      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
       ppu.writeReg(REG_PPUSCROLL, 0b10101_111)
       ppu.writeReg(REG_PPUSCROLL, 0b11111_101)
       ppu.executeScanline()
@@ -283,7 +284,6 @@ class PpuTest {
 
     @Test
     fun `increments y components every scanline`() {
-      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
       ppu.writeReg(REG_PPUSCROLL, 0b00000_111)
       ppu.executeScanline()
@@ -298,7 +298,6 @@ class PpuTest {
 
     @Test
     fun `doesn't increment y components every scanline if rendering disabled`() {
-      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
       ppu.writeReg(REG_PPUSCROLL, 0b00000_111)
       ppu.executeScanline()
@@ -312,7 +311,6 @@ class PpuTest {
 
     @Test
     fun `x components reloaded every scanline`() {
-      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
       ppu.executeScanline()
@@ -326,7 +324,6 @@ class PpuTest {
 
     @Test
     fun `y components not reloaded every scanline`() {
-      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
       ppu.executeScanline()
@@ -341,7 +338,6 @@ class PpuTest {
 
     @Test
     fun `PPUADDR maps to coordinates in a weird way`() {
-      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
       ppu.writeReg(REG_PPUADDR, 0b00_10_11_11)
       ppu.writeReg(REG_PPUADDR, 0b111_10101)
       ppu.executeScanline()
@@ -352,6 +348,21 @@ class PpuTest {
       assertEquals(1, ctx.coords.yNametable)
       assertEquals(0b11111, ctx.coords.yCoarse)
       assertEquals(0b010, ctx.coords.yFine)
+    }
+
+    @Test
+    fun `PPUADDR changes propagate immediately way`() {
+      ppu.executeScanline()
+      ppu.writeReg(REG_PPUADDR, 0b00_10_11_11)
+      ppu.writeReg(REG_PPUADDR, 0b111_10101)
+      ppu.executeScanline()
+
+      val ctx = captureContext(2)
+      assertEquals(1, ctx[1].coords.xNametable)
+      assertEquals(0b10101, ctx[1].coords.xCoarse)
+      assertEquals(1, ctx[1].coords.yNametable)
+      assertEquals(0b11111, ctx[1].coords.yCoarse)
+      assertEquals(0b011, ctx[1].coords.yFine)  // +1 because gets incremented for next scanline
     }
 
     // TODO - entire coords reloaded per frame

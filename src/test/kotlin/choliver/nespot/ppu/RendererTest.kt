@@ -3,6 +3,7 @@ package choliver.nespot.ppu
 import choliver.nespot.Address
 import choliver.nespot.Memory
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
+import choliver.nespot.ppu.Renderer.*
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
@@ -13,6 +14,7 @@ import java.nio.IntBuffer
 
 // TODO - greyscale
 // TODO - colour emphasis
+// TODO - scrolling
 class RendererTest {
   private val colors = (0..63).toList()
   private val paletteEntries = (0..31).map { it + 5 }
@@ -386,16 +388,19 @@ class RendererTest {
     yTile: Int = this.yTile,
     yPixel: Int = this.yPixel,
     isLargeSprites: Boolean = false
-  ) = renderer.renderScanlineAndDetectHit(
-          ctx = Renderer.Context(
-            isLargeSprites = isLargeSprites,
-            bgPatternTable = bgPatternTable,
-            sprPatternTable = sprPatternTable,
-            addrStart = 0,    // TODO
-            fineX = 0,        // TODO
-            fineY = 0         // TODO
-          )
-  )
+  ) = renderer.renderScanlineAndDetectHit(Context(
+    isLargeSprites = isLargeSprites,
+    bgPatternTable = bgPatternTable,
+    sprPatternTable = sprPatternTable,
+    coords = Coords(
+      nametableX = 0,
+      coarseX = 0,
+      fineX = 0,
+      nametableY = 0,
+      coarseY = yTile,
+      fineY = yPixel
+    )
+  ))
 
   private fun initNametableMemory(nametableEntries: List<Int>, yTile: Int = this.yTile) {
     nametableEntries.forEachIndexed { idx, data ->

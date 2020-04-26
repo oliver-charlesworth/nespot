@@ -25,7 +25,6 @@
 - Quirks
 
   - Sprite overflow bug
-  - t/v/x/w timing madness - inc. change of behaviour when rendering disabled
   - OAM address reset during rendering
   - Trigger VBL if isVblEnabled becomes true during VBL period
 

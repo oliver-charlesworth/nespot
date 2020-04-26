@@ -8,7 +8,10 @@ import choliver.nespot.ppu.Ppu.Companion.REG_OAMDATA
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUADDR
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUCTRL
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUDATA
+import choliver.nespot.ppu.Ppu.Companion.REG_PPUMASK
+import choliver.nespot.ppu.Ppu.Companion.REG_PPUSCROLL
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSTATUS
+import choliver.nespot.ppu.Renderer.Context
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 import com.nhaarman.mockitokotlin2.*
@@ -150,11 +153,6 @@ class PpuTest {
     }
   }
 
-  private fun setPpuAddress(addr: Address) {
-    ppu.writeReg(REG_PPUADDR, addr.hi())
-    ppu.writeReg(REG_PPUADDR, addr.lo())
-  }
-
   @Nested
   inner class Vbl {
     @Test
@@ -225,7 +223,145 @@ class PpuTest {
     private fun getVblStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(7)
   }
 
-  // TODO - test that RendererContext is populated correctly
+  @Nested
+  inner class RendererContext {
+    @Test
+    fun `propagates isLargeSprites`() {
+      ppu.writeReg(REG_PPUCTRL, 0b00100000)
+      ppu.executeScanline()
+
+      assertEquals(true, captureContext().isLargeSprites)
+    }
+
+    @Test
+    fun `propagates bgPatternTable`() {
+      ppu.writeReg(REG_PPUCTRL, 0b00010000)
+      ppu.executeScanline()
+
+      assertEquals(1, captureContext().bgPatternTable)
+    }
+
+    @Test
+    fun `propagates sprPatternTable`() {
+      ppu.writeReg(REG_PPUCTRL, 0b00001000)
+      ppu.executeScanline()
+
+      assertEquals(1, captureContext().sprPatternTable)
+    }
+
+    @Test
+    fun `propagates yNametable`() {
+      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
+      ppu.writeReg(REG_PPUCTRL, 0b00000010)
+      ppu.executeScanline()
+
+      assertEquals(1, captureContext().coords.yNametable)
+    }
+
+    @Test
+    fun `propagates xNametable`() {
+      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
+      ppu.writeReg(REG_PPUCTRL, 0b00000001)
+      ppu.executeScanline()
+
+      assertEquals(1, captureContext().coords.xNametable)
+    }
+
+    @Test
+    fun `propagates xCoarse, xFine, yCoarse, yFine`() {
+      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
+      ppu.writeReg(REG_PPUSCROLL, 0b10101_111)
+      ppu.writeReg(REG_PPUSCROLL, 0b11111_101)
+      ppu.executeScanline()
+
+      val ctx = captureContext()
+      assertEquals(0b10101, ctx.coords.xCoarse)
+      assertEquals(0b111, ctx.coords.xFine)
+      assertEquals(0b11111, ctx.coords.yCoarse)
+      assertEquals(0b101, ctx.coords.yFine)
+    }
+
+    @Test
+    fun `increments y components every scanline`() {
+      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
+      ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
+      ppu.writeReg(REG_PPUSCROLL, 0b00000_111)
+      ppu.executeScanline()
+      ppu.executeScanline()
+
+      val ctx = captureContext(2)
+      assertEquals(0b00001, ctx[1].coords.yCoarse)
+      assertEquals(0b000, ctx[1].coords.yFine)
+    }
+
+    @Test
+    fun `doesn't increment y components every scanline if rendering disabled`() {
+      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
+      ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
+      ppu.writeReg(REG_PPUSCROLL, 0b00000_111)
+      ppu.executeScanline()
+      ppu.writeReg(REG_PPUMASK, 0b00000000)   // Rendering disabled
+      ppu.executeScanline()
+
+      val ctx = captureContext(2)
+      assertEquals(0b00000, ctx[1].coords.yCoarse)    // These haven't advanced
+      assertEquals(0b111, ctx[1].coords.yFine)
+    }
+
+    @Test
+    fun `x components reloaded every scanline`() {
+      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
+      ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
+      ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
+      ppu.executeScanline()
+      ppu.writeReg(REG_PPUSCROLL, 0b10101_111)  // New values
+      ppu.executeScanline()
+
+      val ctx = captureContext(2)
+      assertEquals(0b10101, ctx[1].coords.xCoarse)    // New values reloaded
+      assertEquals(0b111, ctx[1].coords.xFine)
+    }
+
+    @Test
+    fun `y components not reloaded every scanline`() {
+      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
+      ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
+      ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
+      ppu.executeScanline()
+      ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
+      ppu.writeReg(REG_PPUSCROLL, 0b10101_111)  // New values
+      ppu.executeScanline()
+
+      val ctx = captureContext(2)
+      assertEquals(0b00000, ctx[1].coords.yCoarse)    // New values ignored, just regular increment
+      assertEquals(0b001, ctx[1].coords.yFine)
+    }
+
+    @Test
+    fun `PPUADDR maps to coordinates in a weird way`() {
+      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
+      ppu.writeReg(REG_PPUADDR, 0b00_10_11_11)
+      ppu.writeReg(REG_PPUADDR, 0b111_10101)
+      ppu.executeScanline()
+
+      val ctx = captureContext()
+      assertEquals(1, ctx.coords.xNametable)
+      assertEquals(0b10101, ctx.coords.xCoarse)
+      assertEquals(1, ctx.coords.yNametable)
+      assertEquals(0b11111, ctx.coords.yCoarse)
+      assertEquals(0b010, ctx.coords.yFine)
+    }
+
+    // TODO - entire coords reloaded per frame
+
+    private fun captureContext() = captureContext(1).first()
+
+    private fun captureContext(num: Int): List<Context> {
+      val captor = argumentCaptor<Context>()
+      verify(renderer, times(num)).renderScanlineAndDetectHit(captor.capture())
+      return captor.allValues
+    }
+  }
 
   @Nested
   inner class SpriteHit {
@@ -265,5 +401,10 @@ class PpuTest {
     }
 
     private fun getHitStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(6)
+  }
+
+  private fun setPpuAddress(addr: Address) {
+    ppu.writeReg(REG_PPUADDR, addr.hi())
+    ppu.writeReg(REG_PPUADDR, addr.lo())
   }
 }

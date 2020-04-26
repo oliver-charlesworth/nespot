@@ -3,7 +3,7 @@ package choliver.nespot.ppu
 import choliver.nespot.Address
 import choliver.nespot.Memory
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
-import choliver.nespot.ppu.Renderer.*
+import choliver.nespot.ppu.Renderer.Context
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever

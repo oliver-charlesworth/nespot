@@ -18,8 +18,8 @@ class Ppu(
   private var isSprite0Hit = false
 
   private var addr: Address = 0x0000
-  private val coordsStored = Coords()
-  private var coordsRendered = Coords()
+  private val coords = Coords()
+  private var coordsWorking = Coords()
   private var w = false
 
   private var readBuffer: Data = 0
@@ -33,18 +33,23 @@ class Ppu(
   fun executeScanline() {
     when (_scanline) {
       in (0 until SCREEN_HEIGHT) -> {
-        if (renderingEnabled() && (_scanline > 0)) {
-          coordsRendered.xFine = coordsStored.xFine
-          coordsRendered.xCoarse = coordsStored.xCoarse
-          coordsRendered.xNametable = coordsStored.xNametable
-          coordsRendered.incrementY()
+        if (renderingEnabled()) {
+          when (_scanline) {
+            0 -> coordsWorking = coords.copy()
+            else -> {
+              coordsWorking.xFine = coords.xFine
+              coordsWorking.xCoarse = coords.xCoarse
+              coordsWorking.xNametable = coords.xNametable
+              coordsWorking.incrementY()
+            }
+          }
         }
 
         val isHit = renderer.renderScanlineAndDetectHit(Context(
           isLargeSprites = state.isLargeSprites,
           bgPatternTable = state.bgPatternTable,
           sprPatternTable = state.sprPatternTable,
-          coords = coordsRendered
+          coords = coordsWorking
         ))
         isSprite0Hit = isSprite0Hit || isHit
       }
@@ -62,9 +67,6 @@ class Ppu(
       (NUM_SCANLINES - 1) -> {
         inVbl = false
         isSprite0Hit = false
-        if (renderingEnabled()) {
-          coordsRendered = coordsStored.copy()
-        }
       }
     }
 
@@ -105,8 +107,8 @@ class Ppu(
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
       REG_PPUCTRL -> {
-        coordsStored.xNametable = data and 0x01
-        coordsStored.yNametable = (data and 0x02) shr 1
+        coords.xNametable = data and 0x01
+        coords.yNametable = (data and 0x02) shr 1
 
         state = state.copy(
           addrInc = if (data.isBitSet(2)) 32 else 1,
@@ -122,8 +124,8 @@ class Ppu(
         isGreyscale = data.isBitSet(0),
         isLeftmostBackgroundShown = data.isBitSet(1),
         isLeftmostSpritesShown = data.isBitSet(2),
-        isBackgroundShown = data.isBitSet(3),
-        isSpritesShown = data.isBitSet(4),
+        bgRenderingEnabled = data.isBitSet(3),
+        sprRenderingEnabled = data.isBitSet(4),
         isRedEmphasized = data.isBitSet(5),
         isGreenEmphasized = data.isBitSet(6),
         isBlueEmphasized = data.isBitSet(7)
@@ -141,11 +143,11 @@ class Ppu(
         val coarse = (data and 0b11111000) shr 3
 
         if (!w) {
-          coordsStored.xCoarse = coarse
-          coordsStored.xFine = fine
+          coords.xCoarse = coarse
+          coords.xFine = fine
         } else {
-          coordsStored.yCoarse = coarse
-          coordsStored.yFine = fine
+          coords.yCoarse = coarse
+          coords.yFine = fine
         }
         w = !w
       }
@@ -156,14 +158,14 @@ class Ppu(
         // See http://wiki.nesdev.com/w/index.php/PPU_scrolling#Summary
         if (!w) {
           addr = addr(lo = addr.lo(), hi = data and 0b00111111)
-          coordsStored.yCoarse    = ((data and 0b00000011) shl 3) or (coordsStored.yCoarse and 0b00111)
-          coordsStored.xNametable =  (data and 0b00000100) shr 3
-          coordsStored.yNametable =  (data and 0b00001000) shr 4
-          coordsStored.yFine      =  (data and 0b00110000) shr 4  // Lose the top bit
+          coords.yCoarse    = ((data and 0b00000011) shl 3) or (coords.yCoarse and 0b00111)
+          coords.xNametable =  (data and 0b00000100) shr 2
+          coords.yNametable =  (data and 0b00001000) shr 3
+          coords.yFine      =  (data and 0b00110000) shr 4  // Lose the top bit
         } else {
           addr = addr(lo = data, hi = addr.hi())
-          coordsStored.xCoarse =  (data and 0b00011111)
-          coordsStored.yCoarse = ((data and 0b11100000) shr 5) or (coordsStored.yCoarse and 0b11000)
+          coords.xCoarse =  (data and 0b00011111)
+          coords.yCoarse = ((data and 0b11100000) shr 5) or (coords.yCoarse and 0b11000)
         }
         w = !w
       }
@@ -180,7 +182,7 @@ class Ppu(
     }
   }
 
-  private fun renderingEnabled() = state.isBackgroundShown || state.isSpritesShown  // TODO - rename these
+  private fun renderingEnabled() = state.bgRenderingEnabled || state.sprRenderingEnabled
 
   private fun State.withIncrementedOamAddr() = copy(oamAddr = (state.oamAddr + 1).addr8())
 
@@ -194,8 +196,8 @@ class Ppu(
     val isGreyscale: Boolean = false,
     val isLeftmostBackgroundShown: Boolean = false,
     val isLeftmostSpritesShown: Boolean = false,
-    val isBackgroundShown: Boolean = false,
-    val isSpritesShown: Boolean = false,
+    val bgRenderingEnabled: Boolean = false,
+    val sprRenderingEnabled: Boolean = false,
     val isRedEmphasized: Boolean = false,
     val isGreenEmphasized: Boolean = false,
     val isBlueEmphasized: Boolean = false,

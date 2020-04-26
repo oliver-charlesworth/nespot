@@ -2,7 +2,6 @@ package choliver.nespot.ppu
 
 import choliver.nespot.Data
 import choliver.nespot.Memory
-import choliver.nespot.MutableForPerfReasons
 import choliver.nespot.isBitSet
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Ppu.Companion.BASE_PATTERNS
@@ -24,15 +23,6 @@ class Renderer(
   private val videoBuffer: IntBuffer,
   private val colors: List<Int> = COLORS
 ) {
-  @MutableForPerfReasons
-  data class Coords(
-    var nametableX: Int = 0,    // 0 or 1 in practice
-    var coarseX: Int = 0,
-    var fineX: Int = 0,
-    var nametableY: Int = 0,    // 0 or 1 in practice
-    var coarseY: Int = 0,
-    var fineY: Int = 0
-  )
 
   data class Context(
     val isLargeSprites: Boolean,
@@ -56,45 +46,28 @@ class Renderer(
   }
 
   private fun prepareBackground(bgPatternTable: Int, coords: Coords) {
-    var fineX = coords.fineX
-    var coarseX = coords.coarseX
-    var nametableX = coords.nametableX
-
     var palette = 0
     var pattern: Data = 0x00
-    var loadNeeded = true
 
-    for (x in 0 until SCREEN_WIDTH) {
-      if (loadNeeded) {
-        val addrNt = BASE_NAMETABLES +
-          ((coords.nametableY * 2 + nametableX) * NAMETABLE_SIZE_BYTES) +
-          (coords.coarseY * NUM_TILE_COLUMNS) +
-          coarseX
+    with (coords) {
+      for (x in 0 until SCREEN_WIDTH) {
+        if ((x == 0) || (fineX == 0)) {
+          val addrNt = BASE_NAMETABLES +
+            ((nametableY * 2 + nametableX) * NAMETABLE_SIZE_BYTES) +
+            (coarseY * NUM_TILE_COLUMNS) +
+            coarseX
 
-        val addrAttr = BASE_NAMETABLES +
-          ((coords.nametableY * 2 + nametableX) * NAMETABLE_SIZE_BYTES) +
-          960 +
-          (coords.coarseY / 4) * (NUM_TILE_COLUMNS / 4) +
-          (coarseX / 4)
+          val addrAttr = BASE_NAMETABLES +
+            ((nametableY * 2 + nametableX) * NAMETABLE_SIZE_BYTES) +
+            960 +
+            (coarseY / 4) * (NUM_TILE_COLUMNS / 4) +
+            (coarseX / 4)
 
-        palette = (memory.load(addrAttr) shr (((coords.coarseY / 2) % 2) * 4 + ((coarseX / 2) % 2) * 2)) and 0x03
-        pattern = getPattern(iTable = bgPatternTable, iTile = memory.load(addrNt), iRow = coords.fineY)
-        loadNeeded = false
-      }
-
-      pixels[x] = Pixel(c = patternPixel(pattern, fineX), p = palette)
-
-      if (fineX < 7) {
-        fineX++
-      } else {
-        loadNeeded = true
-        fineX = 0
-        if (coarseX < 31) {
-          coarseX++
-        } else {
-          coarseX = 0
-          nametableX = 1 - nametableX  // Flip horizontal nametable
+          palette = (memory.load(addrAttr) shr (((coarseY / 2) % 2) * 4 + ((coarseX / 2) % 2) * 2)) and 0x03
+          pattern = getPattern(iTable = bgPatternTable, iTile = memory.load(addrNt), iRow = fineY)
         }
+        pixels[x] = Pixel(c = patternPixel(pattern, fineX), p = palette)
+        incrementX()
       }
     }
   }

@@ -35,7 +35,10 @@ class Ppu(
       in (0 until SCREEN_HEIGHT) -> {
         if (renderingEnabled()) {
           if (scanline > 0) {
-            updateV()
+            coordsRendered.fineX = coordsStored.fineX
+            coordsRendered.coarseX = coordsStored.coarseX
+            coordsRendered.nametableX = coordsStored.nametableX
+            coordsRendered.incrementY()
           }
         }
 
@@ -73,39 +76,15 @@ class Ppu(
     _scanline = (_scanline + 1) % NUM_SCANLINES
   }
 
-  private fun updateV() {
-    // Copy horizontal bits from t
-    coordsRendered.fineX = coordsStored.fineX
-    coordsRendered.coarseX = coordsStored.coarseX
-    coordsRendered.nametableX = coordsStored.nametableX
-
-    when {
-      (coordsRendered.fineY < 7) -> coordsRendered.fineY++
-      else -> {
-        coordsRendered.fineY = 0
-
-        when (coordsRendered.coarseY) {
-          29 -> {
-            coordsRendered.coarseY = 0
-            coordsRendered.nametableY = 1 - coordsRendered.nametableY   // Flip vertical
-          }
-          31 -> coordsRendered.coarseY = 0   // TODO - test-case for this weirdness
-          else -> coordsRendered.coarseY++
-        }
-      }
-    }
-  }
-
   fun readReg(reg: Int): Int {
     return when (reg) {
       REG_PPUSTATUS -> {
         val ret = 0 +
           (if (inVbl) 0x80 else 0x00) +
           (if (isSprite0Hit) 0x40 else 0x00)
-
+        // Reset stuff
         inVbl = false
         w = false
-
         ret
       }
 
@@ -135,7 +114,6 @@ class Ppu(
 
         state = state.copy(
           addrInc = if (data.isBitSet(2)) 32 else 1,
-          nametableAddr = BASE_NAMETABLES + ((data and 0x03) * NAMETABLE_SIZE_BYTES),
           sprPatternTable = if (data.isBitSet(3)) 1 else 0,
           bgPatternTable = if (data.isBitSet(4)) 1 else 0,
           isLargeSprites = data.isBitSet(5),
@@ -177,18 +155,19 @@ class Ppu(
       }
 
       REG_PPUADDR -> {
+        // addr and scroll share registers, so also update coords accordingly.
+        // Super Mario Bros split scroll breaks if we don't do this.
+        // See http://wiki.nesdev.com/w/index.php/PPU_scrolling#Summary
         if (!w) {
+          addr = addr(lo = addr.lo(), hi = data and 0b00111111)
           coordsStored.coarseY    = ((data and 0b00000011) shl 3) or (coordsStored.coarseY and 0b00111)
           coordsStored.nametableX =  (data and 0b00000100) shr 3
           coordsStored.nametableY =  (data and 0b00001000) shr 4
           coordsStored.fineY      =  (data and 0b00110000) shr 4  // Lose the top bit
-
-          addr = addr(lo = addr.lo(), hi = data and 0b00111111)
         } else {
+          addr = addr(lo = data, hi = addr.hi())
           coordsStored.coarseX =  (data and 0b00011111)
           coordsStored.coarseY = ((data and 0b11100000) shr 5) or (coordsStored.coarseY and 0b11000)
-
-          addr = addr(lo = data, hi = addr.hi())
         }
         w = !w
       }
@@ -211,7 +190,6 @@ class Ppu(
 
   private data class State(
     val addrInc: Int = 1,
-    val nametableAddr: Address = BASE_NAMETABLES,
     val sprPatternTable: Int = 0,
     val bgPatternTable: Int = 0,
     val isLargeSprites: Boolean = false,

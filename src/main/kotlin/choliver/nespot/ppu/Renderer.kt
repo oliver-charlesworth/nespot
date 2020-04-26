@@ -1,8 +1,8 @@
 package choliver.nespot.ppu
 
-import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
+import choliver.nespot.MutableForPerfReasons
 import choliver.nespot.isBitSet
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Ppu.Companion.BASE_PATTERNS
@@ -24,13 +24,21 @@ class Renderer(
   private val videoBuffer: IntBuffer,
   private val colors: List<Int> = COLORS
 ) {
+  @MutableForPerfReasons
+  data class Coords(
+    var nametableX: Int = 0,    // 0 or 1 in practice
+    var coarseX: Int = 0,
+    var fineX: Int = 0,
+    var nametableY: Int = 0,    // 0 or 1 in practice
+    var coarseY: Int = 0,
+    var fineY: Int = 0
+  )
+
   data class Context(
     val isLargeSprites: Boolean,
     val bgPatternTable: Int,  // 0 or 1
     val sprPatternTable: Int, // 0 or 1
-    val addrStart: Address,
-    val fineX: Data,
-    val fineY: Data
+    val coords: Coords
   )
 
   private data class Pixel(
@@ -41,41 +49,40 @@ class Renderer(
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0) }
 
   fun renderScanlineAndDetectHit(y: Int, ctx: Context): Boolean {
-    prepareBackground(ctx)
+    prepareBackground(ctx.bgPatternTable, ctx.coords)
     val isHit = prepareSpritesAndDetectHit(y, ctx)
     renderToBuffer(y)
     return isHit
   }
 
-  private fun prepareBackground(ctx: Context) {
-    var fineX = ctx.fineX
-    var coarseX = (ctx.addrStart and 0x001F)
-    val coarseY = (ctx.addrStart and 0x03E0) shr 5
-    var iNametable = (ctx.addrStart and 0x0C00) shr 10
+  private fun prepareBackground(bgPatternTable: Int, coords: Coords) {
+    var fineX = coords.fineX
+    var coarseX = coords.coarseX
+    var nametableX = coords.nametableX
 
-    var iPalette = 0
+    var palette = 0
     var pattern: Data = 0x00
     var loadNeeded = true
 
     for (x in 0 until SCREEN_WIDTH) {
       if (loadNeeded) {
         val addrNt = BASE_NAMETABLES +
-          (iNametable * NAMETABLE_SIZE_BYTES) +
-          (coarseY * NUM_TILE_COLUMNS) +
+          ((coords.nametableY * 2 + nametableX) * NAMETABLE_SIZE_BYTES) +
+          (coords.coarseY * NUM_TILE_COLUMNS) +
           coarseX
 
         val addrAttr = BASE_NAMETABLES +
-          (iNametable * NAMETABLE_SIZE_BYTES) +
+          ((coords.nametableY * 2 + nametableX) * NAMETABLE_SIZE_BYTES) +
           960 +
-          (coarseY / 4) * (NUM_TILE_COLUMNS / 4) +
+          (coords.coarseY / 4) * (NUM_TILE_COLUMNS / 4) +
           (coarseX / 4)
 
-        iPalette = (memory.load(addrAttr) shr (((coarseY / 2) % 2) * 4 + ((coarseX / 2) % 2) * 2)) and 0x03
-        pattern = getPattern(iTable = ctx.bgPatternTable, iTile = memory.load(addrNt), iRow = ctx.fineY)
+        palette = (memory.load(addrAttr) shr (((coords.coarseY / 2) % 2) * 4 + ((coarseX / 2) % 2) * 2)) and 0x03
+        pattern = getPattern(iTable = bgPatternTable, iTile = memory.load(addrNt), iRow = coords.fineY)
         loadNeeded = false
       }
 
-      pixels[x] = Pixel(c = patternPixel(pattern, fineX), p = iPalette)
+      pixels[x] = Pixel(c = patternPixel(pattern, fineX), p = palette)
 
       if (fineX < 7) {
         fineX++
@@ -86,7 +93,7 @@ class Renderer(
           coarseX++
         } else {
           coarseX = 0
-          iNametable = iNametable xor 1
+          nametableX = 1 - nametableX  // Flip horizontal nametable
         }
       }
     }

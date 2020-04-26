@@ -44,7 +44,9 @@
 
 - Constants strewn everywhere
 
-- Make `Runner` / `Debugger` nicer in terms of running different ROMs.
+- Make `Debugger` nicer in terms of running different ROMs.
+
+- Have `Runner` print out the hash of the ROM.
 
 
 ## References

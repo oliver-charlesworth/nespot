@@ -1,6 +1,7 @@
 package choliver.nespot.ppu
 
 import choliver.nespot.*
+import choliver.nespot.ppu.Renderer.*
 import java.nio.IntBuffer
 
 class Ppu(
@@ -15,20 +16,18 @@ class Ppu(
   private var _scanline = 0
   private var inVbl = false
   private var isSprite0Hit = false
-  private var iNametable: Int = 0
-  private var scrollX: Data = 0
-  private var scrollY: Data = 0
 
   private var t: Int = 0
   private var v: Int = 0
-  private var x: Int = 0
+
+  private val coordsStored = Coords()
+  private var coordsRendered = Coords()
   private var w: Boolean = false
 
   private var readBuffer: Data = 0
 
   // TODO - model addr increment quirks during rendering (see wiki.nesdev.com/w/index.php/PPU_scrolling)
   // TODO - add a reset (to clean up counters and stuff)
-  // TODO - only do rendering increments if rendering enabled
 
   val scanline get() = _scanline
 
@@ -44,13 +43,11 @@ class Ppu(
 
         val isHit = renderer.renderScanlineAndDetectHit(
           y = _scanline,
-          ctx = Renderer.Context(
+          ctx = Context(
             isLargeSprites = state.isLargeSprites,
             bgPatternTable = state.bgPatternTable,
             sprPatternTable = state.sprPatternTable,
-            addrStart = (v and 0x0FFF),
-            fineX = x,
-            fineY = (v and 0x7000) shr 12
+            coords = coordsRendered
           )
         )
         isSprite0Hit = isSprite0Hit || isHit
@@ -70,6 +67,7 @@ class Ppu(
         inVbl = false
         isSprite0Hit = false
         if (renderingEnabled()) {
+          coordsRendered = coordsStored.copy()
           v = t // TODO - may have to move this to beginning of next scanline
         }
       }
@@ -82,31 +80,35 @@ class Ppu(
     // Copy horizontal bits from t
     v = (v and 0x7BE0) or (t and 0x041F)
 
-    var fineY = (v and 0x7000) shr 12
-    val coarseX = (v and 0x001F)
-    var coarseY = (v and 0x03E0) shr 5
-    var iNametable = (v and 0x0C00) shr 10
+    coordsRendered.fineX = coordsStored.fineX
+    coordsRendered.fineY = (v and 0x7000) shr 12
+    coordsRendered.coarseX = coordsStored.coarseX
+    coordsRendered.coarseY = (v and 0x03E0) shr 5
+    coordsRendered.nametableX = coordsStored.nametableX
+    coordsRendered.nametableY = (v and 0x0800) shr 11
 
-    if (fineY < 7) {
-      fineY++
-    } else {
-      fineY = 0
+    when {
+      (coordsRendered.fineY < 7) -> coordsRendered.fineY++
+      else -> {
+        coordsRendered.fineY = 0
 
-      when (coarseY) {
-        29 -> {
-          coarseY = 0
-          iNametable = iNametable xor 2
-        }
-        31 -> {
-          coarseY = 0
-        }
-        else -> {
-          coarseY++
+        when (coordsRendered.coarseY) {
+          29 -> {
+            coordsRendered.coarseY = 0
+            coordsRendered.nametableY = 1 - coordsRendered.nametableY   // Flip vertical
+          }
+          31 -> coordsRendered.coarseY = 0   // TODO - test-case for this weirdness
+          else -> coordsRendered.coarseY++
         }
       }
     }
 
-    v = (fineY shl 12) or (iNametable shl 10) or (coarseY shl 5) or coarseX
+    v = 0 +
+      (coordsRendered.fineY shl 12) +
+      (coordsRendered.nametableY shl 11) +
+      (coordsRendered.nametableX shl 10) +
+      (coordsRendered.coarseY shl 5) +
+      coordsRendered.coarseX
   }
 
   fun readReg(reg: Int): Int {
@@ -143,8 +145,9 @@ class Ppu(
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
       REG_PPUCTRL -> {
-        iNametable = data and 0x03
-        t = (iNametable shl 10) or (t and 0x73FF)
+        coordsStored.nametableX = data and 0x01
+        coordsStored.nametableY = (data and 0x02) shr 1
+        t = (data and 0x03) or (t and 0x73FF)
 
         state = state.copy(
           addrInc = if (data.isBitSet(2)) 32 else 1,
@@ -180,12 +183,13 @@ class Ppu(
         val coarse = (data and 0xF8) shr 3
 
         if (!w) {
-          x = fine
+          coordsStored.coarseX = coarse
+          coordsStored.fineX = fine
           t = coarse or (t and 0x7FE0)
-          scrollX = data
         } else {
+          coordsStored.coarseY = coarse
+          coordsStored.fineY = fine
           t = (fine shl 12) or (coarse shl 5) or (t and 0x0C1F)
-          scrollY = data
         }
         w = !w
       }

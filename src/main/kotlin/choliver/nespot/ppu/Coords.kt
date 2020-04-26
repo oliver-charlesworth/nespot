@@ -4,44 +4,44 @@ import choliver.nespot.MutableForPerfReasons
 
 @MutableForPerfReasons
 data class Coords(
-  var nametableX: Int = 0,    // 0 or 1
-  var coarseX: Int = 0,       // 0 to 31 inc.
-  var fineX: Int = 0,         // 0 to 7 inc.
-  var nametableY: Int = 0,    // 0 or 1
-  var coarseY: Int = 0,       // 0 to 31 inc.
-  var fineY: Int = 0          // 0 to 7 inc.
+  var xNametable: Int = 0,    // 0 or 1
+  var xCoarse: Int = 0,       // 0 to 31 inc.
+  var xFine: Int = 0,         // 0 to 7 inc.
+  var yNametable: Int = 0,    // 0 or 1
+  var yCoarse: Int = 0,       // 0 to 31 inc.
+  var yFine: Int = 0          // 0 to 7 inc.
 ) {
   fun incrementX(): Coords {
-    when (fineX) {
+    when (xFine) {
       (TILE_SIZE - 1) -> {
-        fineX = 0
-        when (coarseX) {
+        xFine = 0
+        when (xCoarse) {
           (NUM_TILE_COLUMNS - 1) -> {
-            coarseX = 0
-            nametableX = 1 - nametableX   // Wraparound
+            xCoarse = 0
+            xNametable = 1 - xNametable   // Wraparound
           }
-          else -> coarseX++
+          else -> xCoarse++
         }
       }
-      else -> fineX++
+      else -> xFine++
     }
     return this
   }
 
   fun incrementY(): Coords {
-    when (fineY) {
+    when (yFine) {
       (TILE_SIZE - 1) -> {
-        fineY = 0
-        when (coarseY) {
+        yFine = 0
+        when (yCoarse) {
           (NUM_TILE_ROWS - 1) -> {
-            coarseY = 0
-            nametableY = 1 - nametableY   // Wraparound
+            yCoarse = 0
+            yNametable = 1 - yNametable   // Wraparound
           }
-          (NUM_TILE_COLUMNS - 1) -> coarseY = 0   // Weird special case
-          else -> coarseY++
+          (NUM_TILE_COLUMNS - 1) -> yCoarse = 0   // Weird special case
+          else -> yCoarse++
         }
       }
-      else -> fineY++
+      else -> yFine++
     }
     return this
   }

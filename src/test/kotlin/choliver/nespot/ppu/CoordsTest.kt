@@ -7,49 +7,49 @@ class CoordsTest {
   @Test
   fun `increments x components`() {
     assertEquals(
-      Coords(fineX = 1),
-      Coords(fineX = 0).incrementX()
+      Coords(xFine = 1),
+      Coords(xFine = 0).incrementX()
     )
     assertEquals(
-      Coords(coarseX = 1, fineX = 0),
-      Coords(coarseX = 0, fineX = 7).incrementX()
+      Coords(xCoarse = 1, xFine = 0),
+      Coords(xCoarse = 0, xFine = 7).incrementX()
     )
     assertEquals(
-      Coords(nametableX = 1, coarseX = 0, fineX = 0),
-      Coords(nametableX = 0, coarseX = 31, fineX = 7).incrementX()
+      Coords(xNametable = 1, xCoarse = 0, xFine = 0),
+      Coords(xNametable = 0, xCoarse = 31, xFine = 7).incrementX()
     )
     assertEquals(
-      Coords(nametableX = 0, coarseX = 0, fineX = 0),
-      Coords(nametableX = 1, coarseX = 31, fineX = 7).incrementX()
+      Coords(xNametable = 0, xCoarse = 0, xFine = 0),
+      Coords(xNametable = 1, xCoarse = 31, xFine = 7).incrementX()
     )
   }
 
   @Test
   fun `increments y components`() {
     assertEquals(
-      Coords(fineY = 1),
-      Coords(fineY = 0).incrementY()
+      Coords(yFine = 1),
+      Coords(yFine = 0).incrementY()
     )
     assertEquals(
-      Coords(coarseY = 1, fineY = 0),
-      Coords(coarseY = 0, fineY = 7).incrementY()
+      Coords(yCoarse = 1, yFine = 0),
+      Coords(yCoarse = 0, yFine = 7).incrementY()
     )
     assertEquals(
-      Coords(nametableY = 1, coarseY = 0, fineY = 0),
-      Coords(nametableY = 0, coarseY = 29, fineY = 7).incrementY()
+      Coords(yNametable = 1, yCoarse = 0, yFine = 0),
+      Coords(yNametable = 0, yCoarse = 29, yFine = 7).incrementY()
     )
     assertEquals(
-      Coords(nametableY = 0, coarseY = 0, fineY = 0),
-      Coords(nametableY = 1, coarseY = 29, fineY = 7).incrementY()
+      Coords(yNametable = 0, yCoarse = 0, yFine = 0),
+      Coords(yNametable = 1, yCoarse = 29, yFine = 7).incrementY()
     )
     // Some weird special cases
     assertEquals(
-      Coords(coarseY = 31, fineY = 0),
-      Coords(coarseY = 30, fineY = 7).incrementY()
+      Coords(yCoarse = 31, yFine = 0),
+      Coords(yCoarse = 30, yFine = 7).incrementY()
     )
     assertEquals(
-      Coords(coarseY = 0, fineY = 0),
-      Coords(coarseY = 31, fineY = 7).incrementY()
+      Coords(yCoarse = 0, yFine = 0),
+      Coords(yCoarse = 31, yFine = 7).incrementY()
     )
   }
 }

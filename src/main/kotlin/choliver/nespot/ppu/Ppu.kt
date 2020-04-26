@@ -34,9 +34,9 @@ class Ppu(
     when (_scanline) {
       in (0 until SCREEN_HEIGHT) -> {
         if (renderingEnabled() && (_scanline > 0)) {
-          coordsRendered.fineX = coordsStored.fineX
-          coordsRendered.coarseX = coordsStored.coarseX
-          coordsRendered.nametableX = coordsStored.nametableX
+          coordsRendered.xFine = coordsStored.xFine
+          coordsRendered.xCoarse = coordsStored.xCoarse
+          coordsRendered.xNametable = coordsStored.xNametable
           coordsRendered.incrementY()
         }
 
@@ -105,8 +105,8 @@ class Ppu(
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
       REG_PPUCTRL -> {
-        coordsStored.nametableX = data and 0x01
-        coordsStored.nametableY = (data and 0x02) shr 1
+        coordsStored.xNametable = data and 0x01
+        coordsStored.yNametable = (data and 0x02) shr 1
 
         state = state.copy(
           addrInc = if (data.isBitSet(2)) 32 else 1,
@@ -141,11 +141,11 @@ class Ppu(
         val coarse = (data and 0b11111000) shr 3
 
         if (!w) {
-          coordsStored.coarseX = coarse
-          coordsStored.fineX = fine
+          coordsStored.xCoarse = coarse
+          coordsStored.xFine = fine
         } else {
-          coordsStored.coarseY = coarse
-          coordsStored.fineY = fine
+          coordsStored.yCoarse = coarse
+          coordsStored.yFine = fine
         }
         w = !w
       }
@@ -156,14 +156,14 @@ class Ppu(
         // See http://wiki.nesdev.com/w/index.php/PPU_scrolling#Summary
         if (!w) {
           addr = addr(lo = addr.lo(), hi = data and 0b00111111)
-          coordsStored.coarseY    = ((data and 0b00000011) shl 3) or (coordsStored.coarseY and 0b00111)
-          coordsStored.nametableX =  (data and 0b00000100) shr 3
-          coordsStored.nametableY =  (data and 0b00001000) shr 4
-          coordsStored.fineY      =  (data and 0b00110000) shr 4  // Lose the top bit
+          coordsStored.yCoarse    = ((data and 0b00000011) shl 3) or (coordsStored.yCoarse and 0b00111)
+          coordsStored.xNametable =  (data and 0b00000100) shr 3
+          coordsStored.yNametable =  (data and 0b00001000) shr 4
+          coordsStored.yFine      =  (data and 0b00110000) shr 4  // Lose the top bit
         } else {
           addr = addr(lo = data, hi = addr.hi())
-          coordsStored.coarseX =  (data and 0b00011111)
-          coordsStored.coarseY = ((data and 0b11100000) shr 5) or (coordsStored.coarseY and 0b11000)
+          coordsStored.xCoarse =  (data and 0b00011111)
+          coordsStored.yCoarse = ((data and 0b11100000) shr 5) or (coordsStored.yCoarse and 0b11000)
         }
         w = !w
       }

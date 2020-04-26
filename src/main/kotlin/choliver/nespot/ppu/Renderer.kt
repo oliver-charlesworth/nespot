@@ -39,7 +39,7 @@ class Renderer(
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0) }
 
   fun renderScanlineAndDetectHit(ctx: Context): Boolean {
-    val y = (ctx.coords.coarseY * TILE_SIZE) + ctx.coords.fineY
+    val y = (ctx.coords.yCoarse * TILE_SIZE) + ctx.coords.yFine
     prepareBackground(ctx.bgPatternTable, ctx.coords)
     val isHit = prepareSpritesAndDetectHit(y, ctx)
     renderToBuffer(y)
@@ -52,22 +52,22 @@ class Renderer(
 
     with (coords) {
       for (x in 0 until SCREEN_WIDTH) {
-        if ((x == 0) || (fineX == 0)) {
+        if ((x == 0) || (xFine == 0)) {
           val addrNt = BASE_NAMETABLES +
-            ((nametableY * 2 + nametableX) * NAMETABLE_SIZE_BYTES) +
-            (coarseY * NUM_TILE_COLUMNS) +
-            coarseX
+            ((yNametable * 2 + xNametable) * NAMETABLE_SIZE_BYTES) +
+            (yCoarse * NUM_TILE_COLUMNS) +
+            xCoarse
 
           val addrAttr = BASE_NAMETABLES +
-            ((nametableY * 2 + nametableX) * NAMETABLE_SIZE_BYTES) +
+            ((yNametable * 2 + xNametable) * NAMETABLE_SIZE_BYTES) +
             960 +
-            (coarseY / 4) * (NUM_TILE_COLUMNS / 4) +
-            (coarseX / 4)
+            (yCoarse / 4) * (NUM_TILE_COLUMNS / 4) +
+            (xCoarse / 4)
 
-          palette = (memory.load(addrAttr) shr (((coarseY / 2) % 2) * 4 + ((coarseX / 2) % 2) * 2)) and 0x03
-          pattern = getPattern(iTable = bgPatternTable, iTile = memory.load(addrNt), iRow = fineY)
+          palette = (memory.load(addrAttr) shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
+          pattern = getPattern(iTable = bgPatternTable, iTile = memory.load(addrNt), iRow = yFine)
         }
-        pixels[x] = Pixel(c = patternPixel(pattern, fineX), p = palette)
+        pixels[x] = Pixel(c = patternPixel(pattern, xFine), p = palette)
         incrementX()
       }
     }

@@ -1,8 +1,9 @@
 package choliver.nespot.apu
 
 interface Synth {
-  val output: Int
   var length: Int
+  val output: Int
+  val hasRemainingOutput: Boolean
 
   fun onTimer() {}
   fun onQuarterFrame() {}

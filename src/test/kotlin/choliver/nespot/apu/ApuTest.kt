@@ -1,12 +1,8 @@
 package choliver.nespot.apu
 
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import com.nhaarman.mockitokotlin2.*
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -213,7 +209,16 @@ class ApuTest {
       }
     }
 
-    // TODO - read status
+    @Test
+    fun read() {
+      whenever(sq1.synth.hasRemainingOutput) doReturn true
+      whenever(sq2.synth.hasRemainingOutput) doReturn false
+      whenever(tri.synth.hasRemainingOutput) doReturn false
+      whenever(noi.synth.hasRemainingOutput) doReturn true
+      whenever(dmc.synth.hasRemainingOutput) doReturn true
+
+      assertEquals(0b000_11001, apu.readStatus())
+    }
   }
 
   @Test

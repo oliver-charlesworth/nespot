@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SquareSynthTest {
@@ -70,10 +70,13 @@ class SquareSynthTest {
   }
 
   @Test
-  fun `length counter decrements are visible`() {
-    synth.length = 5
-    repeat(2) { synth.onHalfFrame() }
+  fun `exhaustion is visible`() {
+    repeat(7) { synth.onHalfFrame() }
 
-    assertEquals(3, synth.length)
+    assertTrue(synth.hasRemainingOutput)
+
+    synth.onHalfFrame()
+
+    assertFalse(synth.hasRemainingOutput)
   }
 }

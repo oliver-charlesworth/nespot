@@ -5,11 +5,13 @@ import kotlin.math.max
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
 class SquareSynth : Synth {
   private var iSeq = 0
+  private var iLength = 0
   var haltLength = false
   var dutyCycle = 0
-  override var length = 0
 
-  override val output get() = if (length > 0) SEQUENCES[dutyCycle][iSeq] else 0
+  override var length by observable(0) { iLength = it }
+  override val hasRemainingOutput get() = iLength > 0
+  override val output get() = if (hasRemainingOutput) SEQUENCES[dutyCycle][iSeq] else 0
 
   override fun onTimer() {
     iSeq = (iSeq + 1) % SEQUENCE_LENGTH
@@ -17,7 +19,7 @@ class SquareSynth : Synth {
 
   override fun onHalfFrame() {
     if (!haltLength) {
-      length = max(length - 1, 0)
+      iLength = max(iLength - 1, 0)
     }
   }
 

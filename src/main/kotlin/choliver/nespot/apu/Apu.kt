@@ -7,7 +7,6 @@ import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 import choliver.nespot.isBitSet
 
 // TODO - interrupts
-// TODO - read status register
 class Apu(
   private val buffer: ByteArray,
   memory: Memory,
@@ -25,11 +24,11 @@ class Apu(
   // TODO - DMC interrupt
   // TODO - frame interrupt
   fun readStatus() = 0 +
-    (if (channels.dmc.synth.length != 0) 0x10 else 0x00) +
-    (if (channels.noi.synth.length != 0) 0x08 else 0x00) +
-    (if (channels.tri.synth.length != 0) 0x04 else 0x00) +
-    (if (channels.sq2.synth.length != 0) 0x02 else 0x00) +
-    (if (channels.sq1.synth.length != 0) 0x01 else 0x00)
+    (if (channels.dmc.synth.hasRemainingOutput) 0x10 else 0x00) +
+    (if (channels.noi.synth.hasRemainingOutput) 0x08 else 0x00) +
+    (if (channels.tri.synth.hasRemainingOutput) 0x04 else 0x00) +
+    (if (channels.sq2.synth.hasRemainingOutput) 0x02 else 0x00) +
+    (if (channels.sq1.synth.hasRemainingOutput) 0x01 else 0x00)
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {

@@ -11,13 +11,9 @@ class TriangleSynth : Synth {
   var preventReloadClear = false
   var haltLength = false
   var linear = 0
-  override var length: Int
-    get() = iLength
-    set(value) {
-      iLength = value
-      reload = true
-    } // Reloads both counters
 
+  override var length by observable(0) { iLength = it; reload = true } // Reloads both counters
+  override val hasRemainingOutput get() = iLength > 0   // Doesn't account for linear counter
   override val output get() = SEQUENCE[iSeq]
 
   // Counters gate sequence generation, rather than muting the channel

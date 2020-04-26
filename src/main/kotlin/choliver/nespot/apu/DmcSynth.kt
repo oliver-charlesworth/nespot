@@ -17,8 +17,9 @@ class DmcSynth(private val memory: Memory) : Synth {
   var loop: Boolean = false
   var level: Data = 0
   var address: Address by observable(0x0000) { resetPattern() }
-  override var length by observable(0) { resetPattern() }
 
+  override var length by observable(0) { resetPattern() }
+  override val hasRemainingOutput get() = numBytesRemaining > 0
   override val output get() = level
 
   override fun onTimer() {

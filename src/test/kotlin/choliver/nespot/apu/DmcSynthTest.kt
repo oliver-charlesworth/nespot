@@ -4,7 +4,7 @@ import choliver.nespot.Memory
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class DmcSynthTest {
@@ -142,5 +142,17 @@ class DmcSynthTest {
     val seq2 = synth.take(12)
 
     assertEquals(expected, seq1 + seq2)
+  }
+
+  @Test
+  fun `exhaustion of bytes remaining is visible`() {
+    synth.length = 5
+    synth.take(32)
+
+    assertTrue(synth.hasRemainingOutput)
+
+    synth.take(1)   // The sequence is length-40, but the flag is cleared once we've performed all the mem loads
+
+    assertFalse(synth.hasRemainingOutput)
   }
 }

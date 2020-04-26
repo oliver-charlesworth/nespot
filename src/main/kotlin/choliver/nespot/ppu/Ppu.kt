@@ -36,8 +36,10 @@ class Ppu(
   fun executeScanline() {
     when (_scanline) {
       in (0 until SCREEN_HEIGHT) -> {
-        if (scanline > 0) {
-          updateVY()
+        if (renderingEnabled()) {
+          if (scanline > 0) {
+            updateV()
+          }
         }
 
         val isHit = renderer.renderScanlineAndDetectHit(
@@ -67,14 +69,19 @@ class Ppu(
       (NUM_SCANLINES - 1) -> {
         inVbl = false
         isSprite0Hit = false
-        v = t // TODO - may have to move this to beginning of next scanline
+        if (renderingEnabled()) {
+          v = t // TODO - may have to move this to beginning of next scanline
+        }
       }
     }
 
     _scanline = (_scanline + 1) % NUM_SCANLINES
   }
 
-  private fun updateVY() {
+  private fun updateV() {
+    // Copy horizontal bits from t
+    v = (v and 0x7BE0) or (t and 0x041F)
+
     var fineY = (v and 0x7000) shr 12
     val coarseX = (v and 0x001F)
     var coarseY = (v and 0x03E0) shr 5
@@ -173,15 +180,11 @@ class Ppu(
         val coarse = (data and 0xF8) shr 3
 
         if (!w) {
-          println("scrollX at #${scanline}: ${scrollX}")
-
           x = fine
           t = coarse or (t and 0x7FE0)
-
           scrollX = data
         } else {
           t = (fine shl 12) or (coarse shl 5) or (t and 0x0C1F)
-
           scrollY = data
         }
         w = !w
@@ -208,6 +211,8 @@ class Ppu(
       else -> throw IllegalArgumentException("Attempt to write to reg #${reg}")   // Should never happen
     }
   }
+
+  private fun renderingEnabled() = state.isBackgroundShown || state.isSpritesShown  // TODO - rename these
 
   private fun State.withIncrementedOamAddr() = copy(oamAddr = (state.oamAddr + 1).addr8())
 

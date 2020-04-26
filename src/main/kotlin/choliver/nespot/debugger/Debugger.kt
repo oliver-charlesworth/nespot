@@ -325,7 +325,7 @@ class Debugger(
 
   private fun maybeTraceInstruction() {
     if (isVerbose) {
-      stdout.println("${nes.state.PC}: ${instAt(nes.state.PC)}")  // TODO - de-dupe with InspectInst handler
+      stdout.println("${nes.state.PC.format()}: ${instAt(nes.state.PC)}")  // TODO - de-dupe with InspectInst handler
     }
   }
 

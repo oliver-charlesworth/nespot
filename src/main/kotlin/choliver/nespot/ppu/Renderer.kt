@@ -55,8 +55,6 @@ class Renderer(
     val coarseY = (ctx.addrStart and 0x03E0) shr 5
     var iNametable = (ctx.addrStart and 0x0C00) shr 10
 
-    println("iNt = ${iNametable}, cY = ${coarseY}, fY = ${ctx.fineY}, cX = ${coarseX}, fX = ${fineX}")
-
     for (x in 0 until SCREEN_WIDTH) {
       val addrNt = BASE_NAMETABLES +
         (iNametable * NAMETABLE_SIZE_BYTES) +

@@ -1,6 +1,7 @@
 package choliver.nespot.ppu
 
 import choliver.nespot.*
+import choliver.nespot.ppu.Renderer.Context
 import java.nio.IntBuffer
 
 class Ppu(
@@ -15,19 +16,15 @@ class Ppu(
   private var _scanline = 0
   private var inVbl = false
   private var isSprite0Hit = false
-  private var addr: Address = 0
-  private var scrollX: Data = 0
-  private var scrollY: Data = 0
 
-  private val latchScroll = Latch16(
-    { scrollX = it },
-    { scrollY = it }
-  )
-  private val latchAddr = Latch16(
-    { addr = addr(lo = addr.lo(), hi = it) },
-    { addr = addr(lo = it, hi = addr.hi()) }
-  )
+  private var addr: Address = 0x0000
+  private val coords = Coords()
+  private var coordsWorking = Coords()
+  private var w = false
 
+  private var readBuffer: Data = 0
+
+  // TODO - model addr increment quirks during rendering (see wiki.nesdev.com/w/index.php/PPU_scrolling)
   // TODO - add a reset (to clean up counters and stuff)
 
   val scanline get() = _scanline
@@ -36,17 +33,24 @@ class Ppu(
   fun executeScanline() {
     when (_scanline) {
       in (0 until SCREEN_HEIGHT) -> {
-        val isHit = renderer.renderScanlineAndDetectHit(
-          y = _scanline,
-          ctx = Renderer.Context(
-            isLargeSprites = state.isLargeSprites,
-            nametableAddr = state.nametableAddr,
-            bgPatternTable = state.bgPatternTable,
-            sprPatternTable = state.sprPatternTable,
-            scrollX = scrollX,
-            scrollY = scrollY
-          )
-        )
+        if (renderingEnabled()) {
+          when (_scanline) {
+            0 -> coordsWorking = coords.copy()
+            else -> {
+              coordsWorking.xFine = coords.xFine
+              coordsWorking.xCoarse = coords.xCoarse
+              coordsWorking.xNametable = coords.xNametable
+              coordsWorking.incrementY()
+            }
+          }
+        }
+
+        val isHit = renderer.renderScanlineAndDetectHit(Context(
+          isLargeSprites = state.isLargeSprites,
+          bgPatternTable = state.bgPatternTable,
+          sprPatternTable = state.sprPatternTable,
+          coords = coordsWorking
+        ))
         isSprite0Hit = isSprite0Hit || isHit
       }
 
@@ -59,6 +63,7 @@ class Ppu(
         }
       }
 
+      // Pre-render line
       (NUM_SCANLINES - 1) -> {
         inVbl = false
         isSprite0Hit = false
@@ -75,29 +80,24 @@ class Ppu(
           (if (inVbl) 0x80 else 0x00) +
           (if (isSprite0Hit) 0x40 else 0x00)
 
-        latchScroll.reset()
-        latchAddr.reset()
+        // Reset stuff
         inVbl = false
-
+        w = false
         ret
       }
 
       REG_OAMDATA -> {
         val ret = oam.load(state.oamAddr)
-        state = state.withincrementedOamAddr()
+        state = state.withIncrementedOamAddr()
         ret
       }
 
       REG_PPUDATA -> {
         val ret = when {
-          addr < BASE_PALETTE -> {
-            val ret = state.ppuReadBuffered
-            state = state.copy(ppuReadBuffered = memory.load(addr))
-            ret
-          }
-          else -> palette.load(addr and 0x1F)
+          (addr < BASE_PALETTE) -> readBuffer.also { readBuffer = memory.load(addr) }
+          else -> palette.load(addr and 0x001F)
         }
-        addr = (addr + state.addrInc).addr()
+        addr = (addr + state.addrInc) and 0x7FFF
         ret
       }
       else -> 0x00
@@ -106,22 +106,26 @@ class Ppu(
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
-      REG_PPUCTRL -> state = state.copy(
-        addrInc = if (data.isBitSet(2)) 32 else 1,
-        nametableAddr = 0x2000, // TODO
-        sprPatternTable = if (data.isBitSet(3)) 1 else 0,
-        bgPatternTable = if (data.isBitSet(4)) 1 else 0,
-        isLargeSprites = data.isBitSet(5),
-        // TODO - is master/slave important?
-        isVblEnabled = data.isBitSet(7)
-      )
+      REG_PPUCTRL -> {
+        coords.xNametable = data and 0x01
+        coords.yNametable = (data and 0x02) shr 1
+
+        state = state.copy(
+          addrInc = if (data.isBitSet(2)) 32 else 1,
+          sprPatternTable = if (data.isBitSet(3)) 1 else 0,
+          bgPatternTable = if (data.isBitSet(4)) 1 else 0,
+          isLargeSprites = data.isBitSet(5),
+          // TODO - is master/slave important?
+          isVblEnabled = data.isBitSet(7)
+        )
+      }
 
       REG_PPUMASK -> state = state.copy(
         isGreyscale = data.isBitSet(0),
         isLeftmostBackgroundShown = data.isBitSet(1),
         isLeftmostSpritesShown = data.isBitSet(2),
-        isBackgroundShown = data.isBitSet(3),
-        isSpritesShown = data.isBitSet(4),
+        bgRenderingEnabled = data.isBitSet(3),
+        sprRenderingEnabled = data.isBitSet(4),
         isRedEmphasized = data.isBitSet(5),
         isGreenEmphasized = data.isBitSet(6),
         isBlueEmphasized = data.isBitSet(7)
@@ -131,54 +135,59 @@ class Ppu(
 
       REG_OAMDATA -> {
         oam.store(state.oamAddr, data)
-        state = state.withincrementedOamAddr()
+        state = state.withIncrementedOamAddr()
       }
 
-      REG_PPUSCROLL -> latchScroll.write(data)
+      REG_PPUSCROLL -> {
+        val fine   = (data and 0b00000111)
+        val coarse = (data and 0b11111000) shr 3
 
-      REG_PPUADDR -> latchAddr.write(data)
+        if (!w) {
+          coords.xCoarse = coarse
+          coords.xFine = fine
+        } else {
+          coords.yCoarse = coarse
+          coords.yFine = fine
+        }
+        w = !w
+      }
+
+      REG_PPUADDR -> {
+        // Address and scroll settings share registers, so also update coords accordingly.
+        // Super Mario Bros split scroll breaks if we don't do this.
+        // See http://wiki.nesdev.com/w/index.php/PPU_scrolling#Summary
+        if (!w) {
+          addr = addr(lo = addr.lo(), hi = data and 0b00111111)
+          coords.yCoarse    = ((data and 0b00000011) shl 3) or (coords.yCoarse and 0b00111)
+          coords.xNametable =  (data and 0b00000100) shr 2
+          coords.yNametable =  (data and 0b00001000) shr 3
+          coords.yFine      =  (data and 0b00110000) shr 4  // Lose the top bit
+        } else {
+          addr = addr(lo = data, hi = addr.hi())
+          coords.xCoarse =  (data and 0b00011111)
+          coords.yCoarse = ((data and 0b11100000) shr 5) or (coords.yCoarse and 0b11000)
+        }
+        w = !w
+      }
 
       REG_PPUDATA -> {
         when {
           addr < BASE_PALETTE -> memory.store(addr, data)
           else -> palette.store(addr and 0x1F, data)
         }
-        addr = (addr + state.addrInc).addr()
+        addr = (addr + state.addrInc) and 0x7FFF
       }
 
       else -> throw IllegalArgumentException("Attempt to write to reg #${reg}")   // Should never happen
     }
   }
 
-  private fun State.withincrementedOamAddr() = copy(oamAddr = (state.oamAddr + 1).addr8())
+  private fun renderingEnabled() = state.bgRenderingEnabled || state.sprRenderingEnabled
 
-  private class Latch16(
-    private val updateFirst: (Data) -> Unit,
-    private val updateSecond: (Data) -> Unit
-  ) {
-    private var state = 0
-
-    fun reset() {
-      state = 0
-    }
-
-    fun write(data: Data) {
-      when (state) {
-        0 -> {
-          updateFirst(data)
-          state = 1
-        }
-        1 -> {
-          updateSecond(data)
-          state = 0
-        }
-      }
-    }
-  }
+  private fun State.withIncrementedOamAddr() = copy(oamAddr = (state.oamAddr + 1).addr8())
 
   private data class State(
     val addrInc: Int = 1,
-    val nametableAddr: Address = 0x2000,
     val sprPatternTable: Int = 0,
     val bgPatternTable: Int = 0,
     val isLargeSprites: Boolean = false,
@@ -187,17 +196,16 @@ class Ppu(
     val isGreyscale: Boolean = false,
     val isLeftmostBackgroundShown: Boolean = false,
     val isLeftmostSpritesShown: Boolean = false,
-    val isBackgroundShown: Boolean = false,
-    val isSpritesShown: Boolean = false,
+    val bgRenderingEnabled: Boolean = false,
+    val sprRenderingEnabled: Boolean = false,
     val isRedEmphasized: Boolean = false,
     val isGreenEmphasized: Boolean = false,
     val isBlueEmphasized: Boolean = false,
 
-    val ppuReadBuffered: Data = 0x00,
-
     val oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
   )
 
+  @Suppress("unused")
   companion object {
     // http://wiki.nesdev.com/w/index.php/PPU_registers
     const val REG_PPUCTRL = 0
@@ -209,8 +217,13 @@ class Ppu(
     const val REG_PPUADDR = 6
     const val REG_PPUDATA = 7
 
+    const val BASE_PATTERN_TABLES: Address = 0x0000
+    const val BASE_NAMETABLES: Address = 0x2000
     const val BASE_PATTERNS: Address = 0x0000
     const val BASE_PALETTE: Address = 0x3F00
+
+    const val NAMETABLE_SIZE_BYTES = 0x0400
+    const val PATTERN_TABLE_SIZE_BYTES = 0x1000
 
     const val NUM_SCANLINES = 262
   }

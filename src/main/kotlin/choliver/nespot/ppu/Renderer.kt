@@ -1,10 +1,11 @@
 package choliver.nespot.ppu
 
-import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
 import choliver.nespot.isBitSet
+import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Ppu.Companion.BASE_PATTERNS
+import choliver.nespot.ppu.Ppu.Companion.NAMETABLE_SIZE_BYTES
 import java.nio.IntBuffer
 import kotlin.math.min
 
@@ -22,13 +23,12 @@ class Renderer(
   private val videoBuffer: IntBuffer,
   private val colors: List<Int> = COLORS
 ) {
+
   data class Context(
     val isLargeSprites: Boolean,
-    val nametableAddr: Address,
     val bgPatternTable: Int,  // 0 or 1
     val sprPatternTable: Int, // 0 or 1
-    val scrollX: Data,
-    val scrollY: Data
+    val coords: Coords
   )
 
   private data class Pixel(
@@ -38,28 +38,37 @@ class Renderer(
 
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0) }
 
-  fun renderScanlineAndDetectHit(y: Int, ctx: Context): Boolean {
-    prepareBackground(y, ctx)
+  fun renderScanlineAndDetectHit(ctx: Context): Boolean {
+    val y = (ctx.coords.yCoarse * TILE_SIZE) + ctx.coords.yFine
+    prepareBackground(ctx.bgPatternTable, ctx.coords)
     val isHit = prepareSpritesAndDetectHit(y, ctx)
     renderToBuffer(y)
     return isHit
   }
 
-  private fun prepareBackground(y: Int, ctx: Context) {
-    val yTile = y / TILE_SIZE
-    val yPixel = y % TILE_SIZE
-    for (xTile in 0 until NUM_TILE_COLUMNS) {
-      val xDash = (xTile + (ctx.scrollX / 8)) % NUM_TILE_COLUMNS
-      val xDashBig = (xTile + (ctx.scrollX / 8)) / NUM_TILE_COLUMNS
+  private fun prepareBackground(bgPatternTable: Int, coords: Coords) {
+    var palette = 0
+    var pattern: Data = 0x00
 
-      val addrNt = ctx.nametableAddr + (xDashBig * 1024) + (yTile * NUM_TILE_COLUMNS + xDash)
-      val addrAttr = ctx.nametableAddr + (xDashBig * 1024)  + 960 + ((yTile / 4) * (NUM_TILE_COLUMNS / 4) + (xDash / 4))
-      val iPalette = (memory.load(addrAttr) shr (((yTile / 2) % 2) * 4 + ((xDash / 2) % 2) * 2)) and 0x03
-      val pattern = getPattern(iTable = ctx.bgPatternTable, iTile = memory.load(addrNt), iRow = yPixel)
+    with (coords) {
+      for (x in 0 until SCREEN_WIDTH) {
+        if ((x == 0) || (xFine == 0)) {
+          val addrNt = BASE_NAMETABLES +
+            ((yNametable * 2 + xNametable) * NAMETABLE_SIZE_BYTES) +
+            (yCoarse * NUM_TILE_COLUMNS) +
+            xCoarse
 
-      for (xPixel in 0 until TILE_SIZE) {
-        val c = patternPixel(pattern, xPixel)
-        pixels[xTile * TILE_SIZE + xPixel] = Pixel(c, iPalette)
+          val addrAttr = BASE_NAMETABLES +
+            ((yNametable * 2 + xNametable) * NAMETABLE_SIZE_BYTES) +
+            960 +
+            (yCoarse / 4) * (NUM_TILE_COLUMNS / 4) +
+            (xCoarse / 4)
+
+          palette = (memory.load(addrAttr) shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
+          pattern = getPattern(iTable = bgPatternTable, iTile = memory.load(addrNt), iRow = yFine)
+        }
+        pixels[x] = Pixel(c = patternPixel(pattern, xFine), p = palette)
+        incrementX()
       }
     }
   }
@@ -96,8 +105,7 @@ class Renderer(
           pixels[x] = if (opaqueSpr && (!isBehind || !opaqueBg)) spr else bg
 
           // Collision detection
-          isHit = isHit || ((iSprite == 0) && opaqueBg && opaqueSpr &&
-            (x < (SCREEN_WIDTH - 1)))   // Weird, but apparently it's a thing (note test-case)
+          isHit = isHit || ((iSprite == 0) && opaqueBg && opaqueSpr && (x < (SCREEN_WIDTH - 1)))
         }
       }
     }
@@ -151,5 +159,4 @@ class Renderer(
     val p1 = memory.load(BASE_PATTERNS + addr + TILE_SIZE)
     return (p1 shl 8) or p0
   }
-
 }

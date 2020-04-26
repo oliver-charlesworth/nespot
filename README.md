@@ -7,8 +7,6 @@
   - SMB - explosions sound wrong
   - Interrupts
 
-- Scrolling
-
 - Rendering
 
   - Enable / disable rendering
@@ -18,6 +16,7 @@
   - Sprite priority (overlap)
   - Greyscale
   - Colour emphasis
+  - Don't display top and bottom tile rows 
 
 - Cartridge
   - CHR-RAM (used by Zelda)
@@ -26,7 +25,6 @@
 - Quirks
 
   - Sprite overflow bug
-  - t/v/x/w timing madness - inc. change of behaviour when rendering disabled
   - OAM address reset during rendering
   - Trigger VBL if isVblEnabled becomes true during VBL period
 
@@ -45,7 +43,9 @@
 
 - Constants strewn everywhere
 
-- Make `Runner` / `Debugger` nicer in terms of running different ROMs.
+- Make `Debugger` nicer in terms of running different ROMs.
+
+- Have `Runner` print out the hash of the ROM.
 
 
 ## References

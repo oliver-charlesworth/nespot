@@ -3,7 +3,9 @@ package choliver.nespot.runner
 import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.ppu.SCREEN_HEIGHT
 import choliver.nespot.ppu.SCREEN_WIDTH
+import choliver.nespot.ppu.TILE_SIZE
 import javafx.application.Platform
+import javafx.geometry.Rectangle2D
 import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.image.ImageView
@@ -71,8 +73,15 @@ class Screen(
       stage.title = title
       stage.scene = Scene(Group().apply {
         children.add(ImageView(WritableImage(pixelBuffer)).apply {
+          // Crop top and bottom tile, per http://wiki.nesdev.com/w/index.php/Overscan
+          viewport = Rectangle2D(
+            0.0,
+            TILE_SIZE.toDouble(),
+            SCREEN_WIDTH.toDouble(),
+            (SCREEN_HEIGHT - 2 * TILE_SIZE).toDouble()
+          )
           fitWidth = SCREEN_WIDTH * SCALE
-          fitHeight = SCREEN_HEIGHT * SCALE
+          fitHeight = (SCREEN_HEIGHT - 2 * TILE_SIZE) * SCALE
         })
       })
       stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) {codeToButton(it)?.let(onButtonDown) }

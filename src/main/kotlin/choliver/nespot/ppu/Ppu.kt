@@ -1,7 +1,7 @@
 package choliver.nespot.ppu
 
 import choliver.nespot.*
-import choliver.nespot.ppu.Renderer.*
+import choliver.nespot.ppu.Renderer.Context
 import java.nio.IntBuffer
 
 class Ppu(
@@ -33,24 +33,19 @@ class Ppu(
   fun executeScanline() {
     when (_scanline) {
       in (0 until SCREEN_HEIGHT) -> {
-        if (renderingEnabled()) {
-          if (scanline > 0) {
-            coordsRendered.fineX = coordsStored.fineX
-            coordsRendered.coarseX = coordsStored.coarseX
-            coordsRendered.nametableX = coordsStored.nametableX
-            coordsRendered.incrementY()
-          }
+        if (renderingEnabled() && (_scanline > 0)) {
+          coordsRendered.fineX = coordsStored.fineX
+          coordsRendered.coarseX = coordsStored.coarseX
+          coordsRendered.nametableX = coordsStored.nametableX
+          coordsRendered.incrementY()
         }
 
-        val isHit = renderer.renderScanlineAndDetectHit(
-          y = _scanline,
-          ctx = Context(
-            isLargeSprites = state.isLargeSprites,
-            bgPatternTable = state.bgPatternTable,
-            sprPatternTable = state.sprPatternTable,
-            coords = coordsRendered
-          )
-        )
+        val isHit = renderer.renderScanlineAndDetectHit(Context(
+          isLargeSprites = state.isLargeSprites,
+          bgPatternTable = state.bgPatternTable,
+          sprPatternTable = state.sprPatternTable,
+          coords = coordsRendered
+        ))
         isSprite0Hit = isSprite0Hit || isHit
       }
 
@@ -82,6 +77,7 @@ class Ppu(
         val ret = 0 +
           (if (inVbl) 0x80 else 0x00) +
           (if (isSprite0Hit) 0x40 else 0x00)
+
         // Reset stuff
         inVbl = false
         w = false
@@ -155,7 +151,7 @@ class Ppu(
       }
 
       REG_PPUADDR -> {
-        // addr and scroll share registers, so also update coords accordingly.
+        // Address and scroll settings share registers, so also update coords accordingly.
         // Super Mario Bros split scroll breaks if we don't do this.
         // See http://wiki.nesdev.com/w/index.php/PPU_scrolling#Summary
         if (!w) {

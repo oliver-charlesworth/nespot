@@ -238,7 +238,7 @@ class PpuTest {
 
     @Test
     fun `status flag set if hit`() {
-      whenever(renderer.renderScanlineAndDetectHit(any(), any())) doReturn true
+      whenever(renderer.renderScanlineAndDetectHit(any())) doReturn true
 
       ppu.executeScanline()
 
@@ -247,7 +247,7 @@ class PpuTest {
 
     @Test
     fun `status flag not cleared by reading it`() {
-      whenever(renderer.renderScanlineAndDetectHit(any(), any())) doReturn true
+      whenever(renderer.renderScanlineAndDetectHit(any())) doReturn true
 
       ppu.executeScanline()
 
@@ -257,7 +257,7 @@ class PpuTest {
 
     @Test
     fun `status flag cleared on final scanline`() {
-      whenever(renderer.renderScanlineAndDetectHit(any(), any())) doReturn true
+      whenever(renderer.renderScanlineAndDetectHit(any())) doReturn true
 
       for (i in 0..(NUM_SCANLINES - 1)) { ppu.executeScanline() }
 

@@ -38,7 +38,8 @@ class Renderer(
 
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0) }
 
-  fun renderScanlineAndDetectHit(y: Int, ctx: Context): Boolean {
+  fun renderScanlineAndDetectHit(ctx: Context): Boolean {
+    val y = (ctx.coords.coarseY * TILE_SIZE) + ctx.coords.fineY
     prepareBackground(ctx.bgPatternTable, ctx.coords)
     val isHit = prepareSpritesAndDetectHit(y, ctx)
     renderToBuffer(y)

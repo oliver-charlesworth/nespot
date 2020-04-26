@@ -387,15 +387,14 @@ class RendererTest {
     yPixel: Int = this.yPixel,
     isLargeSprites: Boolean = false
   ) = renderer.renderScanlineAndDetectHit(
-    y = (yTile * TILE_SIZE) + yPixel,
-    ctx = Renderer.Context(
-      isLargeSprites = isLargeSprites,
-      bgPatternTable = bgPatternTable,
-      sprPatternTable = sprPatternTable,
-      addrStart = 0,    // TODO
-      fineX = 0,        // TODO
-      fineY = 0         // TODO
-    )
+          ctx = Renderer.Context(
+            isLargeSprites = isLargeSprites,
+            bgPatternTable = bgPatternTable,
+            sprPatternTable = sprPatternTable,
+            addrStart = 0,    // TODO
+            fineX = 0,        // TODO
+            fineY = 0         // TODO
+          )
   )
 
   private fun initNametableMemory(nametableEntries: List<Int>, yTile: Int = this.yTile) {

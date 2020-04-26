@@ -290,6 +290,8 @@ class PpuTest {
       ppu.executeScanline()
 
       val ctx = captureContext(2)
+      assertEquals(0, ctx[0].yScanline)
+      assertEquals(1, ctx[1].yScanline)
       assertEquals(0b00001, ctx[1].coords.yCoarse)
       assertEquals(0b000, ctx[1].coords.yFine)
     }

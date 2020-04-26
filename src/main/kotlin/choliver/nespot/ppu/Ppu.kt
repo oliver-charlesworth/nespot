@@ -49,7 +49,8 @@ class Ppu(
           isLargeSprites = state.isLargeSprites,
           bgPatternTable = state.bgPatternTable,
           sprPatternTable = state.sprPatternTable,
-          coords = coordsWorking
+          coords = coordsWorking,
+          yScanline = scanline
         ))
         isSprite0Hit = isSprite0Hit || isHit
       }

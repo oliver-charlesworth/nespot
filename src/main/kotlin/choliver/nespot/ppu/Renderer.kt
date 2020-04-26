@@ -28,7 +28,8 @@ class Renderer(
     val isLargeSprites: Boolean,
     val bgPatternTable: Int,  // 0 or 1
     val sprPatternTable: Int, // 0 or 1
-    val coords: Coords
+    val coords: Coords,
+    val yScanline: Int
   )
 
   private data class Pixel(
@@ -39,10 +40,9 @@ class Renderer(
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0) }
 
   fun renderScanlineAndDetectHit(ctx: Context): Boolean {
-    val y = (ctx.coords.yCoarse * TILE_SIZE) + ctx.coords.yFine
     prepareBackground(ctx.bgPatternTable, ctx.coords)
-    val isHit = prepareSpritesAndDetectHit(y, ctx)
-    renderToBuffer(y)
+    val isHit = prepareSpritesAndDetectHit(ctx)
+    renderToBuffer(ctx.yScanline)
     return isHit
   }
 
@@ -73,7 +73,7 @@ class Renderer(
     }
   }
 
-  private fun prepareSpritesAndDetectHit(y: Int, ctx: Context): Boolean {
+  private fun prepareSpritesAndDetectHit(ctx: Context): Boolean {
     var isHit = false
 
     for (iSprite in 0 until NUM_SPRITES) {
@@ -85,7 +85,7 @@ class Renderer(
       val isBehind = attrs.isBitSet(5)
       val flipX = attrs.isBitSet(6)
       val flipY = attrs.isBitSet(7)
-      val yPixel = y - ySprite
+      val yPixel = ctx.yScanline - ySprite
 
       val pattern  = getSpritePattern(ctx, iPattern, yPixel, flipY)
 
@@ -142,8 +142,8 @@ class Renderer(
     } else null
   }
 
-  private fun renderToBuffer(y: Int) {
-    videoBuffer.position(y * SCREEN_WIDTH)
+  private fun renderToBuffer(yScanline: Int) {
+    videoBuffer.position(yScanline * SCREEN_WIDTH)
     pixels.forEach {
       val paletteAddr = if (it.c == 0) 0 else (it.p * 4 + it.c) // Background colour is universal
       videoBuffer.put(colors[palette.load(paletteAddr)])

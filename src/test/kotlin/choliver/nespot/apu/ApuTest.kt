@@ -1,8 +1,12 @@
 package choliver.nespot.apu
 
+import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyZeroInteractions
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -12,9 +16,11 @@ class ApuTest {
   private val tri = SynthContext(synth = mock<TriangleSynth>(), timer = mock())
   private val noi = SynthContext(synth = mock<NoiseSynth>(), envelope = mock(), timer = mock())
   private val dmc = SynthContext(synth = mock<DmcSynth>(), timer = mock())
+  private val sequencer = mock<Sequencer>()
   private val apu = Apu(
     buffer = ByteArray(0),
     memory = mock(),
+    sequencer = sequencer,
     channels = Channels(
       sq1 = sq1,
       sq2 = sq2,
@@ -186,4 +192,35 @@ class ApuTest {
       verify(dmc.synth).length = 0xCA1
     }
   }
+
+  @Nested
+  inner class Status {
+    @Test
+    fun enable() {
+      apu.writeReg(21, 0x1F)
+      listOf(sq1, sq2, tri, noi, dmc).forEach {
+        assertTrue(it.enabled)
+        verifyZeroInteractions(it.synth)
+      }
+    }
+
+    @Test
+    fun disable() {
+      apu.writeReg(21, 0x00)
+      listOf(sq1, sq2, tri, noi, dmc).forEach {
+        assertFalse(it.enabled)
+        verify(it.synth).length = 0
+      }
+    }
+
+    // TODO - read status
+  }
+
+  @Test
+  fun setSequencerMode() {
+    apu.writeReg(23, 0b1_0000000)
+    verify(sequencer).mode = FIVE_STEP
+  }
+
+  // TODO - generate samples
 }

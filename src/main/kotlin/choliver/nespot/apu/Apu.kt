@@ -11,6 +11,7 @@ import choliver.nespot.isBitSet
 class Apu(
   private val buffer: ByteArray,
   memory: Memory,
+  private val sequencer: Sequencer = Sequencer(),
   private val channels: Channels = Channels(
     sq1 = SynthContext(SquareSynth()),
     sq2 = SynthContext(SquareSynth()),
@@ -19,7 +20,6 @@ class Apu(
     dmc = SynthContext(DmcSynth(memory = memory)).apply { fixEnvelope(1) }
   )
 ) {
-  private val sequencer = Sequencer()
   private val mixer = Mixer(sequencer, channels)
 
   // TODO - DMC interrupt

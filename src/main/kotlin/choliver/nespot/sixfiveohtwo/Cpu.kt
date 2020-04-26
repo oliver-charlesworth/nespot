@@ -118,7 +118,7 @@ class Cpu(
           val data = resolve()
           val tmp = A and data
           P.Z = tmp.isZero()
-          P.N = tmp.isNeg()
+          P.N = data.isNeg()
           P.V = data.isBitSet(6)
         }
 

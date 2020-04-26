@@ -43,9 +43,10 @@
 
 - Constants strewn everywhere
 
-- Make `Debugger` nicer in terms of running different ROMs.
-
 - Have `Runner` print out the hash of the ROM.
+
+- Debugger
+  - Needs to do screen redraws without hooking onto NMI (these may be disabled - e.g. Micro Machines).
 
 
 ## References

@@ -2,7 +2,8 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  id("nebula.kotlin") version "1.3.61"
+  application
+  id("nebula.kotlin") version "1.3.72"
   id("org.openjfx.javafxplugin") version "0.0.8"
 }
 
@@ -11,13 +12,11 @@ repositories {
 }
 
 dependencies {
-  implementation("io.github.microutils:kotlin-logging:1.7.7")
+  implementation("com.github.ajalt:clikt:2.6.0")
 
   testImplementation("org.junit.jupiter:junit-jupiter:5.5.2")
   testImplementation("org.hamcrest:hamcrest-library:2.2")
   testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
-
-  testRuntimeOnly("ch.qos.logback:logback-classic:1.2.3")
 }
 
 javafx {
@@ -34,4 +33,8 @@ tasks.test {
   testLogging {
     events(PASSED, SKIPPED, FAILED)
   }
+}
+
+application {
+  mainClassName = "choliver.nespot.runner.RunnerKt"
 }

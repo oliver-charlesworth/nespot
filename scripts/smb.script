@@ -1,0 +1,53 @@
+m u nmi
+v
+screen
+
+q
+
+# Get to complete title screen
+rep 30 m
+
+q
+
+# Start !
+down 1 start
+rep 20 m
+up 1 start
+
+# Wait until we get to regular gamefield
+rep 150 m
+
+# Do a little dance
+down 1 right
+rep 25 m
+down 1 a
+rep 25 m
+up 1 a
+up 1 right
+down 1 left
+rep 50 m
+up 1 left
+
+# Run
+down 1 right
+rep 100 m
+
+# Jump on the naughty
+down 1 a
+rep 100 m
+up 1 a
+
+# TODO - determine the badness
+rep 12 m
+#v
+#s 1500
+q
+s
+# Run some more
+rep 100 m
+
+# Jump over the pipe
+down 1 a
+rep 100 m
+up 1 a
+

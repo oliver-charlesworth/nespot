@@ -54,7 +54,7 @@ class Debugger(
     audioBuffer = ByteArray(0),
     joypads = joypads,
     onReset = { nextStep = NextStep.RESET },
-    onNmi = { nextStep = NextStep.NMI; screen.redraw(); stdout.println("Frame #${numFrames++}") },
+    onNmi = { nextStep = NextStep.NMI; screen.redraw() },
     onIrq = { nextStep = NextStep.IRQ },
     onStore = { addr, data -> stores += (addr to data) }
   ).inspection

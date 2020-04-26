@@ -68,4 +68,12 @@ class SquareSynthTest {
       synth.take(8)
     )
   }
+
+  @Test
+  fun `length counter decrements are visible`() {
+    synth.length = 5
+    repeat(2) { synth.onHalfFrame() }
+
+    assertEquals(3, synth.length)
+  }
 }

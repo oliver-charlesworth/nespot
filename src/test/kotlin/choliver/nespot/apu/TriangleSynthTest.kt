@@ -52,6 +52,14 @@ class TriangleSynthTest {
   }
 
   @Test
+  fun `length counter decrements are visible`() {
+    synth.length = 5
+    repeat(2) { synth.onHalfFrame() }
+
+    assertEquals(3, synth.length)
+  }
+
+  @Test
   fun `setting length counter reloads linear counter`() {
     repeat(2) { synth.onQuarterFrame() }   // Not all the way
     synth.length = 5                             // Arbitrary value, but will trigger a reload

@@ -19,6 +19,7 @@ class Cpu(
   initialState: State = State()
 ) {
   // This flattened mutable operating state means this is strictly non-reentrant
+  private var extraCycles: Int = 0
   private var operand: Operand = Implied
   private var addr: Address = 0x0000
   private var _state = initialState
@@ -44,8 +45,9 @@ class Cpu(
     _state.PC = decoded.nextPc
     operand = decoded.instruction.operand
     addr = decoded.addr
+    extraCycles = 0
     execute(decoded.instruction.opcode)
-    return decoded.numCycles
+    return decoded.numCycles + extraCycles
   }
 
   fun decodeAt(pc: Address) = decoder.decode(pc = pc, x = _state.X, y = _state.Y)
@@ -210,7 +212,13 @@ class Cpu(
   }
 
   private fun branch(cond: Boolean) {
-    state.PC = if (cond) addr else state.PC
+    if (cond) {
+      extraCycles++
+      if (((state.PC xor addr) and 0xFF00) != 0) {
+        extraCycles++   // Page change
+      }
+      state.PC = addr
+    }
   }
 
   private fun push(data: Data) {

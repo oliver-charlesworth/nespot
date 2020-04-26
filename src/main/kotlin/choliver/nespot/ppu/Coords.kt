@@ -4,17 +4,16 @@ import choliver.nespot.MutableForPerfReasons
 
 @MutableForPerfReasons
 data class Coords(
-  var nametableX: Int = 0,    // 0 or 1 in practice
-  var coarseX: Int = 0,
-  var fineX: Int = 0,
-  var nametableY: Int = 0,    // 0 or 1 in practice
-  var coarseY: Int = 0,
-  var fineY: Int = 0
+  var nametableX: Int = 0,    // 0 or 1
+  var coarseX: Int = 0,       // 0 to 31 inc.
+  var fineX: Int = 0,         // 0 to 7 inc.
+  var nametableY: Int = 0,    // 0 or 1
+  var coarseY: Int = 0,       // 0 to 31 inc.
+  var fineY: Int = 0          // 0 to 7 inc.
 ) {
-  fun incrementX() {
-    when {
-      (fineX < (TILE_SIZE - 1)) -> fineX++
-      else -> {
+  fun incrementX(): Coords {
+    when (fineX) {
+      (TILE_SIZE - 1) -> {
         fineX = 0
         when (coarseX) {
           (NUM_TILE_COLUMNS - 1) -> {
@@ -24,24 +23,26 @@ data class Coords(
           else -> coarseX++
         }
       }
+      else -> fineX++
     }
+    return this
   }
 
-  // Takes account of reduced nametable height
-  fun incrementY() {
-    when {
-      (fineY < (TILE_SIZE - 1)) -> fineY++
-      else -> {
+  fun incrementY(): Coords {
+    when (fineY) {
+      (TILE_SIZE - 1) -> {
         fineY = 0
         when (coarseY) {
           (NUM_TILE_ROWS - 1) -> {
             coarseY = 0
             nametableY = 1 - nametableY   // Wraparound
           }
-          (NUM_TILE_COLUMNS - 1) -> coarseY = 0   // TODO - need test-case for this weirdness
+          (NUM_TILE_COLUMNS - 1) -> coarseY = 0   // Weird special case
           else -> coarseY++
         }
       }
+      else -> fineY++
     }
+    return this
   }
 }

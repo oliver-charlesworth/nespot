@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-internal class Channels(
+class Channels(
   val sq1: SynthContext<SquareSynth>,
   val sq2: SynthContext<SquareSynth>,
   val tri: SynthContext<TriangleSynth>,

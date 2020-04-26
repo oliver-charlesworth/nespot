@@ -6,7 +6,7 @@ import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 
 // TODO - interrupts
-internal class Sequencer(
+class Sequencer(
   cyclesPerSample: Rational = CYCLES_PER_SAMPLE,
   frameSequencerFourStepPeriodCycles: Int = FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES,
   frameSequencerFiveStepPeriodCycles: Int = FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES

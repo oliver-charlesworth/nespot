@@ -3,7 +3,7 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Triangle
-internal class TriangleSynth : Synth {
+class TriangleSynth : Synth {
   private var reload = false  // i.e. reload the linear counter
   private var iSeq = 0
   private var iLinear = 0

@@ -3,7 +3,7 @@ package choliver.nespot.apu
 import kotlin.math.max
 
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
-internal class SquareSynth : Synth {
+class SquareSynth : Synth {
   private var iSeq = 0
   var haltLength = false
   var dutyCycle = 0

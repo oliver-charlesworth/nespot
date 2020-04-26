@@ -10,28 +10,26 @@ import choliver.nespot.isBitSet
 // TODO - read status register
 class Apu(
   private val buffer: ByteArray,
-  memory: Memory
-) {
-  private val sequencer = Sequencer()
-  private val channels = Channels(
+  memory: Memory,
+  private val channels: Channels = Channels(
     sq1 = SynthContext(SquareSynth()),
     sq2 = SynthContext(SquareSynth()),
     tri = SynthContext(TriangleSynth()).apply { fixEnvelope(1) },
     noi = SynthContext(NoiseSynth()),
     dmc = SynthContext(DmcSynth(memory = memory)).apply { fixEnvelope(1) }
   )
+) {
+  private val sequencer = Sequencer()
   private val mixer = Mixer(sequencer, channels)
 
-  fun readStatus(): Data {
-    // TODO - DMC interrupt
-    // TODO - frame interrupt
-    return 0 +
-      (if (channels.dmc.synth.length != 0) 0x10 else 0x00) +
-      (if (channels.noi.synth.length != 0) 0x08 else 0x00) +
-      (if (channels.tri.synth.length != 0) 0x04 else 0x00) +
-      (if (channels.sq2.synth.length != 0) 0x02 else 0x00) +
-      (if (channels.sq1.synth.length != 0) 0x01 else 0x00)
-  }
+  // TODO - DMC interrupt
+  // TODO - frame interrupt
+  fun readStatus() = 0 +
+    (if (channels.dmc.synth.length != 0) 0x10 else 0x00) +
+    (if (channels.noi.synth.length != 0) 0x08 else 0x00) +
+    (if (channels.tri.synth.length != 0) 0x04 else 0x00) +
+    (if (channels.sq2.synth.length != 0) 0x02 else 0x00) +
+    (if (channels.sq1.synth.length != 0) 0x01 else 0x00)
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
@@ -149,9 +147,6 @@ class Apu(
     envelope.param = regs[0] and 0x0F
   }
 
-  private fun SynthContext<*>.extractTimer() = ((regs[3] and 0x07) shl 8) or regs[2]
-  private fun SynthContext<*>.extractLength() = LENGTH_TABLE[(regs[3] and 0xF8) shr 3]
-
   fun generate() {
     for (i in buffer.indices step 2) {
       val rounded = mixer.take()
@@ -160,16 +155,6 @@ class Apu(
       buffer[i] = (rounded shr 8).toByte()
       buffer[i + 1] = rounded.toByte()
     }
-  }
-
-  private fun SynthContext<*>.setStatus(enabled: Boolean) {
-    if (!enabled) { synth.length = 0 }
-    this.enabled = enabled
-  }
-
-  private fun SynthContext<*>.fixEnvelope(level: Int) {
-    envelope.directMode = true
-    envelope.param = level
   }
 
   companion object {
@@ -188,5 +173,19 @@ class Apu(
     private val DMC_RATE_TABLE = listOf(
       428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106,  84,  72,  54
     )
+
+    private fun SynthContext<*>.extractTimer() = ((regs[3] and 0x07) shl 8) or regs[2]
+
+    private fun SynthContext<*>.extractLength() = LENGTH_TABLE[(regs[3] and 0xF8) shr 3]
+
+    private fun SynthContext<*>.setStatus(enabled: Boolean) {
+      if (!enabled) { synth.length = 0 }
+      this.enabled = enabled
+    }
+
+    private fun SynthContext<*>.fixEnvelope(level: Int) {
+      envelope.directMode = true
+      envelope.param = level
+    }
   }
 }

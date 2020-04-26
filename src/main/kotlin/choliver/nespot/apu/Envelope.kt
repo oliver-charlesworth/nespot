@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-internal class Envelope {
+class Envelope {
   private var iDivider = 0
   private var iDecay = 0
   private var start = true

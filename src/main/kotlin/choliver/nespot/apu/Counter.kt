@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-internal class Counter(private val cyclesPerSample: Rational = CYCLES_PER_SAMPLE) {
+class Counter(private val cyclesPerSample: Rational = CYCLES_PER_SAMPLE) {
   private var pos = 0.toRational()
   var periodCycles by observable(1.toRational()) { pos = it } // TODO - can this be Int ?
 

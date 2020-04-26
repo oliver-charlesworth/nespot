@@ -17,12 +17,10 @@ class Ppu(
   private var inVbl = false
   private var isSprite0Hit = false
 
-  private var t: Int = 0
-  private var v: Int = 0
-
+  private var addr: Address = 0x0000
   private val coordsStored = Coords()
   private var coordsRendered = Coords()
-  private var w: Boolean = false
+  private var w = false
 
   private var readBuffer: Data = 0
 
@@ -68,7 +66,6 @@ class Ppu(
         isSprite0Hit = false
         if (renderingEnabled()) {
           coordsRendered = coordsStored.copy()
-          v = t // TODO - may have to move this to beginning of next scanline
         }
       }
     }
@@ -78,14 +75,9 @@ class Ppu(
 
   private fun updateV() {
     // Copy horizontal bits from t
-    v = (v and 0x7BE0) or (t and 0x041F)
-
     coordsRendered.fineX = coordsStored.fineX
-    coordsRendered.fineY = (v and 0x7000) shr 12
     coordsRendered.coarseX = coordsStored.coarseX
-    coordsRendered.coarseY = (v and 0x03E0) shr 5
     coordsRendered.nametableX = coordsStored.nametableX
-    coordsRendered.nametableY = (v and 0x0800) shr 11
 
     when {
       (coordsRendered.fineY < 7) -> coordsRendered.fineY++
@@ -102,13 +94,6 @@ class Ppu(
         }
       }
     }
-
-    v = 0 +
-      (coordsRendered.fineY shl 12) +
-      (coordsRendered.nametableY shl 11) +
-      (coordsRendered.nametableX shl 10) +
-      (coordsRendered.coarseY shl 5) +
-      coordsRendered.coarseX
   }
 
   fun readReg(reg: Int): Int {
@@ -132,10 +117,10 @@ class Ppu(
 
       REG_PPUDATA -> {
         val ret = when {
-          (v < BASE_PALETTE) -> readBuffer.also { readBuffer = memory.load(v) }
-          else -> palette.load(v and 0x001F)
+          (addr < BASE_PALETTE) -> readBuffer.also { readBuffer = memory.load(addr) }
+          else -> palette.load(addr and 0x001F)
         }
-        v = (v + state.addrInc) and 0x7FFF
+        addr = (addr + state.addrInc) and 0x7FFF
         ret
       }
       else -> 0x00
@@ -147,7 +132,6 @@ class Ppu(
       REG_PPUCTRL -> {
         coordsStored.nametableX = data and 0x01
         coordsStored.nametableY = (data and 0x02) shr 1
-        t = (data and 0x03) or (t and 0x73FF)
 
         state = state.copy(
           addrInc = if (data.isBitSet(2)) 32 else 1,
@@ -179,37 +163,42 @@ class Ppu(
       }
 
       REG_PPUSCROLL -> {
-        val fine = data and 0x07
-        val coarse = (data and 0xF8) shr 3
+        val fine   = (data and 0b00000111)
+        val coarse = (data and 0b11111000) shr 3
 
         if (!w) {
           coordsStored.coarseX = coarse
           coordsStored.fineX = fine
-          t = coarse or (t and 0x7FE0)
         } else {
           coordsStored.coarseY = coarse
           coordsStored.fineY = fine
-          t = (fine shl 12) or (coarse shl 5) or (t and 0x0C1F)
         }
         w = !w
       }
 
       REG_PPUADDR -> {
         if (!w) {
-          t = ((data and 0x3F) shl 8) or (t and 0x00FF)
+          coordsStored.coarseY    = ((data and 0b00000011) shl 3) or (coordsStored.coarseY and 0b00111)
+          coordsStored.nametableX =  (data and 0b00000100) shr 3
+          coordsStored.nametableY =  (data and 0b00001000) shr 4
+          coordsStored.fineY      =  (data and 0b00110000) shr 4  // Lose the top bit
+
+          addr = addr(lo = addr.lo(), hi = data and 0b00111111)
         } else {
-          t = (data and 0xFF) or (t and 0x7F00)
-          v = t
+          coordsStored.coarseX =  (data and 0b00011111)
+          coordsStored.coarseY = ((data and 0b11100000) shr 5) or (coordsStored.coarseY and 0b11000)
+
+          addr = addr(lo = data, hi = addr.hi())
         }
         w = !w
       }
 
       REG_PPUDATA -> {
         when {
-          v < BASE_PALETTE -> memory.store(v, data)
-          else -> palette.store(v and 0x1F, data)
+          addr < BASE_PALETTE -> memory.store(addr, data)
+          else -> palette.store(addr and 0x1F, data)
         }
-        v = (v + state.addrInc) and 0x7FFF
+        addr = (addr + state.addrInc) and 0x7FFF
       }
 
       else -> throw IllegalArgumentException("Attempt to write to reg #${reg}")   // Should never happen

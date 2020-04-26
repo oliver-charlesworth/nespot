@@ -90,14 +90,14 @@ class BitwiseTest {
     assertForAddressModes(
       BIT,
       target = 0x83,
-      initState = { with(A = 0x81) },
-      expectedState = { with(A = 0x81, Z = _0, N = _1, V = _0) }
+      initState = { with(A = 0x01) },
+      expectedState = { with(A = 0x01, Z = _0, N = _1, V = _0) }
     )
     assertForAddressModes(
       BIT,
       target = 0x43,
-      initState = { with(A = 0x41) },
-      expectedState = { with(A = 0x41, Z = _0, N = _0, V = _1) }
+      initState = { with(A = 0x01) },
+      expectedState = { with(A = 0x01, Z = _0, N = _0, V = _1) }
     )
   }
 }

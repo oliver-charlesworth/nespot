@@ -37,7 +37,7 @@ class Renderer(
     val p: Int
   )
 
-  private data class SprContext(
+  private data class SpriteToRender(
     val x: Int,
     val iSprite: Int,
     val pattern: Int,
@@ -84,8 +84,8 @@ class Renderer(
   }
 
   // TODO - limit to four
-  private fun getSpritesForScanline(ctx: Context): List<SprContext> {
-    val sprites = mutableListOf<SprContext>()
+  private fun getSpritesForScanline(ctx: Context): List<SpriteToRender> {
+    val sprites = mutableListOf<SpriteToRender>()
 
     for (iSprite in 0 until NUM_SPRITES) {
       val ySprite = oam.load(iSprite * 4 + 0) + 1   // Offset of one scanline
@@ -99,7 +99,7 @@ class Renderer(
       val inRange = iRow in 0 until if (ctx.isLargeSprites) (TILE_SIZE * 2) else TILE_SIZE
 
       if (inRange) {
-        sprites += SprContext(
+        sprites += SpriteToRender(
           x = xSprite,
           iSprite = iSprite,
           pattern = getPattern(
@@ -111,7 +111,7 @@ class Renderer(
               true -> (iPattern and 0xFE) + (if (flipY xor (iRow < TILE_SIZE)) 0 else 1)
               false -> iPattern
             },
-            iRow = if (flipY) (7 - (iRow % TILE_SIZE)) else (iRow % TILE_SIZE)
+            iRow = maybeFlip(iRow % TILE_SIZE, flipY)
           ),
           palette = (attrs and 0x03) + 4,
           flipX = attrs.isBitSet(6),
@@ -123,26 +123,23 @@ class Renderer(
     return sprites
   }
 
-  private fun prepareSpritesAndDetectHit(sprites: List<SprContext>): Boolean {
+  private fun prepareSpritesAndDetectHit(sprites: List<SpriteToRender>): Boolean {
     var isHit = false
 
-    sprites.forEach { sprCtx ->
-      for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - sprCtx.x)) {
-        val c = patternPixel(
-          sprCtx.pattern,
-          if (sprCtx.flipX) (7 - xPixel) else xPixel
+    sprites.forEach { spr ->
+      for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - spr.x)) {
+        val x = spr.x + xPixel
+        val pxSpr = Pixel(
+          c = patternPixel(spr.pattern, maybeFlip(xPixel, spr.flipX)),
+          p = spr.palette
         )
-
-        val x = sprCtx.x + xPixel
-        val spr = Pixel(c, sprCtx.palette)
-        val bg = pixels[x]
-        val opaqueSpr = (c != 0)
-        val opaqueBg = (bg.c != 0)
-
-        pixels[x] = if (opaqueSpr && (!sprCtx.behind || !opaqueBg)) spr else bg
+        val pxBg = pixels[x]
+        val opaqueSpr = (pxSpr.c != 0)
+        val opaqueBg = (pxBg.c != 0)
+        pixels[x] = if (opaqueSpr && (!spr.behind || !opaqueBg)) pxSpr else pxBg
 
         // Collision detection
-        isHit = isHit || ((sprCtx.iSprite == 0) && opaqueBg && opaqueSpr && (x < (SCREEN_WIDTH - 1)))
+        isHit = isHit || ((spr.iSprite == 0) && opaqueBg && opaqueSpr && (x < (SCREEN_WIDTH - 1)))
       }
     }
 
@@ -156,6 +153,8 @@ class Renderer(
       videoBuffer.put(colors[palette.load(paletteAddr)])
     }
   }
+
+  private fun maybeFlip(v: Int, flip: Boolean) = if (flip) (7 - v) else v
 
   private fun patternPixel(pattern: Int, xPixel: Int) =
     ((pattern shr (7 - xPixel)) and 1) or (((pattern shr (14 - xPixel)) and 2))

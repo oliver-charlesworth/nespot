@@ -37,6 +37,14 @@ class Renderer(
     val p: Int
   )
 
+  private data class SprContext(
+    val x: Int,
+    val pattern: Int,
+    val palette: Int,
+    val flipX: Boolean,
+    val behind: Boolean
+  )
+
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0) }
 
   fun renderScanlineAndDetectHit(ctx: Context): Boolean {
@@ -78,31 +86,37 @@ class Renderer(
 
     for (iSprite in 0 until NUM_SPRITES) {
       val ySprite = oam.load(iSprite * 4 + 0) + 1   // Offset of one scanline
-      val xSprite = oam.load(iSprite * 4 + 3)
-      val iPattern = oam.load(iSprite * 4 + 1)
       val attrs = oam.load(iSprite * 4 + 2)
-      val iPalette = (attrs and 0x03) + 4
-      val isBehind = attrs.isBitSet(5)
-      val flipX = attrs.isBitSet(6)
-      val flipY = attrs.isBitSet(7)
-      val yPixel = ctx.yScanline - ySprite
 
-      val pattern  = getSpritePattern(ctx, iPattern, yPixel, flipY)
+      val pattern  = getSpritePattern(
+        ctx,
+        iPattern = oam.load(iSprite * 4 + 1),
+        iRow = ctx.yScanline - ySprite,
+        flipY = attrs.isBitSet(7)
+      )
 
       if (pattern != null) {
-        for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - xSprite)) {
+        val sprCtx = SprContext(
+          x = oam.load(iSprite * 4 + 3),
+          pattern = pattern,
+          palette = (attrs and 0x03) + 4,
+          flipX = attrs.isBitSet(6),
+          behind = attrs.isBitSet(5)
+        )
+
+        for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - sprCtx.x)) {
           val c = patternPixel(
-            pattern,
-            if (flipX) (7 - xPixel) else xPixel
+            sprCtx.pattern,
+            if (sprCtx.flipX) (7 - xPixel) else xPixel
           )
 
-          val x = xSprite + xPixel
-          val spr = Pixel(c, iPalette)
+          val x = sprCtx.x + xPixel
+          val spr = Pixel(c, sprCtx.palette)
           val bg = pixels[x]
           val opaqueSpr = (c != 0)
           val opaqueBg = (bg.c != 0)
 
-          pixels[x] = if (opaqueSpr && (!isBehind || !opaqueBg)) spr else bg
+          pixels[x] = if (opaqueSpr && (!sprCtx.behind || !opaqueBg)) spr else bg
 
           // Collision detection
           isHit = isHit || ((iSprite == 0) && opaqueBg && opaqueSpr && (x < (SCREEN_WIDTH - 1)))

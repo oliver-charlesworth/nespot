@@ -1,5 +1,4 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   application
@@ -17,6 +16,8 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter:5.5.2")
   testImplementation("org.hamcrest:hamcrest-library:2.2")
   testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
+  // byte-buddy 1.9.10 (pulled in by Mockito) behaves badly with Java 13 - see https://github.com/mockk/mockk/issues/397
+  testImplementation("net.bytebuddy:byte-buddy:1.10.6")
 }
 
 javafx {
@@ -24,14 +25,10 @@ javafx {
   modules = listOf("javafx.graphics")
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.freeCompilerArgs += listOf("-Xuse-experimental=kotlin.ExperimentalUnsignedTypes")
-}
-
 tasks.test {
   useJUnitPlatform()
   testLogging {
-    events(PASSED, SKIPPED, FAILED)
+    events(FAILED)
   }
 }
 

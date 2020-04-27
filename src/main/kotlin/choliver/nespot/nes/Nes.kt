@@ -24,6 +24,7 @@ class Nes(
 ) {
   interface Inspection {
     val state: State
+    val endOfFrame: Boolean
     fun peek(addr: Address): Data
     fun peekV(addr: Address): Data
     fun fireReset()
@@ -74,28 +75,30 @@ class Nes(
   )
 
   private var numCycles = 0
+  private var endOfFrame = false
 
-  fun runFrame() {
-    while (ppu.scanline == 0) {
-      step()
-    }
-    while (ppu.scanline != 0) {
-      step()
-    }
-    apu.generate()
+  fun runToEndOfFrame() {
+    do step() while (!endOfFrame)
   }
 
   private fun step() {
+    endOfFrame = false
     numCycles += cpu.executeStep()
-
     if (numCycles >= NUM_CYCLES_PER_SCANLINE) {
       numCycles -= NUM_CYCLES_PER_SCANLINE
+
       ppu.executeScanline()
+
+      if (0 == ppu.scanline) {
+        apu.generate()
+        endOfFrame = true
+      }
     }
   }
 
   val inspection = object : Inspection {
     override val state get() = cpu.state
+    override val endOfFrame get() = this@Nes.endOfFrame
     override fun peek(addr: Address) = cpuMapper.load(addr)
     override fun peekV(addr: Address) = ppuMapper.load(addr)
     override fun fireReset() = reset.set()

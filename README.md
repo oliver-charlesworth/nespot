@@ -37,14 +37,15 @@
   
 - Unify where we do address clipping (e.g. inside or outside `Memory` implementations)
   
-- Decimal mode (not really required for NES)
+- Decimal mode (not required for NES)
 
 - Constants strewn everywhere
 
-- Have `Runner` print out the hash of the ROM.
+- `Runner`
 
-- Debugger
-  - Needs to do screen redraws without hooking onto NMI (these may be disabled - e.g. Micro Machines).
+  - `--info` mode to print out the hash / headers of the ROM.
+  - Full-screen mode.
+  - Ability to serialise state (i.e. save game).
 
 
 ## References

@@ -46,7 +46,7 @@ class Runner : CliktCommand() {
 
     while (!isClosed.get()) {
       measureNanoTime {
-        nes.runFrame()
+        nes.runToEndOfFrame()
         screen.redraw()
         audio.play()
       }
@@ -57,7 +57,7 @@ class Runner : CliktCommand() {
 
   private fun runPerfTest(nes: Nes) {
     val runtimeMs = measureTimeMillis {
-      repeat(numPerfFrames!!) { nes.runFrame() }
+      repeat(numPerfFrames!!) { nes.runToEndOfFrame() }
     }
 
     println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")

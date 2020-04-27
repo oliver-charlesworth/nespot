@@ -54,7 +54,7 @@ class Debugger(
     audioBuffer = ByteArray(0),
     joypads = joypads,
     onReset = { nextStep = NextStep.RESET },
-    onNmi = { nextStep = NextStep.NMI; screen.redraw() },
+    onNmi = { nextStep = NextStep.NMI },
     onIrq = { nextStep = NextStep.IRQ },
     onStore = { addr, data -> stores += (addr to data) }
   ).inspection
@@ -67,8 +67,6 @@ class Debugger(
   // Displays
   private var nextDisplayNum = 1
   private val displays = mutableMapOf<Int, Address>()
-
-  private var numFrames = 0
 
   fun start() {
     event(Reset)
@@ -309,6 +307,9 @@ class Debugger(
 
     stores.clear()
     nes.step()
+    if (nes.endOfFrame) {
+      screen.redraw()
+    }
 
     maybeTraceStores()
 

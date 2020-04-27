@@ -39,6 +39,7 @@ class Renderer(
 
   private data class SprContext(
     val x: Int,
+    val iSprite: Int,
     val pattern: Int,
     val palette: Int,
     val flipX: Boolean,
@@ -49,7 +50,8 @@ class Renderer(
 
   fun renderScanlineAndDetectHit(ctx: Context): Boolean {
     prepareBackground(ctx.bgPatternTable, ctx.coords)
-    val isHit = prepareSpritesAndDetectHit(ctx)
+    val sprites = getSpritesForScanline(ctx)
+    val isHit = prepareSpritesAndDetectHit(sprites)
     renderToBuffer(ctx.yScanline)
     return isHit
   }
@@ -81,77 +83,89 @@ class Renderer(
     }
   }
 
-  private fun prepareSpritesAndDetectHit(ctx: Context): Boolean {
+  private fun prepareSpritesAndDetectHit(sprites: List<SprContext>): Boolean {
     var isHit = false
 
-    for (iSprite in 0 until NUM_SPRITES) {
-      val ySprite = oam.load(iSprite * 4 + 0) + 1   // Offset of one scanline
-      val attrs = oam.load(iSprite * 4 + 2)
-
-      val pattern  = getSpritePattern(
-        ctx,
-        iPattern = oam.load(iSprite * 4 + 1),
-        iRow = ctx.yScanline - ySprite,
-        flipY = attrs.isBitSet(7)
-      )
-
-      if (pattern != null) {
-        val sprCtx = SprContext(
-          x = oam.load(iSprite * 4 + 3),
-          pattern = pattern,
-          palette = (attrs and 0x03) + 4,
-          flipX = attrs.isBitSet(6),
-          behind = attrs.isBitSet(5)
+    sprites.forEach { sprCtx ->
+      for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - sprCtx.x)) {
+        val c = patternPixel(
+          sprCtx.pattern,
+          if (sprCtx.flipX) (7 - xPixel) else xPixel
         )
 
-        for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - sprCtx.x)) {
-          val c = patternPixel(
-            sprCtx.pattern,
-            if (sprCtx.flipX) (7 - xPixel) else xPixel
-          )
+        val x = sprCtx.x + xPixel
+        val spr = Pixel(c, sprCtx.palette)
+        val bg = pixels[x]
+        val opaqueSpr = (c != 0)
+        val opaqueBg = (bg.c != 0)
 
-          val x = sprCtx.x + xPixel
-          val spr = Pixel(c, sprCtx.palette)
-          val bg = pixels[x]
-          val opaqueSpr = (c != 0)
-          val opaqueBg = (bg.c != 0)
+        pixels[x] = if (opaqueSpr && (!sprCtx.behind || !opaqueBg)) spr else bg
 
-          pixels[x] = if (opaqueSpr && (!sprCtx.behind || !opaqueBg)) spr else bg
-
-          // Collision detection
-          isHit = isHit || ((iSprite == 0) && opaqueBg && opaqueSpr && (x < (SCREEN_WIDTH - 1)))
-        }
+        // Collision detection
+        isHit = isHit || ((sprCtx.iSprite == 0) && opaqueBg && opaqueSpr && (x < (SCREEN_WIDTH - 1)))
       }
     }
 
     return isHit
   }
 
-  private fun getSpritePattern(ctx: Context, iPattern: Data, iRow: Int, flipY: Boolean) = if (ctx.isLargeSprites) {
-    if ((iRow < 0) || (iRow >= (TILE_SIZE * 2))) {
-      null
-    } else if (iRow < TILE_SIZE) {
-      getPattern(
-        iTable = iPattern and 0x01,
-        iTile = (iPattern and 0xFE) + (if (flipY) 1 else 0),
+  // TODO - limit to four
+  private fun getSpritesForScanline(ctx: Context): List<SprContext> {
+    val sprites = mutableListOf<SprContext>()
+
+    for (iSprite in 0 until NUM_SPRITES) {
+      val ySprite = oam.load(iSprite * 4 + 0) + 1   // Offset of one scanline
+      val iPattern = oam.load(iSprite * 4 + 1)
+      val attrs = oam.load(iSprite * 4 + 2)
+      val xSprite = oam.load(iSprite * 4 + 3)
+
+      val iRow = ctx.yScanline - ySprite
+      val flipY = attrs.isBitSet(7)
+
+      val wat = getWat(
+        ctx,
+        iPattern = iPattern,
         iRow = iRow,
         flipY = flipY
       )
-    } else {
-      getPattern(
-        iTable = iPattern and 0x01,
-        iTile = (iPattern and 0xFE) + (if (flipY) 0 else 1),
-        iRow = iRow - TILE_SIZE,
-        flipY = flipY
-      )
+
+      if (wat != null) {
+        sprites += SprContext(
+          x = xSprite,
+          iSprite = iSprite,
+          pattern = getPattern(
+            iTable = wat.iTable,
+            iTile = wat.iTile,
+            iRow = iRow % TILE_SIZE,
+            flipY = flipY
+          ),
+          palette = (attrs and 0x03) + 4,
+          flipX = attrs.isBitSet(6),
+          behind = attrs.isBitSet(5)
+        )
+      }
     }
+
+    return sprites
+  }
+
+  private data class Wat(
+    val iTable: Int,
+    val iTile: Int
+  )
+
+  private fun getWat(ctx: Context, iPattern: Data, iRow: Int, flipY: Boolean) = if (ctx.isLargeSprites) {
+    if (iRow in 0 until TILE_SIZE * 2) {
+      Wat(
+        iTable = iPattern and 0x01,
+        iTile = (iPattern and 0xFE) + (if (flipY xor (iRow < TILE_SIZE)) 0 else 1)
+      )
+    } else null
   } else {
     if (iRow in 0 until TILE_SIZE) {
-      getPattern(
+      Wat(
         iTable = ctx.sprPatternTable,
-        iTile = iPattern,
-        iRow = iRow,
-        flipY = flipY
+        iTile = iPattern
       )
     } else null
   }

@@ -122,22 +122,22 @@ class Renderer(
       val iRow = ctx.yScanline - ySprite
       val flipY = attrs.isBitSet(7)
 
-      val wat = getWat(
-        ctx,
-        iPattern = iPattern,
-        iRow = iRow,
-        flipY = flipY
-      )
+      val inRange = iRow in 0 until if (ctx.isLargeSprites) (TILE_SIZE * 2) else TILE_SIZE
 
-      if (wat != null) {
+      if (inRange) {
         sprites += SprContext(
           x = xSprite,
           iSprite = iSprite,
           pattern = getPattern(
-            iTable = wat.iTable,
-            iTile = wat.iTile,
-            iRow = iRow % TILE_SIZE,
-            flipY = flipY
+            iTable = when (ctx.isLargeSprites) {
+              true -> iPattern and 0x01
+              false -> ctx.sprPatternTable
+            },
+            iTile = when (ctx.isLargeSprites) {
+              true -> (iPattern and 0xFE) + (if (flipY xor (iRow < TILE_SIZE)) 0 else 1)
+              false -> iPattern
+            },
+            iRow = if (flipY) (7 - (iRow % TILE_SIZE)) else (iRow % TILE_SIZE)
           ),
           palette = (attrs and 0x03) + 4,
           flipX = attrs.isBitSet(6),
@@ -147,27 +147,6 @@ class Renderer(
     }
 
     return sprites
-  }
-
-  private data class Wat(
-    val iTable: Int,
-    val iTile: Int
-  )
-
-  private fun getWat(ctx: Context, iPattern: Data, iRow: Int, flipY: Boolean) = if (ctx.isLargeSprites) {
-    if (iRow in 0 until TILE_SIZE * 2) {
-      Wat(
-        iTable = iPattern and 0x01,
-        iTile = (iPattern and 0xFE) + (if (flipY xor (iRow < TILE_SIZE)) 0 else 1)
-      )
-    } else null
-  } else {
-    if (iRow in 0 until TILE_SIZE) {
-      Wat(
-        iTable = ctx.sprPatternTable,
-        iTile = iPattern
-      )
-    } else null
   }
 
   private fun renderToBuffer(yScanline: Int) {
@@ -181,8 +160,8 @@ class Renderer(
   private fun patternPixel(pattern: Int, xPixel: Int) =
     ((pattern shr (7 - xPixel)) and 1) or (((pattern shr (14 - xPixel)) and 2))
 
-  private fun getPattern(iTable: Int, iTile: Int, iRow: Int, flipY: Boolean = false): Int {
-    val addr = (iTable * 4096) + (iTile * 16) + (if (flipY) (7 - iRow) else iRow)
+  private fun getPattern(iTable: Int, iTile: Int, iRow: Int): Int {
+    val addr = (iTable * 4096) + (iTile * 16) + iRow
     val p0 = memory.load(BASE_PATTERNS + addr)
     val p1 = memory.load(BASE_PATTERNS + addr + TILE_SIZE)
     return (p1 shl 8) or p0

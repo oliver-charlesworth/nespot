@@ -15,7 +15,8 @@ class Ppu(
   private var state = State()
   private var _scanline = 0
   private var inVbl = false
-  private var isSprite0Hit = false
+  private var sprite0Hit = false
+  private var spriteOverflow = false
 
   private var addr: Address = 0x0000
   private val coords = Coords()
@@ -45,14 +46,18 @@ class Ppu(
           }
         }
 
-        val isHit = renderer.renderScanlineAndDetectHit(Context(
-          isLargeSprites = state.isLargeSprites,
+        val result = renderer.renderScanline(Context(
+          // TODO - clean up "state" situation
+          bgRenderingEnabled = state.bgRenderingEnabled,
+          sprRenderingEnabled = state.sprRenderingEnabled,
+          largeSprites = state.largeSprites,
           bgPatternTable = state.bgPatternTable,
           sprPatternTable = state.sprPatternTable,
           coords = coordsWorking,
           yScanline = scanline
         ))
-        isSprite0Hit = isSprite0Hit || isHit
+        sprite0Hit = sprite0Hit || result.sprite0Hit
+        spriteOverflow = spriteOverflow || result.spriteOverflow
       }
 
       (SCREEN_HEIGHT + 1) -> {
@@ -67,7 +72,8 @@ class Ppu(
       // Pre-render line
       (NUM_SCANLINES - 1) -> {
         inVbl = false
-        isSprite0Hit = false
+        sprite0Hit = false
+        spriteOverflow = false
       }
     }
 
@@ -79,7 +85,8 @@ class Ppu(
       REG_PPUSTATUS -> {
         val ret = 0 +
           (if (inVbl) 0x80 else 0x00) +
-          (if (isSprite0Hit) 0x40 else 0x00)
+          (if (sprite0Hit) 0x40 else 0x00) +
+          (if (spriteOverflow) 0x20 else 0x00)
 
         // Reset stuff
         inVbl = false
@@ -115,7 +122,7 @@ class Ppu(
           addrInc = if (data.isBitSet(2)) 32 else 1,
           sprPatternTable = if (data.isBitSet(3)) 1 else 0,
           bgPatternTable = if (data.isBitSet(4)) 1 else 0,
-          isLargeSprites = data.isBitSet(5),
+          largeSprites = data.isBitSet(5),
           // TODO - is master/slave important?
           isVblEnabled = data.isBitSet(7)
         )
@@ -193,7 +200,7 @@ class Ppu(
     val addrInc: Int = 1,
     val sprPatternTable: Int = 0,
     val bgPatternTable: Int = 0,
-    val isLargeSprites: Boolean = false,
+    val largeSprites: Boolean = false,
     val isVblEnabled: Boolean = false,
 
     val isGreyscale: Boolean = false,

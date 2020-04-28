@@ -12,16 +12,19 @@ import choliver.nespot.ppu.Ppu.Companion.REG_PPUMASK
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSCROLL
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSTATUS
 import choliver.nespot.ppu.Renderer.Context
+import choliver.nespot.ppu.Renderer.Result
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 import com.nhaarman.mockitokotlin2.*
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class PpuTest {
   private val memory = mock<Memory>()
-  private val renderer = mock<Renderer>()
+  private val renderer = mock<Renderer> {
+    on { renderScanline(any()) } doReturn Result(sprite0Hit = false, spriteOverflow = false)
+  }
   private val onVbl = mock<() -> Unit>()
   private val ppu = Ppu(
     memory = memory,
@@ -230,11 +233,19 @@ class PpuTest {
     }
 
     @Test
-    fun `propagates isLargeSprites`() {
+    fun `propagates bgRenderingEnabled`() {
       ppu.writeReg(REG_PPUCTRL, 0b00100000)
       ppu.executeScanline()
 
-      assertEquals(true, captureContext().isLargeSprites)
+      assertEquals(true, captureContext().bgRenderingEnabled)
+    }
+
+    @Test
+    fun `propagates largeSprites`() {
+      ppu.writeReg(REG_PPUCTRL, 0b00100000)
+      ppu.executeScanline()
+
+      assertEquals(true, captureContext().largeSprites)
     }
 
     @Test
@@ -371,49 +382,69 @@ class PpuTest {
 
     private fun captureContext(num: Int): List<Context> {
       val captor = argumentCaptor<Context>()
-      verify(renderer, times(num)).renderScanlineAndDetectHit(captor.capture())
+      verify(renderer, times(num)).renderScanline(captor.capture())
       return captor.allValues
     }
   }
 
   @Nested
-  inner class SpriteHit {
+  inner class StatusFlags {
     @Test
-    fun `status flag not set if not hit`() {
-      ppu.executeScanline()
-
-      assertEquals(_0, getHitStatus())
-    }
-
-    @Test
-    fun `status flag set if hit`() {
-      whenever(renderer.renderScanlineAndDetectHit(any())) doReturn true
+    fun `not set if no hit or overflow`() {
+      mockResult(sprite0Hit = false, spriteOverflow = false)
 
       ppu.executeScanline()
 
-      assertEquals(_1, getHitStatus())
+      assertFalse(getHitStatus())
+      assertFalse(getOverflowStatus())
     }
 
     @Test
-    fun `status flag not cleared by reading it`() {
-      whenever(renderer.renderScanlineAndDetectHit(any())) doReturn true
+    fun `set if hit`() {
+      mockResult(sprite0Hit = true, spriteOverflow = false)
 
       ppu.executeScanline()
 
-      assertEquals(_1, getHitStatus())
-      assertEquals(_1, getHitStatus())
+      assertTrue(getHitStatus())
     }
 
     @Test
-    fun `status flag cleared on final scanline`() {
-      whenever(renderer.renderScanlineAndDetectHit(any())) doReturn true
+    fun `set if overflow`() {
+      mockResult(sprite0Hit = false, spriteOverflow = true)
+
+      ppu.executeScanline()
+
+      assertTrue(getOverflowStatus())
+    }
+
+    @Test
+    fun `not cleared by reading`() {
+      mockResult(sprite0Hit = true, spriteOverflow = true)
+
+      ppu.executeScanline()
+
+      assertTrue(getHitStatus())
+      assertTrue(getHitStatus())
+      assertTrue(getOverflowStatus())
+      assertTrue(getHitStatus())
+    }
+
+    @Test
+    fun `cleared on final scanline`() {
+      mockResult(sprite0Hit = true, spriteOverflow = true)
 
       for (i in 0..(NUM_SCANLINES - 1)) { ppu.executeScanline() }
 
-      assertEquals(_0, getHitStatus())
+      assertFalse(getHitStatus())
+      assertFalse(getOverflowStatus())
+    }
+
+    private fun mockResult(sprite0Hit: Boolean, spriteOverflow: Boolean) {
+      whenever(renderer.renderScanline(any())) doReturn Result(sprite0Hit = sprite0Hit, spriteOverflow = spriteOverflow)
     }
 
     private fun getHitStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(6)
+    private fun getOverflowStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(5)
   }
 
   private fun setPpuAddress(addr: Address) {

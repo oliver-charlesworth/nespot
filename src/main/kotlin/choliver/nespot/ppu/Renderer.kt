@@ -25,7 +25,9 @@ class Renderer(
 ) {
 
   data class Context(
-    val isLargeSprites: Boolean,
+    val bgRenderingEnabled: Boolean,
+    val sprRenderingEnabled: Boolean,
+    val largeSprites: Boolean,
     val bgPatternTable: Int,  // 0 or 1
     val sprPatternTable: Int, // 0 or 1
     val coords: Coords,
@@ -54,13 +56,19 @@ class Renderer(
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0) }
 
   fun renderScanline(ctx: Context): Result {
+    val renderingEnabled = ctx.bgRenderingEnabled || ctx.sprRenderingEnabled
+
     prepareBackground(ctx.bgPatternTable, ctx.coords)
+
     val sprites = getSpritesForScanline(ctx)
+
     val isHit = prepareSpritesAndDetectHit(sprites)
+
     renderToBuffer(ctx.yScanline)
+
     return Result(
-      sprite0Hit = isHit,
-      spriteOverflow = sprites.size > MAX_SPRITES_PER_SCANLINE
+      sprite0Hit = renderingEnabled && isHit, // TODO - unclear if this should be gated by enable flags
+      spriteOverflow = renderingEnabled && (sprites.size > MAX_SPRITES_PER_SCANLINE)
     )
   }
 
@@ -103,18 +111,18 @@ class Renderer(
       val iRow = ctx.yScanline - ySprite
       val flipY = attrs.isBitSet(7)
 
-      val inRange = iRow in 0 until if (ctx.isLargeSprites) (TILE_SIZE * 2) else TILE_SIZE
+      val inRange = iRow in 0 until if (ctx.largeSprites) (TILE_SIZE * 2) else TILE_SIZE
 
       if (inRange) {
         sprites += SpriteToRender(
           x = xSprite,
           iSprite = iSprite,
           pattern = getPattern(
-            iTable = when (ctx.isLargeSprites) {
+            iTable = when (ctx.largeSprites) {
               true -> iPattern and 0x01
               false -> ctx.sprPatternTable
             },
-            iTile = when (ctx.isLargeSprites) {
+            iTile = when (ctx.largeSprites) {
               true -> (iPattern and 0xFE) + (if (flipY xor (iRow < TILE_SIZE)) 0 else 1)
               false -> iPattern
             },

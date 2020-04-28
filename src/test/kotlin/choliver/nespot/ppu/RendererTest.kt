@@ -14,7 +14,6 @@ import java.nio.IntBuffer
 
 // TODO - greyscale
 // TODO - colour emphasis
-// TODO - scrolling
 class RendererTest {
   private val colors = (0..63).toList()
   private val paletteEntries = (0..31).map { it + 5 }
@@ -49,43 +48,47 @@ class RendererTest {
     @Test
     fun `patterns for palette #0`() {
       val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
-
       initBgPatternMemory(mapOf(0 to pattern))
 
-      assertRendersAs { pattern[it % TILE_SIZE] }
+      render()
+
+      assertBuffer { pattern[it % TILE_SIZE] }
     }
 
     @Test
     fun `patterns for higher palettes use universal background color`() {
       val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
       val attrEntries = List(NUM_METATILE_COLUMNS) { 1 }  // Arbitrary non-zero palette #
-
       initAttributeMemory(attrEntries)
       initBgPatternMemory(mapOf(0 to pattern))
 
-      assertRendersAs { pattern[it % TILE_SIZE].let { if (it == 0) 0 else (it + NUM_ENTRIES_PER_PALETTE) } }
+      render()
+
+      assertBuffer { pattern[it % TILE_SIZE].let { if (it == 0) 0 else (it + NUM_ENTRIES_PER_PALETTE) } }
     }
 
     @Test
     fun `location-based attributes - bottom metatile`() {
       val pattern = List(TILE_SIZE) { 1 } // Arbitrary non-zero pixel
       val attrEntries = listOf(0, 1, 2, 3, 2, 3, 0, 1, 3, 2, 1, 0, 1, 0, 3, 2)
-
       initAttributeMemory(attrEntries)
       initBgPatternMemory(mapOf(0 to pattern))
 
-      assertRendersAs { 1 + attrEntries[it / METATILE_SIZE] * NUM_ENTRIES_PER_PALETTE }
+      render()
+
+      assertBuffer { 1 + attrEntries[it / METATILE_SIZE] * NUM_ENTRIES_PER_PALETTE }
     }
 
     @Test
     fun `location-based attributes - top metatile`() {
       val pattern = List(TILE_SIZE) { 1 } // Arbitrary non-zero pixel
       val attrEntries = listOf(0, 1, 2, 3, 2, 3, 0, 1, 3, 2, 1, 0, 1, 0, 3, 2)
-
       initAttributeMemory(attrEntries, yTile = 13)
       initBgPatternMemory(mapOf(0 to pattern))
 
-      assertRendersAs(yCoarse = 13) { 1 + attrEntries[it / METATILE_SIZE] * NUM_ENTRIES_PER_PALETTE }
+      render(yCoarse = 13)
+
+      assertBuffer { 1 + attrEntries[it / METATILE_SIZE] * NUM_ENTRIES_PER_PALETTE }
     }
 
     @Test
@@ -96,13 +99,13 @@ class RendererTest {
         33 to List(TILE_SIZE) { 3 },
         44 to List(TILE_SIZE) { 0 }
       )
-
       val nametableEntries = (0 until NUM_TILE_COLUMNS / 4).flatMap { listOf(11, 22, 33, 44) }
-
       initNametableMemory(nametableEntries)
       initBgPatternMemory(patterns)
 
-      assertRendersAs { patterns[nametableEntries[it / TILE_SIZE]]!![it % TILE_SIZE] }
+      render()
+
+      assertBuffer { patterns[nametableEntries[it / TILE_SIZE]]!![it % TILE_SIZE] }
     }
 
     // TODO - conditional rendering
@@ -120,7 +123,9 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0)
 
-      assertRendersAs { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
+      render()
+
+      assertBuffer { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
     }
 
     @Test
@@ -128,7 +133,9 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
       initSpriteMemory(x = xOffset, y = yScanline - 7, iPattern = 1, attrs = 0)
 
-      assertRendersAs { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
+      render()
+
+      assertBuffer { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
     }
 
     @Test
@@ -136,7 +143,9 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0x40)
 
-      assertRendersAs { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern.reversed()) }
+      render()
+
+      assertBuffer { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern.reversed()) }
     }
 
     @Test
@@ -144,7 +153,9 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
       initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0x80)
 
-      assertRendersAs { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
+      render()
+
+      assertBuffer { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
     }
 
     @Test
@@ -152,7 +163,9 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 2)
 
-      assertRendersAs { calcPalIdx(x = it, xOffset = xOffset, iPalette = 2, pattern = pattern) }
+      render()
+
+      assertBuffer { calcPalIdx(x = it, xOffset = xOffset, iPalette = 2, pattern = pattern) }
     }
 
     @Test
@@ -160,10 +173,11 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = 252, y = yScanline, iPattern = 1, attrs = 0)
 
-      assertRendersAs { calcPalIdx(x = it, xOffset = 252, iPalette = 0, pattern = pattern) }
+      render()
+
+      assertBuffer { calcPalIdx(x = it, xOffset = 252, iPalette = 0, pattern = pattern) }
     }
 
-    // TODO - max sprites per scanline
     // TODO - conditional rendering
     // TODO - clipping
 
@@ -184,7 +198,9 @@ class RendererTest {
       initSprPatternMemory(mapOf(2 to pattern), yRow = 0)
       initSpriteMemory(x = xOffset, y = yScanline, iPattern = 2, attrs = 0)
 
-      assertRendersAs(isLargeSprites = true) { calcPalIdx(x = it) }
+      render(largeSprites = true)
+
+      assertBuffer { calcPalIdx(x = it) }
     }
 
     @Test
@@ -192,7 +208,9 @@ class RendererTest {
       initSprPatternMemory(mapOf(3 to pattern), yRow = 7) // Note - next pattern index!
       initSpriteMemory(x = xOffset, y = yScanline - 15, iPattern = 2, attrs = 0)
 
-      assertRendersAs(isLargeSprites = true) { calcPalIdx(x = it) }
+      render(largeSprites = true)
+
+      assertBuffer { calcPalIdx(x = it) }
     }
 
     @Test
@@ -200,7 +218,9 @@ class RendererTest {
       initSprPatternMemory(mapOf(3 to pattern), yRow = 7) // Note - next pattern index!
       initSpriteMemory(x = xOffset, y = yScanline, iPattern = 2, attrs = 0x80)
 
-      assertRendersAs(isLargeSprites = true) { calcPalIdx(x = it) }
+      render(largeSprites = true)
+
+      assertBuffer { calcPalIdx(x = it) }
     }
 
     @Test
@@ -208,7 +228,9 @@ class RendererTest {
       initSprPatternMemory(mapOf(2 to pattern), yRow = 0)
       initSpriteMemory(x = xOffset, y = yScanline - 15, iPattern = 2, attrs = 0x80)
 
-      assertRendersAs(isLargeSprites = true) { calcPalIdx(x = it) }
+      render(largeSprites = true)
+
+      assertBuffer { calcPalIdx(x = it) }
     }
 
     @Test
@@ -222,7 +244,9 @@ class RendererTest {
         attrs = 0
       )
 
-      assertRendersAs(isLargeSprites = true) { calcPalIdx(x = it) }
+      render(largeSprites = true)
+
+      assertBuffer { calcPalIdx(x = it) }
     }
 
     private fun calcPalIdx(x: Int) = if (x in xOffset until TILE_SIZE + xOffset) {
@@ -365,32 +389,51 @@ class RendererTest {
       assertTrue(render().sprite0Hit)
     }
 
+    @Test
+    fun `doesn't trigger hit if rendering disabled`() {
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
+      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
+
+      assertFalse(render(bgRenderingEnabled = false, sprRenderingEnabled = false).sprite0Hit)
+      assertTrue(render(sprRenderingEnabled = false).sprite0Hit)
+      assertTrue(render(bgRenderingEnabled = false).sprite0Hit)
+    }
+
     // TODO - not detected in active clipping region (background or sprite)
-    // TODO - what about if rendering disabled?
   }
 
   @Nested
   inner class Overflow {
-    private val xOffset = 5
-    // TODO - what about if rendering disabled?
     // TODO - sprite selection
 
     @Test
-    fun `doesn't overflow for 8 or less`() {
+    fun `doesn't trigger overflow for 8 or less`() {
       repeat(8) {
-        initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+        initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
       }
 
       assertFalse(render().spriteOverflow)
     }
 
     @Test
-    fun `overflows for 9 or more`() {
+    fun `triggers overflow for 9 or more`() {
       repeat(9) {
-        initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+        initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
       }
 
       assertTrue(render().spriteOverflow)
+    }
+
+    @Test
+    fun `doesn't trigger overflow if rendering disabled`() {
+      repeat(9) {
+        initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+      }
+
+      assertFalse(render(bgRenderingEnabled = false, sprRenderingEnabled = false).spriteOverflow)
+      assertTrue(render(sprRenderingEnabled = false).spriteOverflow)
+      assertTrue(render(bgRenderingEnabled = false).spriteOverflow)
     }
   }
 
@@ -421,7 +464,9 @@ class RendererTest {
       initNametableMemory(nametableEntries.subList(32, 64), nametable = 1)
       initBgPatternMemory(patterns)
 
-      assertRendersAs(xCoarse = 5) { patterns[nametableEntries[(it / TILE_SIZE) + 5]]!![it % TILE_SIZE] }
+      render(xCoarse = 5)
+
+      assertBuffer { patterns[nametableEntries[(it / TILE_SIZE) + 5]]!![it % TILE_SIZE] }
     }
 
     @Test
@@ -448,37 +493,34 @@ class RendererTest {
       initNametableMemory(nametableEntries.subList(32, 64), nametable = 1)
       initBgPatternMemory(patterns)
 
-      assertRendersAs(xFine = 5) { patterns[nametableEntries[(it + 5) / TILE_SIZE]]!![(it + 5) % TILE_SIZE] }
+      render(xFine = 5)
+
+      assertBuffer { patterns[nametableEntries[(it + 5) / TILE_SIZE]]!![(it + 5) % TILE_SIZE] }
     }
 
     // TODO - ensure we do minimal memory loads
   }
 
-
-  private fun assertRendersAs(
-    xCoarse: Int = 0,
-    xFine: Int = 0,
-    yCoarse: Int = this.yCoarse,
-    yFine: Int = this.yFine,
-    isLargeSprites: Boolean = false,
-    expected: (Int) -> Int
-  ) {
-    render(xCoarse, xFine, yCoarse, yFine, isLargeSprites)
-
+  private fun assertBuffer(expected: (Int) -> Int) {
     assertEquals(
       (0 until SCREEN_WIDTH).map { colors[paletteEntries[expected(it)]] },
       videoBuffer.array().toList().subList(yScanline * SCREEN_WIDTH, (yScanline + 1) * SCREEN_WIDTH)
     )
   }
 
+  // TODO - this helper function adds little value
   private fun render(
     xCoarse: Int = 0,
     xFine: Int = 0,
     yCoarse: Int = this.yCoarse,
     yFine: Int = this.yFine,
-    isLargeSprites: Boolean = false
+    bgRenderingEnabled: Boolean = true,
+    sprRenderingEnabled: Boolean = true,
+    largeSprites: Boolean = false
   ) = renderer.renderScanline(Context(
-    isLargeSprites = isLargeSprites,
+    bgRenderingEnabled = bgRenderingEnabled,
+    sprRenderingEnabled = sprRenderingEnabled,
+    largeSprites = largeSprites,
     bgPatternTable = bgPatternTable,
     sprPatternTable = sprPatternTable,
     coords = Coords(

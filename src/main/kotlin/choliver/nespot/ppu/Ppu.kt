@@ -108,6 +108,7 @@ class Ppu(
         addr = (addr + state.addrInc) and 0x7FFF
         ret
       }
+
       else -> 0x00
     }
   }

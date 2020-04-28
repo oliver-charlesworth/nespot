@@ -17,7 +17,21 @@ import org.junit.jupiter.params.provider.ValueSource
 
 class Mmc1MapperTest {
   @Nested
-  inner class Prg {
+  inner class PrgRam {
+    private val mapper = Mmc1Mapper(MapperConfig(chrData = ByteArray(0)))
+
+    @Test
+    fun `load and store`() {
+      mapper.prg.store(0x6000, 0x30) // Lowest mapped address
+      mapper.prg.store(0x7FFF, 0x40) // Highest mapped address
+
+      assertEquals(0x30, mapper.prg.load(0x6000))
+      assertEquals(0x40, mapper.prg.load(0x7FFF))
+    }
+  }
+
+  @Nested
+  inner class PrgRom {
     private val prgData = ByteArray(8 * 16384)
     private val mapper = Mmc1Mapper(MapperConfig(prgData = prgData))
 
@@ -121,7 +135,23 @@ class Mmc1MapperTest {
   }
 
   @Nested
-  inner class Chr {
+  inner class ChrRam {
+    private val mapper = Mmc1Mapper(MapperConfig(chrData = ByteArray(0)))
+
+    @Test
+    fun `load and store`() {
+      val chr = mapper.chr.intercept(mock())
+
+      chr.store(0x0000, 0x30) // Lowest mapped address
+      chr.store(0x1FFF, 0x40) // Highest mapped address
+
+      assertEquals(0x30, chr.load(0x0000))
+      assertEquals(0x40, chr.load(0x1FFF))
+    }
+  }
+
+  @Nested
+  inner class ChrRom {
     private val chrData = ByteArray(8 * 4096)
     private val mapper = Mmc1Mapper(MapperConfig(chrData = chrData))
 

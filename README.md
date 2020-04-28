@@ -14,10 +14,6 @@
   - Greyscale
   - Colour emphasis
 
-- Cartridge
-  - CHR-RAM (used by Zelda)
-  - PRG-RAM
-
 - Quirks
 
   - [Sprite overflow bug](http://wiki.nesdev.com/w/index.php/PPU_sprite_evaluation#Sprite_overflow_bug)

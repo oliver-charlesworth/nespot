@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class ApuTest {
-  private val sq1 = SynthContext(synth = mock<SquareSynth>(), envelope = mock(), sweep = mock(), timer = mock())
-  private val sq2 = SynthContext(synth = mock<SquareSynth>(), envelope = mock(), sweep = mock(), timer = mock())
-  private val tri = SynthContext(synth = mock<TriangleSynth>(), timer = mock())
-  private val noi = SynthContext(synth = mock<NoiseSynth>(), envelope = mock(), timer = mock())
-  private val dmc = SynthContext(synth = mock<DmcSynth>(), timer = mock())
+  private val sq1 = spy(SynthContext(synth = mock<SquareSynth>(), envelope = mock(), sweep = mock(), timer = mock()))
+  private val sq2 = spy(SynthContext(synth = mock<SquareSynth>(), envelope = mock(), sweep = mock(), timer = mock()))
+  private val tri = spy(SynthContext(synth = mock<TriangleSynth>(), timer = mock()))
+  private val noi = spy(SynthContext(synth = mock<NoiseSynth>(), envelope = mock(), timer = mock()))
+  private val dmc = spy(SynthContext(synth = mock<DmcSynth>(), timer = mock()))
   private val sequencer = mock<Sequencer>()
   private val apu = Apu(
     buffer = ByteArray(0),
@@ -92,7 +92,7 @@ class ApuTest {
 
     private fun assertLength(reg: Int, ctx: SynthContext<*>) {
       apu.writeReg(reg, 0b10101_000)
-      verify(ctx.synth).length = 20 // See the length table
+      verify(ctx).length = 20 // See the length table
       verify(ctx.envelope).reset()
     }
   }
@@ -120,7 +120,7 @@ class ApuTest {
     @Test
     fun length() {
       apu.writeReg(11, 0b10101_000)
-      verify(tri.synth).length = 20 // See the length table
+      verify(tri).length = 20 // See the length table
     }
   }
 
@@ -151,7 +151,7 @@ class ApuTest {
     @Test
     fun length() {
       apu.writeReg(15, 0b10101_000)
-      verify(noi.synth).length = 20 // See the length table
+      verify(noi).length = 20 // See the length table
       verify(noi.envelope).reset()
     }
   }
@@ -185,7 +185,7 @@ class ApuTest {
     @Test
     fun length() {
       apu.writeReg(19, 0xCA)
-      verify(dmc.synth).length = 0xCA1
+      verify(dmc).length = 0xCA1
     }
   }
 

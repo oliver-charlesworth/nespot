@@ -1,7 +1,6 @@
 package choliver.nespot.apu
 
 // TODO - model negate differently for pulse1 and pulse2
-// TODO - channel muting
 class Sweep(private val timer: Counter) {
   private var iDivider = 0
   private var reload = true
@@ -9,6 +8,8 @@ class Sweep(private val timer: Counter) {
   var divider = 0
   var negate = false
   var shift = 0
+
+  val mute get() = (currentPeriod() < MIN_PERIOD) || (targetPeriod() > MAX_PERIOD)
 
   fun reset() {
     reload = true
@@ -21,17 +22,22 @@ class Sweep(private val timer: Counter) {
     } else {
       iDivider--
     }
-    if ((iDivider == 0) && enabled) {
-      adjustPeriod()
+    if ((iDivider == 0) && enabled && !mute) {
+      timer.periodCycles = targetPeriod().toRational()
     }
   }
 
-  private fun adjustPeriod() {
-    val period = timer.periodCycles.toInt()
+  private fun targetPeriod(): Int {
+    val period = currentPeriod()
     val delta = period shr shift
-    val newPeriod = period + (if (negate) -delta else delta)
-    if (newPeriod in 8..0x7FF) {
-      timer.periodCycles = newPeriod.toRational()
-    }
+    return period + (if (negate) -delta else delta)
+  }
+
+  private fun currentPeriod() = timer.periodCycles.toInt()
+
+  companion object {
+    // Inclusive, and * 2 because normalised to CPU (rather than APU) cycles
+    private const val MIN_PERIOD = 8 * 2
+    private const val MAX_PERIOD = 0x7FF * 2
   }
 }

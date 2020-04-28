@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SweepTest {
@@ -34,17 +34,6 @@ class SweepTest {
   }
 
   @Test
-  fun `doesn't adjust period out of range`() {
-    timer.periodCycles = 8.toRational()
-    sweep.negate = true
-
-    assertEquals(
-      listOf(8, 8, 8, 8),
-      take(4)
-    )
-  }
-
-  @Test
   fun `resets mid-decay`() {
     take(2) // Part way through division
     sweep.reset()
@@ -53,6 +42,38 @@ class SweepTest {
     assertEquals(
       listOf(64, 64, 64, 80, 80, 80, 80, 100),
       take(8)
+    )
+  }
+
+  @Test
+  fun `mutes if current period too low`() {
+    timer.periodCycles = 16.toRational()
+    assertFalse(sweep.mute)
+
+    timer.periodCycles = 15.toRational()
+    assertTrue(sweep.mute)
+  }
+
+  @Test
+  fun `mutes if target period too high`() {
+    sweep.negate = false
+    timer.periodCycles = 0x800.toRational()
+
+    sweep.shift = 1
+    assertFalse(sweep.mute)
+
+    sweep.shift = 0
+    assertTrue(sweep.mute)
+  }
+
+  @Test
+  fun `doesn't adjust period when muted`() {
+    timer.periodCycles = 15.toRational()
+    sweep.negate = true
+
+    assertEquals(
+      listOf(15, 15, 15, 15),
+      take(4)
     )
   }
 

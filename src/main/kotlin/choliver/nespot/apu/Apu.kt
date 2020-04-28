@@ -39,11 +39,11 @@ class Apu(
       in REG_DMC_RANGE -> channels.dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
 
       REG_SND_CHN -> {
-        channels.dmc.setStatus(data.isBitSet(4))
-        channels.noi.setStatus(data.isBitSet(3))
-        channels.tri.setStatus(data.isBitSet(2))
-        channels.sq2.setStatus(data.isBitSet(1))
-        channels.sq1.setStatus(data.isBitSet(0))
+        channels.dmc.enabled = data.isBitSet(4)
+        channels.noi.enabled = data.isBitSet(3)
+        channels.tri.enabled = data.isBitSet(2)
+        channels.sq2.enabled = data.isBitSet(1)
+        channels.sq1.enabled = data.isBitSet(0)
       }
 
       REG_FRAME_COUNTER_CTRL -> {
@@ -77,7 +77,7 @@ class Apu(
 
       3 -> {
         timer.periodCycles = extractPeriodCycles().toRational()
-        synth.length = extractLength()
+        length = extractLength()
         envelope.reset()
       }
     }
@@ -99,7 +99,7 @@ class Apu(
 
       3 -> {
         timer.periodCycles = extractPeriodCycles()
-        synth.length = extractLength()
+        length = extractLength()
       }
     }
   }
@@ -119,7 +119,7 @@ class Apu(
       }
 
       3 -> {
-        synth.length = extractLength()
+        length = extractLength()
         envelope.reset()
       }
     }
@@ -136,7 +136,7 @@ class Apu(
       }
       1 -> synth.level = data and 0x7F
       2 -> synth.address = 0xC000 + (data * 64)
-      3 -> synth.length = (data * 16) + 1
+      3 -> length = (data * 16) + 1
     }
   }
 
@@ -176,11 +176,6 @@ class Apu(
     private fun SynthContext<*>.extractTimer() = ((regs[3] and 0x07) shl 8) or regs[2]
 
     private fun SynthContext<*>.extractLength() = LENGTH_TABLE[(regs[3] and 0xF8) shr 3]
-
-    private fun SynthContext<*>.setStatus(enabled: Boolean) {
-      if (!enabled) { synth.length = 0 }
-      this.enabled = enabled
-    }
 
     private fun SynthContext<*>.fixEnvelope(level: Int) {
       envelope.directMode = true

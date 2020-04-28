@@ -8,8 +8,7 @@ class SynthContext<S : Synth>(
   val timer: Counter = Counter(),
   val envelope: Envelope = Envelope(),
   val sweep: Sweep = Sweep(timer),
-  val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00),
-  var enabled: Boolean = false
+  val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00)
 ) {
   fun take(ticks: Ticks): Int {
     if (ticks.quarter) {
@@ -23,6 +22,15 @@ class SynthContext<S : Synth>(
     repeat(timer.take()) {
       synth.onTimer()
     }
-    return if (enabled && !sweep.mute) (synth.output * envelope.level) else 0
+    return if (sweep.mute) 0 else (synth.output * envelope.level)
+  }
+
+  var enabled by observable(false) {
+    if (!it) { synth.length = 0 }
+  }
+
+  /** Gates length setting based on whether enabled. */
+  var length by observable(0) {
+    if (enabled) { synth.length = it }
   }
 }

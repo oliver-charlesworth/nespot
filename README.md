@@ -2,6 +2,17 @@
 
 ## To do
 
+- Known game issues
+  - Super Mario Bros
+    - explosions sound wrong
+  - Micro Machines
+    - Lots of graphical artifacts
+    - Sprite priority required
+    - Last note on splash screen doesn't end
+  - Zelda
+    - Music sounds a little off
+    - One pixel off on vertical scroll in start menu
+
 - Sound
   - Clicking
   - Interrupts

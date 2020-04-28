@@ -38,6 +38,7 @@ class Cartridge(romData: ByteArray) {
     return when (val mapper = ((romData[6].toInt() and 0xF0) shr 4) or ((romData[7].toInt() and 0xF0))) {
       0 -> NromMapper(config)
       1 -> Mmc1Mapper(config)
+      71 -> Mapper71(config)
       else -> throw UnsupportedRomException("Mapper #${mapper}")
     }
   }

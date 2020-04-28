@@ -19,6 +19,7 @@ import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 
 class PpuTest {
   private val memory = mock<Memory>()
@@ -32,6 +33,13 @@ class PpuTest {
     onVbl = onVbl,
     renderer = renderer
   )
+
+  @Test
+  fun `write to disallowed register doesn't fail`() {
+    assertDoesNotThrow {
+      ppu.writeReg(REG_PPUSTATUS, 0x12)   // Micro Machines does this on startup (probably by accident)
+    }
+  }
 
   @Nested
   inner class ExternalMemory {

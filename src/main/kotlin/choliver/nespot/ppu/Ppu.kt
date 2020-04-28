@@ -187,8 +187,6 @@ class Ppu(
         }
         addr = (addr + state.addrInc) and 0x7FFF
       }
-
-      else -> throw IllegalArgumentException("Attempt to write to reg #${reg}")   // Should never happen
     }
   }
 

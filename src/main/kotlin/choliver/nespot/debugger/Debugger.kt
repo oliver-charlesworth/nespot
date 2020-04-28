@@ -18,6 +18,7 @@ import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nespot.nes.Nes.Companion.PPU_RAM_SIZE
 import choliver.nespot.runner.FakeJoypads
 import choliver.nespot.runner.Screen
+import java.io.File
 import java.io.InputStream
 import java.io.PrintStream
 
@@ -406,4 +407,13 @@ class Debugger(
 
   private fun Address.format() = "0x%04x".format(this)
   private fun Data.format8() = "0x%02x".format(this)
+
+  companion object {
+    @JvmStatic
+    fun main(args: Array<String>) = Debugger(
+      rom = File(args[0]).readBytes(),
+      stdin = System.`in`,
+      stdout = System.out
+    ).start()
+  }
 }

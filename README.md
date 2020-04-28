@@ -2,9 +2,8 @@
 
 ## To do
 
-- Sound!
+- Sound
   - Clicking
-  - SMB - explosions sound wrong
   - Interrupts
 
 - Rendering

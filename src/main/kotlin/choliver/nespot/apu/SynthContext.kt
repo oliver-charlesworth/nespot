@@ -23,6 +23,6 @@ class SynthContext<S : Synth>(
     repeat(timer.take()) {
       synth.onTimer()
     }
-    return if (enabled) (synth.output * envelope.level) else 0
+    return if (enabled && !sweep.mute) (synth.output * envelope.level) else 0
   }
 }

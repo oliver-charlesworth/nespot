@@ -8,16 +8,6 @@ import choliver.nespot.data
 
 // https://wiki.nesdev.com/w/index.php/NROM
 class NromMapper(private val config: MapperConfig) : Mapper {
-  init {
-    with(config) {
-      validate(!hasPersistentMem, "Persistent memory")
-      validate(mirroring != IGNORED, "Ignored mirroring control")
-      validate(trainerData.isEmpty(), "Trainer data")
-      validate(prgData.size in listOf(16384, 32768), "PRG ROM size ${prgData.size}")
-      validate(chrData.size == 8192, "CHR ROM size ${chrData.size}")
-    }
-  }
-
   override val prg = object : Memory {
     // Just map everything to PRG-ROM
     override fun load(addr: Address) = config.prgData[addr and (config.prgData.size - 1)].data()
@@ -67,13 +57,6 @@ class NromMapper(private val config: MapperConfig) : Mapper {
     }
 
     private fun mapToVram(addr: Address) = addr and 2047
-  }
-
-
-  private fun validate(predicate: Boolean, message: String) {
-    if (!predicate) {
-      throw Cartridge.UnsupportedRomException(message)
-    }
   }
 
   @Suppress("unused")

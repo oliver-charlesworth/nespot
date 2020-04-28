@@ -11,7 +11,7 @@ import choliver.nespot.ppu.Ppu.Companion.REG_PPUDATA
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUMASK
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSCROLL
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSTATUS
-import choliver.nespot.ppu.Renderer.Context
+import choliver.nespot.ppu.Renderer.*
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 import com.nhaarman.mockitokotlin2.*
@@ -371,7 +371,7 @@ class PpuTest {
 
     private fun captureContext(num: Int): List<Context> {
       val captor = argumentCaptor<Context>()
-      verify(renderer, times(num)).renderScanlineAndDetectHit(captor.capture())
+      verify(renderer, times(num)).renderScanline(captor.capture())
       return captor.allValues
     }
   }
@@ -387,7 +387,7 @@ class PpuTest {
 
     @Test
     fun `status flag set if hit`() {
-      whenever(renderer.renderScanlineAndDetectHit(any())) doReturn true
+      whenever(renderer.renderScanline(any())) doReturn Result(sprite0Hit = true, spriteOverflow = false)
 
       ppu.executeScanline()
 
@@ -396,7 +396,7 @@ class PpuTest {
 
     @Test
     fun `status flag not cleared by reading it`() {
-      whenever(renderer.renderScanlineAndDetectHit(any())) doReturn true
+      whenever(renderer.renderScanline(any())) doReturn Result(sprite0Hit = true, spriteOverflow = false)
 
       ppu.executeScanline()
 
@@ -406,7 +406,7 @@ class PpuTest {
 
     @Test
     fun `status flag cleared on final scanline`() {
-      whenever(renderer.renderScanlineAndDetectHit(any())) doReturn true
+      whenever(renderer.renderScanline(any())) doReturn Result(sprite0Hit = true, spriteOverflow = false)
 
       for (i in 0..(NUM_SCANLINES - 1)) { ppu.executeScanline() }
 

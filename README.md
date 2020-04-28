@@ -11,7 +11,7 @@
 
   - Enable / disable rendering
   - Clipping - inc. impact on collision detection
-  - Limit to four sprites
+  - Limit to eight sprites
   - Detect too many sprites
   - Sprite priority (overlap)
   - Greyscale
@@ -23,15 +23,15 @@
 
 - Quirks
 
-  - Sprite overflow bug
+  - [Sprite overflow bug](http://wiki.nesdev.com/w/index.php/PPU_sprite_evaluation#Sprite_overflow_bug)
   - OAM address reset during rendering
   - Trigger VBL if isVblEnabled becomes true during VBL period
 
 - Model cycle counts for:
 
   - Page boundary crossings 
-  - OAM DMA
-  - APU DMC stalls (see http://wiki.nesdev.com/w/index.php/APU_DMC)
+  - [OAM DMA stalls](http://wiki.nesdev.com/w/index.php/PPU_OAM#DMA)
+  - [APU DMC stalls](http://wiki.nesdev.com/w/index.php/APU_DMC#Memory_reader)
   
 - PPU reset
   

@@ -45,14 +45,15 @@ class Ppu(
           }
         }
 
-        val isHit = renderer.renderScanlineAndDetectHit(Context(
+        val result = renderer.renderScanline(Context(
           isLargeSprites = state.isLargeSprites,
           bgPatternTable = state.bgPatternTable,
           sprPatternTable = state.sprPatternTable,
           coords = coordsWorking,
           yScanline = scanline
         ))
-        isSprite0Hit = isSprite0Hit || isHit
+        isSprite0Hit = isSprite0Hit || result.sprite0Hit
+        // TODO - sprite overflow
       }
 
       (SCREEN_HEIGHT + 1) -> {

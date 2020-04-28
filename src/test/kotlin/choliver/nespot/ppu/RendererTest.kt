@@ -308,7 +308,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
       initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
 
-      assertTrue(render())
+      assertTrue(render().sprite0Hit)
     }
 
     @Test
@@ -317,7 +317,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
       initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
 
-      assertFalse(render())
+      assertFalse(render().sprite0Hit)
     }
 
     @Test
@@ -326,7 +326,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to listOf(0, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
       initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
 
-      assertFalse(render())
+      assertFalse(render().sprite0Hit)
     }
 
     @Test
@@ -335,7 +335,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 1, 0, 1, 0, 1, 0)), yRow = 0)
       initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
 
-      assertTrue(render())
+      assertTrue(render().sprite0Hit)
     }
 
     @Test
@@ -344,7 +344,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
       initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = 1)
 
-      assertFalse(render())
+      assertFalse(render().sprite0Hit)
     }
 
     @Test
@@ -353,18 +353,45 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
       initSpriteMemory(x = 255, y = yScanline, iPattern = 1, attrs = 0)
 
-      assertFalse(render())
+      assertFalse(render().sprite0Hit)
     }
+
     @Test
     fun `triggers hit from behind`() {
       initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
       initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0x20) // Behind
 
-      assertTrue(render())
+      assertTrue(render().sprite0Hit)
     }
 
     // TODO - not detected in active clipping region (background or sprite)
+    // TODO - what about if rendering disabled?
+  }
+
+  @Nested
+  inner class Overflow {
+    private val xOffset = 5
+    // TODO - what about if rendering disabled?
+    // TODO - sprite selection
+
+    @Test
+    fun `doesn't overflow for 8 or less`() {
+      repeat(8) {
+        initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+      }
+
+      assertFalse(render().spriteOverflow)
+    }
+
+    @Test
+    fun `overflows for 9 or more`() {
+      repeat(9) {
+        initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+      }
+
+      assertTrue(render().spriteOverflow)
+    }
   }
 
   // Renderer knows nothing of vertical scroll, so we only test horizontal scroll
@@ -450,7 +477,7 @@ class RendererTest {
     yCoarse: Int = this.yCoarse,
     yFine: Int = this.yFine,
     isLargeSprites: Boolean = false
-  ) = renderer.renderScanlineAndDetectHit(Context(
+  ) = renderer.renderScanline(Context(
     isLargeSprites = isLargeSprites,
     bgPatternTable = bgPatternTable,
     sprPatternTable = sprPatternTable,

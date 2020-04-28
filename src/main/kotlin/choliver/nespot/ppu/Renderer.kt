@@ -32,6 +32,11 @@ class Renderer(
     val yScanline: Int
   )
 
+  data class Result(
+    val sprite0Hit: Boolean,
+    val spriteOverflow: Boolean
+  )
+
   private data class Pixel(
     val c: Int,
     val p: Int
@@ -48,12 +53,15 @@ class Renderer(
 
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0) }
 
-  fun renderScanlineAndDetectHit(ctx: Context): Boolean {
+  fun renderScanline(ctx: Context): Result {
     prepareBackground(ctx.bgPatternTable, ctx.coords)
     val sprites = getSpritesForScanline(ctx)
     val isHit = prepareSpritesAndDetectHit(sprites)
     renderToBuffer(ctx.yScanline)
-    return isHit
+    return Result(
+      sprite0Hit = isHit,
+      spriteOverflow = sprites.size > MAX_SPRITES_PER_SCANLINE
+    )
   }
 
   private fun prepareBackground(bgPatternTable: Int, coords: Coords) {
@@ -83,7 +91,6 @@ class Renderer(
     }
   }
 
-  // TODO - limit to four
   private fun getSpritesForScanline(ctx: Context): List<SpriteToRender> {
     val sprites = mutableListOf<SpriteToRender>()
 
@@ -164,5 +171,9 @@ class Renderer(
     val p0 = memory.load(BASE_PATTERNS + addr)
     val p1 = memory.load(BASE_PATTERNS + addr + TILE_SIZE)
     return (p1 shl 8) or p0
+  }
+
+  companion object {
+    const val MAX_SPRITES_PER_SCANLINE = 8
   }
 }

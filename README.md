@@ -11,7 +11,6 @@
 
   - Enable / disable rendering
   - Clipping - inc. impact on collision detection
-  - Limit to eight sprites
   - Sprite priority (overlap)
   - Greyscale
   - Colour emphasis

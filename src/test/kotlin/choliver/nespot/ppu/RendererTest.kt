@@ -405,8 +405,6 @@ class RendererTest {
 
   @Nested
   inner class Overflow {
-    // TODO - sprite selection
-
     @Test
     fun `doesn't trigger overflow for 8 or less`() {
       repeat(8) {
@@ -434,6 +432,19 @@ class RendererTest {
       assertFalse(render(bgRenderingEnabled = false, sprRenderingEnabled = false).spriteOverflow)
       assertTrue(render(sprRenderingEnabled = false).spriteOverflow)
       assertTrue(render(bgRenderingEnabled = false).spriteOverflow)
+    }
+
+    @Test
+    fun `only renders the 8 sprites with highest priority`() {
+      val pattern = List(TILE_SIZE) { 1 }
+      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
+      repeat(9) {
+        initSpriteMemory(x = (it * (TILE_SIZE + 1)), y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+      }
+
+      render()
+
+      assertEquals(8 * 8, extractScanline().count { it != colors[paletteEntries[0]] })
     }
   }
 
@@ -504,9 +515,12 @@ class RendererTest {
   private fun assertBuffer(expected: (Int) -> Int) {
     assertEquals(
       (0 until SCREEN_WIDTH).map { colors[paletteEntries[expected(it)]] },
-      videoBuffer.array().toList().subList(yScanline * SCREEN_WIDTH, (yScanline + 1) * SCREEN_WIDTH)
+      extractScanline()
     )
   }
+
+  private fun extractScanline() =
+    videoBuffer.array().toList().subList(yScanline * SCREEN_WIDTH, (yScanline + 1) * SCREEN_WIDTH)
 
   // TODO - this helper function adds little value
   private fun render(

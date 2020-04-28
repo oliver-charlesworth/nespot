@@ -11,7 +11,8 @@ import choliver.nespot.ppu.Ppu.Companion.REG_PPUDATA
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUMASK
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSCROLL
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSTATUS
-import choliver.nespot.ppu.Renderer.*
+import choliver.nespot.ppu.Renderer.Context
+import choliver.nespot.ppu.Renderer.Result
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 import com.nhaarman.mockitokotlin2.*

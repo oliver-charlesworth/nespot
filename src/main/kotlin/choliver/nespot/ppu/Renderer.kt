@@ -12,7 +12,6 @@ import kotlin.math.min
 // TODO - eliminate all the magic numbers here
 // TODO - conditional rendering
 // TODO - scrolling
-// TODO - only select four sprites
 // TODO - priority
 // TODO - grayscale
 // TODO - emphasize
@@ -62,7 +61,7 @@ class Renderer(
 
     val sprites = getSpritesForScanline(ctx)
 
-    val isHit = prepareSpritesAndDetectHit(sprites)
+    val isHit = prepareSpritesAndDetectHit(sprites.take(MAX_SPRITES_PER_SCANLINE))
 
     renderToBuffer(ctx.yScanline)
 

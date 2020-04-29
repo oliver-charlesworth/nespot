@@ -261,63 +261,110 @@ class RendererTest {
   @Nested
   inner class Priority {
     private val paletteSpr = 1  // Non-zero palette
-    private val paletteBg = 2   // Non-zero palette different to that of sprite
+    private val paletteSpr2 = 3 // Non-zero palette
+    private val paletteBg = 2   // Non-zero palette different to that of sprites
 
     private val ubg = 0
-    private val bg = 1 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
-    private val spr = 1 + ((NUM_PALETTES + paletteSpr) * NUM_ENTRIES_PER_PALETTE)
+    private val bgEntry = 1 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
+    private val sprEntry = 1 + ((NUM_PALETTES + paletteSpr) * NUM_ENTRIES_PER_PALETTE)
 
     @Test
     fun `transparent bg, transparent spr, in front - ubg`() {
-      assertPixelColour(expected = ubg, bgOpaque = false, sprOpaque = false, sprBehind = false)
+      initBackground(false)
+      initSprite(behind = false, opaque = false, palette = paletteSpr)
+
+      assertPixelColour(expected = ubg)
     }
 
     @Test
     fun `transparent bg, transparent spr, behind - ubg`() {
-      assertPixelColour(expected = ubg, bgOpaque = false, sprOpaque = false, sprBehind = true)
+      initBackground(false)
+      initSprite(behind = true, opaque = false, palette = paletteSpr)
+
+      assertPixelColour(expected = ubg)
     }
 
     @Test
     fun `transparent bg, opaque spr, in front - spr`() {
-      assertPixelColour(expected = spr, bgOpaque = false, sprOpaque = true, sprBehind = false)
+      initBackground(false)
+      initSprite(behind = false, opaque = true, palette = paletteSpr)
+
+      assertPixelColour(expected = sprEntry)
     }
 
     @Test
     fun `transparent bg, opaque spr, behind - spr`() {
-      assertPixelColour(expected = spr, bgOpaque = false, sprOpaque = true, sprBehind = true)
+      initBackground(false)
+      initSprite(behind = true, opaque = true, palette = paletteSpr)
+
+      assertPixelColour(expected = sprEntry)
     }
 
     @Test
     fun `opaque bg, transparent spr, in front - bg`() {
-      assertPixelColour(expected = bg, bgOpaque = true, sprOpaque = false, sprBehind = false)
+      initBackground(true)
+      initSprite(behind = false, opaque = false, palette = paletteSpr)
+
+      assertPixelColour(expected = bgEntry)
     }
 
     @Test
     fun `opaque bg, transparent spr, behind - bg`() {
-      assertPixelColour(expected = bg, bgOpaque = true, sprOpaque = false, sprBehind = true)
+      initBackground(true)
+      initSprite(behind = true, opaque = false, palette = paletteSpr)
+
+      assertPixelColour(expected = bgEntry)
     }
 
     @Test
     fun `opaque bg, opaque spr, in front - spr`() {
-      assertPixelColour(expected = spr, bgOpaque = true, sprOpaque = true, sprBehind = false)
+      initBackground(true)
+      initSprite(behind = false, opaque = true, palette = paletteSpr)
+
+      assertPixelColour(expected = sprEntry)
     }
 
     @Test
     fun `opaque bg, opaque spr, behind - bg`() {
-      assertPixelColour(expected = bg, bgOpaque = true, sprOpaque = true, sprBehind = true)
+      initBackground(true)
+      initSprite(behind = true, opaque = true, palette = paletteSpr)
+
+      assertPixelColour(expected = bgEntry)
     }
 
-    private fun assertPixelColour(expected: Int, bgOpaque: Boolean, sprOpaque: Boolean, sprBehind: Boolean) {
-      initAttributeMemory(List(NUM_METATILE_COLUMNS) { paletteBg })
-      initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { if (bgOpaque) 1 else 0 }))
-      initSprPatternMemory(mapOf(1 to List(TILE_SIZE) { if (sprOpaque) 1 else 0 }), yRow = 0)
+    @Test
+    fun `lowest-index opaque foreground sprite wins`() {
+      initSprite(behind = false, opaque = true, palette = paletteSpr, iSprite = 0)
+      initSprite(behind = false, opaque = true, palette = paletteSpr2, iSprite = 1)
+
+      assertPixelColour(expected = sprEntry)
+    }
+
+    @Test
+    fun `lowest-index opaque background sprite wins`() {
+      initSprite(behind = true, opaque = true, palette = paletteSpr, iSprite = 0)
+      initSprite(behind = true, opaque = true, palette = paletteSpr2, iSprite = 1)
+
+      assertPixelColour(expected = sprEntry)
+    }
+
+    private fun initSprite(iSprite: Int = 0, behind: Boolean, opaque: Boolean, palette: Int) {
       initSpriteMemory(
         x = 0,
         y = yScanline,
-        iPattern = 1,
-        attrs = (if (sprBehind) 0x20 else 0x00) or paletteSpr
+        iPattern = iSprite,
+        attrs = (if (behind) 0x20 else 0x00) or palette,
+        iSprite = iSprite
       )
+      initSprPatternMemory(mapOf(iSprite to List(TILE_SIZE) { if (opaque) 1 else 0 }), yRow = 0)
+    }
 
+    private fun initBackground(opaque: Boolean) {
+      initAttributeMemory(List(NUM_METATILE_COLUMNS) { paletteBg })
+      initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { if (opaque) 1 else 0 }))
+    }
+
+    private fun assertPixelColour(expected: Int) {
       render()
 
       assertEquals(colors[paletteEntries[expected]], videoBuffer.array()[yScanline * SCREEN_WIDTH])
@@ -398,6 +445,16 @@ class RendererTest {
       assertFalse(render(bgRenderingEnabled = false, sprRenderingEnabled = false).sprite0Hit)
       assertTrue(render(sprRenderingEnabled = false).sprite0Hit)
       assertTrue(render(bgRenderingEnabled = false).sprite0Hit)
+    }
+
+    @Test
+    fun `doesn't trigger hit if opaque sprite overlaps opaque sprite`() {
+      initBgPatternMemory(mapOf(0 to listOf(0, 0, 0, 0, 0, 0, 0, 0)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
+      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = 0)
+      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = 1)
+
+      assertFalse(render().sprite0Hit)
     }
 
     // TODO - not detected in active clipping region (background or sprite)

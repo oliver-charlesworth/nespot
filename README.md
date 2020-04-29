@@ -10,7 +10,6 @@
 
   - Enable / disable rendering
   - Clipping - inc. impact on collision detection
-  - Sprite priority (overlap)
   - Greyscale
   - Colour emphasis
 

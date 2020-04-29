@@ -1,6 +1,10 @@
 package choliver.nespot.cartridge
 
+import choliver.nespot.Memory
 import choliver.nespot.cartridge.MapperConfig.Mirroring.*
+import choliver.nespot.cartridge.mappers.Mapper71
+import choliver.nespot.cartridge.mappers.Mmc1Mapper
+import choliver.nespot.cartridge.mappers.NromMapper
 import choliver.nespot.isBitSet
 
 // https://wiki.nesdev.com/w/index.php/INES
@@ -8,7 +12,7 @@ class Cartridge(romData: ByteArray) {
 
   private val mapper = createMapper(romData)
   val prg = mapper.prg
-  val chr = mapper.chr
+  fun chr(vram: Memory) = mapper.chr(vram)
 
   init {
     val magicNumber = romData.copyOfRange(0, 4).toList()
@@ -38,6 +42,7 @@ class Cartridge(romData: ByteArray) {
     return when (val mapper = ((romData[6].toInt() and 0xF0) shr 4) or ((romData[7].toInt() and 0xF0))) {
       0 -> NromMapper(config)
       1 -> Mmc1Mapper(config)
+      71 -> Mapper71(config)
       else -> throw UnsupportedRomException("Mapper #${mapper}")
     }
   }

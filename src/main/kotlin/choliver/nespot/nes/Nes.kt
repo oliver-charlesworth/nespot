@@ -45,7 +45,7 @@ class Nes(
   private val cpuRam = Ram(CPU_RAM_SIZE)
   private val ppuRam = Ram(PPU_RAM_SIZE)
 
-  private val ppuMapper = cartridge.chr.intercept(ppuRam)
+  private val ppuMapper = cartridge.chr(ppuRam)
 
   private val ppu = Ppu(
     memory = ppuMapper,

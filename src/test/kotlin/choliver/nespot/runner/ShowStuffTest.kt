@@ -30,7 +30,7 @@ class ShowStuffTest {
   @Disabled
   fun patterns() {
     val cartridge = Cartridge(File("roms/smb.nes").readBytes())
-    val chr = cartridge.chr.intercept(mock())
+    val chr = cartridge.chr(mock())
 
     fun getPatternData(
       patternTable: Int,    // 0 to 1

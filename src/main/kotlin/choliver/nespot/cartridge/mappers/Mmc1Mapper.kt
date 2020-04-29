@@ -1,6 +1,8 @@
-package choliver.nespot.cartridge
+package choliver.nespot.cartridge.mappers
 
 import choliver.nespot.*
+import choliver.nespot.cartridge.Mapper
+import choliver.nespot.cartridge.MapperConfig
 
 // https://wiki.nesdev.com/w/index.php/MMC1
 class Mmc1Mapper(private val config: MapperConfig) : Mapper {
@@ -49,7 +51,7 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
     }
   }
 
-  override val chr = object : ChrMemory {
+  override fun chr(vram: Memory) = object : Memory {
     private val myLoad: (Address) -> Data = if (usingChrRam) {
       { addr -> chrRam.load(addr) }
     } else {
@@ -62,46 +64,44 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
       { _, _ -> }
     }
 
-    override fun intercept(ram: Memory) = object : Memory {
-      override fun load(addr: Address) = when {
-        addr >= BASE_VRAM -> ram.load(mapToVram(addr))  // This maps everything >= 0x4000 too
-        addr < BASE_CHR1_ROM -> myLoad(mapToBank(addr, when (chrMode) {
+    override fun load(addr: Address) = when {
+      addr >= BASE_VRAM -> vram.load(mapToVram(addr))  // This maps everything >= 0x4000 too
+      addr < BASE_CHR1_ROM -> myLoad(mapToBank(addr, when (chrMode) {
+        0 -> (chr0Bank and 0x1E)
+        1 -> chr0Bank
+        else -> throw IllegalArgumentException()  // Should never happen
+      }))
+      else -> myLoad(mapToBank(addr, when (chrMode) {
+        0 -> (chr0Bank or 0x01)
+        1 -> chr1Bank
+        else -> throw IllegalArgumentException()  // Should never happen
+      }))
+    }
+
+    override fun store(addr: Address, data: Data) {
+      when {
+        addr >= BASE_VRAM -> vram.store(mapToVram(addr), data)  // This maps everything >= 0x4000 too
+        addr < BASE_CHR1_ROM -> myStore(mapToBank(addr, when (chrMode) {
           0 -> (chr0Bank and 0x1E)
           1 -> chr0Bank
           else -> throw IllegalArgumentException()  // Should never happen
-        }))
-        else -> myLoad(mapToBank(addr, when (chrMode) {
+        }), data)
+        else -> myStore(mapToBank(addr, when (chrMode) {
           0 -> (chr0Bank or 0x01)
           1 -> chr1Bank
           else -> throw IllegalArgumentException()  // Should never happen
-        }))
+        }), data)
       }
+    }
 
-      override fun store(addr: Address, data: Data) {
-        when {
-          addr >= BASE_VRAM -> ram.store(mapToVram(addr), data)  // This maps everything >= 0x4000 too
-          addr < BASE_CHR1_ROM -> myStore(mapToBank(addr, when (chrMode) {
-            0 -> (chr0Bank and 0x1E)
-            1 -> chr0Bank
-            else -> throw IllegalArgumentException()  // Should never happen
-          }), data)
-          else -> myStore(mapToBank(addr, when (chrMode) {
-            0 -> (chr0Bank or 0x01)
-            1 -> chr1Bank
-            else -> throw IllegalArgumentException()  // Should never happen
-          }), data)
-        }
-      }
+    private fun mapToBank(addr: Address, iBank: Int): Address = (addr and 0x0FFF) + 0x1000 * iBank
 
-      private fun mapToBank(addr: Address, iBank: Int): Address = (addr and 0x0FFF) + 0x1000 * iBank
-
-      private fun mapToVram(addr: Address): Address = when (mirrorMode) {
-        0 -> (addr and 1023)
-        1 -> (addr and 1023) + 1024
-        2 -> (addr and 2047)
-        3 -> (addr and 1023) or ((addr and 2048) shr 1)
-        else -> throw UnsupportedOperationException()   // Should never happen
-      }
+    private fun mapToVram(addr: Address): Address = when (mirrorMode) {
+      0 -> (addr and 1023)
+      1 -> (addr and 1023) + 1024
+      2 -> (addr and 2047)
+      3 -> (addr and 1023) or ((addr and 2048) shr 1)
+      else -> throw UnsupportedOperationException()   // Should never happen
     }
   }
 

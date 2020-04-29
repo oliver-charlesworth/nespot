@@ -2,6 +2,13 @@
 
 ## To do
 
+- Known game issues
+  - Micro Machines
+    - Lots of graphical artifacts
+    - Sprite priority required
+  - Zelda
+    - One pixel off on vertical scroll in start menu
+
 - Sound
   - Clicking
   - Interrupts
@@ -36,7 +43,6 @@
 - `Runner`
 
   - `--info` mode to print out the hash / headers of the ROM.
-  - Full-screen mode.
   - Ability to serialise state (i.e. save game).
 
 

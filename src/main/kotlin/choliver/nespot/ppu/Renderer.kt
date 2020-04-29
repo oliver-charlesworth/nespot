@@ -11,8 +11,6 @@ import kotlin.math.min
 
 // TODO - eliminate all the magic numbers here
 // TODO - conditional rendering
-// TODO - scrolling
-// TODO - priority
 // TODO - grayscale
 // TODO - emphasize
 class Renderer(
@@ -40,7 +38,8 @@ class Renderer(
 
   private data class Pixel(
     val c: Int,
-    val p: Int
+    val p: Int,
+    val src: Int  // -1 represents bg
   )
 
   private data class SpriteToRender(
@@ -52,7 +51,7 @@ class Renderer(
     val behind: Boolean
   )
 
-  private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0) }
+  private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0, 0) }
 
   fun renderScanline(ctx: Context): Result {
     val renderingEnabled = ctx.bgRenderingEnabled || ctx.sprRenderingEnabled
@@ -92,7 +91,7 @@ class Renderer(
           palette = (memory.load(addrAttr) shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
           pattern = getPattern(iTable = bgPatternTable, iTile = memory.load(addrNt), iRow = yFine)
         }
-        pixels[x] = Pixel(c = patternPixel(pattern, xFine), p = palette)
+        pixels[x] = Pixel(c = patternPixel(pattern, xFine), p = palette, src = -1)
         incrementX()
       }
     }
@@ -140,20 +139,29 @@ class Renderer(
   private fun prepareSpritesAndDetectHit(sprites: List<SpriteToRender>): Boolean {
     var isHit = false
 
+    // Lowest index is highest priority, so render last
     sprites.forEach { spr ->
       for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - spr.x)) {
         val x = spr.x + xPixel
         val pxSpr = Pixel(
           c = patternPixel(spr.pattern, maybeFlip(xPixel, spr.flipX)),
-          p = spr.palette
+          p = spr.palette,
+          src = spr.iSprite
         )
-        val pxBg = pixels[x]
+        val pxCurrent = pixels[x]
         val opaqueSpr = (pxSpr.c != 0)
-        val opaqueBg = (pxBg.c != 0)
-        pixels[x] = if (opaqueSpr && (!spr.behind || !opaqueBg)) pxSpr else pxBg
+        val opaqueCurrent = (pxCurrent.c != 0)
 
-        // Collision detection
-        isHit = isHit || ((spr.iSprite == 0) && opaqueBg && opaqueSpr && (x < (SCREEN_WIDTH - 1)))
+        // Do not render if already a sprite
+        pixels[x] = when {
+          (pxCurrent.src != -1) -> pxCurrent        // Don't render if already a higher-priority sprite
+          !opaqueSpr -> pxCurrent                   // Don't render if transparent
+          spr.behind && opaqueCurrent -> pxCurrent  // Don't render if behind an opaque pixel
+          else -> pxSpr
+        }
+
+        // Collision detection - no need to check if current is sprite, as only relevant for iSprite == 0
+        isHit = isHit || ((spr.iSprite == 0) && opaqueCurrent && opaqueSpr && (x < (SCREEN_WIDTH - 1)))
       }
     }
 

@@ -1,6 +1,7 @@
 package choliver.nespot.cartridge.mappers
 
 import choliver.nespot.*
+import choliver.nespot.cartridge.BASE_VRAM
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.MapperConfig
 import choliver.nespot.cartridge.MirroringMemory
@@ -31,14 +32,14 @@ class Mapper71(private val config: MapperConfig) : Mapper {
     val mirroredRam = MirroringMemory(config.mirroring, vram)
 
     return object : Memory {
-      override fun load(addr: Address) = if (addr >= choliver.nespot.cartridge.BASE_VRAM) {
+      override fun load(addr: Address) = if (addr >= BASE_VRAM) {
         mirroredRam.load(addr)  // This maps everything >= 0x4000 too
       } else {
         chrRam.load(addr)
       }
 
       override fun store(addr: Address, data: Data) {
-        if (addr >= choliver.nespot.cartridge.BASE_VRAM) {
+        if (addr >= BASE_VRAM) {
           mirroredRam.store(addr, data) // This maps everything >= 0x4000 too
         } else {
           chrRam.store(addr, data)
@@ -52,7 +53,6 @@ class Mapper71(private val config: MapperConfig) : Mapper {
     const val BASE_PRG0_ROM = 0x8000
     const val BASE_PRG1_ROM = 0xC000
     const val BASE_CHR_ROM = 0x0000
-    const val BASE_VRAM = 0x2000
     const val BASE_BANK_SELECT = 0xC000
   }
 }

@@ -1,7 +1,6 @@
 package choliver.nespot.cartridge
 
 import choliver.nespot.*
-import choliver.nespot.cartridge.MapperConfig.Mirroring.*
 
 // https://wiki.nesdev.com/w/index.php/INES_Mapper_071
 class Mapper71(private val config: MapperConfig) : Mapper {
@@ -26,50 +25,25 @@ class Mapper71(private val config: MapperConfig) : Mapper {
   }
 
   override val chr = object : ChrMemory {
-    // Separate implementations so we're not performing the conditional in the hot path
-    override fun intercept(ram: Memory) = when (config.mirroring) {
-      HORIZONTAL -> HorizontalChr(ram)
-      VERTICAL -> VerticalChr(ram)
-      IGNORED -> throw UnsupportedOperationException()
-    }
-  }
+    override fun intercept(ram: Memory): Memory {
+      val mirroredRam = MirroringMemory(config.mirroring, ram)
 
-  private inner class HorizontalChr(private val ram: Memory) : Memory {
-    override fun load(addr: Address) = if (addr >= BASE_VRAM) {
-      ram.load(mapToVram(addr)) // This maps everything >= 0x4000 too
-    } else {
-      chrRam.load(addr)
-    }
+      return object : Memory {
+        override fun load(addr: Address) = if (addr >= choliver.nespot.cartridge.BASE_VRAM) {
+          mirroredRam.load(addr)  // This maps everything >= 0x4000 too
+        } else {
+          chrRam.load(addr)
+        }
 
-    override fun store(addr: Address, data: Data) {
-      // This maps everything >= 0x4000 too
-      if (addr >= BASE_VRAM) {
-        ram.store(mapToVram(addr), data)
-      } else {
-        chrRam.store(addr, data)
+        override fun store(addr: Address, data: Data) {
+          if (addr >= choliver.nespot.cartridge.BASE_VRAM) {
+            mirroredRam.store(addr, data) // This maps everything >= 0x4000 too
+          } else {
+            chrRam.store(addr, data)
+          }
+        }
       }
     }
-
-    private fun mapToVram(addr: Address) = (addr and 1023) or ((addr and 2048) shr 1)
-  }
-
-  private inner class VerticalChr(private val ram: Memory) : Memory {
-    override fun load(addr: Address) = if (addr >= BASE_VRAM) {
-      ram.load(mapToVram(addr)) // This maps everything >= 0x4000 too
-    } else {
-      chrRam.load(addr)
-    }
-
-    override fun store(addr: Address, data: Data) {
-      // This maps everything >= 0x4000 too
-      if (addr >= BASE_VRAM) {
-        ram.store(mapToVram(addr), data)
-      } else {
-        chrRam.store(addr, data)
-      }
-    }
-
-    private fun mapToVram(addr: Address) = addr and 2047
   }
 
   @Suppress("unused")

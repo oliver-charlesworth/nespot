@@ -16,7 +16,6 @@ class NromMapper(private val config: MapperConfig) : Mapper {
   }
 
   override val chr = object : ChrMemory {
-    // Separate implementations so we're not performing the conditional in the hot path
     override fun intercept(ram: Memory): Memory {
       val mirroredRam = MirroringMemory(config.mirroring, ram)
 

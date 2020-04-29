@@ -2,6 +2,9 @@ package choliver.nespot.cartridge
 
 import choliver.nespot.Memory
 import choliver.nespot.cartridge.MapperConfig.Mirroring.*
+import choliver.nespot.cartridge.mappers.Mapper71
+import choliver.nespot.cartridge.mappers.Mmc1Mapper
+import choliver.nespot.cartridge.mappers.NromMapper
 import choliver.nespot.isBitSet
 
 // https://wiki.nesdev.com/w/index.php/INES

@@ -1,6 +1,8 @@
-package choliver.nespot.cartridge
+package choliver.nespot.cartridge.mappers
 
 import choliver.nespot.*
+import choliver.nespot.cartridge.Mapper
+import choliver.nespot.cartridge.MapperConfig
 
 // https://wiki.nesdev.com/w/index.php/MMC1
 class Mmc1Mapper(private val config: MapperConfig) : Mapper {

@@ -1,6 +1,9 @@
-package choliver.nespot.cartridge
+package choliver.nespot.cartridge.mappers
 
 import choliver.nespot.*
+import choliver.nespot.cartridge.Mapper
+import choliver.nespot.cartridge.MapperConfig
+import choliver.nespot.cartridge.MirroringMemory
 
 // https://wiki.nesdev.com/w/index.php/INES_Mapper_071
 class Mapper71(private val config: MapperConfig) : Mapper {

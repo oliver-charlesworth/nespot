@@ -1,9 +1,10 @@
-package choliver.nespot.cartridge
+package choliver.nespot.cartridge.mappers
 
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
-import choliver.nespot.cartridge.Mmc1Mapper.Companion.BASE_SR
+import choliver.nespot.cartridge.MapperConfig
+import choliver.nespot.cartridge.mappers.Mmc1Mapper.Companion.BASE_SR
 import choliver.nespot.data
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock

@@ -1,7 +1,8 @@
-package choliver.nespot.cartridge
+package choliver.nespot.cartridge.mappers
 
 import choliver.nespot.Address
 import choliver.nespot.Memory
+import choliver.nespot.cartridge.MapperConfig
 import choliver.nespot.cartridge.MapperConfig.Mirroring
 import choliver.nespot.cartridge.MapperConfig.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.MapperConfig.Mirroring.VERTICAL

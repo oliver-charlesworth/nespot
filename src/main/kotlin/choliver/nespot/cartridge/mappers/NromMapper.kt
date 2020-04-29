@@ -1,8 +1,12 @@
-package choliver.nespot.cartridge
+package choliver.nespot.cartridge.mappers
 
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
+import choliver.nespot.cartridge.BASE_VRAM
+import choliver.nespot.cartridge.Mapper
+import choliver.nespot.cartridge.MapperConfig
+import choliver.nespot.cartridge.MirroringMemory
 import choliver.nespot.data
 
 // https://wiki.nesdev.com/w/index.php/NROM

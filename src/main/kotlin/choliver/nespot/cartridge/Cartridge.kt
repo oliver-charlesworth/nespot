@@ -1,5 +1,6 @@
 package choliver.nespot.cartridge
 
+import choliver.nespot.Memory
 import choliver.nespot.cartridge.MapperConfig.Mirroring.*
 import choliver.nespot.isBitSet
 
@@ -8,7 +9,7 @@ class Cartridge(romData: ByteArray) {
 
   private val mapper = createMapper(romData)
   val prg = mapper.prg
-  val chr = mapper.chr
+  fun chr(vram: Memory) = mapper.chr(vram)
 
   init {
     val magicNumber = romData.copyOfRange(0, 4).toList()

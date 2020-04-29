@@ -55,7 +55,7 @@ class NromMapperTest {
         this[0] = 0x30
         this[8191] = 0x40
       })
-      val chr = mapper.chr.intercept(mock())
+      val chr = mapper.chr(mock())
 
       assertEquals(0x30, chr.load(0x0000))
       assertEquals(0x40, chr.load(0x1FFF))
@@ -128,7 +128,7 @@ class NromMapperTest {
     private fun assertLoadAndStore(mirroring: Mirroring, source: Address, target: Address) {
       val mapper = mapper(mirroring = mirroring)
       val vram = mock<Memory>()
-      val chr = mapper.chr.intercept(vram)
+      val chr = mapper.chr(vram)
 
       val data = (target + 23).data() // Arbitrary payload
       whenever(vram.load(target)) doReturn data

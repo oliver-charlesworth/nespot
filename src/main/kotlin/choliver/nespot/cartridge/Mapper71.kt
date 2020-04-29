@@ -24,23 +24,21 @@ class Mapper71(private val config: MapperConfig) : Mapper {
     }
   }
 
-  override val chr = object : ChrMemory {
-    override fun intercept(ram: Memory): Memory {
-      val mirroredRam = MirroringMemory(config.mirroring, ram)
+  override fun chr(vram: Memory): Memory {
+    val mirroredRam = MirroringMemory(config.mirroring, vram)
 
-      return object : Memory {
-        override fun load(addr: Address) = if (addr >= choliver.nespot.cartridge.BASE_VRAM) {
-          mirroredRam.load(addr)  // This maps everything >= 0x4000 too
+    return object : Memory {
+      override fun load(addr: Address) = if (addr >= choliver.nespot.cartridge.BASE_VRAM) {
+        mirroredRam.load(addr)  // This maps everything >= 0x4000 too
+      } else {
+        chrRam.load(addr)
+      }
+
+      override fun store(addr: Address, data: Data) {
+        if (addr >= choliver.nespot.cartridge.BASE_VRAM) {
+          mirroredRam.store(addr, data) // This maps everything >= 0x4000 too
         } else {
-          chrRam.load(addr)
-        }
-
-        override fun store(addr: Address, data: Data) {
-          if (addr >= choliver.nespot.cartridge.BASE_VRAM) {
-            mirroredRam.store(addr, data) // This maps everything >= 0x4000 too
-          } else {
-            chrRam.store(addr, data)
-          }
+          chrRam.store(addr, data)
         }
       }
     }

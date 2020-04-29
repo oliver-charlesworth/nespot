@@ -15,22 +15,18 @@ class NromMapper(private val config: MapperConfig) : Mapper {
     override fun store(addr: Address, data: Data) {}
   }
 
-  override val chr = object : ChrMemory {
-    override fun intercept(ram: Memory): Memory {
-      val mirroredRam = MirroringMemory(config.mirroring, ram)
+  override fun chr(vram: Memory) = object : Memory {
+    val mirroredRam = MirroringMemory(config.mirroring, vram)
 
-      return object : Memory {
-        override fun load(addr: Address) = if (addr >= BASE_VRAM) {
-          mirroredRam.load(addr)  // This maps everything >= 0x4000 too
-        } else {
-          config.chrData[addr].data()
-        }
+    override fun load(addr: Address) = if (addr >= BASE_VRAM) {
+      mirroredRam.load(addr)  // This maps everything >= 0x4000 too
+    } else {
+      config.chrData[addr].data()
+    }
 
-        override fun store(addr: Address, data: Data) {
-          if (addr >= BASE_VRAM) {
-            mirroredRam.store(addr, data) // This maps everything >= 0x4000 too
-          }
-        }
+    override fun store(addr: Address, data: Data) {
+      if (addr >= BASE_VRAM) {
+        mirroredRam.store(addr, data) // This maps everything >= 0x4000 too
       }
     }
   }

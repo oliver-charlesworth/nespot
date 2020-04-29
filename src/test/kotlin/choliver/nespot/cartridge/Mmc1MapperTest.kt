@@ -140,7 +140,7 @@ class Mmc1MapperTest {
 
     @Test
     fun `load and store`() {
-      val chr = mapper.chr.intercept(mock())
+      val chr = mapper.chr(mock())
 
       chr.store(0x0000, 0x30) // Lowest mapped address
       chr.store(0x1FFF, 0x40) // Highest mapped address
@@ -215,7 +215,7 @@ class Mmc1MapperTest {
     }
 
     private fun assertLoads(expected: Map<Address, Data>) {
-      val chr = mapper.chr.intercept(mock())
+      val chr = mapper.chr(mock())
       expected.forEach { (addr, data) -> assertEquals(data, chr.load(addr)) }
     }
   }
@@ -305,7 +305,7 @@ class Mmc1MapperTest {
     private fun assertLoadAndStore(mode: Int, source: Address, target: Address) {
       val mapper = Mmc1Mapper(MapperConfig(chrData = ByteArray(8192)))
       val vram = mock<Memory>()
-      val chr = mapper.chr.intercept(vram)
+      val chr = mapper.chr(vram)
       mapper.writeReg(0, mode)
 
       val data = (target + 23).data() // Arbitrary payload

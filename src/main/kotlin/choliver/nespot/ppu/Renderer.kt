@@ -22,7 +22,7 @@ class Renderer(
 ) {
 
   @MutableForPerfReasons
-  data class Context(
+  data class Input(
     var bgEnabled: Boolean,
     var sprEnabled: Boolean,
     var bgLeftTileEnabled: Boolean,
@@ -34,7 +34,7 @@ class Renderer(
     var scanline: Int
   )
 
-  data class Result(
+  data class Output(
     val sprite0Hit: Boolean,
     val spriteOverflow: Boolean
   )
@@ -56,7 +56,7 @@ class Renderer(
 
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0, 0) }
 
-  fun renderScanline(ctx: Context): Result {
+  fun renderScanline(ctx: Input): Output {
     if (ctx.bgEnabled) {
       prepareBackground(ctx)
     } else {
@@ -77,13 +77,13 @@ class Renderer(
 
     renderToBuffer(ctx.scanline)
 
-    return Result(
+    return Output(
       sprite0Hit = isHit,
       spriteOverflow = (ctx.bgEnabled || ctx.sprEnabled) && (sprites.size > MAX_SPRITES_PER_SCANLINE)
     )
   }
 
-  private fun prepareBackground(ctx: Context) {
+  private fun prepareBackground(ctx: Input) {
     var palette = 0
     var pattern: Data = 0x00
 
@@ -122,7 +122,7 @@ class Renderer(
     }
   }
 
-  private fun getSpritesForScanline(ctx: Context): List<SpriteToRender> {
+  private fun getSpritesForScanline(ctx: Input): List<SpriteToRender> {
     val sprites = mutableListOf<SpriteToRender>()
 
     for (iSprite in 0 until NUM_SPRITES) {
@@ -161,7 +161,7 @@ class Renderer(
     return sprites
   }
 
-  private fun prepareSpritesAndDetectHit(ctx: Context, sprites: List<SpriteToRender>): Boolean {
+  private fun prepareSpritesAndDetectHit(ctx: Input, sprites: List<SpriteToRender>): Boolean {
     var isHit = false
 
     // Lowest index is highest priority, so render last

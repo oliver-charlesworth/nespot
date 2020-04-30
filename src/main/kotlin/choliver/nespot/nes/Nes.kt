@@ -6,6 +6,7 @@ import choliver.nespot.Memory
 import choliver.nespot.Ram
 import choliver.nespot.apu.Apu
 import choliver.nespot.cartridge.Cartridge
+import choliver.nespot.cartridge.Rom
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
 import choliver.nespot.sixfiveohtwo.InstructionDecoder
@@ -13,7 +14,7 @@ import choliver.nespot.sixfiveohtwo.model.State
 import java.nio.IntBuffer
 
 class Nes(
-  rom: ByteArray,
+  rom: Rom,
   videoBuffer: IntBuffer,
   audioBuffer: ByteArray,
   joypads: Joypads,

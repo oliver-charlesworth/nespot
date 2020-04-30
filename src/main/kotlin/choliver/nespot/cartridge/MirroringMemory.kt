@@ -3,8 +3,8 @@ package choliver.nespot.cartridge
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
-import choliver.nespot.cartridge.MapperConfig.Mirroring
-import choliver.nespot.cartridge.MapperConfig.Mirroring.*
+import choliver.nespot.cartridge.Rom.Mirroring
+import choliver.nespot.cartridge.Rom.Mirroring.*
 
 class MirroringMemory(
   mirroring: Mirroring,

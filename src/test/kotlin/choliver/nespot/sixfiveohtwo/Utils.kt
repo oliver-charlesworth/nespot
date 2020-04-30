@@ -19,16 +19,16 @@ private data class Case(
 
 private val PROTO_STATES = listOf(
   State(),
-  State(P = Flags(C = true)),
-  State(P = Flags(Z = true)),
-  State(P = Flags(I = true)),
-  State(P = Flags(D = true)),
-  State(P = Flags(V = true)),
-  State(P = Flags(N = true)),
-  State(A = 0xAA),
-  State(X = 0xAA),
-  State(Y = 0xAA),
-  State(S = 0xAA)
+  State(p = Flags(c = true)),
+  State(p = Flags(z = true)),
+  State(p = Flags(i = true)),
+  State(p = Flags(d = true)),
+  State(p = Flags(v = true)),
+  State(p = Flags(n = true)),
+  State(a = 0xAA),
+  State(x = 0xAA),
+  State(y = 0xAA),
+  State(s = 0xAA)
 )
 
 const val BASE_ZERO_PAGE: Address = 0x0000
@@ -51,12 +51,12 @@ private val CASES = mapOf(
   ),
   ZERO_PAGE_X to Case(
     operand = { ZeroPageIndexed(0x30, X) },
-    state = { with(X = 0x20) },
+    state = { with(x = 0x20) },
     targetAddr = 0x0050
   ),
   ZERO_PAGE_Y to Case(
     operand = { ZeroPageIndexed(0x30, Y) },
-    state = { with(Y = 0x20) },
+    state = { with(y = 0x20) },
     targetAddr = 0x0050
   ),
   ABSOLUTE to Case(
@@ -65,12 +65,12 @@ private val CASES = mapOf(
   ),
   ABSOLUTE_X to Case(
     operand = { AbsoluteIndexed(SCARY_ADDR - 0x20, X) },
-    state = { with(X = 0x20) },
+    state = { with(x = 0x20) },
     targetAddr = SCARY_ADDR
   ),
   ABSOLUTE_Y to Case(
     operand = { AbsoluteIndexed(SCARY_ADDR - 0x20, Y) },
-    state = { with(Y = 0x20) },
+    state = { with(y = 0x20) },
     targetAddr = SCARY_ADDR
   ),
   INDIRECT to Case(
@@ -79,13 +79,13 @@ private val CASES = mapOf(
   ),
   INDEXED_INDIRECT to Case(
     operand = { IndexedIndirect(0x30) },
-    state = { with(X = 0x10) },
+    state = { with(x = 0x10) },
     mem = addrToMem(0x0040, SCARY_ADDR),
     targetAddr = SCARY_ADDR
   ),
   INDIRECT_INDEXED to Case(
     operand = { IndirectIndexed(0x30) },
-    state = { with(Y = 0x10) },
+    state = { with(y = 0x10) },
     mem = addrToMem(0x0030, SCARY_ADDR - 0x10),
     targetAddr = SCARY_ADDR
   )
@@ -111,7 +111,7 @@ fun assertForAddressModes(
         initStores = case.mem +             // Indirection / pointer
           (case.targetAddr to target) +     // Target (user-defined value, case-defined location)
           initStores,                       // User-defined
-        expectedState = case.state(proto).with(PC = BASE_USER + instruction.encode().size).expectedState(),
+        expectedState = case.state(proto).with(pc = BASE_USER + instruction.encode().size).expectedState(),
         expectedStores = expectedStores(case.targetAddr),
         name = instruction.toString()
       )
@@ -138,7 +138,7 @@ fun assertCpuEffects(
     pollReset = pollReset,
     pollNmi = pollNmi,
     pollIrq = pollIrq,
-    initialState = initState.with(PC = BASE_USER)
+    initialState = initState.with(pc = BASE_USER)
   )
   var numCycles = 0
   repeat(instructions.size) { numCycles += cpu.executeStep() }

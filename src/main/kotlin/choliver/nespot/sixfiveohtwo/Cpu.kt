@@ -30,19 +30,19 @@ class Cpu(
   fun executeStep() = when {
     pollReset() -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
     pollNmi() -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
-    pollIrq() -> if (_state.P.I) executeInstruction() else vector(VECTOR_IRQ, updateStack = true, disableIrq = false)
+    pollIrq() -> if (_state.p.i) executeInstruction() else vector(VECTOR_IRQ, updateStack = true, disableIrq = false)
     else -> executeInstruction()
   }
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {
     interrupt(addr, updateStack = updateStack, setBreakFlag = false)
-    state.P.I = disableIrq || state.P.I
+    state.p.i = disableIrq || state.p.i
     return NUM_INTERRUPT_CYCLES
   }
 
   private fun executeInstruction(): Int {
-    val decoded = decodeAt(_state.PC)
-    _state.PC = decoded.nextPc
+    val decoded = decodeAt(_state.pc)
+    _state.pc = decoded.nextPc
     operand = decoded.instruction.operand
     addr = decoded.addr
     extraCycles = 0
@@ -50,7 +50,7 @@ class Cpu(
     return decoded.numCycles + extraCycles
   }
 
-  fun decodeAt(pc: Address) = decoder.decode(pc = pc, x = _state.X, y = _state.Y)
+  fun decodeAt(pc: Address) = decoder.decode(pc = pc, x = _state.x, y = _state.y)
 
   private fun execute(op: Opcode) {
     _state.apply {
@@ -58,153 +58,153 @@ class Cpu(
         ADC -> add(resolve())
         SBC -> add(resolve() xor 0xFF)
 
-        CMP -> compare(A, resolve())
-        CPX -> compare(X, resolve())
-        CPY -> compare(Y, resolve())
+        CMP -> compare(a, resolve())
+        CPX -> compare(x, resolve())
+        CPY -> compare(y, resolve())
 
         DEC -> storeResult(resolve() - 1)
         DEX -> {
-          X = (X - 1).data()
-          updateZN(X)
+          x = (x - 1).data()
+          updateZN(x)
         }
         DEY -> {
-          Y = (Y - 1).data()
-          updateZN(Y)
+          y = (y - 1).data()
+          updateZN(y)
         }
 
         INC -> storeResult(resolve() + 1)
         INX -> {
-          X = (X + 1).data()
-          updateZN(X)
+          x = (x + 1).data()
+          updateZN(x)
         }
         INY -> {
-          Y = (Y + 1).data()
-          updateZN(Y)
+          y = (y + 1).data()
+          updateZN(y)
         }
 
         ASL -> {
           val data = resolve()
           storeResult(data shl 1)
-          P.C = data.isBitSet(7)
+          p.c = data.isBitSet(7)
         }
         LSR -> {
           val data = resolve()
           storeResult(data shr 1)
-          P.C = data.isBitSet(0)
+          p.c = data.isBitSet(0)
         }
         ROL -> {
           val data = resolve()
-          storeResult((data shl 1) or (if (P.C) 1 else 0))
-          P.C = data.isBitSet(7)
+          storeResult((data shl 1) or (if (p.c) 1 else 0))
+          p.c = data.isBitSet(7)
         }
         ROR -> {
           val data = resolve()
-          storeResult((data shr 1) or (if (P.C) 0x80 else 0))
-          P.C = data.isBitSet(0)
+          storeResult((data shr 1) or (if (p.c) 0x80 else 0))
+          p.c = data.isBitSet(0)
         }
 
         AND -> {
-          A = A and resolve()
-          updateZN(A)
+          a = a and resolve()
+          updateZN(a)
         }
         ORA -> {
-          A = A or resolve()
-          updateZN(A)
+          a = a or resolve()
+          updateZN(a)
         }
         EOR -> {
-          A = A xor resolve()
-          updateZN(A)
+          a = a xor resolve()
+          updateZN(a)
         }
 
         BIT -> {
           val data = resolve()
-          val tmp = A and data
-          P.Z = tmp.isZero()
-          P.N = data.isNeg()
-          P.V = data.isBitSet(6)
+          val tmp = a and data
+          p.z = tmp.isZero()
+          p.n = data.isNeg()
+          p.v = data.isBitSet(6)
         }
 
         LDA -> {
-          A = resolve()
-          updateZN(A)
+          a = resolve()
+          updateZN(a)
         }
         LDX -> {
-          X = resolve()
-          updateZN(X)
+          x = resolve()
+          updateZN(x)
         }
         LDY -> {
-          Y = resolve()
-          updateZN(Y)
+          y = resolve()
+          updateZN(y)
         }
 
-        STA -> memory.store(addr, A)
-        STX -> memory.store(addr, X)
-        STY -> memory.store(addr, Y)
+        STA -> memory.store(addr, a)
+        STX -> memory.store(addr, x)
+        STY -> memory.store(addr, y)
 
-        PHP -> push(P.data() or 0x10)  // Most online references state that PHP also sets B on stack
-        PHA -> push(A)
-        PLP -> P = pop().toFlags()
+        PHP -> push(p.data() or 0x10)  // Most online references state that PHP also sets B on stack
+        PHA -> push(a)
+        PLP -> p = pop().toFlags()
         PLA -> {
-          A = pop()
-          updateZN(A)
+          a = pop()
+          updateZN(a)
         }
 
-        JMP -> PC = addr
+        JMP -> pc = addr
 
         JSR -> {
           // One before next instruction (note we already advanced PC)
-          push((PC - 1).hi())
-          push((PC - 1).lo())
-          PC = addr
+          push((pc - 1).hi())
+          push((pc - 1).lo())
+          pc = addr
         }
 
-        RTS -> PC = (addr(lo = pop(), hi = pop()) + 1).addr()
+        RTS -> pc = (addr(lo = pop(), hi = pop()) + 1).addr()
 
         RTI -> {
-          P = pop().toFlags()
-          PC = addr(lo = pop(), hi = pop())
+          p = pop().toFlags()
+          pc = addr(lo = pop(), hi = pop())
         }
 
         BRK -> interrupt(VECTOR_IRQ, updateStack = true, setBreakFlag = true)
 
-        BPL -> branch(!P.N)
-        BMI -> branch(P.N)
-        BVC -> branch(!P.V)
-        BVS -> branch(P.V)
-        BCC -> branch(!P.C)
-        BCS -> branch(P.C)
-        BNE -> branch(!P.Z)
-        BEQ -> branch(P.Z)
+        BPL -> branch(!p.n)
+        BMI -> branch(p.n)
+        BVC -> branch(!p.v)
+        BVS -> branch(p.v)
+        BCC -> branch(!p.c)
+        BCS -> branch(p.c)
+        BNE -> branch(!p.z)
+        BEQ -> branch(p.z)
 
         TXA -> {
-          A = X
-          updateZN(A)
+          a = x
+          updateZN(a)
         }
         TYA -> {
-          A = Y
-          updateZN(A)
+          a = y
+          updateZN(a)
         }
-        TXS -> S = X
+        TXS -> s = x
         TAY -> {
-          Y = A
-          updateZN(Y)
+          y = a
+          updateZN(y)
         }
         TAX -> {
-          X = A
-          updateZN(X)
+          x = a
+          updateZN(x)
         }
         TSX -> {
-          X = S
-          updateZN(X)
+          x = s
+          updateZN(x)
         }
 
-        CLC -> P.C = _0
-        CLD -> P.D = _0
-        CLI -> P.I = _0
-        CLV -> P.V = _0
-        SEC -> P.C = _1
-        SED -> P.D = _1
-        SEI -> P.I = _1
+        CLC -> p.c = _0
+        CLD -> p.d = _0
+        CLI -> p.i = _0
+        CLV -> p.v = _0
+        SEC -> p.c = _1
+        SED -> p.d = _1
+        SEI -> p.i = _1
 
         NOP -> { }
       }
@@ -214,33 +214,33 @@ class Cpu(
   private fun branch(cond: Boolean) {
     if (cond) {
       extraCycles++
-      if (((state.PC xor addr) and 0xFF00) != 0) {
+      if (((state.pc xor addr) and 0xFF00) != 0) {
         extraCycles++   // Page change
       }
-      state.PC = addr
+      state.pc = addr
     }
   }
 
   private fun push(data: Data) {
-    memory.store(state.S or 0x100, data)
-    state.S = (state.S - 1).data()
+    memory.store(state.s or 0x100, data)
+    state.s = (state.s - 1).data()
   }
 
   private fun pop(): Data {
-    state.S = (state.S + 1).data()
-    return memory.load(state.S or 0x100)
+    state.s = (state.s + 1).data()
+    return memory.load(state.s or 0x100)
   }
 
   private fun add(rhs: Data) = _state.apply {
-    val c = P.C
-    val raw = A + rhs + (if (c) 1 else 0)
+    val c = p.c
+    val raw = a + rhs + (if (c) 1 else 0)
     val result = raw.data()
-    val sameOperandSigns = (A.isNeg() == rhs.isNeg())
-    val differentResultSign = (A.isNeg() != result.isNeg())
+    val sameOperandSigns = (a.isNeg() == rhs.isNeg())
+    val differentResultSign = (a.isNeg() != result.isNeg())
 
-    A = result
-    P.C = raw.isBitSet(8)
-    P.V = sameOperandSigns && differentResultSign
+    a = result
+    p.c = raw.isBitSet(8)
+    p.v = sameOperandSigns && differentResultSign
     updateZN(result)
   }
 
@@ -248,25 +248,25 @@ class Cpu(
     val raw = (lhs + (rhs xor 0xFF) + 1)
     val result = raw.data()
 
-    P.C = raw.isBitSet(8)
+    p.c = raw.isBitSet(8)
     updateZN(result)
   }
 
   private fun interrupt(vector: Address, updateStack: Boolean, setBreakFlag: Boolean) = _state.apply {
     if (updateStack) {
-      push(PC.hi())
-      push(PC.lo())
-      push( P.data() or (if (setBreakFlag) 0x10 else 0x00))
+      push(pc.hi())
+      push(pc.lo())
+      push( p.data() or (if (setBreakFlag) 0x10 else 0x00))
     }
 
-    PC = addr(
+    pc = addr(
       lo = memory.load(vector),
       hi = memory.load(vector + 1)
     )
   }
 
   private fun resolve() = when (operand) {
-    is Accumulator -> _state.A
+    is Accumulator -> _state.a
     is Immediate -> (operand as Immediate).literal
     else -> memory.load(addr)
   }
@@ -274,7 +274,7 @@ class Cpu(
   private fun storeResult(data: Data) {
     val d = data.data()
     if (operand is Accumulator) {
-      _state.A = d
+      _state.a = d
     } else {
       memory.store(addr, d)
     }
@@ -282,8 +282,8 @@ class Cpu(
   }
 
   private fun updateZN(data: Data) {
-    state.P.Z = data.isZero()
-    state.P.N = data.isNeg()
+    state.p.z = data.isZero()
+    state.p.n = data.isNeg()
   }
 
   companion object {

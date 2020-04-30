@@ -48,7 +48,7 @@ class CpuTest {
       instructions = listOf(
         Instruction(BEQ, Relative(0x01))
       ),
-      initState = State(P = Flags(Z = _1)),
+      initState = State(p = Flags(z = _1)),
       expectedCycles = 3
     )
 
@@ -57,7 +57,7 @@ class CpuTest {
       instructions = listOf(
         Instruction(BEQ, Relative(0x80))
       ),
-      initState = State(P = Flags(Z = _1)),
+      initState = State(p = Flags(z = _1)),
       expectedCycles = 4
     )
   }
@@ -78,9 +78,9 @@ class CpuTest {
     fun `follows reset vector and sets I`(I: Boolean) {
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(S = 0xFF, P = Flags(I = I)),
+        initState = State(s = 0xFF, p = Flags(i = I)),
         initStores = memory,
-        expectedState = State(S = 0xFF, P = Flags(I = _1), PC = resetHandler),
+        expectedState = State(s = 0xFF, p = Flags(i = _1), pc = resetHandler),
         expectedCycles = NUM_INTERRUPT_CYCLES,
         pollReset = { _1 }
       )
@@ -89,12 +89,12 @@ class CpuTest {
     @ParameterizedTest(name = "I == {0}")
     @ValueSource(booleans = [_0, _1])
     fun `follows nmi vector and leaves I unmodified`(I: Boolean) {
-      val flags = Flags(I = I)
+      val flags = Flags(i = I)
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(S = 0xFF, P = flags),
+        initState = State(s = 0xFF, p = flags),
         initStores = memory,
-        expectedState = State(S = 0xFC, P = flags, PC = nmiHandler),
+        expectedState = State(s = 0xFC, p = flags, pc = nmiHandler),
         expectedStores = expectedStores(flags),
         expectedCycles = NUM_INTERRUPT_CYCLES,
         pollNmi = { _1 }
@@ -103,12 +103,12 @@ class CpuTest {
 
     @Test
     fun `follows irq vector and leaves I unmodified if I == _0`() {
-      val flags = Flags(I = _0)
+      val flags = Flags(i = _0)
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(S = 0xFF, P = flags),
+        initState = State(s = 0xFF, p = flags),
         initStores = memory,
-        expectedState = State(S = 0xFC, P = flags, PC = irqHandler),
+        expectedState = State(s = 0xFC, p = flags, pc = irqHandler),
         expectedStores = expectedStores(flags),
         expectedCycles = NUM_INTERRUPT_CYCLES,
         pollIrq = { _1 }
@@ -117,12 +117,12 @@ class CpuTest {
 
     @Test
     fun `doesn't follow irq vector if I == _1`() {
-      val flags = Flags(I = _1)
+      val flags = Flags(i = _1)
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(S = 0xFF, P = flags),
+        initState = State(s = 0xFF, p = flags),
         initStores = memory,
-        expectedState = State(S = 0xFF, P = flags, PC = (BASE_USER + 1)),
+        expectedState = State(s = 0xFF, p = flags, pc = (BASE_USER + 1)),
         pollIrq = { _1 }
       )
     }
@@ -131,9 +131,9 @@ class CpuTest {
     fun `reset has highest priority`() {
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(S = 0xFF, P = Flags(I = _0)),
+        initState = State(s = 0xFF, p = Flags(i = _0)),
         initStores = memory,
-        expectedState = State(S = 0xFF, P = Flags(I = _1), PC = resetHandler),
+        expectedState = State(s = 0xFF, p = Flags(i = _1), pc = resetHandler),
         pollReset = { _1 },
         pollNmi = { _1 },
         pollIrq = { _1 }
@@ -142,12 +142,12 @@ class CpuTest {
 
     @Test
     fun `nmi has second highest priority`() {
-      val flags = Flags(I = _0)
+      val flags = Flags(i = _0)
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(S = 0xFF, P = flags),
+        initState = State(s = 0xFF, p = flags),
         initStores = memory,
-        expectedState = State(S = 0xFC, P = flags, PC = nmiHandler),
+        expectedState = State(s = 0xFC, p = flags, pc = nmiHandler),
         expectedStores = expectedStores(flags),
         pollNmi = { _1 },
         pollIrq = { _1 }

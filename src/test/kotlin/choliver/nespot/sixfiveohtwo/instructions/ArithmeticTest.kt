@@ -23,37 +23,37 @@ class ArithmeticTest {
   inner class Adc {
     @Test
     fun resultIsPositive() {
-      assertForAddressModesAndCarry(originalA = 0x20, rhs = 0x10, A = 0x30, V = _0, C = _0, N = _0, Z = _0)
+      assertForAddressModesAndCarry(originalA = 0x20, rhs = 0x10, a = 0x30, v = _0, c = _0, n = _0, z = _0)
     }
 
     @Test
     fun resultIsNegative() {
-      assertForAddressModesAndCarry(originalA = 0x20, rhs = 0xD0, A = 0xF0, V = _0, C = _0, N = _1, Z = _0)
+      assertForAddressModesAndCarry(originalA = 0x20, rhs = 0xD0, a = 0xF0, v = _0, c = _0, n = _1, z = _0)
     }
 
     @Test
     fun unsignedCarryOutAndPositive() {
-      assertForAddressModesAndCarry(originalA = 0x50, rhs = 0xD0, A = 0x20, V = _0, C = _1, N = _0, Z = _0)
+      assertForAddressModesAndCarry(originalA = 0x50, rhs = 0xD0, a = 0x20, v = _0, c = _1, n = _0, z = _0)
     }
 
     @Test
     fun unsignedCarryOutAndNegative() {
-      assertForAddressModesAndCarry(originalA = 0xD0, rhs = 0xD0, A = 0xA0, V = _0, C = _1, N = _1, Z = _0)
+      assertForAddressModesAndCarry(originalA = 0xD0, rhs = 0xD0, a = 0xA0, v = _0, c = _1, n = _1, z = _0)
     }
 
     @Test
     fun overflowToNegative() {
-      assertForAddressModesAndCarry(originalA = 0x20, rhs = 0x70, A = 0x90, V = _1, C = _0, N = _1, Z = _0)
+      assertForAddressModesAndCarry(originalA = 0x20, rhs = 0x70, a = 0x90, v = _1, c = _0, n = _1, z = _0)
     }
 
     @Test
     fun overflowToPositive() {
-      assertForAddressModesAndCarry(originalA = 0xE0, rhs = 0x90, A = 0x70, V = _1, C = _1, N = _0, Z = _0)
+      assertForAddressModesAndCarry(originalA = 0xE0, rhs = 0x90, a = 0x70, v = _1, c = _1, n = _0, z = _0)
     }
 
     @Test
     fun resultIsZero() {
-      assertForAddressModesAndCarry(originalA = 0x10, rhs = 0xF0, A = 0x00, V = _0, C = _1, N = _0, Z = _1)
+      assertForAddressModesAndCarry(originalA = 0x10, rhs = 0xF0, a = 0x00, v = _0, c = _1, n = _0, z = _1)
     }
 
     @Test
@@ -86,26 +86,26 @@ class ArithmeticTest {
     private fun assertForAddressModesAndCarry(
       originalA: Data,
       rhs: Data,
-      A: Data,
-      V: Boolean,
-      C: Boolean,
-      N: Boolean,
-      Z: Boolean
+      a: Data,
+      v: Boolean,
+      c: Boolean,
+      n: Boolean,
+      z: Boolean
     ) {
       // TODO - exercise decimal mode
 
       assertForAddressModes(
         ADC,
         target = rhs,
-        initState = { with(A = originalA, C = _0, D = _0) },
-        expectedState = { with(A = A, V = V, C = C, N = N, Z = Z, D = _0) }
+        initState = { with(a = originalA, c = _0, d = _0) },
+        expectedState = { with(a = a, v = v, c = c, n = n, z = z, d = _0) }
       )
 
       assertForAddressModes(
         ADC,
         target = rhs,
-        initState = { with(A = (originalA - 1), C = _1, D = _0) },
-        expectedState = { with(A = A, V = V, C = C, N = N, Z = Z, D = _0) }
+        initState = { with(a = (originalA - 1), c = _1, d = _0) },
+        expectedState = { with(a = a, v = v, c = c, n = n, z = z, d = _0) }
       )
     }
   }
@@ -114,37 +114,37 @@ class ArithmeticTest {
   inner class Sbc {
     @Test
     fun resultIsPositive() {
-      assertForAddressModesAndCarry(originalA = 0x20, rhs = 0xF0, A = 0x30, V = _0, C = _0, N = _0, Z = _0)
+      assertForAddressModesAndCarry(originalA = 0x20, rhs = 0xF0, a = 0x30, v = _0, c = _0, n = _0, z = _0)
     }
 
     @Test
     fun resultIsNegative() {
-      assertForAddressModesAndCarry(originalA = 0x20, rhs = 0x30, A = 0xF0, V = _0, C = _0, N = _1, Z = _0)
+      assertForAddressModesAndCarry(originalA = 0x20, rhs = 0x30, a = 0xF0, v = _0, c = _0, n = _1, z = _0)
     }
 
     @Test
     fun unsignedCarryOutAndPositive() {
-      assertForAddressModesAndCarry(originalA = 0x50, rhs = 0x30, A = 0x20, V = _0, C = _1, N = _0, Z = _0)
+      assertForAddressModesAndCarry(originalA = 0x50, rhs = 0x30, a = 0x20, v = _0, c = _1, n = _0, z = _0)
     }
 
     @Test
     fun unsignedCarryOutAndNegative() {
-      assertForAddressModesAndCarry(originalA = 0xD0, rhs = 0x30, A = 0xA0, V = _0, C = _1, N = _1, Z = _0)
+      assertForAddressModesAndCarry(originalA = 0xD0, rhs = 0x30, a = 0xA0, v = _0, c = _1, n = _1, z = _0)
     }
 
     @Test
     fun overflowToNegative() {
-      assertForAddressModesAndCarry(originalA = 0x20, rhs = 0x90, A = 0x90, V = _1, C = _0, N = _1, Z = _0)
+      assertForAddressModesAndCarry(originalA = 0x20, rhs = 0x90, a = 0x90, v = _1, c = _0, n = _1, z = _0)
     }
 
     @Test
     fun overflowToPositive() {
-      assertForAddressModesAndCarry(originalA = 0xE0, rhs = 0x70, A = 0x70, V = _1, C = _1, N = _0, Z = _0)
+      assertForAddressModesAndCarry(originalA = 0xE0, rhs = 0x70, a = 0x70, v = _1, c = _1, n = _0, z = _0)
     }
 
     @Test
     fun resultIsZero() {
-      assertForAddressModesAndCarry(originalA = 0x10, rhs = 0x10, A = 0x00, V = _0, C = _1, N = _0, Z = _1)
+      assertForAddressModesAndCarry(originalA = 0x10, rhs = 0x10, a = 0x00, v = _0, c = _1, n = _0, z = _1)
     }
 
     @Test
@@ -178,26 +178,26 @@ class ArithmeticTest {
     private fun assertForAddressModesAndCarry(
       originalA: Data,
       rhs: Data,
-      A: Data,
-      V: Boolean,
-      C: Boolean,
-      N: Boolean,
-      Z: Boolean
+      a: Data,
+      v: Boolean,
+      c: Boolean,
+      n: Boolean,
+      z: Boolean
     ) {
       // TODO - exercise decimal mode
 
       assertForAddressModes(
         SBC,
         target = rhs,
-        initState = { with(A = originalA, C = _1, D = _0) },
-        expectedState = { with(A = A, V = V, C = C, N = N, Z = Z, D = _0) }
+        initState = { with(a = originalA, c = _1, d = _0) },
+        expectedState = { with(a = a, v = v, c = c, n = n, z = z, d = _0) }
       )
 
       assertForAddressModes(
         SBC,
         target = rhs,
-        initState = { with(A = (originalA + 1), C = _0, D = _0) },
-        expectedState = { with(A = A, V = V, C = C, N = N, Z = Z, D = _0) }
+        initState = { with(a = (originalA + 1), c = _0, d = _0) },
+        expectedState = { with(a = a, v = v, c = c, n = n, z = z, d = _0) }
       )
     }
   }
@@ -209,8 +209,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CMP,
         target = 0xFD,
-        initState = { with(A = 0xFE) },
-        expectedState = { with(A = 0xFE, C = _1, N = _0, Z = _0) }
+        initState = { with(a = 0xFE) },
+        expectedState = { with(a = 0xFE, c = _1, n = _0, z = _0) }
       )
     }
 
@@ -219,8 +219,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CMP,
         target = 0xFF,
-        initState = { with(A = 0xFE) },
-        expectedState = { with(A = 0xFE, C = _0, N = _1, Z = _0) }
+        initState = { with(a = 0xFE) },
+        expectedState = { with(a = 0xFE, c = _0, n = _1, z = _0) }
       )
     }
 
@@ -229,8 +229,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CMP,
         target = 0xFE,
-        initState = { with(A = 0xFE) },
-        expectedState = { with(A = 0xFE, C = _1, N = _0, Z = _1) }
+        initState = { with(a = 0xFE) },
+        expectedState = { with(a = 0xFE, c = _1, n = _0, z = _1) }
       )
     }
 
@@ -239,8 +239,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CMP,
         target = 0x7F,
-        initState = { with(A = 0x80) },
-        expectedState = { with(A = 0x80, C = _1, N = _0, Z = _0) } // 0x80 > 0x7F only if unsigned
+        initState = { with(a = 0x80) },
+        expectedState = { with(a = 0x80, c = _1, n = _0, z = _0) } // 0x80 > 0x7F only if unsigned
       )
     }
 
@@ -249,8 +249,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CMP,
         target = 0x00,
-        initState = { with(A = 0xFE) },
-        expectedState = { with(A = 0xFE, C = _1, N = _1, Z = _0) }
+        initState = { with(a = 0xFE) },
+        expectedState = { with(a = 0xFE, c = _1, n = _1, z = _0) }
       )
     }
   }
@@ -262,8 +262,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CPX,
         target = 0xFD,
-        initState = { with(X = 0xFE) },
-        expectedState = { with(X = 0xFE, C = _1, N = _0, Z = _0) }
+        initState = { with(x = 0xFE) },
+        expectedState = { with(x = 0xFE, c = _1, n = _0, z = _0) }
       )
     }
 
@@ -277,8 +277,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CPY,
         target = 0xFD,
-        initState = { with(Y = 0xFE) },
-        expectedState = { with(Y = 0xFE, C = _1, N = _0, Z = _0) }
+        initState = { with(y = 0xFE) },
+        expectedState = { with(y = 0xFE, c = _1, n = _0, z = _0) }
       )
     }
 
@@ -290,19 +290,19 @@ class ArithmeticTest {
     assertForAddressModes(
       DEC,
       target = 0x02,
-      expectedState = { with(Z = _0, N = _0) },
+      expectedState = { with(z = _0, n = _0) },
       expectedStores = { mapOf(it to 0x01) }
     )
     assertForAddressModes(
       DEC,
       target = 0x01,
-      expectedState = { with(Z = _1, N = _0) },
+      expectedState = { with(z = _1, n = _0) },
       expectedStores = { mapOf(it to 0x00) }
     )
     assertForAddressModes(
       DEC,
       target = 0xFF,
-      expectedState = { with(Z = _0, N = _1) },
+      expectedState = { with(z = _0, n = _1) },
       expectedStores = { mapOf(it to 0xFE) }
     )
   }
@@ -311,18 +311,18 @@ class ArithmeticTest {
   fun dex() {
     assertForAddressModes(
       DEX,
-      initState = { with(X = 0x02) },
-      expectedState = { with(X = 0x01, Z = _0, N = _0) }
+      initState = { with(x = 0x02) },
+      expectedState = { with(x = 0x01, z = _0, n = _0) }
     )
     assertForAddressModes(
       DEX,
-      initState = { with(X = 0x01) },
-      expectedState = { with(X = 0x00, Z = _1, N = _0) }
+      initState = { with(x = 0x01) },
+      expectedState = { with(x = 0x00, z = _1, n = _0) }
     )
     assertForAddressModes(
       DEX,
-      initState = { with(X = 0xFF) },
-      expectedState = { with(X = 0xFE, Z = _0, N = _1) }
+      initState = { with(x = 0xFF) },
+      expectedState = { with(x = 0xFE, z = _0, n = _1) }
     )
   }
 
@@ -330,18 +330,18 @@ class ArithmeticTest {
   fun dey() {
     assertForAddressModes(
       DEY,
-      initState = { with(Y = 0x02) },
-      expectedState = { with(Y = 0x01, Z = _0, N = _0) }
+      initState = { with(y = 0x02) },
+      expectedState = { with(y = 0x01, z = _0, n = _0) }
     )
     assertForAddressModes(
       DEY,
-      initState = { with(Y = 0x01) },
-      expectedState = { with(Y = 0x00, Z = _1, N = _0) }
+      initState = { with(y = 0x01) },
+      expectedState = { with(y = 0x00, z = _1, n = _0) }
     )
     assertForAddressModes(
       DEY,
-      initState = { with(Y = 0xFF) },
-      expectedState = { with(Y = 0xFE, Z = _0, N = _1) }
+      initState = { with(y = 0xFF) },
+      expectedState = { with(y = 0xFE, z = _0, n = _1) }
     )
   }
 
@@ -350,19 +350,19 @@ class ArithmeticTest {
     assertForAddressModes(
       INC,
       target = 0x01,
-      expectedState = { with(Z = _0, N = _0) },
+      expectedState = { with(z = _0, n = _0) },
       expectedStores = { mapOf(it to 0x02) }
     )
     assertForAddressModes(
       INC,
       target = 0xFF,
-      expectedState = { with(Z = _1, N = _0) },
+      expectedState = { with(z = _1, n = _0) },
       expectedStores = { mapOf(it to 0x00) }
     )
     assertForAddressModes(
       INC,
       target = 0xFE,
-      expectedState = { with(Z = _0, N = _1) },
+      expectedState = { with(z = _0, n = _1) },
       expectedStores = { mapOf(it to 0xFF) }
     )
   }
@@ -371,18 +371,18 @@ class ArithmeticTest {
   fun inx() {
     assertForAddressModes(
       INX,
-      initState = { with(X = 0x01) },
-      expectedState = { with(X = 0x02, Z = _0, N = _0) }
+      initState = { with(x = 0x01) },
+      expectedState = { with(x = 0x02, z = _0, n = _0) }
     )
     assertForAddressModes(
       INX,
-      initState = { with(X = 0xFF) },
-      expectedState = { with(X = 0x00, Z = _1, N = _0) }
+      initState = { with(x = 0xFF) },
+      expectedState = { with(x = 0x00, z = _1, n = _0) }
     )
     assertForAddressModes(
       INX,
-      initState = { with(X = 0xFE) },
-      expectedState = { with(X = 0xFF, Z = _0, N = _1) }
+      initState = { with(x = 0xFE) },
+      expectedState = { with(x = 0xFF, z = _0, n = _1) }
     )
   }
 
@@ -390,51 +390,51 @@ class ArithmeticTest {
   fun iny() {
     assertForAddressModes(
       INY,
-      initState = { with(Y = 0x01) },
-      expectedState = { with(Y = 0x02, Z = _0, N = _0) }
+      initState = { with(y = 0x01) },
+      expectedState = { with(y = 0x02, z = _0, n = _0) }
     )
     assertForAddressModes(
       INY,
-      initState = { with(Y = 0xFF) },
-      expectedState = { with(Y = 0x00, Z = _1, N = _0) }
+      initState = { with(y = 0xFF) },
+      expectedState = { with(y = 0x00, z = _1, n = _0) }
     )
     assertForAddressModes(
       INY,
-      initState = { with(Y = 0xFE) },
-      expectedState = { with(Y = 0xFF, Z = _0, N = _1) }
+      initState = { with(y = 0xFE) },
+      expectedState = { with(y = 0xFF, z = _0, n = _1) }
     )
   }
 
   @Test
   fun asl() {
-    assertShift(ASL, 0x02, 0x04) { with(C = _0, Z = _0, N = _0) }
-    assertShift(ASL, 0x40, 0x80) { with(C = _0, Z = _0, N = _1) }
-    assertShift(ASL, 0x88, 0x10) { with(C = _1, Z = _0, N = _0) }
-    assertShift(ASL, 0x80, 0x00) { with(C = _1, Z = _1, N = _0) }
+    assertShift(ASL, 0x02, 0x04) { with(c = _0, z = _0, n = _0) }
+    assertShift(ASL, 0x40, 0x80) { with(c = _0, z = _0, n = _1) }
+    assertShift(ASL, 0x88, 0x10) { with(c = _1, z = _0, n = _0) }
+    assertShift(ASL, 0x80, 0x00) { with(c = _1, z = _1, n = _0) }
   }
 
   @Test
   fun lsr() {
-    assertShift(LSR, 0x80, 0x40) { with(C = _0, Z = _0, N = _0) }
-    assertShift(LSR, 0x01, 0x00) { with(C = _1, Z = _1, N = _0) }
-    assertShift(LSR, 0x00, 0x00) { with(C = _0, Z = _1, N = _0) }
+    assertShift(LSR, 0x80, 0x40) { with(c = _0, z = _0, n = _0) }
+    assertShift(LSR, 0x01, 0x00) { with(c = _1, z = _1, n = _0) }
+    assertShift(LSR, 0x00, 0x00) { with(c = _0, z = _1, n = _0) }
   }
 
   @Test
   fun rol() {
-    assertShift(ROL, 0x02, 0x04, { with(C = _0) }) { with(C = _0, Z = _0, N = _0) }
-    assertShift(ROL, 0x40, 0x80, { with(C = _0) }) { with(C = _0, Z = _0, N = _1) }
-    assertShift(ROL, 0x88, 0x10, { with(C = _0) }) { with(C = _1, Z = _0, N = _0) }
-    assertShift(ROL, 0x80, 0x00, { with(C = _0) }) { with(C = _1, Z = _1, N = _0) }
-    assertShift(ROL, 0x02, 0x05, { with(C = _1) }) { with(C = _0, Z = _0, N = _0) }
+    assertShift(ROL, 0x02, 0x04, { with(c = _0) }) { with(c = _0, z = _0, n = _0) }
+    assertShift(ROL, 0x40, 0x80, { with(c = _0) }) { with(c = _0, z = _0, n = _1) }
+    assertShift(ROL, 0x88, 0x10, { with(c = _0) }) { with(c = _1, z = _0, n = _0) }
+    assertShift(ROL, 0x80, 0x00, { with(c = _0) }) { with(c = _1, z = _1, n = _0) }
+    assertShift(ROL, 0x02, 0x05, { with(c = _1) }) { with(c = _0, z = _0, n = _0) }
   }
 
   @Test
   fun ror() {
-    assertShift(ROR, 0x80, 0x40, { with(C = _0) }) { with(C = _0, Z = _0, N = _0) }
-    assertShift(ROR, 0x01, 0x00, { with(C = _0) }) { with(C = _1, Z = _1, N = _0) }
-    assertShift(ROR, 0x00, 0x00, { with(C = _0) }) { with(C = _0, Z = _1, N = _0) }
-    assertShift(ROR, 0x80, 0xC0, { with(C = _1) }) { with(C = _0, Z = _0, N = _1) }
+    assertShift(ROR, 0x80, 0x40, { with(c = _0) }) { with(c = _0, z = _0, n = _0) }
+    assertShift(ROR, 0x01, 0x00, { with(c = _0) }) { with(c = _1, z = _1, n = _0) }
+    assertShift(ROR, 0x00, 0x00, { with(c = _0) }) { with(c = _0, z = _1, n = _0) }
+    assertShift(ROR, 0x80, 0xC0, { with(c = _1) }) { with(c = _0, z = _0, n = _1) }
   }
 
   // Accumulator mode is a special case, so handle it separately
@@ -448,8 +448,8 @@ class ArithmeticTest {
     assertForAddressModes(
       op,
       modes = setOf(ACCUMULATOR),
-      initState = { with(A = target).initState() },
-      expectedState = { with(A = expected).expectedState() }
+      initState = { with(a = target).initState() },
+      expectedState = { with(a = expected).expectedState() }
     )
 
     assertForAddressModes(

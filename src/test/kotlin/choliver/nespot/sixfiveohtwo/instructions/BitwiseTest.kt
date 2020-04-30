@@ -12,20 +12,20 @@ class BitwiseTest {
     assertForAddressModes(
       AND,
       target = 0x23,
-      initState = { with(A = 0x11) },
-      expectedState = { with(A = 0x01, Z = _0, N = _0) }
+      initState = { with(a =  0x11) },
+      expectedState = { with(a =  0x01, z =  _0, n =  _0) }
     )
     assertForAddressModes(
       AND,
       target = 0x22,
-      initState = { with(A = 0x11) },
-      expectedState = { with(A = 0x00, Z = _1, N = _0) }
+      initState = { with(a =  0x11) },
+      expectedState = { with(a =  0x00, z =  _1, n =  _0) }
     )
     assertForAddressModes(
       AND,
       target = 0x83,
-      initState = { with(A = 0x81) },
-      expectedState = { with(A = 0x81, Z = _0, N = _1) }
+      initState = { with(a =  0x81) },
+      expectedState = { with(a =  0x81, z =  _0, n =  _1) }
     )
   }
 
@@ -34,20 +34,20 @@ class BitwiseTest {
     assertForAddressModes(
       ORA,
       target = 0x23,
-      initState = { with(A = 0x11) },
-      expectedState = { with(A = 0x33, Z = _0, N = _0) }
+      initState = { with(a =  0x11) },
+      expectedState = { with(a =  0x33, z =  _0, n =  _0) }
     )
     assertForAddressModes(
       ORA,
       target = 0x00,
-      initState = { with(A = 0x00) },
-      expectedState = { with(A = 0x00, Z = _1, N = _0) }
+      initState = { with(a =  0x00) },
+      expectedState = { with(a =  0x00, z =  _1, n =  _0) }
     )
     assertForAddressModes(
       ORA,
       target = 0x83,
-      initState = { with(A = 0x81) },
-      expectedState = { with(A = 0x83, Z = _0, N = _1) }
+      initState = { with(a =  0x81) },
+      expectedState = { with(a =  0x83, z =  _0, n =  _1) }
     )
   }
 
@@ -56,20 +56,20 @@ class BitwiseTest {
     assertForAddressModes(
       EOR,
       target = 0x23,
-      initState = { with(A = 0x11) },
-      expectedState = { with(A = 0x32, Z = _0, N = _0) }
+      initState = { with(a =  0x11) },
+      expectedState = { with(a =  0x32, z =  _0, n =  _0) }
     )
     assertForAddressModes(
       EOR,
       target = 0x11,
-      initState = { with(A = 0x11) },
-      expectedState = { with(A = 0x00, Z = _1, N = _0) }
+      initState = { with(a =  0x11) },
+      expectedState = { with(a =  0x00, z =  _1, n =  _0) }
     )
     assertForAddressModes(
       EOR,
       target = 0x03,
-      initState = { with(A = 0x81) },
-      expectedState = { with(A = 0x82, Z = _0, N = _1) }
+      initState = { with(a =  0x81) },
+      expectedState = { with(a =  0x82, z =  _0, n =  _1) }
     )
   }
 
@@ -78,26 +78,26 @@ class BitwiseTest {
     assertForAddressModes(
       BIT,
       target = 0x23,
-      initState = { with(A = 0x11) },
-      expectedState = { with(A = 0x11, Z = _0, N = _0, V = _0) }
+      initState = { with(a =  0x11) },
+      expectedState = { with(a =  0x11, z =  _0, n =  _0, v =  _0) }
     )
     assertForAddressModes(
       BIT,
       target = 0x22,
-      initState = { with(A = 0x11) },
-      expectedState = { with(A = 0x11, Z = _1, N = _0, V = _0) }
+      initState = { with(a =  0x11) },
+      expectedState = { with(a =  0x11, z =  _1, n =  _0, v =  _0) }
     )
     assertForAddressModes(
       BIT,
       target = 0x83,
-      initState = { with(A = 0x01) },
-      expectedState = { with(A = 0x01, Z = _0, N = _1, V = _0) }
+      initState = { with(a =  0x01) },
+      expectedState = { with(a =  0x01, z =  _0, n =  _1, v =  _0) }
     )
     assertForAddressModes(
       BIT,
       target = 0x43,
-      initState = { with(A = 0x01) },
-      expectedState = { with(A = 0x01, Z = _0, N = _0, V = _1) }
+      initState = { with(a =  0x01) },
+      expectedState = { with(a =  0x01, z =  _0, n =  _0, v =  _1) }
     )
   }
 }

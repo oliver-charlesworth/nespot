@@ -12,9 +12,9 @@ class StackTest {
   fun pha() {
     assertForAddressModes(
       PHA,
-      initState = { with(S = 0x30, A = 0x20) },
-      expectedState = { with(S = 0x2F, A = 0x20) },
-      expectedStores = { mapOf(0x0130 to 0x20) }
+      initState = { with(s =  0x30, a =  0x20) },
+      expectedState = { with(s =  0x2F, a =  0x20) },
+      expectedStores =  { mapOf(0x0130 to 0x20) }
     )
   }
 
@@ -22,35 +22,35 @@ class StackTest {
   fun php() {
     assertForAddressModes(
       PHP,
-      initState = { with(S = 0x30, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
-      expectedState = { with(S = 0x2F, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) },
-      expectedStores = { mapOf(0x0130 to 0xDF) }  // Note B is also set on stack
+      initState = { with(s =  0x30, n =  _1, v =  _1, d =  _1, i =  _1, z =  _1, c =  _1) },
+      expectedState = { with(s =  0x2F, n =  _1, v =  _1, d =  _1, i =  _1, z =  _1, c =  _1) },
+      expectedStores =  { mapOf(0x0130 to 0xDF) }  // Note B is also set on stack
     )
   }
 
   @Test
   fun pla() {
-    fun assertBehaviour(data: Data, Z: Boolean, N: Boolean) {
+    fun assertBehaviour(data: Data, z: Boolean, n: Boolean) {
       assertForAddressModes(
         PLA,
-        initStores = mapOf(0x123 to data),
-        initState = { with(S = 0x22) },
-        expectedState = { with(S = 0x23, A = data, Z = Z, N = N) }
+        initStores =  mapOf(0x123 to data),
+        initState = { with(s =  0x22) },
+        expectedState = { with(s =  0x23, a =  data, z =  z, n =  n) }
       )
     }
 
-    assertBehaviour(0x30, Z = _0, N = _0)
-    assertBehaviour(0xD0, Z = _0, N = _1)
-    assertBehaviour(0x00, Z = _1, N = _0)
+    assertBehaviour(0x30, z =  _0, n =  _0)
+    assertBehaviour(0xD0, z =  _0, n =  _1)
+    assertBehaviour(0x00, z =  _1, n =  _0)
   }
 
   @Test
   fun plp() {
     assertForAddressModes(
       PLP,
-      initStores = mapOf(0x123 to 0xCF),
-      initState = { with(S = 0x22) },
-      expectedState = { with(S = 0x23, N = _1, V = _1, D = _1, I = _1, Z = _1, C = _1) }
+      initStores =  mapOf(0x123 to 0xCF),
+      initState = { with(s =  0x22) },
+      expectedState = { with(s =  0x23, n =  _1, v =  _1, d =  _1, i =  _1, z =  _1, c =  _1) }
     )
   }
 }

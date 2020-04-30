@@ -18,7 +18,6 @@ class Ppu(
   private var spriteOverflow = false
 
   private var addr: Address = 0x0000
-  private val coordsYeah = Coords()
   private var w = false
 
   private var readBuffer: Data = 0
@@ -35,11 +34,11 @@ class Ppu(
         with(state.renderer) {
           if (bgEnabled || sprEnabled) {
             when (scanline) {
-              0 -> coords = coordsYeah.copy()
+              0 -> coords = state.coords.copy()
               else -> {
-                coords.xFine = coordsYeah.xFine
-                coords.xCoarse = coordsYeah.xCoarse
-                coords.xNametable = coordsYeah.xNametable
+                coords.xFine = state.coords.xFine
+                coords.xCoarse = state.coords.xCoarse
+                coords.xNametable = state.coords.xNametable
                 coords.incrementY()
               }
             }
@@ -106,19 +105,18 @@ class Ppu(
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
-      REG_PPUCTRL -> {
-        coordsYeah.xNametable = data and 0x01
-        coordsYeah.yNametable = (data and 0x02) shr 1
-
-        with(state) {
-          addrInc = if (data.isBitSet(2)) 32 else 1
-          with(renderer) {
-            sprPatternTable = if (data.isBitSet(3)) 1 else 0
-            bgPatternTable = if (data.isBitSet(4)) 1 else 0
-            largeSprites = data.isBitSet(5)
-            // TODO - is master/slave important?
-          }
-          isVblEnabled = data.isBitSet(7)
+      REG_PPUCTRL -> with(state) {
+        addrInc = if (data.isBitSet(2)) 32 else 1
+        with(renderer) {
+          sprPatternTable = if (data.isBitSet(3)) 1 else 0
+          bgPatternTable = if (data.isBitSet(4)) 1 else 0
+          largeSprites = data.isBitSet(5)
+          // TODO - is master/slave important?
+        }
+        isVblEnabled = data.isBitSet(7)
+        with(coords) {
+          xNametable = data and 0x01
+          yNametable = (data and 0x02) shr 1
         }
       }
 
@@ -146,12 +144,14 @@ class Ppu(
         val fine   = (data and 0b00000111)
         val coarse = (data and 0b11111000) shr 3
 
-        if (!w) {
-          coordsYeah.xCoarse = coarse
-          coordsYeah.xFine = fine
-        } else {
-          coordsYeah.yCoarse = coarse
-          coordsYeah.yFine = fine
+        with(state.coords) {
+          if (!w) {
+            xCoarse = coarse
+            xFine = fine
+          } else {
+            yCoarse = coarse
+            yFine = fine
+          }
         }
         w = !w
       }
@@ -162,16 +162,20 @@ class Ppu(
         // See http://wiki.nesdev.com/w/index.php/PPU_scrolling#Summary
         if (!w) {
           addr = addr(lo = addr.lo(), hi = data and 0b00111111)
-          coordsYeah.yCoarse    = ((data and 0b00000011) shl 3) or (coordsYeah.yCoarse and 0b00111)
-          coordsYeah.xNametable =  (data and 0b00000100) shr 2
-          coordsYeah.yNametable =  (data and 0b00001000) shr 3
-          coordsYeah.yFine      =  (data and 0b00110000) shr 4  // Lose the top bit
+          with(state.coords) {
+            yCoarse = ((data and 0b00000011) shl 3) or (yCoarse and 0b00111)
+            xNametable = (data and 0b00000100) shr 2
+            yNametable = (data and 0b00001000) shr 3
+            yFine = (data and 0b00110000) shr 4  // Lose the top bit
+          }
         } else {
           addr = addr(lo = data, hi = addr.hi())
-          coordsYeah.xCoarse =  (data and 0b00011111)
-          coordsYeah.yCoarse = ((data and 0b11100000) shr 5) or (coordsYeah.yCoarse and 0b11000)
+          with(state.coords) {
+            xCoarse = (data and 0b00011111)
+            yCoarse = ((data and 0b11100000) shr 5) or (yCoarse and 0b11000)
+          }
           // TODO - should probably happen *after* the incrementY() above
-          state.renderer.coords = coordsYeah.copy()   // Propagate immediately
+          state.renderer.coords = state.coords.copy()   // Propagate immediately
         }
         w = !w
       }
@@ -207,6 +211,7 @@ class Ppu(
     var isRedEmphasized: Boolean = false,
     var isGreenEmphasized: Boolean = false,
     var isBlueEmphasized: Boolean = false,
+    var coords: Coords = Coords(),
     var oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
   )
 

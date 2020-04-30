@@ -10,7 +10,7 @@ import java.nio.IntBuffer
 import kotlin.math.min
 
 // TODO - eliminate all the magic numbers here
-// TODO - conditional rendering
+// TODO - clipping
 // TODO - grayscale
 // TODO - emphasize
 class Renderer(
@@ -39,7 +39,7 @@ class Renderer(
   private data class Pixel(
     val c: Int,
     val p: Int,
-    val src: Int  // -1 represents bg
+    val src: Int
   )
 
   private data class SpriteToRender(
@@ -54,27 +54,33 @@ class Renderer(
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0, 0) }
 
   fun renderScanline(ctx: Context): Result {
-    val renderingEnabled = ctx.bgRenderingEnabled || ctx.sprRenderingEnabled
-
-    prepareBackground(ctx.bgPatternTable, ctx.coords)
+    if (ctx.bgRenderingEnabled) {
+      prepareBackground(ctx)
+    } else {
+      prepareBlankBackground()
+    }
 
     val sprites = getSpritesForScanline(ctx)
 
-    val isHit = prepareSpritesAndDetectHit(sprites.take(MAX_SPRITES_PER_SCANLINE))
+    val isHit = if (ctx.sprRenderingEnabled) {
+      prepareSpritesAndDetectHit(sprites.take(MAX_SPRITES_PER_SCANLINE))
+    } else {
+      false
+    }
 
     renderToBuffer(ctx.yScanline)
 
     return Result(
-      sprite0Hit = renderingEnabled && isHit, // TODO - unclear if this should be gated by enable flags
-      spriteOverflow = renderingEnabled && (sprites.size > MAX_SPRITES_PER_SCANLINE)
+      sprite0Hit = isHit,
+      spriteOverflow = (ctx.bgRenderingEnabled || ctx.sprRenderingEnabled) && (sprites.size > MAX_SPRITES_PER_SCANLINE)
     )
   }
 
-  private fun prepareBackground(bgPatternTable: Int, coords: Coords) {
+  private fun prepareBackground(ctx: Context) {
     var palette = 0
     var pattern: Data = 0x00
 
-    with (coords) {
+    with (ctx.coords) {
       for (x in 0 until SCREEN_WIDTH) {
         if ((x == 0) || (xFine == 0)) {
           val addrNt = BASE_NAMETABLES +
@@ -89,11 +95,17 @@ class Renderer(
             (xCoarse / 4)
 
           palette = (memory.load(addrAttr) shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
-          pattern = getPattern(iTable = bgPatternTable, iTile = memory.load(addrNt), iRow = yFine)
+          pattern = getPattern(iTable = ctx.bgPatternTable, iTile = memory.load(addrNt), iRow = yFine)
         }
-        pixels[x] = Pixel(c = patternPixel(pattern, xFine), p = palette, src = -1)
+        pixels[x] = Pixel(c = patternPixel(pattern, xFine), p = palette, src = SRC_BG)
         incrementX()
       }
+    }
+  }
+
+  private fun prepareBlankBackground() {
+    for (x in 0 until SCREEN_WIDTH) {
+      pixels[x] = Pixel(c = 0, p = 0, src = SRC_BG)
     }
   }
 
@@ -154,7 +166,7 @@ class Renderer(
 
         // Do not render if already a sprite
         pixels[x] = when {
-          (pxCurrent.src != -1) -> pxCurrent        // Don't render if already a higher-priority sprite
+          (pxCurrent.src != SRC_BG) -> pxCurrent    // Don't render if already a higher-priority sprite
           !opaqueSpr -> pxCurrent                   // Don't render if transparent
           spr.behind && opaqueCurrent -> pxCurrent  // Don't render if behind an opaque pixel
           else -> pxSpr
@@ -190,5 +202,7 @@ class Renderer(
 
   companion object {
     const val MAX_SPRITES_PER_SCANLINE = 8
+
+    private const val SRC_BG = -1
   }
 }

@@ -108,9 +108,17 @@ class RendererTest {
       assertBuffer { patterns[nametableEntries[it / TILE_SIZE]]!![it % TILE_SIZE] }
     }
 
-    // TODO - conditional rendering
+    @Test
+    fun `not rendering if disabled`() {
+      val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
+      initBgPatternMemory(mapOf(0 to pattern))
+
+      render(bgRenderingEnabled = false)
+
+      assertBuffer { 0 }
+    }
+
     // TODO - clipping
-    // TODO - scrolling / offset (inc. nametable calculations)
   }
 
   @Nested
@@ -169,7 +177,7 @@ class RendererTest {
     }
 
     @Test
-    fun `off the right-hand-edge`() {
+    fun `partially off the right-hand-edge`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = 252, y = yScanline, iPattern = 1, attrs = 0)
 
@@ -178,7 +186,16 @@ class RendererTest {
       assertBuffer { calcPalIdx(x = it, xOffset = 252, iPalette = 0, pattern = pattern) }
     }
 
-    // TODO - conditional rendering
+    @Test
+    fun `not rendering if disabled`() {
+      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
+      initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0)
+
+      render(sprRenderingEnabled = false)
+
+      assertBuffer { 0 }
+    }
+
     // TODO - clipping
 
     private fun calcPalIdx(x: Int, xOffset: Int, iPalette: Int, pattern: List<Int>) =
@@ -442,9 +459,8 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
       initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
 
-      assertFalse(render(bgRenderingEnabled = false, sprRenderingEnabled = false).sprite0Hit)
-      assertTrue(render(sprRenderingEnabled = false).sprite0Hit)
-      assertTrue(render(bgRenderingEnabled = false).sprite0Hit)
+      assertFalse(render(sprRenderingEnabled = false).sprite0Hit)
+      assertFalse(render(bgRenderingEnabled = false).sprite0Hit)
     }
 
     @Test

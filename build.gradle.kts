@@ -12,6 +12,7 @@ repositories {
 
 dependencies {
   implementation("com.github.ajalt:clikt:2.6.0")
+  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.0")
 
   testImplementation("org.junit.jupiter:junit-jupiter:5.5.2")
   testImplementation("org.hamcrest:hamcrest-library:2.2")

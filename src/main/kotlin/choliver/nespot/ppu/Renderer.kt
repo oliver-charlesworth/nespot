@@ -2,6 +2,7 @@ package choliver.nespot.ppu
 
 import choliver.nespot.Data
 import choliver.nespot.Memory
+import choliver.nespot.MutableForPerfReasons
 import choliver.nespot.isBitSet
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Ppu.Companion.BASE_PATTERNS
@@ -20,16 +21,17 @@ class Renderer(
   private val colors: List<Int> = COLORS
 ) {
 
+  @MutableForPerfReasons
   data class Context(
-    val bgRenderingEnabled: Boolean,
-    val sprRenderingEnabled: Boolean,
-    val bgLeftTileEnabled: Boolean,
-    val sprLeftTileEnabled: Boolean,
-    val largeSprites: Boolean,
-    val bgPatternTable: Int,  // 0 or 1
-    val sprPatternTable: Int, // 0 or 1
-    val coords: Coords,
-    val yScanline: Int
+    var bgEnabled: Boolean,
+    var sprEnabled: Boolean,
+    var bgLeftTileEnabled: Boolean,
+    var sprLeftTileEnabled: Boolean,
+    var largeSprites: Boolean,
+    var bgPatternTable: Int,  // 0 or 1
+    var sprPatternTable: Int, // 0 or 1
+    var coords: Coords,
+    var scanline: Int
   )
 
   data class Result(
@@ -55,7 +57,7 @@ class Renderer(
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0, 0) }
 
   fun renderScanline(ctx: Context): Result {
-    if (ctx.bgRenderingEnabled) {
+    if (ctx.bgEnabled) {
       prepareBackground(ctx)
     } else {
       prepareBlankBackground()
@@ -67,17 +69,17 @@ class Renderer(
 
     val sprites = getSpritesForScanline(ctx)
 
-    val isHit = if (ctx.sprRenderingEnabled) {
+    val isHit = if (ctx.sprEnabled) {
       prepareSpritesAndDetectHit(ctx, sprites.take(MAX_SPRITES_PER_SCANLINE))
     } else {
       false
     }
 
-    renderToBuffer(ctx.yScanline)
+    renderToBuffer(ctx.scanline)
 
     return Result(
       sprite0Hit = isHit,
-      spriteOverflow = (ctx.bgRenderingEnabled || ctx.sprRenderingEnabled) && (sprites.size > MAX_SPRITES_PER_SCANLINE)
+      spriteOverflow = (ctx.bgEnabled || ctx.sprEnabled) && (sprites.size > MAX_SPRITES_PER_SCANLINE)
     )
   }
 
@@ -129,7 +131,7 @@ class Renderer(
       val attrs = oam.load(iSprite * 4 + 2)
       val xSprite = oam.load(iSprite * 4 + 3)
 
-      val iRow = ctx.yScanline - ySprite
+      val iRow = ctx.scanline - ySprite
       val flipY = attrs.isBitSet(7)
 
       val inRange = iRow in 0 until if (ctx.largeSprites) (TILE_SIZE * 2) else TILE_SIZE

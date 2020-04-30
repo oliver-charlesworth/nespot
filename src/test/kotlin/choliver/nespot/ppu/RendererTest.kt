@@ -631,8 +631,8 @@ class RendererTest {
     sprLeftTileEnabled: Boolean = true,
     largeSprites: Boolean = false
   ) = renderer.renderScanline(Context(
-    bgRenderingEnabled = bgRenderingEnabled,
-    sprRenderingEnabled = sprRenderingEnabled,
+    bgEnabled = bgRenderingEnabled,
+    sprEnabled = sprRenderingEnabled,
     bgLeftTileEnabled = bgLeftTileEnabled,
     sprLeftTileEnabled = sprLeftTileEnabled,
     largeSprites = largeSprites,
@@ -644,7 +644,7 @@ class RendererTest {
       yCoarse = yCoarse,
       yFine = yFine
     ),
-    yScanline = yScanline
+    scanline = yScanline
   ))
 
   private fun initNametableMemory(

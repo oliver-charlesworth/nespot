@@ -241,19 +241,19 @@ class PpuTest {
     }
 
     @Test
-    fun `propagates sprRenderingEnabled`() {
+    fun `propagates sprEnabled`() {
       ppu.writeReg(REG_PPUMASK, 0b00010000)
       ppu.executeScanline()
 
-      assertEquals(true, captureContext().sprRenderingEnabled)
+      assertEquals(true, captureContext().sprEnabled)
     }
 
     @Test
-    fun `propagates bgRenderingEnabled`() {
+    fun `propagates bgEnabled`() {
       ppu.writeReg(REG_PPUMASK, 0b00001000)
       ppu.executeScanline()
 
-      assertEquals(true, captureContext().bgRenderingEnabled)
+      assertEquals(true, captureContext().bgEnabled)
     }
 
     @Test
@@ -333,10 +333,9 @@ class PpuTest {
       ppu.executeScanline()
 
       val ctx = captureContext(2)
-      assertEquals(0, ctx[0].yScanline)
-      assertEquals(1, ctx[1].yScanline)
       assertEquals(0b00001, ctx[1].coords.yCoarse)
       assertEquals(0b000, ctx[1].coords.yFine)
+      assertEquals(2, ppu.scanline)
     }
 
     @Test

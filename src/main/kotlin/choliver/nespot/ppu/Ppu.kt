@@ -13,14 +13,12 @@ class Ppu(
   private val renderer: Renderer = Renderer(memory, palette, oam, videoBuffer)
 ) {
   private var state = State()
-  private var _scanline = 0
   private var inVbl = false
   private var sprite0Hit = false
   private var spriteOverflow = false
 
   private var addr: Address = 0x0000
-  private val coords = Coords()
-  private var coordsWorking = Coords()
+  private val coordsYeah = Coords()
   private var w = false
 
   private var readBuffer: Data = 0
@@ -28,36 +26,27 @@ class Ppu(
   // TODO - model addr increment quirks during rendering (see wiki.nesdev.com/w/index.php/PPU_scrolling)
   // TODO - add a reset (to clean up counters and stuff)
 
-  val scanline get() = _scanline
+  val scanline get() = state.renderer.scanline
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   fun executeScanline() {
-    when (_scanline) {
+    when (state.renderer.scanline) {
       in (0 until SCREEN_HEIGHT) -> {
-        if (renderingEnabled()) {
-          when (_scanline) {
-            0 -> coordsWorking = coords.copy()
-            else -> {
-              coordsWorking.xFine = coords.xFine
-              coordsWorking.xCoarse = coords.xCoarse
-              coordsWorking.xNametable = coords.xNametable
-              coordsWorking.incrementY()
+        with(state.renderer) {
+          if (bgEnabled || sprEnabled) {
+            when (scanline) {
+              0 -> coords = coordsYeah.copy()
+              else -> {
+                coords.xFine = coordsYeah.xFine
+                coords.xCoarse = coordsYeah.xCoarse
+                coords.xNametable = coordsYeah.xNametable
+                coords.incrementY()
+              }
             }
           }
         }
 
-        val result = renderer.renderScanline(Context(
-          // TODO - clean up "state" situation
-          bgRenderingEnabled = state.bgRenderingEnabled,
-          sprRenderingEnabled = state.sprRenderingEnabled,
-          bgLeftTileEnabled = state.bgLeftTileEnabled,
-          sprLeftTileEnabled = state.sprLeftTileEnabled,
-          largeSprites = state.largeSprites,
-          bgPatternTable = state.bgPatternTable,
-          sprPatternTable = state.sprPatternTable,
-          coords = coordsWorking,
-          yScanline = scanline
-        ))
+        val result = renderer.renderScanline(state.renderer)
         sprite0Hit = sprite0Hit || result.sprite0Hit
         spriteOverflow = spriteOverflow || result.spriteOverflow
       }
@@ -79,7 +68,7 @@ class Ppu(
       }
     }
 
-    _scanline = (_scanline + 1) % NUM_SCANLINES
+    state.renderer.scanline = (state.renderer.scanline + 1) % NUM_SCANLINES
   }
 
   fun readReg(reg: Int): Int {
@@ -118,31 +107,35 @@ class Ppu(
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
       REG_PPUCTRL -> {
-        coords.xNametable = data and 0x01
-        coords.yNametable = (data and 0x02) shr 1
+        coordsYeah.xNametable = data and 0x01
+        coordsYeah.yNametable = (data and 0x02) shr 1
 
-        state = state.copy(
-          addrInc = if (data.isBitSet(2)) 32 else 1,
-          sprPatternTable = if (data.isBitSet(3)) 1 else 0,
-          bgPatternTable = if (data.isBitSet(4)) 1 else 0,
-          largeSprites = data.isBitSet(5),
-          // TODO - is master/slave important?
+        with(state) {
+          addrInc = if (data.isBitSet(2)) 32 else 1
+          with(renderer) {
+            sprPatternTable = if (data.isBitSet(3)) 1 else 0
+            bgPatternTable = if (data.isBitSet(4)) 1 else 0
+            largeSprites = data.isBitSet(5)
+            // TODO - is master/slave important?
+          }
           isVblEnabled = data.isBitSet(7)
-        )
+        }
       }
 
-      REG_PPUMASK -> state = state.copy(
-        isGreyscale = data.isBitSet(0),
-        bgLeftTileEnabled = data.isBitSet(1),
-        sprLeftTileEnabled = data.isBitSet(2),
-        bgRenderingEnabled = data.isBitSet(3),
-        sprRenderingEnabled = data.isBitSet(4),
-        isRedEmphasized = data.isBitSet(5),
-        isGreenEmphasized = data.isBitSet(6),
+      REG_PPUMASK -> with(state) {
+        isGreyscale = data.isBitSet(0)
+        with(renderer) {
+          bgLeftTileEnabled = data.isBitSet(1)
+          sprLeftTileEnabled = data.isBitSet(2)
+          bgEnabled = data.isBitSet(3)
+          sprEnabled = data.isBitSet(4)
+        }
+        isRedEmphasized = data.isBitSet(5)
+        isGreenEmphasized = data.isBitSet(6)
         isBlueEmphasized = data.isBitSet(7)
-      )
+      }
 
-      REG_OAMADDR -> state = state.copy(oamAddr = data)
+      REG_OAMADDR -> state.oamAddr = data
 
       REG_OAMDATA -> {
         oam.store(state.oamAddr, data)
@@ -154,11 +147,11 @@ class Ppu(
         val coarse = (data and 0b11111000) shr 3
 
         if (!w) {
-          coords.xCoarse = coarse
-          coords.xFine = fine
+          coordsYeah.xCoarse = coarse
+          coordsYeah.xFine = fine
         } else {
-          coords.yCoarse = coarse
-          coords.yFine = fine
+          coordsYeah.yCoarse = coarse
+          coordsYeah.yFine = fine
         }
         w = !w
       }
@@ -169,16 +162,16 @@ class Ppu(
         // See http://wiki.nesdev.com/w/index.php/PPU_scrolling#Summary
         if (!w) {
           addr = addr(lo = addr.lo(), hi = data and 0b00111111)
-          coords.yCoarse    = ((data and 0b00000011) shl 3) or (coords.yCoarse and 0b00111)
-          coords.xNametable =  (data and 0b00000100) shr 2
-          coords.yNametable =  (data and 0b00001000) shr 3
-          coords.yFine      =  (data and 0b00110000) shr 4  // Lose the top bit
+          coordsYeah.yCoarse    = ((data and 0b00000011) shl 3) or (coordsYeah.yCoarse and 0b00111)
+          coordsYeah.xNametable =  (data and 0b00000100) shr 2
+          coordsYeah.yNametable =  (data and 0b00001000) shr 3
+          coordsYeah.yFine      =  (data and 0b00110000) shr 4  // Lose the top bit
         } else {
           addr = addr(lo = data, hi = addr.hi())
-          coords.xCoarse =  (data and 0b00011111)
-          coords.yCoarse = ((data and 0b11100000) shr 5) or (coords.yCoarse and 0b11000)
+          coordsYeah.xCoarse =  (data and 0b00011111)
+          coordsYeah.yCoarse = ((data and 0b11100000) shr 5) or (coordsYeah.yCoarse and 0b11000)
           // TODO - should probably happen *after* the incrementY() above
-          coordsWorking = coords.copy()   // Propagate immediately
+          state.renderer.coords = coordsYeah.copy()   // Propagate immediately
         }
         w = !w
       }
@@ -193,27 +186,28 @@ class Ppu(
     }
   }
 
-  private fun renderingEnabled() = state.bgRenderingEnabled || state.sprRenderingEnabled
-
   private fun State.withIncrementedOamAddr() = copy(oamAddr = (state.oamAddr + 1).addr8())
 
+  @MutableForPerfReasons
   private data class State(
-    val addrInc: Int = 1,
-    val sprPatternTable: Int = 0,
-    val bgPatternTable: Int = 0,
-    val largeSprites: Boolean = false,
-    val isVblEnabled: Boolean = false,
-
-    val isGreyscale: Boolean = false,
-    val bgLeftTileEnabled: Boolean = false,
-    val sprLeftTileEnabled: Boolean = false,
-    val bgRenderingEnabled: Boolean = false,
-    val sprRenderingEnabled: Boolean = false,
-    val isRedEmphasized: Boolean = false,
-    val isGreenEmphasized: Boolean = false,
-    val isBlueEmphasized: Boolean = false,
-
-    val oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
+    var addrInc: Int = 1,
+    val renderer: Context = Context(
+      bgEnabled = false,
+      sprEnabled = false,
+      bgLeftTileEnabled = false,
+      sprLeftTileEnabled = false,
+      largeSprites = false,
+      bgPatternTable = 0,
+      sprPatternTable = 0,
+      coords = Coords(),
+      scanline = 0
+    ),
+    var isVblEnabled: Boolean = false,
+    var isGreyscale: Boolean = false,
+    var isRedEmphasized: Boolean = false,
+    var isGreenEmphasized: Boolean = false,
+    var isBlueEmphasized: Boolean = false,
+    var oamAddr: Address8 = 0x00    // TODO - apparently this is reset to 0 during rendering
   )
 
   @Suppress("unused")

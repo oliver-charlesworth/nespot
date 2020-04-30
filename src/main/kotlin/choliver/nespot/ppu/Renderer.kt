@@ -24,6 +24,8 @@ class Renderer(
   data class Context(
     val bgRenderingEnabled: Boolean,
     val sprRenderingEnabled: Boolean,
+    val bgLeftTileEnabled: Boolean,
+    val sprLeftTileEnabled: Boolean,
     val largeSprites: Boolean,
     val bgPatternTable: Int,  // 0 or 1
     val sprPatternTable: Int, // 0 or 1
@@ -60,10 +62,14 @@ class Renderer(
       prepareBlankBackground()
     }
 
+    if (!ctx.bgLeftTileEnabled) {
+      blankLeftBackgroundTile()
+    }
+
     val sprites = getSpritesForScanline(ctx)
 
     val isHit = if (ctx.sprRenderingEnabled) {
-      prepareSpritesAndDetectHit(sprites.take(MAX_SPRITES_PER_SCANLINE))
+      prepareSpritesAndDetectHit(ctx, sprites.take(MAX_SPRITES_PER_SCANLINE))
     } else {
       false
     }
@@ -109,6 +115,12 @@ class Renderer(
     }
   }
 
+  private fun blankLeftBackgroundTile() {
+    for (x in 0 until TILE_SIZE) {
+      pixels[x] = Pixel(c = 0, p = 0, src = SRC_BG)
+    }
+  }
+
   private fun getSpritesForScanline(ctx: Context): List<SpriteToRender> {
     val sprites = mutableListOf<SpriteToRender>()
 
@@ -148,7 +160,7 @@ class Renderer(
     return sprites
   }
 
-  private fun prepareSpritesAndDetectHit(sprites: List<SpriteToRender>): Boolean {
+  private fun prepareSpritesAndDetectHit(ctx: Context, sprites: List<SpriteToRender>): Boolean {
     var isHit = false
 
     // Lowest index is highest priority, so render last
@@ -163,17 +175,25 @@ class Renderer(
         val pxCurrent = pixels[x]
         val opaqueSpr = (pxSpr.c != 0)
         val opaqueCurrent = (pxCurrent.c != 0)
+        val clipped = !ctx.sprLeftTileEnabled && x < TILE_SIZE
 
-        // Do not render if already a sprite
-        pixels[x] = when {
-          (pxCurrent.src != SRC_BG) -> pxCurrent    // Don't render if already a higher-priority sprite
-          !opaqueSpr -> pxCurrent                   // Don't render if transparent
-          spr.behind && opaqueCurrent -> pxCurrent  // Don't render if behind an opaque pixel
-          else -> pxSpr
+        when {
+          clipped -> {}                        // Don't render if clipped
+          (pxCurrent.src != SRC_BG) -> {}      // Don't render if already a higher-priority sprite
+          !opaqueSpr -> {}                     // Don't render if transparent
+          (spr.behind && opaqueCurrent) -> {}  // Don't render if behind an opaque pixel
+          else -> pixels[x] = pxSpr
         }
 
         // Collision detection - no need to check if current is sprite, as only relevant for iSprite == 0
-        isHit = isHit || ((spr.iSprite == 0) && opaqueCurrent && opaqueSpr && (x < (SCREEN_WIDTH - 1)))
+        when {
+          (spr.iSprite > 0) -> {}
+          clipped -> {}
+          !opaqueCurrent -> {}
+          !opaqueSpr -> {}
+          (x == (SCREEN_WIDTH  - 1)) -> {}
+          else -> isHit = true
+        }
       }
     }
 

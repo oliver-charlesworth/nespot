@@ -109,7 +109,7 @@ class RendererTest {
     }
 
     @Test
-    fun `not rendering if disabled`() {
+    fun `not rendered if disabled`() {
       val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
       initBgPatternMemory(mapOf(0 to pattern))
 
@@ -118,7 +118,15 @@ class RendererTest {
       assertBuffer { 0 }
     }
 
-    // TODO - clipping
+    @Test
+    fun `not rendered if clipped`() {
+      val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
+      initBgPatternMemory(mapOf(0 to pattern))
+
+      render(bgLeftTileEnabled = false)
+
+      assertBuffer { if (it < TILE_SIZE) 0 else pattern[it % TILE_SIZE] }
+    }
   }
 
   @Nested
@@ -187,7 +195,7 @@ class RendererTest {
     }
 
     @Test
-    fun `not rendering if disabled`() {
+    fun `not rendered if disabled`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0)
 
@@ -196,7 +204,15 @@ class RendererTest {
       assertBuffer { 0 }
     }
 
-    // TODO - clipping
+    @Test
+    fun `not rendered if clipped`() {
+      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
+      initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0)
+
+      render(sprLeftTileEnabled = false)
+
+      assertBuffer { if (it < TILE_SIZE) 0 else calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
+    }
 
     private fun calcPalIdx(x: Int, xOffset: Int, iPalette: Int, pattern: List<Int>) =
       if (x in xOffset until TILE_SIZE + xOffset) {
@@ -464,6 +480,16 @@ class RendererTest {
     }
 
     @Test
+    fun `doesn't trigger hit if clipped`() {
+      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
+      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
+      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
+
+      assertFalse(render(sprLeftTileEnabled = false).sprite0Hit)
+      assertFalse(render(bgLeftTileEnabled = false).sprite0Hit)
+    }
+
+    @Test
     fun `doesn't trigger hit if opaque sprite overlaps opaque sprite`() {
       initBgPatternMemory(mapOf(0 to listOf(0, 0, 0, 0, 0, 0, 0, 0)))
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
@@ -472,8 +498,6 @@ class RendererTest {
 
       assertFalse(render().sprite0Hit)
     }
-
-    // TODO - not detected in active clipping region (background or sprite)
   }
 
   @Nested
@@ -603,10 +627,14 @@ class RendererTest {
     yFine: Int = this.yFine,
     bgRenderingEnabled: Boolean = true,
     sprRenderingEnabled: Boolean = true,
+    bgLeftTileEnabled: Boolean = true,
+    sprLeftTileEnabled: Boolean = true,
     largeSprites: Boolean = false
   ) = renderer.renderScanline(Context(
     bgRenderingEnabled = bgRenderingEnabled,
     sprRenderingEnabled = sprRenderingEnabled,
+    bgLeftTileEnabled = bgLeftTileEnabled,
+    sprLeftTileEnabled = sprLeftTileEnabled,
     largeSprites = largeSprites,
     bgPatternTable = bgPatternTable,
     sprPatternTable = sprPatternTable,

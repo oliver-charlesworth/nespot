@@ -50,6 +50,8 @@ class Ppu(
           // TODO - clean up "state" situation
           bgRenderingEnabled = state.bgRenderingEnabled,
           sprRenderingEnabled = state.sprRenderingEnabled,
+          bgLeftTileEnabled = state.bgLeftTileEnabled,
+          sprLeftTileEnabled = state.sprLeftTileEnabled,
           largeSprites = state.largeSprites,
           bgPatternTable = state.bgPatternTable,
           sprPatternTable = state.sprPatternTable,
@@ -131,8 +133,8 @@ class Ppu(
 
       REG_PPUMASK -> state = state.copy(
         isGreyscale = data.isBitSet(0),
-        isLeftmostBackgroundShown = data.isBitSet(1),
-        isLeftmostSpritesShown = data.isBitSet(2),
+        bgLeftTileEnabled = data.isBitSet(1),
+        sprLeftTileEnabled = data.isBitSet(2),
         bgRenderingEnabled = data.isBitSet(3),
         sprRenderingEnabled = data.isBitSet(4),
         isRedEmphasized = data.isBitSet(5),
@@ -203,8 +205,8 @@ class Ppu(
     val isVblEnabled: Boolean = false,
 
     val isGreyscale: Boolean = false,
-    val isLeftmostBackgroundShown: Boolean = false,
-    val isLeftmostSpritesShown: Boolean = false,
+    val bgLeftTileEnabled: Boolean = false,
+    val sprLeftTileEnabled: Boolean = false,
     val bgRenderingEnabled: Boolean = false,
     val sprRenderingEnabled: Boolean = false,
     val isRedEmphasized: Boolean = false,

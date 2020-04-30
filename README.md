@@ -16,7 +16,6 @@
 
 - Rendering
 
-  - Clipping - inc. impact on collision detection
   - Greyscale
   - Colour emphasis
 

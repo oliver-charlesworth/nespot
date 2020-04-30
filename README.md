@@ -3,20 +3,19 @@
 ## To do
 
 - Known game issues
+
   - Micro Machines
     - Lots of graphical artifacts
-    - Sprite priority required
   - Zelda
     - One pixel off on vertical scroll in start menu
 
 - Sound
+
   - Clicking
   - Interrupts
 
 - Rendering
 
-  - Enable / disable rendering
-  - Clipping - inc. impact on collision detection
   - Greyscale
   - Colour emphasis
 

@@ -10,7 +10,6 @@ import java.nio.IntBuffer
 import kotlin.math.min
 
 // TODO - eliminate all the magic numbers here
-// TODO - conditional rendering
 // TODO - grayscale
 // TODO - emphasize
 class Renderer(
@@ -24,6 +23,8 @@ class Renderer(
   data class Context(
     val bgRenderingEnabled: Boolean,
     val sprRenderingEnabled: Boolean,
+    val bgLeftTileEnabled: Boolean,
+    val sprLeftTileEnabled: Boolean,
     val largeSprites: Boolean,
     val bgPatternTable: Int,  // 0 or 1
     val sprPatternTable: Int, // 0 or 1
@@ -39,7 +40,7 @@ class Renderer(
   private data class Pixel(
     val c: Int,
     val p: Int,
-    val src: Int  // -1 represents bg
+    val src: Int
   )
 
   private data class SpriteToRender(
@@ -54,27 +55,37 @@ class Renderer(
   private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0, 0) }
 
   fun renderScanline(ctx: Context): Result {
-    val renderingEnabled = ctx.bgRenderingEnabled || ctx.sprRenderingEnabled
+    if (ctx.bgRenderingEnabled) {
+      prepareBackground(ctx)
+    } else {
+      prepareBlankBackground()
+    }
 
-    prepareBackground(ctx.bgPatternTable, ctx.coords)
+    if (!ctx.bgLeftTileEnabled) {
+      blankLeftBackgroundTile()
+    }
 
     val sprites = getSpritesForScanline(ctx)
 
-    val isHit = prepareSpritesAndDetectHit(sprites.take(MAX_SPRITES_PER_SCANLINE))
+    val isHit = if (ctx.sprRenderingEnabled) {
+      prepareSpritesAndDetectHit(ctx, sprites.take(MAX_SPRITES_PER_SCANLINE))
+    } else {
+      false
+    }
 
     renderToBuffer(ctx.yScanline)
 
     return Result(
-      sprite0Hit = renderingEnabled && isHit, // TODO - unclear if this should be gated by enable flags
-      spriteOverflow = renderingEnabled && (sprites.size > MAX_SPRITES_PER_SCANLINE)
+      sprite0Hit = isHit,
+      spriteOverflow = (ctx.bgRenderingEnabled || ctx.sprRenderingEnabled) && (sprites.size > MAX_SPRITES_PER_SCANLINE)
     )
   }
 
-  private fun prepareBackground(bgPatternTable: Int, coords: Coords) {
+  private fun prepareBackground(ctx: Context) {
     var palette = 0
     var pattern: Data = 0x00
 
-    with (coords) {
+    with (ctx.coords) {
       for (x in 0 until SCREEN_WIDTH) {
         if ((x == 0) || (xFine == 0)) {
           val addrNt = BASE_NAMETABLES +
@@ -89,11 +100,23 @@ class Renderer(
             (xCoarse / 4)
 
           palette = (memory.load(addrAttr) shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
-          pattern = getPattern(iTable = bgPatternTable, iTile = memory.load(addrNt), iRow = yFine)
+          pattern = getPattern(iTable = ctx.bgPatternTable, iTile = memory.load(addrNt), iRow = yFine)
         }
-        pixels[x] = Pixel(c = patternPixel(pattern, xFine), p = palette, src = -1)
+        pixels[x] = Pixel(c = patternPixel(pattern, xFine), p = palette, src = SRC_BG)
         incrementX()
       }
+    }
+  }
+
+  private fun prepareBlankBackground() {
+    for (x in 0 until SCREEN_WIDTH) {
+      pixels[x] = Pixel(c = 0, p = 0, src = SRC_BG)
+    }
+  }
+
+  private fun blankLeftBackgroundTile() {
+    for (x in 0 until TILE_SIZE) {
+      pixels[x] = Pixel(c = 0, p = 0, src = SRC_BG)
     }
   }
 
@@ -136,7 +159,7 @@ class Renderer(
     return sprites
   }
 
-  private fun prepareSpritesAndDetectHit(sprites: List<SpriteToRender>): Boolean {
+  private fun prepareSpritesAndDetectHit(ctx: Context, sprites: List<SpriteToRender>): Boolean {
     var isHit = false
 
     // Lowest index is highest priority, so render last
@@ -151,17 +174,25 @@ class Renderer(
         val pxCurrent = pixels[x]
         val opaqueSpr = (pxSpr.c != 0)
         val opaqueCurrent = (pxCurrent.c != 0)
+        val clipped = !ctx.sprLeftTileEnabled && x < TILE_SIZE
 
-        // Do not render if already a sprite
-        pixels[x] = when {
-          (pxCurrent.src != -1) -> pxCurrent        // Don't render if already a higher-priority sprite
-          !opaqueSpr -> pxCurrent                   // Don't render if transparent
-          spr.behind && opaqueCurrent -> pxCurrent  // Don't render if behind an opaque pixel
-          else -> pxSpr
+        when {
+          clipped -> {}                        // Don't render if clipped
+          (pxCurrent.src != SRC_BG) -> {}      // Don't render if already a higher-priority sprite
+          !opaqueSpr -> {}                     // Don't render if transparent
+          (spr.behind && opaqueCurrent) -> {}  // Don't render if behind an opaque pixel
+          else -> pixels[x] = pxSpr
         }
 
         // Collision detection - no need to check if current is sprite, as only relevant for iSprite == 0
-        isHit = isHit || ((spr.iSprite == 0) && opaqueCurrent && opaqueSpr && (x < (SCREEN_WIDTH - 1)))
+        when {
+          (spr.iSprite > 0) -> {}
+          clipped -> {}
+          !opaqueCurrent -> {}
+          !opaqueSpr -> {}
+          (x == (SCREEN_WIDTH  - 1)) -> {}
+          else -> isHit = true
+        }
       }
     }
 
@@ -190,5 +221,7 @@ class Renderer(
 
   companion object {
     const val MAX_SPRITES_PER_SCANLINE = 8
+
+    private const val SRC_BG = -1
   }
 }

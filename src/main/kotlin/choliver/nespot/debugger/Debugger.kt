@@ -77,7 +77,7 @@ class Debugger(
   private fun consume(parser: CommandParser, enablePrompts: Boolean) {
     while (true) {
       if (enablePrompts) {
-        stdout.print("[${nes.state.PC.format()}]: ")
+        stdout.print("[${nes.state.pc.format()}]: ")
       }
 
       if (!handleCommand(parser.next())) {
@@ -148,15 +148,15 @@ class Debugger(
       }
 
       // Prevent Until(currentPC) from doing nothing
-      is Until -> oneThenUntil { nes.state.PC != cmd.pc }
+      is Until -> oneThenUntil { nes.state.pc != cmd.pc }
 
       is UntilOffset -> {
         val target = nextPc(cmd.offset)
-        until { nes.state.PC != target }
+        until { nes.state.pc != target }
       }
 
       // Prevent UntilOpcode(currentOpcode) from doing nothing
-      is UntilOpcode -> oneThenUntil { instAt(nes.state.PC).opcode != cmd.op }
+      is UntilOpcode -> oneThenUntil { instAt(nes.state.pc).opcode != cmd.op }
 
       // One more so that the interrupt actually occurs
       is UntilNmi -> untilThenOne { nextStep != NextStep.NMI }
@@ -327,7 +327,7 @@ class Debugger(
 
   private fun maybeTraceInstruction() {
     if (isVerbose) {
-      stdout.println("${nes.state.PC.format()}: ${instAt(nes.state.PC)}")  // TODO - de-dupe with InspectInst handler
+      stdout.println("${nes.state.pc.format()}: ${instAt(nes.state.pc)}")  // TODO - de-dupe with InspectInst handler
     }
   }
 
@@ -354,7 +354,7 @@ class Debugger(
       }
     }
 
-  private fun isBreakpointHit() = when (val bp = points.breakpoints[nes.state.PC]) {
+  private fun isBreakpointHit() = when (val bp = points.breakpoints[nes.state.pc]) {
     null -> true
     else -> {
       stdout.println("Hit breakpoint #${bp.num}")
@@ -363,7 +363,7 @@ class Debugger(
   }
 
   private fun nextPc(offset: Int = 1) =
-    (0 until offset).fold(nes.state.PC) { pc, _ -> nes.decodeAt(pc).nextPc }
+    (0 until offset).fold(nes.state.pc) { pc, _ -> nes.decodeAt(pc).nextPc }
 
   private fun instAt(pc: Address) = nes.decodeAt(pc).instruction
 

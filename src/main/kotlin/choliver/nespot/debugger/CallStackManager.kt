@@ -41,7 +41,7 @@ class CallStackManager(
   private var valid = false // Becomes valid once S initialised
 
   fun preInstruction() {
-    val decoded = nes.decodeAt(nes.state.PC)
+    val decoded = nes.decodeAt(nes.state.pc)
 
     when (decoded.instruction.opcode) {
       TXS -> if (valid) {
@@ -122,7 +122,7 @@ class CallStackManager(
 
   fun postInstruction() {
     val latest = map.entries.last()
-    latest.setValue(latest.value.copy(current = nes.state.PC))
+    latest.setValue(latest.value.copy(current = nes.state.pc))
   }
 
   private fun pushFrame(type: FrameType, start: Address, current: Address = start) {

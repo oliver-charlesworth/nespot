@@ -10,7 +10,6 @@ import java.nio.IntBuffer
 import kotlin.math.min
 
 // TODO - eliminate all the magic numbers here
-// TODO - clipping
 // TODO - grayscale
 // TODO - emphasize
 class Renderer(

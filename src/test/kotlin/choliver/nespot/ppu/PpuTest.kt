@@ -241,11 +241,35 @@ class PpuTest {
     }
 
     @Test
+    fun `propagates sprRenderingEnabled`() {
+      ppu.writeReg(REG_PPUMASK, 0b00010000)
+      ppu.executeScanline()
+
+      assertEquals(true, captureContext().sprRenderingEnabled)
+    }
+
+    @Test
     fun `propagates bgRenderingEnabled`() {
-      ppu.writeReg(REG_PPUCTRL, 0b00100000)
+      ppu.writeReg(REG_PPUMASK, 0b00001000)
       ppu.executeScanline()
 
       assertEquals(true, captureContext().bgRenderingEnabled)
+    }
+
+    @Test
+    fun `propagates sprLeftTileEnabled`() {
+      ppu.writeReg(REG_PPUMASK, 0b00000100)
+      ppu.executeScanline()
+
+      assertEquals(true, captureContext().sprLeftTileEnabled)
+    }
+
+    @Test
+    fun `propagates bgLeftTileEnabled`() {
+      ppu.writeReg(REG_PPUMASK, 0b00000010)
+      ppu.executeScanline()
+
+      assertEquals(true, captureContext().bgLeftTileEnabled)
     }
 
     @Test

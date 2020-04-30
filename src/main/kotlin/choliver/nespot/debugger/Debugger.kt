@@ -2,6 +2,7 @@ package choliver.nespot.debugger
 
 import choliver.nespot.Address
 import choliver.nespot.Data
+import choliver.nespot.cartridge.Rom
 import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
 import choliver.nespot.debugger.CallStackManager.FrameType.NMI
 import choliver.nespot.debugger.Command.*
@@ -50,7 +51,7 @@ class Debugger(
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
 
   private val nes = Nes(
-    rom = rom,
+    rom = Rom.parse(rom),
     videoBuffer = screen.buffer,
     audioBuffer = ByteArray(0),
     joypads = joypads,

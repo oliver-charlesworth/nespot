@@ -5,27 +5,27 @@ import choliver.nespot.Data
 import choliver.nespot.Memory
 import choliver.nespot.cartridge.BASE_VRAM
 import choliver.nespot.cartridge.Mapper
-import choliver.nespot.cartridge.MapperConfig
 import choliver.nespot.cartridge.MirroringMemory
+import choliver.nespot.cartridge.Rom
 import choliver.nespot.data
 
 // https://wiki.nesdev.com/w/index.php/NROM
-class NromMapper(private val config: MapperConfig) : Mapper {
+class NromMapper(private val rom: Rom) : Mapper {
   override val prg = object : Memory {
     // Just map everything to PRG-ROM
-    override fun load(addr: Address) = config.prgData[addr and (config.prgData.size - 1)].data()
+    override fun load(addr: Address) = rom.prgData[addr and (rom.prgData.size - 1)].data()
 
     // TODO - PRG-RAM
     override fun store(addr: Address, data: Data) {}
   }
 
   override fun chr(vram: Memory) = object : Memory {
-    val mirroredRam = MirroringMemory(config.mirroring, vram)
+    val mirroredRam = MirroringMemory(rom.mirroring, vram)
 
     override fun load(addr: Address) = if (addr >= BASE_VRAM) {
       mirroredRam.load(addr)  // This maps everything >= 0x4000 too
     } else {
-      config.chrData[addr].data()
+      rom.chrData[addr].data()
     }
 
     override fun store(addr: Address, data: Data) {

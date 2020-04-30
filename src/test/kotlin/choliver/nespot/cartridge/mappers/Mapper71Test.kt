@@ -3,10 +3,10 @@ package choliver.nespot.cartridge.mappers
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
-import choliver.nespot.cartridge.MapperConfig
-import choliver.nespot.cartridge.MapperConfig.Mirroring
-import choliver.nespot.cartridge.MapperConfig.Mirroring.HORIZONTAL
-import choliver.nespot.cartridge.MapperConfig.Mirroring.VERTICAL
+import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.Rom.Mirroring
+import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
+import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
 import choliver.nespot.cartridge.mappers.Mapper71.Companion.BASE_BANK_SELECT
 import choliver.nespot.data
 import com.nhaarman.mockitokotlin2.doReturn
@@ -164,7 +164,7 @@ class Mapper71Test {
     prgData: ByteArray = ByteArray(32768),
     chrData: ByteArray = ByteArray(8192),
     mirroring: Mirroring = VERTICAL
-  ) = Mapper71(MapperConfig(
+  ) = Mapper71(Rom(
     mirroring = mirroring,
     prgData = prgData,
     chrData = chrData

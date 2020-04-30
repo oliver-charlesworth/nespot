@@ -41,7 +41,6 @@
 
 - `Runner`
 
-  - `--info` mode to print out the hash / headers of the ROM.
   - Ability to serialise state (i.e. save game).
 
 

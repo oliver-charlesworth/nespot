@@ -2,15 +2,15 @@ package choliver.nespot.cartridge.mappers
 
 import choliver.nespot.*
 import choliver.nespot.cartridge.Mapper
-import choliver.nespot.cartridge.MapperConfig
+import choliver.nespot.cartridge.Rom
 
 // https://wiki.nesdev.com/w/index.php/MMC1
-class Mmc1Mapper(private val config: MapperConfig) : Mapper {
+class Mmc1Mapper(private val rom: Rom) : Mapper {
   private val prgRam = Ram(8192)
   private val chrRam = Ram(8192)
-  private val usingChrRam = config.chrData.isEmpty()
-  private val numPrgBanks = (config.prgData.size / 16384)
-  private val numChrBanks = if (usingChrRam) 2 else (config.chrData.size / 4096)
+  private val usingChrRam = rom.chrData.isEmpty()
+  private val numPrgBanks = (rom.prgData.size / 16384)
+  private val numChrBanks = if (usingChrRam) 2 else (rom.chrData.size / 4096)
   private var srCount = 0
   private var sr = 0
   private var chr0Bank = 0
@@ -41,7 +41,7 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
       }
     }
 
-    private fun load(addr: Address, iBank: Int) = config.prgData[(addr and 0x3FFF) + 0x4000 * iBank].data()
+    private fun load(addr: Address, iBank: Int) = rom.prgData[(addr and 0x3FFF) + 0x4000 * iBank].data()
 
     override fun store(addr: Address, data: Data) {
       when {
@@ -55,7 +55,7 @@ class Mmc1Mapper(private val config: MapperConfig) : Mapper {
     private val myLoad: (Address) -> Data = if (usingChrRam) {
       { addr -> chrRam.load(addr) }
     } else {
-      { addr -> config.chrData[addr].data() }
+      { addr -> rom.chrData[addr].data() }
     }
 
     private val myStore: (Address, Data) -> Unit = if (usingChrRam) {

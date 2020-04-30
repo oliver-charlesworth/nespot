@@ -3,13 +3,13 @@ package choliver.nespot.cartridge.mappers
 import choliver.nespot.*
 import choliver.nespot.cartridge.BASE_VRAM
 import choliver.nespot.cartridge.Mapper
-import choliver.nespot.cartridge.MapperConfig
 import choliver.nespot.cartridge.MirroringMemory
+import choliver.nespot.cartridge.Rom
 
 // https://wiki.nesdev.com/w/index.php/INES_Mapper_071
-class Mapper71(private val config: MapperConfig) : Mapper {
+class Mapper71(private val rom: Rom) : Mapper {
   private val chrRam = Ram(8192)
-  private val numPrgBanks = (config.prgData.size / 16384)
+  private val numPrgBanks = (rom.prgData.size / 16384)
   private var prg0Bank = 0
 
   override val prg = object : Memory {
@@ -19,7 +19,7 @@ class Mapper71(private val config: MapperConfig) : Mapper {
       load(addr, numPrgBanks - 1) // Fixed
     }
 
-    private fun load(addr: Address, iBank: Int) = config.prgData[(addr and 0x3FFF) + 0x4000 * iBank].data()
+    private fun load(addr: Address, iBank: Int) = rom.prgData[(addr and 0x3FFF) + 0x4000 * iBank].data()
 
     override fun store(addr: Address, data: Data) {
       if (addr >= BASE_BANK_SELECT) {
@@ -29,7 +29,7 @@ class Mapper71(private val config: MapperConfig) : Mapper {
   }
 
   override fun chr(vram: Memory): Memory {
-    val mirroredRam = MirroringMemory(config.mirroring, vram)
+    val mirroredRam = MirroringMemory(rom.mirroring, vram)
 
     return object : Memory {
       override fun load(addr: Address) = if (addr >= BASE_VRAM) {

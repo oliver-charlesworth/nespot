@@ -3,7 +3,7 @@ package choliver.nespot.ppu
 import choliver.nespot.Address
 import choliver.nespot.Memory
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
-import choliver.nespot.ppu.Renderer.Context
+import choliver.nespot.ppu.Renderer.Input
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
@@ -630,9 +630,9 @@ class RendererTest {
     bgLeftTileEnabled: Boolean = true,
     sprLeftTileEnabled: Boolean = true,
     largeSprites: Boolean = false
-  ) = renderer.renderScanline(Context(
-    bgRenderingEnabled = bgRenderingEnabled,
-    sprRenderingEnabled = sprRenderingEnabled,
+  ) = renderer.renderScanline(Input(
+    bgEnabled = bgRenderingEnabled,
+    sprEnabled = sprRenderingEnabled,
     bgLeftTileEnabled = bgLeftTileEnabled,
     sprLeftTileEnabled = sprLeftTileEnabled,
     largeSprites = largeSprites,
@@ -644,7 +644,7 @@ class RendererTest {
       yCoarse = yCoarse,
       yFine = yFine
     ),
-    yScanline = yScanline
+    scanline = yScanline
   ))
 
   private fun initNametableMemory(

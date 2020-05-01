@@ -1,7 +1,7 @@
 package choliver.nespot.cartridge
 
 import choliver.nespot.Memory
-import choliver.nespot.cartridge.mappers.Mapper71
+import choliver.nespot.cartridge.mappers.UxRomMapper
 import choliver.nespot.cartridge.mappers.Mmc1Mapper
 import choliver.nespot.cartridge.mappers.NromMapper
 
@@ -21,7 +21,8 @@ class Cartridge(rom: Rom) {
   private fun createMapper(rom: Rom) = when (rom.mapper) {
     0 -> NromMapper(rom)
     1 -> Mmc1Mapper(rom)
-    71 -> Mapper71(rom)
+    2 -> UxRomMapper(rom)
+    71 -> UxRomMapper(rom)  // See https://wiki.nesdev.com/w/index.php/INES_Mapper_071
     else -> throw RuntimeException("Mapper #${rom.mapper}")
   }
 }

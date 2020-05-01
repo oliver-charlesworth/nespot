@@ -96,13 +96,12 @@ class Screen(
   }
 
   private fun initStage() {
-    val switchModeCombo = KeyCodeCombination(KeyCode.F, KeyCombination.META_DOWN, KeyCombination.SHIFT_DOWN)
     stage = Stage()
     stage.fullScreenExitKeyCombination = KeyCombination.NO_MATCH
     stage.title = title
     stage.scene = Scene(Group().apply { children.add(imageView) }, Color.BLACK)
     stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) {
-      if (switchModeCombo.match(it)) {
+      if (it.code == KeyCode.F) {
         isFullScreen = !isFullScreen
         configureStageAndImage()
       } else {

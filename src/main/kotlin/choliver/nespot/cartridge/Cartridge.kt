@@ -1,9 +1,9 @@
 package choliver.nespot.cartridge
 
 import choliver.nespot.Memory
-import choliver.nespot.cartridge.mappers.UxRomMapper
 import choliver.nespot.cartridge.mappers.Mmc1Mapper
 import choliver.nespot.cartridge.mappers.NromMapper
+import choliver.nespot.cartridge.mappers.UxRomMapper
 
 // See https://wiki.nesdev.com/w/index.php/INES
 class Cartridge(rom: Rom) {

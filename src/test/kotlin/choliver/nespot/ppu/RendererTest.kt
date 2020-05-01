@@ -300,6 +300,7 @@ class RendererTest {
     private val ubg = 0
     private val bgEntry = 1 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
     private val sprEntry = 1 + ((NUM_PALETTES + paletteSpr) * NUM_ENTRIES_PER_PALETTE)
+    private val sprEntry2 = 1 + ((NUM_PALETTES + paletteSpr2) * NUM_ENTRIES_PER_PALETTE)
 
     @Test
     fun `transparent bg, transparent spr, in front - ubg`() {
@@ -366,7 +367,8 @@ class RendererTest {
     }
 
     @Test
-    fun `lowest-index opaque foreground sprite wins`() {
+    fun `lowest-index opaque in-front sprite wins`() {
+      initBackground(true)
       initSprite(behind = false, opaque = true, palette = paletteSpr, iSprite = 0)
       initSprite(behind = false, opaque = true, palette = paletteSpr2, iSprite = 1)
 
@@ -374,11 +376,30 @@ class RendererTest {
     }
 
     @Test
-    fun `lowest-index opaque background sprite wins`() {
+    fun `lowest-index opaque behind sprite wins`() {
+      initBackground(false)
       initSprite(behind = true, opaque = true, palette = paletteSpr, iSprite = 0)
       initSprite(behind = true, opaque = true, palette = paletteSpr2, iSprite = 1)
 
       assertPixelColour(expected = sprEntry)
+    }
+
+    @Test
+    fun `lower-index opaque behind sprite wins over opaque in-front sprite`() {
+      initBackground(true)
+      initSprite(behind = true, opaque = true, palette = paletteSpr, iSprite = 0)
+      initSprite(behind = false, opaque = true, palette = paletteSpr2, iSprite = 1)
+
+      assertPixelColour(expected = bgEntry) // Behind sprite wins, so we see the background!
+    }
+
+    @Test
+    fun `lower-index transparent behind sprite doesn't win over opaque in-front sprite`() {
+      initBackground(true)
+      initSprite(behind = true, opaque = false, palette = paletteSpr, iSprite = 0)
+      initSprite(behind = false, opaque = true, palette = paletteSpr2, iSprite = 1)
+
+      assertPixelColour(expected = sprEntry2)
     }
 
     private fun initSprite(iSprite: Int = 0, behind: Boolean, opaque: Boolean, palette: Int) {

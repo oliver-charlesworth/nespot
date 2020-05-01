@@ -52,7 +52,7 @@ NESpot is built with JDK 11.  It may work with older Java versions, but this has
 | Game | SHA-1 (PRG+CHR) | Status |
 | --- | --- | --- |
 | Donkey Kong           | `D222DBBA5BD3716BBF62CA91167C6A9D15C60065` | No known issues. |
-| Super Mario Bros      | `FACEE9C577A5262DBE33AC4930BB0B58C8C037F7` | Very playable.  [One known minor bug](https://github.com/oliver-charlesworth/nespot/issues/87). |
+| Super Mario Bros      | `FACEE9C577A5262DBE33AC4930BB0B58C8C037F7` | No known issues. |
 | Bubble Bobble         | `C1A8F6A9316080487CFEACA62F3D573CD9D484E9` | No known issues. |
 | Hook                  | `EAE5205928D3FA2AFEA0374B457D2BB91E414D99` | No known issues. |
 | Legend of Zelda       | `A12D74C73A0481599A5D832361D168F4737BBCF6` | Very playable.  [On known minor bug](https://github.com/oliver-charlesworth/nespot/issues/89). |

@@ -67,6 +67,17 @@ class SweepTest {
   }
 
   @Test
+  fun `doesn't mute if inhibited`() {
+    sweep.inhibitMute = true
+
+    timer.periodCycles = 16.toRational()
+    assertFalse(sweep.mute)
+
+    timer.periodCycles = 15.toRational()
+    assertFalse(sweep.mute)
+  }
+
+  @Test
   fun `doesn't adjust period when muted`() {
     timer.periodCycles = 15.toRational()
     sweep.negate = true

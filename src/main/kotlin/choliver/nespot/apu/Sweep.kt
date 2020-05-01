@@ -8,8 +8,9 @@ class Sweep(private val timer: Counter) {
   var divider = 0
   var negate = false
   var shift = 0
+  var inhibitMute = false
 
-  val mute get() = (currentPeriod() < MIN_PERIOD) || (targetPeriod() > MAX_PERIOD)
+  val mute get() = !inhibitMute && ((currentPeriod() < MIN_PERIOD) || (targetPeriod() > MAX_PERIOD))
 
   fun reset() {
     reload = true

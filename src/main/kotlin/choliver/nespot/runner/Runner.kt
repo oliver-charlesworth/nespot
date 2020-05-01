@@ -13,7 +13,7 @@ import kotlin.math.roundToInt
 import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
-class Runner : CliktCommand() {
+class Runner : CliktCommand(name = "nespot") {
   private val raw by argument(name = "rom").file(mustExist = true, canBeDir = false)
   private val displayInfo by option("--info", "-i").flag()
   private val numPerfFrames by option("--perf", "-p").int()

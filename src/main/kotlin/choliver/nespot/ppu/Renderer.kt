@@ -39,10 +39,11 @@ class Renderer(
     val spriteOverflow: Boolean
   )
 
+  @MutableForPerfReasons
   private data class Pixel(
-    val c: Int,
-    val p: Int,
-    val src: Int
+    var c: Int = 0,
+    var p: Int = 0,
+    var opaqueSpr: Boolean = false  // Is an opaque sprite placed here?
   )
 
   private data class SpriteToRender(
@@ -54,7 +55,7 @@ class Renderer(
     val behind: Boolean
   )
 
-  private val pixels = Array(SCREEN_WIDTH) { Pixel(0, 0, 0) }
+  private val pixels = Array(SCREEN_WIDTH) { Pixel() }
 
   fun renderScanline(ctx: Input): Output {
     if (ctx.bgEnabled) {
@@ -104,7 +105,11 @@ class Renderer(
           palette = (memory.load(addrAttr) shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
           pattern = getPattern(iTable = ctx.bgPatternTable, iTile = memory.load(addrNt), iRow = yFine)
         }
-        pixels[x] = Pixel(c = patternPixel(pattern, xFine), p = palette, src = SRC_BG)
+        with(pixels[x]) {
+          c = patternPixel(pattern, xFine)
+          p = palette
+          opaqueSpr = false
+        }
         incrementX()
       }
     }
@@ -112,13 +117,21 @@ class Renderer(
 
   private fun prepareBlankBackground() {
     for (x in 0 until SCREEN_WIDTH) {
-      pixels[x] = Pixel(c = 0, p = 0, src = SRC_BG)
+      with(pixels[x]) {
+        c = 0
+        p = 0
+        opaqueSpr = false
+      }
     }
   }
 
   private fun blankLeftBackgroundTile() {
     for (x in 0 until TILE_SIZE) {
-      pixels[x] = Pixel(c = 0, p = 0, src = SRC_BG)
+      with(pixels[x]) {
+        c = 0
+        p = 0
+        opaqueSpr = false
+      }
     }
   }
 
@@ -168,32 +181,26 @@ class Renderer(
     sprites.forEach { spr ->
       for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - spr.x)) {
         val x = spr.x + xPixel
-        val pxSpr = Pixel(
-          c = patternPixel(spr.pattern, maybeFlip(xPixel, spr.flipX)),
-          p = spr.palette,
-          src = spr.iSprite
-        )
-        val pxCurrent = pixels[x]
-        val opaqueSpr = (pxSpr.c != 0)
-        val opaqueCurrent = (pxCurrent.c != 0)
-        val clipped = !ctx.sprLeftTileEnabled && x < TILE_SIZE
+        val c = patternPixel(spr.pattern, maybeFlip(xPixel, spr.flipX))
+        val px = pixels[x]
 
-        when {
-          clipped -> {}                        // Don't render if clipped
-          (pxCurrent.src != SRC_BG) -> {}      // Don't render if already a higher-priority sprite
-          !opaqueSpr -> {}                     // Don't render if transparent
-          (spr.behind && opaqueCurrent) -> {}  // Don't render if behind an opaque pixel
-          else -> pixels[x] = pxSpr
-        }
+        val opaqueSpr = (c != 0)
+        val clipped = !ctx.sprLeftTileEnabled && (x < TILE_SIZE)
 
-        // Collision detection - no need to check if current is sprite, as only relevant for iSprite == 0
-        when {
-          (spr.iSprite > 0) -> {}
-          clipped -> {}
-          !opaqueCurrent -> {}
-          !opaqueSpr -> {}
-          (x == (SCREEN_WIDTH  - 1)) -> {}
-          else -> isHit = true
+        if (opaqueSpr && !px.opaqueSpr && !clipped) {
+          px.opaqueSpr = true
+
+          // There is no previous opaque sprite, so if pixel is opaque then it must be background
+          val opaqueBg = (px.c != 0)
+
+          if (!(spr.behind && opaqueBg)) {
+            px.c = c
+            px.p = spr.palette
+          }
+
+          if ((spr.iSprite == 0) && opaqueBg && (x < (SCREEN_WIDTH - 1))) {
+            isHit = true
+          }
         }
       }
     }
@@ -223,7 +230,5 @@ class Renderer(
 
   companion object {
     const val MAX_SPRITES_PER_SCANLINE = 8
-
-    private const val SRC_BG = -1
   }
 }

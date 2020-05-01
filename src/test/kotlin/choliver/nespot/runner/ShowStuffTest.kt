@@ -30,7 +30,7 @@ class ShowStuffTest {
   @Test
   @Disabled
   fun patterns() {
-    val cartridge = Cartridge(Rom(File("roms/smb.nes").readBytes()))
+    val cartridge = Cartridge(Rom.parse(File("roms/smb.nes").readBytes()))
     val chr = cartridge.chr(mock())
 
     fun getPatternData(

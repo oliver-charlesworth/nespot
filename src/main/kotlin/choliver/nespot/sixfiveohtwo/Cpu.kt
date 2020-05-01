@@ -118,8 +118,7 @@ class Cpu(
 
         BIT -> {
           val data = resolve()
-          val tmp = a and data
-          p.z = tmp.isZero()
+          p.z = (a and data).isZero()
           p.n = data.isNeg()
           p.v = data.isBitSet(6)
         }
@@ -256,7 +255,7 @@ class Cpu(
     if (updateStack) {
       push(pc.hi())
       push(pc.lo())
-      push( p.data() or (if (setBreakFlag) 0x10 else 0x00))
+      push(p.data() or (if (setBreakFlag) 0x10 else 0x00))
     }
 
     pc = addr(

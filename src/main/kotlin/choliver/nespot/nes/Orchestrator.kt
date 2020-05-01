@@ -17,10 +17,6 @@ internal class Orchestrator(
 
   val endOfFrame get() = _endOfFrame
 
-  fun runToEndOfFrame() {
-    do step() while (!_endOfFrame)
-  }
-
   fun step() {
     _endOfFrame = false
     cyclesRemainingInScanline -= cpu.executeStep()
@@ -47,7 +43,7 @@ internal class Orchestrator(
 
   private fun generateSamplesForScanline() {
     while (samplesRemainingInScanline > 0) {
-      apu.next()
+      apu.generateSample()
       samplesRemainingInScanline -= 1
     }
     samplesRemainingInScanline += SAMPLES_PER_SCANLINE

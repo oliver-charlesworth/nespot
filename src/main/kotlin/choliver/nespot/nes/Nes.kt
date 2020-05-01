@@ -1,6 +1,9 @@
 package choliver.nespot.nes
 
-import choliver.nespot.*
+import choliver.nespot.Address
+import choliver.nespot.Data
+import choliver.nespot.Memory
+import choliver.nespot.Ram
 import choliver.nespot.apu.Apu
 import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Rom
@@ -74,7 +77,9 @@ class Nes(
 
   private val orchestrator = Orchestrator(cpu, apu, ppu)
 
-  fun runToEndOfFrame() = orchestrator.runToEndOfFrame()
+  fun runToEndOfFrame() {
+    do orchestrator.step() while (!orchestrator.endOfFrame)
+  }
 
   val inspection = object : Inspection {
     override val state get() = cpu.state

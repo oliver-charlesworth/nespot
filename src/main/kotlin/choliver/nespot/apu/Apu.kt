@@ -3,7 +3,6 @@ package choliver.nespot.apu
 import choliver.nespot.*
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
-import choliver.nespot.toRational
 
 // TODO - interrupts
 class Apu(
@@ -148,7 +147,7 @@ class Apu(
     envelope.param = regs[0] and 0x0F
   }
 
-  fun next() {
+  fun generateSample() {
     val rounded = mixer.take()
 
     // This seems to be the opposite of little-endian
@@ -156,16 +155,6 @@ class Apu(
     buffer[_iSample * 2 + 1] = rounded.toByte()
 
     _iSample = (_iSample + 1) % SAMPLES_PER_FRAME
-  }
-
-  fun generate() {
-    for (i in buffer.indices step 2) {
-      val rounded = mixer.take()
-
-      // This seems to be the opposite of little-endian
-      buffer[i] = (rounded shr 8).toByte()
-      buffer[i + 1] = rounded.toByte()
-    }
   }
 
   companion object {

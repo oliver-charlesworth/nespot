@@ -1,6 +1,5 @@
 package choliver.nespot
 
-import choliver.nespot.Rational
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

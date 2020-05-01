@@ -41,7 +41,10 @@ class Nes(
 
   private val cartridge = Cartridge(rom)
 
-  private val apu = Apu(audioBuffer, cartridge.prg)
+  private val apu = Apu(
+    buffer = audioBuffer,
+    memory = cartridge.prg  // DMC can only read from PRG space
+  )
 
   private val cpuRam = Ram(CPU_RAM_SIZE)
   private val ppuRam = Ram(PPU_RAM_SIZE)
@@ -71,7 +74,7 @@ class Nes(
       }
     },
     pollReset = reset::poll,
-    pollIrq = irq::poll,
+    pollIrq = apu::irq, // TODO
     pollNmi = nmi::poll
   )
 

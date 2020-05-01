@@ -4,7 +4,7 @@ import choliver.nespot.*
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 
-// TODO - interrupts
+// TODO - frame interrupt
 class Apu(
   private val buffer: ByteArray,
   memory: Memory,
@@ -21,9 +21,8 @@ class Apu(
   private val mixer = Mixer(sequencer, channels)
 
   val iSample get() = _iSample
+  val irq get() = channels.dmc.synth.irq
 
-  // TODO - DMC interrupt
-  // TODO - frame interrupt
   fun readStatus() = 0 +
     (if (channels.dmc.synth.hasRemainingOutput) 0x10 else 0x00) +
     (if (channels.noi.synth.hasRemainingOutput) 0x08 else 0x00) +
@@ -40,6 +39,7 @@ class Apu(
       in REG_DMC_RANGE -> channels.dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
 
       REG_SND_CHN -> {
+        channels.dmc.synth.clearIrq()
         channels.dmc.enabled = data.isBitSet(4)
         channels.noi.enabled = data.isBitSet(3)
         channels.tri.enabled = data.isBitSet(2)
@@ -49,7 +49,6 @@ class Apu(
 
       REG_FRAME_COUNTER_CTRL -> {
         sequencer.mode = if (data.isBitSet(7)) FIVE_STEP else FOUR_STEP
-        // TODO - IRQ inhibit
       }
     }
   }
@@ -131,7 +130,7 @@ class Apu(
     regs[idx] = data
     when (idx) {
       0 -> {
-        // TODO - IRQ enabled
+        synth.irqEnabled = data.isBitSet(7)
         synth.loop = data.isBitSet(6)
         timer.periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
       }

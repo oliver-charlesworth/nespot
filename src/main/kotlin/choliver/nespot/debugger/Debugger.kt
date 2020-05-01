@@ -55,6 +55,7 @@ class Debugger(
     videoBuffer = screen.buffer,
     audioBuffer = ByteArray(0),
     joypads = joypads,
+    // TODO - this is not correct - doesn't take priority into account, and isn't edge-triggered
     onReset = { nextStep = NextStep.RESET },
     onNmi = { nextStep = NextStep.NMI },
     onIrq = { nextStep = NextStep.IRQ },

@@ -102,14 +102,13 @@ class CpuTest {
     }
 
     @Test
-    fun `follows irq vector and leaves I unmodified if I == _0`() {
-      val flags = Flags(i = _0)
+    fun `follows irq vector and sets I if I == _0`() {
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(s = 0xFF, p = flags),
+        initState = State(s = 0xFF, p = Flags(i = _0)),
         initStores = memory,
-        expectedState = State(s = 0xFC, p = flags, pc = irqHandler),
-        expectedStores = expectedStores(flags),
+        expectedState = State(s = 0xFC, p = Flags(i = _1), pc = irqHandler),
+        expectedStores = expectedStores(Flags(i = _0)),
         expectedCycles = NUM_INTERRUPT_CYCLES,
         pollIrq = { _1 }
       )

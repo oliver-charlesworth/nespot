@@ -6,8 +6,8 @@ import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.MirroringMemory
 import choliver.nespot.cartridge.Rom
 
-// https://wiki.nesdev.com/w/index.php/INES_Mapper_071
-class Mapper71(private val rom: Rom) : Mapper {
+// See https://wiki.nesdev.com/w/index.php/UxROM
+class UxRomMapper(private val rom: Rom) : Mapper {
   private val chrRam = Ram(8192)
   private val numPrgBanks = (rom.prgData.size / 16384)
   private var prg0Bank = 0

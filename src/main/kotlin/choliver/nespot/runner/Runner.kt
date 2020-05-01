@@ -1,5 +1,6 @@
 package choliver.nespot.runner
 
+import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
 import com.github.ajalt.clikt.core.CliktCommand
@@ -38,7 +39,7 @@ class Runner : CliktCommand(name = "nespot") {
       onButtonUp = { joypads.up(1, it) },
       onClose = { isClosed.set(true) }
     )
-    private val audio = Audio(frameRateHz = 60)   // TODO - move to a constant somewhere
+    private val audio = Audio(frameRateHz = FRAME_RATE_HZ)
     private val nes = Nes(
       rom = rom,
       videoBuffer = screen.buffer,

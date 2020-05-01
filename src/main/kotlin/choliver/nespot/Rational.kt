@@ -1,8 +1,8 @@
-package choliver.nespot.apu
+package choliver.nespot
 
 import kotlin.math.absoluteValue
 
-class Rational(a: Int, b: Int) {
+class Rational(a: Int, b: Int = 1) {
   val a: Int
   val b: Int
 
@@ -25,7 +25,8 @@ class Rational(a: Int, b: Int) {
   operator fun compareTo(rhs: Int) = a - (b * rhs)
   operator fun unaryMinus() = Rational(-a, b)
   /** Rounds towards zero. */
-  fun toInt() = a / b
+  fun toInt() = (a / b)
+  fun toDouble() = (a.toDouble() / b.toDouble())
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -52,4 +53,4 @@ class Rational(a: Int, b: Int) {
   }
 }
 
-internal fun Int.toRational() = Rational(this, 1)
+internal fun Int.toRational() = Rational(this)

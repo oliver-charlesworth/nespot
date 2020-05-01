@@ -1,10 +1,8 @@
 package choliver.nespot.apu
 
-import choliver.nespot.Data
-import choliver.nespot.Memory
+import choliver.nespot.*
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
-import choliver.nespot.isBitSet
 
 // TODO - interrupts
 class Apu(
@@ -19,7 +17,10 @@ class Apu(
     dmc = SynthContext(DmcSynth(memory = memory)).apply { inhibitMute(); fixEnvelope(1) }
   )
 ) {
+  private var _iSample = 0
   private val mixer = Mixer(sequencer, channels)
+
+  val iSample get() = _iSample
 
   // TODO - DMC interrupt
   // TODO - frame interrupt
@@ -146,14 +147,14 @@ class Apu(
     envelope.param = regs[0] and 0x0F
   }
 
-  fun generate() {
-    for (i in buffer.indices step 2) {
-      val rounded = mixer.take()
+  fun generateSample() {
+    val rounded = mixer.take()
 
-      // This seems to be the opposite of little-endian
-      buffer[i] = (rounded shr 8).toByte()
-      buffer[i + 1] = rounded.toByte()
-    }
+    // This seems to be the opposite of little-endian
+    buffer[_iSample * 2] = (rounded shr 8).toByte()
+    buffer[_iSample * 2 + 1] = rounded.toByte()
+
+    _iSample = (_iSample + 1) % SAMPLES_PER_FRAME
   }
 
   companion object {

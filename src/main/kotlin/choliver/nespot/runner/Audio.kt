@@ -1,6 +1,6 @@
 package choliver.nespot.runner
 
-import choliver.nespot.apu.SAMPLE_RATE_HZ
+import choliver.nespot.SAMPLE_RATE_HZ
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 

@@ -75,37 +75,21 @@ class Nes(
     pollNmi = nmi::poll
   )
 
-  private var numCycles = 0
-  private var endOfFrame = false
+  private val orchestrator = Orchestrator(cpu, apu, ppu)
 
   fun runToEndOfFrame() {
-    do step() while (!endOfFrame)
-  }
-
-  private fun step() {
-    endOfFrame = false
-    numCycles += cpu.executeStep()
-    if (numCycles >= NUM_CYCLES_PER_SCANLINE) {
-      numCycles -= NUM_CYCLES_PER_SCANLINE
-
-      ppu.executeScanline()
-
-      if (0 == ppu.scanline) {
-        apu.generate()
-        endOfFrame = true
-      }
-    }
+    do orchestrator.step() while (!orchestrator.endOfFrame)
   }
 
   val inspection = object : Inspection {
     override val state get() = cpu.state
-    override val endOfFrame get() = this@Nes.endOfFrame
+    override val endOfFrame get() = orchestrator.endOfFrame
     override fun peek(addr: Address) = cpuMapper.load(addr)
     override fun peekV(addr: Address) = ppuMapper.load(addr)
     override fun fireReset() = reset.set()
     override fun fireNmi() = nmi.set()
     override fun fireIrq() = irq.set()
-    override fun step() = this@Nes.step()
+    override fun step() = orchestrator.step()
     override fun decodeAt(pc: Address) = cpu.decodeAt(pc)
   }
 
@@ -129,8 +113,5 @@ class Nes(
     const val ADDR_JOYPADS: Address = 0x4016
     const val ADDR_JOYPAD1: Address = 0x4016
     const val ADDR_JOYPAD2: Address = 0x4017
-
-    // See http://wiki.nesdev.com/w/index.php/Cycle_reference_chart#Clock_rates
-    const val NUM_CYCLES_PER_SCANLINE = 113
   }
 }

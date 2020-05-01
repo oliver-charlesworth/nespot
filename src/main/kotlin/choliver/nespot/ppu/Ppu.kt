@@ -48,13 +48,13 @@ class Ppu(
         }
 
         // Pre-render line
-        (NUM_SCANLINES - 1) -> {
+        (SCANLINES_PER_FRAME - 1) -> {
           inVbl = false
           rendererOut = Renderer.Output(sprite0Hit = false, spriteOverflow = false)
         }
       }
 
-      rendererIn.scanline = (rendererIn.scanline + 1) % NUM_SCANLINES
+      rendererIn.scanline = (rendererIn.scanline + 1) % SCANLINES_PER_FRAME
     }
   }
 
@@ -227,7 +227,5 @@ class Ppu(
 
     const val NAMETABLE_SIZE_BYTES = 0x0400
     const val PATTERN_TABLE_SIZE_BYTES = 0x1000
-
-    const val NUM_SCANLINES = 262
   }
 }

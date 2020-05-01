@@ -30,6 +30,7 @@ tasks.test {
   testLogging {
     events(FAILED)
   }
+  maxParallelForks = Runtime.getRuntime().availableProcessors()
 }
 
 application {

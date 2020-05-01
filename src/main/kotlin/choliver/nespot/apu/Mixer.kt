@@ -1,5 +1,6 @@
 package choliver.nespot.apu
 
+import choliver.nespot.SAMPLE_RATE_HZ
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sqrt

@@ -5,6 +5,7 @@ import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 import choliver.nespot.apu.Sequencer.Ticks
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
+import choliver.nespot.toRational
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

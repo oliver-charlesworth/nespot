@@ -1,9 +1,6 @@
 package choliver.nespot.nes
 
-import choliver.nespot.Address
-import choliver.nespot.Data
-import choliver.nespot.Memory
-import choliver.nespot.Ram
+import choliver.nespot.*
 import choliver.nespot.apu.Apu
 import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Rom
@@ -75,7 +72,8 @@ class Nes(
     pollNmi = nmi::poll
   )
 
-  private var numCycles = 0
+  private var cyclesRemainingInScanline = CYCLES_PER_SCANLINE
+  private var samplesRemainingInScanline = SAMPLES_PER_SCANLINE
   private var endOfFrame = false
 
   fun runToEndOfFrame() {
@@ -84,17 +82,27 @@ class Nes(
 
   private fun step() {
     endOfFrame = false
-    numCycles += cpu.executeStep()
-    if (numCycles >= NUM_CYCLES_PER_SCANLINE) {
-      numCycles -= NUM_CYCLES_PER_SCANLINE
-
-      ppu.executeScanline()
-
-      if (0 == ppu.scanline) {
-        apu.generate()
-        endOfFrame = true
-      }
+    cyclesRemainingInScanline -= cpu.executeStep()
+    if (cyclesRemainingInScanline < 0) {
+      finishScanline()
     }
+  }
+
+  private fun finishScanline() {
+    cyclesRemainingInScanline += CYCLES_PER_SCANLINE
+    ppu.executeScanline()
+    generateSamplesForScanline()
+    if (0 == ppu.scanline) {
+      endOfFrame = true
+    }
+  }
+
+  private fun generateSamplesForScanline() {
+    while (samplesRemainingInScanline > 0) {
+      apu.next()
+      samplesRemainingInScanline -= 1
+    }
+    samplesRemainingInScanline += SAMPLES_PER_SCANLINE
   }
 
   val inspection = object : Inspection {
@@ -129,8 +137,5 @@ class Nes(
     const val ADDR_JOYPADS: Address = 0x4016
     const val ADDR_JOYPAD1: Address = 0x4016
     const val ADDR_JOYPAD2: Address = 0x4017
-
-    // See http://wiki.nesdev.com/w/index.php/Cycle_reference_chart#Clock_rates
-    const val NUM_CYCLES_PER_SCANLINE = 113
   }
 }

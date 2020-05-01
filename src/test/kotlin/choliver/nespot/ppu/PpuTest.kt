@@ -2,7 +2,6 @@ package choliver.nespot.ppu
 
 import choliver.nespot.*
 import choliver.nespot.ppu.Ppu.Companion.BASE_PALETTE
-import choliver.nespot.ppu.Ppu.Companion.NUM_SCANLINES
 import choliver.nespot.ppu.Ppu.Companion.REG_OAMADDR
 import choliver.nespot.ppu.Ppu.Companion.REG_OAMDATA
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUADDR
@@ -168,7 +167,7 @@ class PpuTest {
   inner class Vbl {
     @Test
     fun `interrupt not fired if disabled`() {
-      repeat(NUM_SCANLINES) { ppu.executeScanline() }
+      repeat(SCANLINES_PER_FRAME) { ppu.executeScanline() }
       verifyZeroInteractions(onVbl)
     }
 
@@ -182,7 +181,7 @@ class PpuTest {
       ppu.executeScanline()
       verify(onVbl)()
 
-      repeat(NUM_SCANLINES - SCREEN_HEIGHT - 2) { ppu.executeScanline() }
+      repeat(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2) { ppu.executeScanline() }
       verifyZeroInteractions(onVbl)
     }
 
@@ -207,14 +206,14 @@ class PpuTest {
 
     @Test
     fun `status flag still set on penultimate scanline`() {
-      for (i in 0..(NUM_SCANLINES - 2)) { ppu.executeScanline() }
+      for (i in 0..(SCANLINES_PER_FRAME - 2)) { ppu.executeScanline() }
 
       assertEquals(_1, getVblStatus())
     }
 
     @Test
     fun `status flag cleared on final scanline`() {
-      for (i in 0..(NUM_SCANLINES - 1)) { ppu.executeScanline() }
+      for (i in 0..(SCANLINES_PER_FRAME - 1)) { ppu.executeScanline() }
 
       assertEquals(_0, getVblStatus())
     }
@@ -464,7 +463,7 @@ class PpuTest {
     fun `cleared on final scanline`() {
       mockResult(sprite0Hit = true, spriteOverflow = true)
 
-      for (i in 0..(NUM_SCANLINES - 1)) { ppu.executeScanline() }
+      for (i in 0..(SCANLINES_PER_FRAME - 1)) { ppu.executeScanline() }
 
       assertFalse(getHitStatus())
       assertFalse(getOverflowStatus())

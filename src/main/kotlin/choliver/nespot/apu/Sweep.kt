@@ -1,5 +1,7 @@
 package choliver.nespot.apu
 
+import choliver.nespot.toRational
+
 // TODO - model negate differently for pulse1 and pulse2
 class Sweep(private val timer: Counter) {
   private var iDivider = 0

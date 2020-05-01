@@ -1,5 +1,9 @@
 package choliver.nespot.apu
 
+import choliver.nespot.CYCLES_PER_SAMPLE
+import choliver.nespot.Rational
+import choliver.nespot.toRational
+
 class Counter(private val cyclesPerSample: Rational = CYCLES_PER_SAMPLE) {
   private var pos = 0.toRational()
   var periodCycles by observable(1.toRational()) { pos = it } // TODO - can this be Int ?

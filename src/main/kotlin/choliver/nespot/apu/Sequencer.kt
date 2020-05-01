@@ -1,5 +1,7 @@
 package choliver.nespot.apu
 
+import choliver.nespot.CYCLES_PER_SAMPLE
+import choliver.nespot.Rational
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
 import choliver.nespot.sixfiveohtwo.utils._0

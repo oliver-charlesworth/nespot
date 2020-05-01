@@ -72,48 +72,19 @@ class Nes(
     pollNmi = nmi::poll
   )
 
-  private var cyclesRemainingInScanline = CYCLES_PER_SCANLINE
-  private var samplesRemainingInScanline = SAMPLES_PER_SCANLINE
-  private var endOfFrame = false
+  private val orchestrator = Orchestrator(cpu, apu, ppu)
 
-  fun runToEndOfFrame() {
-    do step() while (!endOfFrame)
-  }
-
-  private fun step() {
-    endOfFrame = false
-    cyclesRemainingInScanline -= cpu.executeStep()
-    if (cyclesRemainingInScanline < 0) {
-      finishScanline()
-    }
-  }
-
-  private fun finishScanline() {
-    cyclesRemainingInScanline += CYCLES_PER_SCANLINE
-    ppu.executeScanline()
-    generateSamplesForScanline()
-    if (0 == ppu.scanline) {
-      endOfFrame = true
-    }
-  }
-
-  private fun generateSamplesForScanline() {
-    while (samplesRemainingInScanline > 0) {
-      apu.next()
-      samplesRemainingInScanline -= 1
-    }
-    samplesRemainingInScanline += SAMPLES_PER_SCANLINE
-  }
+  fun runToEndOfFrame() = orchestrator.runToEndOfFrame()
 
   val inspection = object : Inspection {
     override val state get() = cpu.state
-    override val endOfFrame get() = this@Nes.endOfFrame
+    override val endOfFrame get() = orchestrator.endOfFrame
     override fun peek(addr: Address) = cpuMapper.load(addr)
     override fun peekV(addr: Address) = ppuMapper.load(addr)
     override fun fireReset() = reset.set()
     override fun fireNmi() = nmi.set()
     override fun fireIrq() = irq.set()
-    override fun step() = this@Nes.step()
+    override fun step() = orchestrator.step()
     override fun decodeAt(pc: Address) = cpu.decodeAt(pc)
   }
 

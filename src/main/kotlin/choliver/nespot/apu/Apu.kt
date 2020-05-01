@@ -14,9 +14,9 @@ class Apu(
   private val channels: Channels = Channels(
     sq1 = SynthContext(SquareSynth()),
     sq2 = SynthContext(SquareSynth()),
-    tri = SynthContext(TriangleSynth()).apply { fixEnvelope(1) },
-    noi = SynthContext(NoiseSynth()),
-    dmc = SynthContext(DmcSynth(memory = memory)).apply { fixEnvelope(1) }
+    tri = SynthContext(TriangleSynth()).apply { inhibitMute(); fixEnvelope(1) },
+    noi = SynthContext(NoiseSynth()).apply { inhibitMute() },
+    dmc = SynthContext(DmcSynth(memory = memory)).apply { inhibitMute(); fixEnvelope(1) }
   )
 ) {
   private val mixer = Mixer(sequencer, channels)
@@ -180,6 +180,10 @@ class Apu(
     private fun SynthContext<*>.fixEnvelope(level: Int) {
       envelope.directMode = true
       envelope.param = level
+    }
+
+    private fun SynthContext<*>.inhibitMute() {
+      sweep.inhibitMute = true
     }
   }
 }

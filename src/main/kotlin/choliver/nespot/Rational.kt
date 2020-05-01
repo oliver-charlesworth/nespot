@@ -26,6 +26,7 @@ class Rational(a: Int, b: Int = 1) {
   operator fun unaryMinus() = Rational(-a, b)
   /** Rounds towards zero. */
   fun toInt() = (a / b)
+  fun toDouble() = (a.toDouble() / b.toDouble())
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

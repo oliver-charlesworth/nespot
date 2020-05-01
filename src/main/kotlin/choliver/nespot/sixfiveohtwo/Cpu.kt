@@ -30,7 +30,7 @@ class Cpu(
   fun executeStep() = when {
     pollReset() -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
     pollNmi() -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
-    pollIrq() -> if (_state.p.i) executeInstruction() else vector(VECTOR_IRQ, updateStack = true, disableIrq = false)
+    pollIrq() -> if (_state.p.i) executeInstruction() else vector(VECTOR_IRQ, updateStack = true, disableIrq = true)
     else -> executeInstruction()
   }
 

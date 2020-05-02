@@ -5,7 +5,7 @@ import choliver.nespot.data
 import choliver.nespot.nes.Nes
 import java.util.*
 
-fun Nes.Inspection2.toSnapshot() = Snapshot(
+fun Nes.Diagnostics.toSnapshot() = Snapshot(
   cpu = cpu.state,
   ppu = ppu.state,
   ram = encodeMemory(2048, ram),
@@ -14,7 +14,7 @@ fun Nes.Inspection2.toSnapshot() = Snapshot(
   oam = encodeMemory(256, ppu.oam)
 )
 
-fun Nes.Inspection2.restoreFrom(snapshot: Snapshot) {
+fun Nes.Diagnostics.restoreFrom(snapshot: Snapshot) {
   cpu.state = snapshot.cpu
   ppu.state = snapshot.ppu
   decodeMemory(2048, ram, snapshot.ram)

@@ -50,7 +50,7 @@ class Cpu(
     return decoded.numCycles + extraCycles
   }
 
-  fun decodeAt(pc: Address) = decoder.decode(pc = pc, x = _state.x, y = _state.y)
+  private fun decodeAt(pc: Address) = decoder.decode(pc = pc, x = _state.x, y = _state.y)
 
   private fun execute(op: Opcode) {
     _state.apply {
@@ -285,13 +285,14 @@ class Cpu(
     _state.p.n = data.isNeg()
   }
 
-  inner class Inspection internal constructor() {
+  inner class Diagnostics internal constructor() {
     var state
       get() = _state
       set(value) { _state = value.copy() }
+    fun decodeAt(pc: Address) = this@Cpu.decodeAt(pc)
   }
 
-  val inspection = Inspection()
+  val diagnostics = Diagnostics()
 
   companion object {
     const val VECTOR_NMI: Address = 0xFFFA

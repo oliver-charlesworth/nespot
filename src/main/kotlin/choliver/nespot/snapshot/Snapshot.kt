@@ -9,6 +9,7 @@ data class Snapshot(
   // TODO - interrupts
   // TODO - cartridge
   // TODO - APU
+  // TODO - sequencer
   val cpu: CpuState,
   val ppu: PpuState,
 

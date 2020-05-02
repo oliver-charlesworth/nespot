@@ -7,7 +7,7 @@ import choliver.nespot.apu.Apu
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
 
-internal class Orchestrator(
+class Sequencer(
   private val cpu: Cpu,
   private val apu: Apu,
   private val ppu: Ppu
@@ -15,12 +15,14 @@ internal class Orchestrator(
   private var cyclesRemainingInScanline = CYCLES_PER_SCANLINE
   private var scanlinesRemainingInFrame = SCANLINES_PER_FRAME
   private var cyclesTilNextSample = CYCLES_PER_SAMPLE
-  private var _endOfFrame = false
+  private var endOfFrame = false
 
-  val endOfFrame get() = _endOfFrame
+  fun runToEndOfFrame() {
+    do step() while (!endOfFrame)
+  }
 
   fun step() {
-    _endOfFrame = false
+    endOfFrame = false
     val cycles = cpu.executeStep()
     cyclesRemainingInScanline -= cycles
     cyclesTilNextSample -= cycles
@@ -49,6 +51,18 @@ internal class Orchestrator(
       throw IllegalStateException("Unexpected APU/PPU rate mismatch")
     }
     scanlinesRemainingInFrame = SCANLINES_PER_FRAME
-    _endOfFrame = true
+    endOfFrame = true
   }
+
+  inner class Diagnostics internal constructor() {
+
+    // TODO - state
+//    var state
+//      get() = _state
+//      set(value) { _state = value.copy() }
+    val endOfFrame get() = this@Sequencer.endOfFrame
+    fun step() = this@Sequencer.step()
+  }
+
+  val diagnostics = Diagnostics()
 }

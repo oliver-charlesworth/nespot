@@ -8,7 +8,7 @@ import kotlin.math.sqrt
 // TODO - non-linear mixing (used by SMB to set triangle/noise level)
 // See https://wiki.nesdev.com/w/index.php/APU_Mixer
 internal class Mixer(
-  private val sequencer: Sequencer,
+  private val sequencer: FrameSequencer,
   private val channels: Channels
 ) {
   private val alpha: Double

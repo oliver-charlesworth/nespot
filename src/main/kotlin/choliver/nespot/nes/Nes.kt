@@ -9,8 +9,6 @@ import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
-import choliver.nespot.sixfiveohtwo.InstructionDecoder
-import choliver.nespot.sixfiveohtwo.model.State
 import java.nio.IntBuffer
 
 class Nes(
@@ -23,18 +21,6 @@ class Nes(
   onIrq: () -> Unit = {},
   private val onStore: (Address, Data) -> Unit = { _: Address, _: Data -> }
 ) {
-  interface Inspection {
-    val state: State
-    val endOfFrame: Boolean
-    fun peek(addr: Address): Data
-    fun peekV(addr: Address): Data
-    fun fireReset()
-    fun fireNmi()
-    fun fireIrq()
-    fun step()
-    fun decodeAt(pc: Address): InstructionDecoder.Decoded
-  }
-
   private val reset = InterruptSource(onReset)
   private val nmi = InterruptSource(onNmi)
   private val irq = InterruptSource(onIrq)
@@ -78,22 +64,10 @@ class Nes(
     pollNmi = nmi::poll
   )
 
-  private val orchestrator = Orchestrator(cpu, apu, ppu)
+  private val sequencer = Sequencer(cpu, apu, ppu)
 
   fun runToEndOfFrame() {
-    do orchestrator.step() while (!orchestrator.endOfFrame)
-  }
-
-  val inspection = object : Inspection {
-    override val state get() = cpu.state
-    override val endOfFrame get() = orchestrator.endOfFrame
-    override fun peek(addr: Address) = cpuMapper[addr]
-    override fun peekV(addr: Address) = ppuMapper[addr]
-    override fun fireReset() = reset.set()
-    override fun fireNmi() = nmi.set()
-    override fun fireIrq() = irq.set()
-    override fun step() = orchestrator.step()
-    override fun decodeAt(pc: Address) = cpu.decodeAt(pc)
+    sequencer.runToEndOfFrame()
   }
 
   private class InterruptSource(private val listener: () -> Unit) {
@@ -105,15 +79,20 @@ class Nes(
     }
   }
 
-  // TODO - consolidate with Inspection
-  inner class Inspection2 internal constructor() {
-    val cpu = this@Nes.cpu.inspection
-    val ppu = this@Nes.ppu.inspection
+  inner class Diagnostics internal constructor() {
+    val sequencer = this@Nes.sequencer.diagnostics
+    val cpu = this@Nes.cpu.diagnostics
+    val ppu = this@Nes.ppu.diagnostics
     val ram = this@Nes.cpuRam
     val vram = this@Nes.ppuRam
+    fun peek(addr: Address) = cpuMapper[addr]
+    fun peekV(addr: Address) = ppuMapper[addr]
+    fun fireReset() = reset.set()
+    fun fireNmi() = nmi.set()
+    fun fireIrq() = irq.set()
   }
 
-  val inspection2 = Inspection2()
+  val diagnostics = Diagnostics()
 
   // TODO - consolidate all the constants
   companion object {

@@ -177,7 +177,7 @@ class Ppu(
     }
   }
 
-  inner class Inspection internal constructor() {
+  inner class Diagnostics internal constructor() {
     var state
       get() = this@Ppu.state
       set(value) { this@Ppu.state = value }
@@ -185,7 +185,7 @@ class Ppu(
     val palette = this@Ppu.palette
   }
 
-  val inspection = Inspection()
+  val diagnostics = Diagnostics()
 
   @Suppress("unused")
   companion object {

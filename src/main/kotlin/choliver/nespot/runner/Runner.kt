@@ -110,19 +110,19 @@ class Runner : CliktCommand(name = "nespot") {
         restoreFromSnapshot()
       } else {
         // TODO - reset
-        nes.inspection.fireReset()
+        nes.diagnostics.fireReset()
       }
     }
 
     private fun restoreFromSnapshot() {
       val mapper = jacksonObjectMapper()
-      nes.inspection2.restoreFrom(mapper.readValue(snapshotFile!!))
+      nes.diagnostics.restoreFrom(mapper.readValue(snapshotFile!!))
     }
 
     private fun snapshot() {
       val mapper = jacksonObjectMapper()
       mapper.enable(SerializationFeature.INDENT_OUTPUT)
-      println(mapper.writeValueAsString(nes.inspection2.toSnapshot()))
+      println(mapper.writeValueAsString(nes.diagnostics.toSnapshot()))
     }
   }
 }

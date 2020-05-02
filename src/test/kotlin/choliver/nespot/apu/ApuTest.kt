@@ -172,6 +172,12 @@ class ApuTest {
     }
 
     @Test
+    fun `irq enable`() {
+      apu.writeReg(16, 0b1_0_00_0000)
+      verify(dmc.synth).irqEnabled = true
+    }
+
+    @Test
     fun level() {
       apu.writeReg(17, 0b0_1010101)
       verify(dmc.synth).level = 0b1010101
@@ -193,21 +199,39 @@ class ApuTest {
   @Nested
   inner class Status {
     @Test
-    fun enable() {
-      apu.writeReg(21, 0x1F)
-      listOf(sq1, sq2, tri, noi, dmc).forEach {
+    fun `enable normal channels`() {
+      apu.writeReg(21, 0x0F)
+      listOf(sq1, sq2, tri, noi).forEach {
         assertTrue(it.enabled)
         verifyZeroInteractions(it.synth)
       }
     }
 
     @Test
-    fun disable() {
+    fun `enable DMC clears IRQ as well`() {
+      apu.writeReg(21, 0x10)
+      assertTrue(dmc.enabled)
+      verify(dmc.synth).clearIrq()
+      verifyNoMoreInteractions(dmc.synth)
+    }
+
+    @Test
+    fun `disable normal channels`() {
       apu.writeReg(21, 0x00)
-      listOf(sq1, sq2, tri, noi, dmc).forEach {
+      listOf(sq1, sq2, tri, noi).forEach {
         assertFalse(it.enabled)
         verify(it.synth).length = 0
+        verifyNoMoreInteractions(it.synth)
       }
+    }
+
+    @Test
+    fun `disable DMC clears IRQ as well`() {
+      apu.writeReg(21, 0x00)
+      assertFalse(dmc.enabled)
+      verify(dmc.synth).length = 0
+      verify(dmc.synth).clearIrq()
+      verifyNoMoreInteractions(dmc.synth)
     }
 
     @Test
@@ -223,9 +247,18 @@ class ApuTest {
   }
 
   @Test
-  fun setSequencerMode() {
+  fun `set sequencer mode`() {
     apu.writeReg(23, 0b1_0000000)
     verify(sequencer).mode = FIVE_STEP
+  }
+
+  @Test
+  fun `exposes DMC IRQ status`() {
+    whenever(dmc.synth.irq) doReturn true
+    assertTrue(apu.irq)
+
+    whenever(dmc.synth.irq) doReturn false
+    assertFalse(apu.irq)
   }
 
   // TODO - generate samples

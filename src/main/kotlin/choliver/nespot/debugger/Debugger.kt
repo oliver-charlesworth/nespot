@@ -18,7 +18,7 @@ import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nespot.nes.Nes.Companion.PPU_RAM_SIZE
 import choliver.nespot.runner.FakeJoypads
-import choliver.nespot.runner.KEY_MAPPINGS
+import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
 import choliver.nespot.runner.Screen.Event.KeyDown
@@ -117,10 +117,10 @@ class Debugger(
     events.drainTo(myEvents)
     myEvents.forEach { e ->
       when (e) {
-        is KeyDown -> when (val action = KEY_MAPPINGS[e.code]) {
+        is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> joypads.down(1, action.button)
         }
-        is KeyUp -> when (val action = KEY_MAPPINGS[e.code]) {
+        is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> joypads.up(1, action.button)
         }
       }

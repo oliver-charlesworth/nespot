@@ -14,7 +14,7 @@ fun Nes.Inspection2.toSnapshot() = Snapshot(
   oam = encodeMemory(256, ppu.oam)
 )
 
-fun Nes.Inspection2.fromSnapshot(snapshot: Snapshot) {
+fun Nes.Inspection2.restoreFrom(snapshot: Snapshot) {
   cpu.state = snapshot.cpu
   ppu.state = snapshot.ppu
   decodeMemory(2048, ram, snapshot.ram)

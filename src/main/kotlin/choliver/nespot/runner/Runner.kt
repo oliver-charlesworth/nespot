@@ -5,7 +5,7 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
 import choliver.nespot.runner.KeyAction.*
 import choliver.nespot.runner.Screen.Event.*
-import choliver.nespot.snapshot.fromSnapshot
+import choliver.nespot.snapshot.restoreFrom
 import choliver.nespot.snapshot.toSnapshot
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -54,7 +54,7 @@ class Runner : CliktCommand(name = "nespot") {
     fun run() {
       screen.fullScreen = fullScreen
 
-      reset()
+      restore()
 
       if (numPerfFrames == null) {
         runNormally()
@@ -91,13 +91,13 @@ class Runner : CliktCommand(name = "nespot") {
       events.drainTo(myEvents)
       myEvents.forEach { e ->
         when (e) {
-          is KeyDown -> when (val action = KEY_MAPPINGS[e.code]) {
+          is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
             is Joypad -> joypads.down(1, action.button)
             is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
             is Snapshot -> snapshot()
-            is Reset -> reset()
+            is Restore -> restore()
           }
-          is KeyUp -> when (val action = KEY_MAPPINGS[e.code]) {
+          is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
             is Joypad -> joypads.up(1, action.button)
           }
           is Close -> closed = true
@@ -105,17 +105,18 @@ class Runner : CliktCommand(name = "nespot") {
       }
     }
 
-    private fun reset() {
+    private fun restore() {
       if (snapshotFile != null) {
-        loadFromSnapshot()
+        restoreFromSnapshot()
       } else {
+        // TODO - reset
         nes.inspection.fireReset()
       }
     }
 
-    private fun loadFromSnapshot() {
+    private fun restoreFromSnapshot() {
       val mapper = jacksonObjectMapper()
-      nes.inspection2.fromSnapshot(mapper.readValue(snapshotFile!!))
+      nes.inspection2.restoreFrom(mapper.readValue(snapshotFile!!))
     }
 
     private fun snapshot() {

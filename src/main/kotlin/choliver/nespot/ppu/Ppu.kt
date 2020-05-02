@@ -178,7 +178,9 @@ class Ppu(
   }
 
   inner class Inspection internal constructor() {
-    val state get() = this@Ppu.state.copy()
+    var state
+      get() = this@Ppu.state
+      set(value) { this@Ppu.state = value }
     val oam = this@Ppu.oam
     val palette = this@Ppu.palette
   }

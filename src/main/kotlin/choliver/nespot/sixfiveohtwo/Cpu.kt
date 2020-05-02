@@ -286,7 +286,9 @@ class Cpu(
   }
 
   inner class Inspection internal constructor() {
-    val state get() = _state.copy()
+    var state
+      get() = _state
+      set(value) { _state = value.copy() }
   }
 
   val inspection = Inspection()

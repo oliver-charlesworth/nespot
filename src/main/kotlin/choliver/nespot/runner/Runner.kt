@@ -5,9 +5,11 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
 import choliver.nespot.runner.KeyAction.*
 import choliver.nespot.runner.Screen.Event.*
-import choliver.nespot.snapshot.snapshot
+import choliver.nespot.snapshot.fromSnapshot
+import choliver.nespot.snapshot.toSnapshot
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
@@ -24,6 +26,7 @@ class Runner : CliktCommand(name = "nespot") {
   private val displayInfo by option("--info", "-i").flag()
   private val numPerfFrames by option("--perf", "-p").int()
   private val fullScreen by option("--fullscreen", "-f").flag()
+  private val snapshotFile by option("--snapshot", "-s").file(mustExist = true, canBeDir = false)
 
   override fun run() {
     val rom = Rom.parse(raw.readBytes())
@@ -50,7 +53,13 @@ class Runner : CliktCommand(name = "nespot") {
 
     fun run() {
       screen.fullScreen = fullScreen
-      nes.inspection.fireReset()
+
+      if (snapshotFile != null) {
+        loadState()
+      } else {
+        nes.inspection.fireReset()
+      }
+
       if (numPerfFrames == null) {
         runNormally()
       } else {
@@ -99,10 +108,15 @@ class Runner : CliktCommand(name = "nespot") {
       }
     }
 
+    private fun loadState() {
+      val mapper = jacksonObjectMapper()
+      nes.inspection2.fromSnapshot(mapper.readValue(snapshotFile!!))
+    }
+
     private fun dumpState() {
       val mapper = jacksonObjectMapper()
       mapper.enable(SerializationFeature.INDENT_OUTPUT)
-      println(mapper.writeValueAsString(nes.inspection2.snapshot()))
+      println(mapper.writeValueAsString(nes.inspection2.toSnapshot()))
     }
   }
 }

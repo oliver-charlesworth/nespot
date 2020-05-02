@@ -327,8 +327,7 @@ class Debugger(
     }
 
     stores.clear()
-    nes.sequencer.step()
-    if (nes.sequencer.endOfFrame) {
+    if (nes.sequencer.step()) {
       screen.redraw()
     }
 

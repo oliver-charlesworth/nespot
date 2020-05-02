@@ -1,5 +1,6 @@
 package choliver.nespot.snapshot
 
+import choliver.nespot.nes.Sequencer.State as SequencerState
 import choliver.nespot.ppu.model.State as PpuState
 import choliver.nespot.sixfiveohtwo.model.State as CpuState
 
@@ -9,7 +10,7 @@ data class Snapshot(
   // TODO - interrupts
   // TODO - cartridge
   // TODO - APU
-  // TODO - sequencer
+  val sequencer: SequencerState = SequencerState(),
   val cpu: CpuState,
   val ppu: PpuState,
 

@@ -49,13 +49,10 @@ class SequencerTest {
   fun `sets EOF exactly at end of frame`() {
     whenever(cpu.executeStep()) doReturn 1
 
-    repeat(CYCLES_PER_FRAME.roundUp() - 1) { sequencer.step() }  // One before end of frame
+    repeat(CYCLES_PER_FRAME.roundUp() - 2) { sequencer.step() }  // Two before end of frame
 
-    assertFalse(sequencer.diagnostics.endOfFrame)  // Not quite enough
-
-    sequencer.step()                               // One more step
-
-    assertTrue(sequencer.diagnostics.endOfFrame)   // Oh yes
+    assertFalse(sequencer.step())  // Not quite enough
+    assertTrue(sequencer.step())   // Oh yes
   }
 
   private fun Rational.roundUp() = ceil(toDouble()).toInt()

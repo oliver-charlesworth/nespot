@@ -1,8 +1,6 @@
 package choliver.nespot.nes
 
-import choliver.nespot.CYCLES_PER_SAMPLE
-import choliver.nespot.CYCLES_PER_SCANLINE
-import choliver.nespot.SCANLINES_PER_FRAME
+import choliver.nespot.*
 import choliver.nespot.apu.Apu
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
@@ -12,55 +10,64 @@ class Sequencer(
   private val apu: Apu,
   private val ppu: Ppu
 ) {
-  private var cyclesRemainingInScanline = CYCLES_PER_SCANLINE
-  private var scanlinesRemainingInFrame = SCANLINES_PER_FRAME
-  private var cyclesTilNextSample = CYCLES_PER_SAMPLE
-  private var endOfFrame = false
+  @MutableForPerfReasons
+  data class State(
+    var cyclesTilNextSample: Rational = CYCLES_PER_SAMPLE,
+    var cyclesRemainingInScanline: Rational = CYCLES_PER_SCANLINE,
+    var scanlinesRemainingInFrame: Int = SCANLINES_PER_FRAME
+  )
+
+  private var state = State()
 
   fun runToEndOfFrame() {
-    do step() while (!endOfFrame)
+    @Suppress("ControlFlowWithEmptyBody")
+    while (!step()) {}
   }
 
-  fun step() {
-    endOfFrame = false
+  fun step() = with(state) {
     val cycles = cpu.executeStep()
     cyclesRemainingInScanline -= cycles
     cyclesTilNextSample -= cycles
 
     if (cyclesTilNextSample <= 0) {
-      apu.generateSample()
-      cyclesTilNextSample += CYCLES_PER_SAMPLE
+      generateSample()
     }
 
     if (cyclesRemainingInScanline <= 0) {
       finishScanline()
     }
-  }
 
-  private fun finishScanline() {
-    cyclesRemainingInScanline += CYCLES_PER_SCANLINE
-    ppu.executeScanline()
-    scanlinesRemainingInFrame--
     if (scanlinesRemainingInFrame == 0) {
       finishFrame()
+      true
+    } else {
+      false
     }
   }
 
-  private fun finishFrame() {
+  private fun generateSample() = with(state) {
+    apu.generateSample()
+    cyclesTilNextSample += CYCLES_PER_SAMPLE
+  }
+
+  private fun finishScanline() = with(state) {
+    cyclesRemainingInScanline += CYCLES_PER_SCANLINE
+    ppu.executeScanline()
+    scanlinesRemainingInFrame--
+  }
+
+  private fun finishFrame() = with(state) {
     if (apu.iSample != 0 || ppu.scanline != 0) {
       throw IllegalStateException("Unexpected APU/PPU rate mismatch")
     }
     scanlinesRemainingInFrame = SCANLINES_PER_FRAME
-    endOfFrame = true
   }
 
   inner class Diagnostics internal constructor() {
+    var state
+      get() = this@Sequencer.state
+      set(value) { this@Sequencer.state = value.copy() }
 
-    // TODO - state
-//    var state
-//      get() = _state
-//      set(value) { _state = value.copy() }
-    val endOfFrame get() = this@Sequencer.endOfFrame
     fun step() = this@Sequencer.step()
   }
 

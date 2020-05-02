@@ -137,14 +137,16 @@ fun assertCpuEffects(
     memory,
     pollReset = pollReset,
     pollNmi = pollNmi,
-    pollIrq = pollIrq,
-    initialState = initState.with(pc = BASE_USER)
+    pollIrq = pollIrq
   )
+
+  cpu.diagnostics.state = initState.with(pc = BASE_USER)
+
   var numCycles = 0
   repeat(instructions.size) { numCycles += cpu.executeStep() }
 
   if (expectedState != null) {
-    assertEquals(expectedState, cpu.state, "Unexpected state for [${name}]")
+    assertEquals(expectedState, cpu.diagnostics.state, "Unexpected state for [${name}]")
   }
   expectedStores.forEach { (addr, data) -> verify(memory)[addr] = data }
   verify(memory, times(expectedStores.size))[any()] = any()

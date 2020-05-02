@@ -1,6 +1,7 @@
 package choliver.nespot.snapshot
 
 import choliver.nespot.Memory
+import choliver.nespot.data
 import choliver.nespot.nes.Nes
 import java.util.*
 
@@ -30,5 +31,5 @@ private fun decodeMemory(size: Int, memory: Memory, snapshot: String) {
   if (decoded.size != size) {
     throw IllegalArgumentException("Unexpected memory length")
   }
-  decoded.forEachIndexed { addr, data -> memory.store(addr, data.toInt())  }
+  decoded.forEachIndexed { addr, data -> memory.store(addr, data.data())  }
 }

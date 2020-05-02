@@ -105,6 +105,16 @@ class Nes(
     }
   }
 
+  // TODO - consolidate with Inspection
+  inner class Inspection2 internal constructor() {
+    val cpu = this@Nes.cpu.inspection
+    val ppu = this@Nes.ppu.inspection
+    val ram = this@Nes.cpuRam
+    val vram = this@Nes.ppuRam
+  }
+
+  val inspection2 = Inspection2()
+
   // TODO - consolidate all the constants
   companion object {
     const val CPU_RAM_SIZE = 2048

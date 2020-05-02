@@ -1,7 +1,7 @@
 package choliver.nespot.ppu
 
 import choliver.nespot.*
-import choliver.nespot.ppu.Renderer.Input
+import choliver.nespot.ppu.model.State
 import java.nio.IntBuffer
 
 class Ppu(
@@ -17,32 +17,32 @@ class Ppu(
   // TODO - model addr increment quirks during rendering (see wiki.nesdev.com/w/index.php/PPU_scrolling)
   // TODO - add a reset (to clean up counters and stuff)
 
-  val scanline get() = state.rendererIn.scanline
+  val scanline get() = state.scanline
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   fun executeScanline() {
     with(state) {
-      when (rendererIn.scanline) {
+      when (scanline) {
         in (0 until SCREEN_HEIGHT) -> {
-          if (rendererIn.bgEnabled || rendererIn.sprEnabled) {
-            when (rendererIn.scanline) {
-              0 -> rendererIn.coords = coords.copy()
+          if (bgEnabled || sprEnabled) {
+            when (scanline) {
+              0 -> coords = coordsBacking.copy()
               else -> {
-                rendererIn.coords.xFine = coords.xFine
-                rendererIn.coords.xCoarse = coords.xCoarse
-                rendererIn.coords.xNametable = coords.xNametable
-                rendererIn.coords.incrementY()
+                coords.xFine = coordsBacking.xFine
+                coords.xCoarse = coordsBacking.xCoarse
+                coords.xNametable = coordsBacking.xNametable
+                coords.incrementY()
               }
             }
           }
-          rendererOut = renderer.renderScanline(rendererIn)
+          renderer.renderScanline(state)
         }
 
         (SCREEN_HEIGHT + 1) -> {
           inVbl = true
 
           // TODO - this is set if isVblEnabled *becomes* true during VBL phase
-          if (isVblEnabled) {
+          if (vblEnabled) {
             onVbl()
           }
         }
@@ -50,11 +50,12 @@ class Ppu(
         // Pre-render line
         (SCANLINES_PER_FRAME - 1) -> {
           inVbl = false
-          rendererOut = Renderer.Output(sprite0Hit = false, spriteOverflow = false)
+          sprite0Hit = false
+          spriteOverflow = false
         }
       }
 
-      rendererIn.scanline = (rendererIn.scanline + 1) % SCANLINES_PER_FRAME
+      scanline = (scanline + 1) % SCANLINES_PER_FRAME
     }
   }
 
@@ -63,8 +64,8 @@ class Ppu(
       REG_PPUSTATUS -> {
         val ret = 0 +
           (if (inVbl) 0x80 else 0x00) +
-          (if (rendererOut.sprite0Hit) 0x40 else 0x00) +
-          (if (rendererOut.spriteOverflow) 0x20 else 0x00)
+          (if (sprite0Hit) 0x40 else 0x00) +
+          (if (spriteOverflow) 0x20 else 0x00)
 
         // Reset stuff
         inVbl = false
@@ -96,30 +97,26 @@ class Ppu(
       when (reg) {
         REG_PPUCTRL -> {
           addrInc = if (data.isBitSet(2)) 32 else 1
-          with(rendererIn) {
-            sprPatternTable = if (data.isBitSet(3)) 1 else 0
-            bgPatternTable = if (data.isBitSet(4)) 1 else 0
-            largeSprites = data.isBitSet(5)
-            // TODO - is master/slave important?
-          }
-          isVblEnabled = data.isBitSet(7)
-          with(coords) {
+          sprPatternTable = if (data.isBitSet(3)) 1 else 0
+          bgPatternTable = if (data.isBitSet(4)) 1 else 0
+          largeSprites = data.isBitSet(5)
+          // TODO - is master/slave important?
+          vblEnabled = data.isBitSet(7)
+          with(coordsBacking) {
             xNametable = data and 0x01
             yNametable = (data and 0x02) shr 1
           }
         }
 
         REG_PPUMASK -> {
-          isGreyscale = data.isBitSet(0)
-          with(rendererIn) {
-            bgLeftTileEnabled = data.isBitSet(1)
-            sprLeftTileEnabled = data.isBitSet(2)
-            bgEnabled = data.isBitSet(3)
-            sprEnabled = data.isBitSet(4)
-          }
-          isRedEmphasized = data.isBitSet(5)
-          isGreenEmphasized = data.isBitSet(6)
-          isBlueEmphasized = data.isBitSet(7)
+          greyscale = data.isBitSet(0)
+          bgLeftTileEnabled = data.isBitSet(1)
+          sprLeftTileEnabled = data.isBitSet(2)
+          bgEnabled = data.isBitSet(3)
+          sprEnabled = data.isBitSet(4)
+          redEmphasized = data.isBitSet(5)
+          greenEmphasized = data.isBitSet(6)
+          blueEmphasized = data.isBitSet(7)
         }
 
         REG_OAMADDR -> oamAddr = data
@@ -133,7 +130,7 @@ class Ppu(
           val fine = (data and 0b00000111)
           val coarse = (data and 0b11111000) shr 3
 
-          with(coords) {
+          with(coordsBacking) {
             if (!w) {
               xCoarse = coarse
               xFine = fine
@@ -151,7 +148,7 @@ class Ppu(
           // See http://wiki.nesdev.com/w/index.php/PPU_scrolling#Summary
           if (!w) {
             addr = addr(lo = addr.lo(), hi = data and 0b00111111)
-            with(coords) {
+            with(coordsBacking) {
               yCoarse = ((data and 0b00000011) shl 3) or (yCoarse and 0b00111)
               xNametable = (data and 0b00000100) shr 2
               yNametable = (data and 0b00001000) shr 3
@@ -159,12 +156,12 @@ class Ppu(
             }
           } else {
             addr = addr(lo = data, hi = addr.hi())
-            with(coords) {
+            with(coordsBacking) {
               xCoarse = (data and 0b00011111)
               yCoarse = ((data and 0b11100000) shr 5) or (yCoarse and 0b11000)
             }
             // TODO - should probably happen *after* the incrementY() above
-            rendererIn.coords = coords.copy()   // Propagate immediately
+            coords = coordsBacking.copy()   // Propagate immediately
           }
           w = !w
         }
@@ -180,33 +177,15 @@ class Ppu(
     }
   }
 
-  @MutableForPerfReasons
-  private data class State(
-    val rendererIn: Input = Input(
-      bgEnabled = false,
-      sprEnabled = false,
-      bgLeftTileEnabled = false,
-      sprLeftTileEnabled = false,
-      largeSprites = false,
-      bgPatternTable = 0,
-      sprPatternTable = 0,
-      coords = Coords(),
-      scanline = 0
-    ),
-    var rendererOut: Renderer.Output = Renderer.Output(sprite0Hit = false, spriteOverflow = false),
-    var addrInc: Int = 1,
-    var isVblEnabled: Boolean = false,
-    var isGreyscale: Boolean = false,
-    var isRedEmphasized: Boolean = false,
-    var isGreenEmphasized: Boolean = false,
-    var isBlueEmphasized: Boolean = false,
-    var coords: Coords = Coords(),
-    var oamAddr: Address8 = 0x00,    // TODO - apparently this is reset to 0 during rendering
-    var addr: Address = 0x0000,
-    var readBuffer: Data = 0x00,
-    var inVbl: Boolean = false,
-    var w: Boolean = false
-  )
+  inner class Inspection internal constructor() {
+    var state
+      get() = this@Ppu.state
+      set(value) { this@Ppu.state = value }
+    val oam = this@Ppu.oam
+    val palette = this@Ppu.palette
+  }
+
+  val inspection = Inspection()
 
   @Suppress("unused")
   companion object {

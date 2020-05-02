@@ -10,8 +10,7 @@ import choliver.nespot.ppu.Ppu.Companion.REG_PPUDATA
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUMASK
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSCROLL
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSTATUS
-import choliver.nespot.ppu.Renderer.Input
-import choliver.nespot.ppu.Renderer.Output
+import choliver.nespot.ppu.model.State
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 import com.nhaarman.mockitokotlin2.*
@@ -22,9 +21,7 @@ import org.junit.jupiter.api.assertDoesNotThrow
 
 class PpuTest {
   private val memory = mock<Memory>()
-  private val renderer = mock<Renderer> {
-    on { renderScanline(any()) } doReturn Output(sprite0Hit = false, spriteOverflow = false)
-  }
+  private val renderer = mock<Renderer>()
   private val onVbl = mock<() -> Unit>()
   private val ppu = Ppu(
     memory = memory,
@@ -410,8 +407,8 @@ class PpuTest {
 
     private fun captureContext() = captureContext(1).first()
 
-    private fun captureContext(num: Int): List<Input> {
-      val captor = argumentCaptor<Input>()
+    private fun captureContext(num: Int): List<State> {
+      val captor = argumentCaptor<State>()
       verify(renderer, times(num)).renderScanline(captor.capture())
       return captor.allValues
     }
@@ -470,7 +467,13 @@ class PpuTest {
     }
 
     private fun mockResult(sprite0Hit: Boolean, spriteOverflow: Boolean) {
-      whenever(renderer.renderScanline(any())) doReturn Output(sprite0Hit = sprite0Hit, spriteOverflow = spriteOverflow)
+      whenever(renderer.renderScanline(any())) doAnswer {
+        with(it.getArgument(0) as State) {
+          this.sprite0Hit = sprite0Hit
+          this.spriteOverflow = spriteOverflow
+        }
+        Unit
+      }
     }
 
     private fun getHitStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(6)

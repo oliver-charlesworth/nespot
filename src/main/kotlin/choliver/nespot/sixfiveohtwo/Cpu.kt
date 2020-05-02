@@ -136,9 +136,9 @@ class Cpu(
           updateZN(y)
         }
 
-        STA -> memory.store(addr, a)
-        STX -> memory.store(addr, x)
-        STY -> memory.store(addr, y)
+        STA -> memory[addr] = a
+        STX -> memory[addr] = x
+        STY -> memory[addr] = y
 
         PHP -> push(p.data() or 0x10)  // Most online references state that PHP also sets B on stack
         PHA -> push(a)
@@ -221,13 +221,13 @@ class Cpu(
   }
 
   private fun push(data: Data) {
-    memory.store(_state.s or 0x100, data)
+    memory[_state.s or 0x100] = data
     _state.s = (_state.s - 1).data()
   }
 
   private fun pop(): Data {
     _state.s = (_state.s + 1).data()
-    return memory.load(_state.s or 0x100)
+    return memory[_state.s or 0x100]
   }
 
   private fun add(rhs: Data) = _state.apply {
@@ -259,15 +259,15 @@ class Cpu(
     }
 
     pc = addr(
-      lo = memory.load(vector),
-      hi = memory.load(vector + 1)
+      lo = memory[vector],
+      hi = memory[vector + 1]
     )
   }
 
   private fun resolve() = when (operand) {
     is Accumulator -> _state.a
     is Immediate -> (operand as Immediate).literal
-    else -> memory.load(addr)
+    else -> memory[addr]
   }
 
   private fun storeResult(data: Data) {
@@ -275,7 +275,7 @@ class Cpu(
     if (operand is Accumulator) {
       _state.a = d
     } else {
-      memory.store(addr, d)
+      memory[addr] = d
     }
     updateZN(d)
   }

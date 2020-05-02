@@ -67,9 +67,9 @@ class Nes(
 
   private val cpu = Cpu(
     object : Memory {
-      override fun load(addr: Address) = cpuMapper.load(addr)
-      override fun store(addr: Address, data: Data) {
-        cpuMapper.store(addr, data)
+      override fun get(addr: Address) = cpuMapper[addr]
+      override fun set(addr: Address, data: Data) {
+        cpuMapper[addr] = data
         onStore(addr, data)
       }
     },
@@ -87,8 +87,8 @@ class Nes(
   val inspection = object : Inspection {
     override val state get() = cpu.state
     override val endOfFrame get() = orchestrator.endOfFrame
-    override fun peek(addr: Address) = cpuMapper.load(addr)
-    override fun peekV(addr: Address) = ppuMapper.load(addr)
+    override fun peek(addr: Address) = cpuMapper[addr]
+    override fun peekV(addr: Address) = ppuMapper[addr]
     override fun fireReset() = reset.set()
     override fun fireNmi() = nmi.set()
     override fun fireIrq() = irq.set()

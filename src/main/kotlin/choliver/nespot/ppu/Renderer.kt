@@ -82,8 +82,8 @@ class Renderer(
             (yCoarse / 4) * (NUM_TILE_COLUMNS / 4) +
             (xCoarse / 4)
 
-          palette = (memory.load(addrAttr) shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
-          pattern = getPattern(iTable = state.bgPatternTable, iTile = memory.load(addrNt), iRow = yFine)
+          palette = (memory[addrAttr] shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
+          pattern = getPattern(iTable = state.bgPatternTable, iTile = memory[addrNt], iRow = yFine)
         }
         with(pixels[x]) {
           c = patternPixel(pattern, xFine)
@@ -119,10 +119,10 @@ class Renderer(
     val sprites = mutableListOf<SpriteToRender>()
 
     for (iSprite in 0 until NUM_SPRITES) {
-      val ySprite = oam.load(iSprite * 4 + 0) + 1   // Offset of one scanline
-      val iPattern = oam.load(iSprite * 4 + 1)
-      val attrs = oam.load(iSprite * 4 + 2)
-      val xSprite = oam.load(iSprite * 4 + 3)
+      val ySprite = oam[iSprite * 4 + 0] + 1   // Offset of one scanline
+      val iPattern = oam[iSprite * 4 + 1]
+      val attrs = oam[iSprite * 4 + 2]
+      val xSprite = oam[iSprite * 4 + 3]
 
       val iRow = state.scanline - ySprite
       val flipY = attrs.isBitSet(7)
@@ -192,7 +192,7 @@ class Renderer(
     videoBuffer.position(state.scanline * SCREEN_WIDTH)
     pixels.forEach {
       val paletteAddr = if (it.c == 0) 0 else (it.p * 4 + it.c) // Background colour is universal
-      videoBuffer.put(colors[palette.load(paletteAddr)])
+      videoBuffer.put(colors[palette[paletteAddr]])
     }
   }
 
@@ -203,8 +203,8 @@ class Renderer(
 
   private fun getPattern(iTable: Int, iTile: Int, iRow: Int): Int {
     val addr = (iTable * 4096) + (iTile * 16) + iRow
-    val p0 = memory.load(BASE_PATTERNS + addr)
-    val p1 = memory.load(BASE_PATTERNS + addr + TILE_SIZE)
+    val p0 = memory[BASE_PATTERNS + addr]
+    val p1 = memory[BASE_PATTERNS + addr + TILE_SIZE]
     return (p1 shl 8) or p0
   }
 

@@ -22,7 +22,7 @@ class RendererTest {
   private val memory = mock<Memory>()
   private val palette = mock<Memory> {
     paletteEntries.forEachIndexed { idx, data ->
-      on { load(idx) } doReturn data
+      on { get(idx) } doReturn data
     }
   }
   private val oam = mock<Memory>()
@@ -674,9 +674,7 @@ class RendererTest {
     yTile: Int = this.yCoarse
   ) {
     nametableEntries.forEachIndexed { idx, data ->
-      whenever(memory.load(
-        BASE_NAMETABLES + (nametable * 0x400) + (yTile * NUM_TILE_COLUMNS) + idx
-      )) doReturn data
+      whenever(memory[BASE_NAMETABLES + (nametable * 0x400) + (yTile * NUM_TILE_COLUMNS) + idx]) doReturn data
     }
   }
 
@@ -691,8 +689,7 @@ class RendererTest {
       } else {
         (data[1] shl 6) or (data[0] shl 4)
       }
-      whenever(memory.load(
-        BASE_NAMETABLES + (nametable * 0x400) + (NUM_TILE_COLUMNS * NUM_TILE_ROWS) + ((yTile / 4) * (NUM_METATILE_COLUMNS / 2)) + idx)
+      whenever(memory[BASE_NAMETABLES + (nametable * 0x400) + (NUM_TILE_COLUMNS * NUM_TILE_ROWS) + ((yTile / 4) * (NUM_METATILE_COLUMNS / 2)) + idx]
       ) doReturn attr
     }
   }
@@ -713,16 +710,16 @@ class RendererTest {
         lo = (lo shl 1) or (it and 1)
         hi = (hi shl 1) or ((it / 2) and 1)
       }
-      whenever(memory.load(baseAddr + (idx * PATTERN_SIZE_BYTES) + yFine)) doReturn lo
-      whenever(memory.load(baseAddr + (idx * PATTERN_SIZE_BYTES) + yFine + TILE_SIZE)) doReturn hi
+      whenever(memory[baseAddr + (idx * PATTERN_SIZE_BYTES) + yFine]) doReturn lo
+      whenever(memory[baseAddr + (idx * PATTERN_SIZE_BYTES) + yFine + TILE_SIZE]) doReturn hi
     }
   }
 
   private fun initSpriteMemory(x: Int, y: Int, iPattern: Int, attrs: Int, iSprite: Int = 0) {
     val base = iSprite * SPRITE_SIZE_BYTES
-    whenever(oam.load(base + 0)) doReturn y - 1
-    whenever(oam.load(base + 1)) doReturn iPattern
-    whenever(oam.load(base + 2)) doReturn attrs
-    whenever(oam.load(base + 3)) doReturn x
+    whenever(oam[base + 0]) doReturn y - 1
+    whenever(oam[base + 1]) doReturn iPattern
+    whenever(oam[base + 2]) doReturn attrs
+    whenever(oam[base + 3]) doReturn x
   }
 }

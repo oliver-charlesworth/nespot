@@ -23,11 +23,11 @@ class Mmc1MapperTest {
 
     @Test
     fun `load and store`() {
-      mapper.prg.store(0x6000, 0x30) // Lowest mapped address
-      mapper.prg.store(0x7FFF, 0x40) // Highest mapped address
+      mapper.prg[0x6000] = 0x30 // Lowest mapped address
+      mapper.prg[0x7FFF] = 0x40 // Highest mapped address
 
-      assertEquals(0x30, mapper.prg.load(0x6000))
-      assertEquals(0x40, mapper.prg.load(0x7FFF))
+      assertEquals(0x30, mapper.prg[0x6000])
+      assertEquals(0x40, mapper.prg[0x7FFF])
     }
   }
 
@@ -131,7 +131,7 @@ class Mmc1MapperTest {
     }
 
     private fun assertLoads(expected: Map<Address, Data>) {
-      expected.forEach { (addr, data) -> assertEquals(data, mapper.prg.load(addr)) }
+      expected.forEach { (addr, data) -> assertEquals(data, mapper.prg[addr]) }
     }
   }
 
@@ -143,11 +143,11 @@ class Mmc1MapperTest {
     fun `load and store`() {
       val chr = mapper.chr(mock())
 
-      chr.store(0x0000, 0x30) // Lowest mapped address
-      chr.store(0x1FFF, 0x40) // Highest mapped address
+      chr[0x0000] = 0x30 // Lowest mapped address
+      chr[0x1FFF] = 0x40 // Highest mapped address
 
-      assertEquals(0x30, chr.load(0x0000))
-      assertEquals(0x40, chr.load(0x1FFF))
+      assertEquals(0x30, chr[0x0000])
+      assertEquals(0x40, chr[0x1FFF])
     }
   }
 
@@ -217,7 +217,7 @@ class Mmc1MapperTest {
 
     private fun assertLoads(expected: Map<Address, Data>) {
       val chr = mapper.chr(mock())
-      expected.forEach { (addr, data) -> assertEquals(data, chr.load(addr)) }
+      expected.forEach { (addr, data) -> assertEquals(data, chr[addr]) }
     }
   }
 
@@ -310,23 +310,23 @@ class Mmc1MapperTest {
       mapper.writeReg(0, mode)
 
       val data = (target + 23).data() // Arbitrary payload
-      whenever(vram.load(target)) doReturn data
+      whenever(vram[target]) doReturn data
 
-      assertEquals(data, chr.load(source))
+      assertEquals(data, chr[source])
 
-      chr.store(source, data)
-      verify(vram).store(target, data)
+      chr[source] = data
+      verify(vram)[target] = data
     }
   }
 
   private fun Mmc1Mapper.writeReg(idx: Int, data: Data) {
     val d = data and 0x1F
     val addr = BASE_SR or ((idx and 0x03) shl 13)
-    prg.store(addr, 0x80)   // Reset
-    prg.store(addr, d shr 0)
-    prg.store(addr, d shr 1)
-    prg.store(addr, d shr 2)
-    prg.store(addr, d shr 3)
-    prg.store(addr, d shr 4)
+    prg[addr] = 0x80   // Reset
+    prg[addr] = d shr 0
+    prg[addr] = d shr 1
+    prg[addr] = d shr 2
+    prg[addr] = d shr 3
+    prg[addr] = d shr 4
   }
 }

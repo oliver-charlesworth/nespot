@@ -24,12 +24,12 @@ fun Nes.Inspection2.fromSnapshot(snapshot: Snapshot) {
 }
 
 private fun encodeMemory(size: Int, memory: Memory) =
-  Base64.getEncoder().encodeToString(ByteArray(size) { memory.load(it).toByte() })
+  Base64.getEncoder().encodeToString(ByteArray(size) { memory[it].toByte() })
 
 private fun decodeMemory(size: Int, memory: Memory, snapshot: String) {
   val decoded = Base64.getDecoder().decode(snapshot)
   if (decoded.size != size) {
     throw IllegalArgumentException("Unexpected memory length")
   }
-  decoded.forEachIndexed { addr, data -> memory.store(addr, data.data())  }
+  decoded.forEachIndexed { addr, data -> memory[addr] = data.data() }
 }

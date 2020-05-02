@@ -37,7 +37,7 @@ class DmcSynth(private val memory: Memory) : Synth {
 
   private fun maybeLoadSample() {
     if ((numBitsRemaining == 0) && (numBytesRemaining > 0)) {
-      sample = memory.load(address + length - numBytesRemaining)
+      sample = memory[address + length - numBytesRemaining]
       numBitsRemaining = 8
       numBytesRemaining--
       if (numBytesRemaining == 0) {

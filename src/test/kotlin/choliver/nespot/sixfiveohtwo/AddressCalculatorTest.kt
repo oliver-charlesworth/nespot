@@ -52,8 +52,8 @@ class AddressCalculatorTest {
 
   @Test
   fun indirect() {
-    whenever(memory.load(0x40FF)) doReturn 0x30
-    whenever(memory.load(0x4100)) doReturn 0x12
+    whenever(memory[0x40FF]) doReturn 0x30
+    whenever(memory[0x4100]) doReturn 0x12
 
     assertEquals(
       0x1230,
@@ -111,8 +111,8 @@ class AddressCalculatorTest {
   inner class IndexedIndirect {
     @Test
     fun basic() {
-      whenever(memory.load(0x0030)) doReturn 0x30
-      whenever(memory.load(0x0031)) doReturn 0x12
+      whenever(memory[0x0030]) doReturn 0x30
+      whenever(memory[0x0031]) doReturn 0x12
 
       assertEquals(
         0x1230,
@@ -122,8 +122,8 @@ class AddressCalculatorTest {
 
     @Test
     fun zeroPageWraparoundOffset() {
-      whenever(memory.load(0x0030)) doReturn 0x30
-      whenever(memory.load(0x0031)) doReturn 0x12
+      whenever(memory[0x0030]) doReturn 0x30
+      whenever(memory[0x0031]) doReturn 0x12
 
       assertEquals(
         0x1230,
@@ -133,8 +133,8 @@ class AddressCalculatorTest {
 
     @Test
     fun zeroPageWraparoundHighByte() {
-      whenever(memory.load(0x00FF)) doReturn 0x30
-      whenever(memory.load(0x0000)) doReturn 0x12
+      whenever(memory[0x00FF]) doReturn 0x30
+      whenever(memory[0x0000]) doReturn 0x12
 
       assertEquals(
         0x1230,
@@ -148,8 +148,8 @@ class AddressCalculatorTest {
   inner class IndirectIndexed {
     @Test
     fun basic() {
-      whenever(memory.load(0x0030)) doReturn 0x30
-      whenever(memory.load(0x0031)) doReturn 0x12
+      whenever(memory[0x0030]) doReturn 0x30
+      whenever(memory[0x0031]) doReturn 0x12
 
       assertEquals(
         0x1240,
@@ -159,8 +159,8 @@ class AddressCalculatorTest {
 
     @Test
     fun zeroPageWraparoundHighByte() {
-      whenever(memory.load(0x00FF)) doReturn 0x30
-      whenever(memory.load(0x0000)) doReturn 0x12
+      whenever(memory[0x00FF]) doReturn 0x30
+      whenever(memory[0x0000]) doReturn 0x12
 
       assertEquals(
         0x1240,

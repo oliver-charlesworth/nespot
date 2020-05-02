@@ -13,24 +13,24 @@ import choliver.nespot.data
 class NromMapper(private val rom: Rom) : Mapper {
   override val prg = object : Memory {
     // Just map everything to PRG-ROM
-    override fun load(addr: Address) = rom.prgData[addr and (rom.prgData.size - 1)].data()
+    override fun get(addr: Address) = rom.prgData[addr and (rom.prgData.size - 1)].data()
 
     // TODO - PRG-RAM
-    override fun store(addr: Address, data: Data) {}
+    override fun set(addr: Address, data: Data) {}
   }
 
   override fun chr(vram: Memory) = object : Memory {
     val mirroredRam = MirroringMemory(rom.mirroring, vram)
 
-    override fun load(addr: Address) = if (addr >= BASE_VRAM) {
-      mirroredRam.load(addr)  // This maps everything >= 0x4000 too
+    override fun get(addr: Address) = if (addr >= BASE_VRAM) {
+      mirroredRam[addr]  // This maps everything >= 0x4000 too
     } else {
       rom.chrData[addr].data()
     }
 
-    override fun store(addr: Address, data: Data) {
+    override fun set(addr: Address, data: Data) {
       if (addr >= BASE_VRAM) {
-        mirroredRam.store(addr, data) // This maps everything >= 0x4000 too
+        mirroredRam[addr] = data // This maps everything >= 0x4000 too
       }
     }
   }

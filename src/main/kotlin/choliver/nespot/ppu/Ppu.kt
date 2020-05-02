@@ -74,15 +74,15 @@ class Ppu(
       }
 
       REG_OAMDATA -> {
-        val ret = oam.load(oamAddr)
+        val ret = oam[oamAddr]
         oamAddr = (oamAddr + 1).addr8()
         ret
       }
 
       REG_PPUDATA -> {
         val ret = when {
-          (addr < BASE_PALETTE) -> readBuffer.also { readBuffer = memory.load(addr) }
-          else -> palette.load(addr and 0x001F)
+          (addr < BASE_PALETTE) -> readBuffer.also { readBuffer = memory[addr] }
+          else -> palette[addr and 0x001F]
         }
         addr = (addr + addrInc) and 0x7FFF
         ret
@@ -122,7 +122,7 @@ class Ppu(
         REG_OAMADDR -> oamAddr = data
 
         REG_OAMDATA -> {
-          oam.store(oamAddr, data)
+          oam[oamAddr] = data
           oamAddr = (oamAddr + 1).addr8()
         }
 
@@ -168,8 +168,8 @@ class Ppu(
 
         REG_PPUDATA -> {
           when {
-            addr < BASE_PALETTE -> memory.store(addr, data)
-            else -> palette.store(addr and 0x1F, data)
+            addr < BASE_PALETTE -> memory[addr] = data
+            else -> palette[addr and 0x1F] = data
           }
           addr = (addr + addrInc) and 0x7FFF
         }

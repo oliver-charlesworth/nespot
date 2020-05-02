@@ -26,12 +26,12 @@ class AddressCalculator(
   }.addr()
 
   private fun load16(addr: Address) = addr(
-    lo = memory.load(addr.addr()),
-    hi = memory.load((addr + 1).addr())
+    lo = memory[addr.addr()],
+    hi = memory[(addr + 1).addr()]
   )
 
   private fun load16FromZeroPage(addr: Address8) = addr(
-    lo = memory.load(addr),
-    hi = memory.load((addr + 1).addr8())
+    lo = memory[addr],
+    hi = memory[(addr + 1).addr8()]
   )
 }

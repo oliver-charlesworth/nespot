@@ -25,7 +25,7 @@ class DmcSynthTest {
   fun `decodes delta sequence`() {
     synth.length = 5
     for (i in 0 until 5) {
-      whenever(memory.load(0x1230 + i)) doReturn (if (i % 2 == 0) 0xFF else 0xAA)  // Nice bit patterns
+      whenever(memory[0x1230 + i]) doReturn (if (i % 2 == 0) 0xFF else 0xAA)  // Nice bit patterns
     }
 
     val expected = listOf(
@@ -43,8 +43,8 @@ class DmcSynthTest {
   @Test
   fun `retains last value after sample ends`() {
     synth.length = 2
-    whenever(memory.load(0x1230)) doReturn 0xFF
-    whenever(memory.load(0x1231)) doReturn 0xAA
+    whenever(memory[0x1230]) doReturn 0xFF
+    whenever(memory[0x1231]) doReturn 0xAA
 
     val expected = listOf(
       0,
@@ -60,8 +60,8 @@ class DmcSynthTest {
   fun `restarts after sample ends if loop flag set`() {
     synth.length = 2
     synth.loop = true
-    whenever(memory.load(0x1230)) doReturn 0xFF
-    whenever(memory.load(0x1231)) doReturn 0xAA
+    whenever(memory[0x1230]) doReturn 0xFF
+    whenever(memory[0x1231]) doReturn 0xAA
 
     val expected = listOf(
       0,
@@ -79,7 +79,7 @@ class DmcSynthTest {
   fun `can't exceed lower bound`() {
     synth.length = 1
     synth.level = 7
-    whenever(memory.load(0x1230)) doReturn 0x00 // Dowm down down
+    whenever(memory[0x1230]) doReturn 0x00 // Dowm down down
 
     val expected = listOf(
       7,
@@ -93,7 +93,7 @@ class DmcSynthTest {
   fun `can't exceed upper bound`() {
     synth.length = 1
     synth.level = 120
-    whenever(memory.load(0x1230)) doReturn 0xFF // Up up up
+    whenever(memory[0x1230]) doReturn 0xFF // Up up up
 
     val expected = listOf(
       120,
@@ -106,10 +106,10 @@ class DmcSynthTest {
   @Test
   fun `changing address mid-way resets pattern, but current sample is played to completion`() {
     synth.length = 2
-    whenever(memory.load(0x1230)) doReturn 0xFF
-    whenever(memory.load(0x1231)) doReturn 0xAA
-    whenever(memory.load(0x2340)) doReturn 0x00
-    whenever(memory.load(0x2341)) doReturn 0x55
+    whenever(memory[0x1230]) doReturn 0xFF
+    whenever(memory[0x1231]) doReturn 0xAA
+    whenever(memory[0x2340]) doReturn 0x00
+    whenever(memory[0x2341]) doReturn 0x55
 
     val expected = listOf(
       0,
@@ -128,8 +128,8 @@ class DmcSynthTest {
   @Test
   fun `changing length mid-way resets pattern, but current sample is played to completion`() {
     synth.length = 2
-    whenever(memory.load(0x1230)) doReturn 0xFF
-    whenever(memory.load(0x1231)) doReturn 0xAA
+    whenever(memory[0x1230]) doReturn 0xFF
+    whenever(memory[0x1231]) doReturn 0xAA
 
     val expected = listOf(
       0,

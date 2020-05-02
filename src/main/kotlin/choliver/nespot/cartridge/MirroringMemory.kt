@@ -16,9 +16,9 @@ class MirroringMemory(
     IGNORED -> throw UnsupportedOperationException()
   }
 
-  override fun load(addr: Address) = ram.load(mapToVram(addr))
+  override fun get(addr: Address) = ram[mapToVram(addr)]
 
-  override fun store(addr: Address, data: Data) {
-    ram.store(mapToVram(addr), data)
+  override fun set(addr: Address, data: Data) {
+    ram[mapToVram(addr)] = data
   }
 }

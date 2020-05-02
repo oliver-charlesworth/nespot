@@ -47,16 +47,16 @@ class PpuTest {
       ppu.writeReg(REG_PPUDATA, 0x30)
       ppu.writeReg(REG_PPUDATA, 0x40)
 
-      verify(memory).store(0x1230, 0x20)
-      verify(memory).store(0x1231, 0x30)
-      verify(memory).store(0x1232, 0x40)
+      verify(memory)[0x1230] = 0x20
+      verify(memory)[0x1231] = 0x30
+      verify(memory)[0x1232] = 0x40
     }
 
     @Test
     fun `reads from incrementing memory locations, first read is garbage`() {
-      whenever(memory.load(0x1230)) doReturn 0x20
-      whenever(memory.load(0x1231)) doReturn 0x30
-      whenever(memory.load(0x1232)) doReturn 0x40
+      whenever(memory[0x1230]) doReturn 0x20
+      whenever(memory[0x1231]) doReturn 0x30
+      whenever(memory[0x1232]) doReturn 0x40
 
       setPpuAddress(0x1230)
 
@@ -68,8 +68,8 @@ class PpuTest {
 
     @Test
     fun `reads from successive latched addresses, first read is garbage in each case`() {
-      whenever(memory.load(0x1230)) doReturn 0x20
-      whenever(memory.load(0x1590)) doReturn 0x30
+      whenever(memory[0x1230]) doReturn 0x20
+      whenever(memory[0x1590]) doReturn 0x30
 
       setPpuAddress(0x1230)
 
@@ -91,9 +91,9 @@ class PpuTest {
       ppu.writeReg(REG_PPUDATA, 0x30)
       ppu.writeReg(REG_PPUDATA, 0x40)
 
-      verify(memory).store(0x1230, 0x20)
-      verify(memory).store(0x1250, 0x30)
-      verify(memory).store(0x1270, 0x40)
+      verify(memory)[0x1230] = 0x20
+      verify(memory)[0x1250] = 0x30
+      verify(memory)[0x1270] = 0x40
     }
 
     @Test
@@ -104,7 +104,7 @@ class PpuTest {
 
       ppu.writeReg(REG_PPUDATA, 0x20)
 
-      verify(memory).store(0x1230, 0x20)
+      verify(memory)[0x1230] = 0x20
     }
   }
 

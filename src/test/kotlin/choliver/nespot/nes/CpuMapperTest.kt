@@ -32,17 +32,17 @@ class CpuMapperTest {
 
   @Test
   fun `maps to prg`() {
-    whenever(prg.load(0x4020)) doReturn 0x10
-    whenever(prg.load(0xFFFF)) doReturn 0x20
+    whenever(prg[0x4020]) doReturn 0x10
+    whenever(prg[0xFFFF]) doReturn 0x20
 
-    assertEquals(0x10, mapper.load(0x4020))
-    assertEquals(0x20, mapper.load(0xFFFF))
+    assertEquals(0x10, mapper[0x4020])
+    assertEquals(0x20, mapper[0xFFFF])
 
-    mapper.store(0x4020, 0x30)
-    mapper.store(0xFFFF, 0x40)
+    mapper[0x4020] = 0x30
+    mapper[0xFFFF] = 0x40
 
-    verify(prg).store(0x4020, 0x30)
-    verify(prg).store(0xFFFF, 0x40)
+    verify(prg)[0x4020] = 0x30
+    verify(prg)[0xFFFF] = 0x40
   }
 
   @Test
@@ -50,15 +50,15 @@ class CpuMapperTest {
     whenever(ppu.readReg(0)) doReturn 0x10
     whenever(ppu.readReg(7)) doReturn 0x20
 
-    assertEquals(0x10, mapper.load(0x2000))
-    assertEquals(0x20, mapper.load(0x2007))
-    assertEquals(0x10, mapper.load(0x2008)) // First mirror
-    assertEquals(0x20, mapper.load(0x3FFF)) // Last mirror
+    assertEquals(0x10, mapper[0x2000])
+    assertEquals(0x20, mapper[0x2007])
+    assertEquals(0x10, mapper[0x2008]) // First mirror
+    assertEquals(0x20, mapper[0x3FFF]) // Last mirror
 
-    mapper.store(0x2000, 0x30)
-    mapper.store(0x2007, 0x40)
-    mapper.store(0x2008, 0x50)  // First mirror
-    mapper.store(0x3FFF, 0x60)  // Last mirror
+    mapper[0x2000] = 0x30
+    mapper[0x2007] = 0x40
+    mapper[0x2008] = 0x50  // First mirror
+    mapper[0x3FFF] = 0x60  // Last mirror
 
     verify(ppu).writeReg(0, 0x30)
     verify(ppu).writeReg(7, 0x40)
@@ -68,23 +68,23 @@ class CpuMapperTest {
 
   @Test
   fun `maps to ram`() {
-    whenever(ram.load(0x0000)) doReturn 0x10
-    whenever(ram.load(0x07FF)) doReturn 0x20
+    whenever(ram[0x0000]) doReturn 0x10
+    whenever(ram[0x07FF]) doReturn 0x20
 
-    assertEquals(0x10, mapper.load(0x0000))
-    assertEquals(0x20, mapper.load(0x07FF))
-    assertEquals(0x10, mapper.load(0x0800)) // First mirror
-    assertEquals(0x20, mapper.load(0x1FFF)) // Last mirror
+    assertEquals(0x10, mapper[0x0000])
+    assertEquals(0x20, mapper[0x07FF])
+    assertEquals(0x10, mapper[0x0800]) // First mirror
+    assertEquals(0x20, mapper[0x1FFF]) // Last mirror
 
-    mapper.store(0x0000, 0x30)
-    mapper.store(0x07FF, 0x40)
-    mapper.store(0x0800, 0x50)  // First mirror
-    mapper.store(0x1FFF, 0x60)  // Last mirror
+    mapper[0x0000] = 0x30
+    mapper[0x07FF] = 0x40
+    mapper[0x0800] = 0x50  // First mirror
+    mapper[0x1FFF] = 0x60  // Last mirror
 
-    verify(ram).store(0x0000, 0x30)
-    verify(ram).store(0x07FF, 0x40)
-    verify(ram).store(0x0000, 0x50)
-    verify(ram).store(0x07FF, 0x60)
+    verify(ram)[0x0000] = 0x30
+    verify(ram)[0x07FF] = 0x40
+    verify(ram)[0x0000] = 0x50
+    verify(ram)[0x07FF] = 0x60
   }
 
   @Test
@@ -92,19 +92,19 @@ class CpuMapperTest {
     whenever(joypads.read1()) doReturn 0x10
     whenever(joypads.read2()) doReturn 0x20
 
-    assertEquals(0x10, mapper.load(ADDR_JOYPAD1))
-    assertEquals(0x20, mapper.load(ADDR_JOYPAD2))
+    assertEquals(0x10, mapper[ADDR_JOYPAD1])
+    assertEquals(0x20, mapper[ADDR_JOYPAD2])
 
-    mapper.store(ADDR_JOYPADS, 0x30)
+    mapper[ADDR_JOYPADS] = 0x30
 
     verify(joypads).write(0x30)
   }
 
   @Test
   fun `performs oam dma`() {
-    (0..255).forEach { whenever(ram.load(0x0500 + it)) doReturn (0xFF - it) }
+    (0..255).forEach { whenever(ram[0x0500 + it]) doReturn (0xFF - it) }
 
-    mapper.store(ADDR_OAMDMA, 0x05)
+    mapper[ADDR_OAMDMA] = 0x05
 
     (0..255).forEach {
       verify(ppu).writeReg(REG_OAMDATA, 0xFF - it)
@@ -115,10 +115,10 @@ class CpuMapperTest {
   fun `maps to apu`() {
     whenever(apu.readStatus()) doReturn 0x10
 
-    assertEquals(0x10, mapper.load(ADDR_APU_STATUS))
+    assertEquals(0x10, mapper[ADDR_APU_STATUS])
 
-    mapper.store(0x4000, 0x30)
-    mapper.store(0x4017, 0x40)    // This is the highest APU reg
+    mapper[0x4000] = 0x30
+    mapper[0x4017] = 0x40    // This is the highest APU reg
 
     verify(apu).writeReg(0, 0x30)
     verify(apu).writeReg(23, 0x40)

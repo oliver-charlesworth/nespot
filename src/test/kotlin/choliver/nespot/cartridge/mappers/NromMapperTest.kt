@@ -28,10 +28,10 @@ class NromMapperTest {
         this[32767] = 0x60
       })
 
-      assertEquals(0x30, mapper.prg.load(0x8000))
-      assertEquals(0x40, mapper.prg.load(0xBFFF))
-      assertEquals(0x50, mapper.prg.load(0xC000))
-      assertEquals(0x60, mapper.prg.load(0xFFFF))
+      assertEquals(0x30, mapper.prg[0x8000])
+      assertEquals(0x40, mapper.prg[0xBFFF])
+      assertEquals(0x50, mapper.prg[0xC000])
+      assertEquals(0x60, mapper.prg[0xFFFF])
     }
 
     @Test
@@ -41,10 +41,10 @@ class NromMapperTest {
         this[16383] = 0x40
       })
 
-      assertEquals(0x30, mapper.prg.load(0x8000))
-      assertEquals(0x40, mapper.prg.load(0xBFFF))
-      assertEquals(0x30, mapper.prg.load(0xC000))
-      assertEquals(0x40, mapper.prg.load(0xFFFF))
+      assertEquals(0x30, mapper.prg[0x8000])
+      assertEquals(0x40, mapper.prg[0xBFFF])
+      assertEquals(0x30, mapper.prg[0xC000])
+      assertEquals(0x40, mapper.prg[0xFFFF])
     }
   }
 
@@ -58,8 +58,8 @@ class NromMapperTest {
       })
       val chr = mapper.chr(mock())
 
-      assertEquals(0x30, chr.load(0x0000))
-      assertEquals(0x40, chr.load(0x1FFF))
+      assertEquals(0x30, chr[0x0000])
+      assertEquals(0x40, chr[0x1FFF])
     }
 
     @Test
@@ -132,12 +132,12 @@ class NromMapperTest {
       val chr = mapper.chr(vram)
 
       val data = (target + 23).data() // Arbitrary payload
-      whenever(vram.load(target)) doReturn data
+      whenever(vram[target]) doReturn data
 
-      assertEquals(data, chr.load(source))
+      assertEquals(data, chr[source])
 
-      chr.store(source, data)
-      verify(vram).store(target, data)
+      chr[source] = data
+      verify(vram)[target] = data
     }
   }
 

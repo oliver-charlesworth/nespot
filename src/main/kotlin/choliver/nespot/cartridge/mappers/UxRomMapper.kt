@@ -13,15 +13,14 @@ class UxRomMapper(private val rom: Rom) : Mapper {
   private var prg0Bank = 0
 
   override val prg = object : Memory {
-    override fun load(addr: Address) = if (addr < BASE_PRG1_ROM) {
-      load(addr, prg0Bank)
-    } else {
-      load(addr, numPrgBanks - 1) // Fixed
-    }
+    override operator fun get(addr: Address) = getFromBank(
+      addr,
+      if (addr < BASE_PRG1_ROM) { prg0Bank } else { numPrgBanks - 1 } // Upper bank is fixed
+    )
 
-    private fun load(addr: Address, iBank: Int) = rom.prgData[(addr and 0x3FFF) + 0x4000 * iBank].data()
+    private fun getFromBank(addr: Address, iBank: Int) = rom.prgData[(addr and 0x3FFF) + 0x4000 * iBank].data()
 
-    override fun store(addr: Address, data: Data) {
+    override operator fun set(addr: Address, data: Data) {
       if (addr >= BASE_BANK_SELECT) {
         prg0Bank = data % numPrgBanks
       }
@@ -32,17 +31,17 @@ class UxRomMapper(private val rom: Rom) : Mapper {
     val mirroredRam = MirroringMemory(rom.mirroring, vram)
 
     return object : Memory {
-      override fun load(addr: Address) = if (addr >= BASE_VRAM) {
-        mirroredRam.load(addr)  // This maps everything >= 0x4000 too
+      override fun get(addr: Address) = if (addr >= BASE_VRAM) {
+        mirroredRam[addr]  // This maps everything >= 0x4000 too
       } else {
-        chrRam.load(addr)
+        chrRam[addr]
       }
 
-      override fun store(addr: Address, data: Data) {
+      override fun set(addr: Address, data: Data) {
         if (addr >= BASE_VRAM) {
-          mirroredRam.store(addr, data) // This maps everything >= 0x4000 too
+          mirroredRam[addr] = data // This maps everything >= 0x4000 too
         } else {
-          chrRam.store(addr, data)
+          chrRam[addr] = data
         }
       }
     }

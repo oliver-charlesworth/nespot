@@ -21,31 +21,27 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
   private var prgMode = 0
 
   override val prg = object : Memory {
-    override fun load(addr: Address) = when {
-      addr < BASE_PRG0_ROM -> prgRam.load(addr and 0x1FFF)
-      addr < BASE_PRG1_ROM -> {
-        load(addr, when (prgMode) {
-          0, 1 -> (prgBank and 0x0E) // 32k mode
-          2 -> 0 // Fixed
-          3 -> prgBank // Variable
-          else -> throw IllegalArgumentException()  // Should never happen
-        })
-      }
-      else -> {
-        load(addr, when (prgMode) {
-          0, 1 -> (prgBank or 0x01) // 32k mode
-          2 -> prgBank  // Variable
-          3 -> numPrgBanks - 1 // Fixed
-          else -> throw IllegalArgumentException()  // Should never happen
-        })
-      }
+    override fun get(addr: Address) = when {
+      addr < BASE_PRG0_ROM -> prgRam[addr and 0x1FFF]
+      addr < BASE_PRG1_ROM -> getFromBank(addr, when (prgMode) {
+        0, 1 -> (prgBank and 0x0E) // 32k mode
+        2 -> 0 // Fixed
+        3 -> prgBank // Variable
+        else -> throw IllegalArgumentException()  // Should never happen
+      })
+      else -> getFromBank(addr, when (prgMode) {
+        0, 1 -> (prgBank or 0x01) // 32k mode
+        2 -> prgBank  // Variable
+        3 -> numPrgBanks - 1 // Fixed
+        else -> throw IllegalArgumentException()  // Should never happen
+      })
     }
 
-    private fun load(addr: Address, iBank: Int) = rom.prgData[(addr and 0x3FFF) + 0x4000 * iBank].data()
+    private fun getFromBank(addr: Address, iBank: Int) = rom.prgData[(addr and 0x3FFF) + 0x4000 * iBank].data()
 
-    override fun store(addr: Address, data: Data) {
+    override fun set(addr: Address, data: Data) {
       when {
-        addr < BASE_PRG0_ROM -> prgRam.store(addr and 0x1FFF, data)
+        addr < BASE_PRG0_ROM -> prgRam[addr and 0x1FFF] = data
         addr >= BASE_SR -> updateShiftRegister(addr, data)
       }
     }
@@ -53,19 +49,19 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
 
   override fun chr(vram: Memory) = object : Memory {
     private val myLoad: (Address) -> Data = if (usingChrRam) {
-      { addr -> chrRam.load(addr) }
+      { addr -> chrRam[addr] }
     } else {
       { addr -> rom.chrData[addr].data() }
     }
 
     private val myStore: (Address, Data) -> Unit = if (usingChrRam) {
-      { addr, data -> chrRam.store(addr, data) }
+      { addr, data -> chrRam[addr] = data }
     } else {
       { _, _ -> }
     }
 
-    override fun load(addr: Address) = when {
-      addr >= BASE_VRAM -> vram.load(mapToVram(addr))  // This maps everything >= 0x4000 too
+    override fun get(addr: Address) = when {
+      addr >= BASE_VRAM -> vram[mapToVram(addr)]  // This maps everything >= 0x4000 too
       addr < BASE_CHR1_ROM -> myLoad(mapToBank(addr, when (chrMode) {
         0 -> (chr0Bank and 0x1E)
         1 -> chr0Bank
@@ -78,9 +74,9 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
       }))
     }
 
-    override fun store(addr: Address, data: Data) {
+    override fun set(addr: Address, data: Data) {
       when {
-        addr >= BASE_VRAM -> vram.store(mapToVram(addr), data)  // This maps everything >= 0x4000 too
+        addr >= BASE_VRAM -> vram[mapToVram(addr)] = data  // This maps everything >= 0x4000 too
         addr < BASE_CHR1_ROM -> myStore(mapToBank(addr, when (chrMode) {
           0 -> (chr0Bank and 0x1E)
           1 -> chr0Bank

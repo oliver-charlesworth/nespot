@@ -146,8 +146,8 @@ fun assertCpuEffects(
   if (expectedState != null) {
     assertEquals(expectedState, cpu.state, "Unexpected state for [${name}]")
   }
-  expectedStores.forEach { (addr, data) -> verify(memory).store(addr, data) }
-  verify(memory, times(expectedStores.size)).store(any(), any())
+  expectedStores.forEach { (addr, data) -> verify(memory)[addr] = data }
+  verify(memory, times(expectedStores.size))[any()] = any()
   if (expectedCycles != null) {
     assertEquals(expectedCycles, numCycles, "Unexpected # cycles for [${name}]")
   }
@@ -159,7 +159,7 @@ fun List<Instruction>.memoryMap(base: Address) = map { it.encode() }
   .associate { (base + it.index).addr() to it.value }
 
 fun mockMemory(init: Map<Address, Data>) = mock<Memory> {
-  on { load(any()) } doAnswer { init[it.getArgument(0)] ?: 0xCC } // Easier to spot during debugging than 0x00
+  on { get(any()) } doAnswer { init[it.getArgument(0)] ?: 0xCC } // Easier to spot during debugging than 0x00
 }
 
 fun addrToMem(addr: Address, data: Int) = mapOf(addr to data.lo(), (addr + 1) to data.hi())

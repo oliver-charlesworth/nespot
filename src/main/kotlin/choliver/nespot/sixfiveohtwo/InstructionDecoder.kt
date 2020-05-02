@@ -25,7 +25,7 @@ class InstructionDecoder(private val memory: Memory) {
 
   fun decode(pc: Address, x: Data, y: Data): Decoded {
     var nextPc = pc
-    fun load() = memory.load(nextPc++)
+    fun load() = memory[nextPc++]
 
     val opcode = load()
     val found = ENCODINGS[opcode] ?: error("Unexpected opcode 0x%02x at 0x%04x".format(opcode, pc))

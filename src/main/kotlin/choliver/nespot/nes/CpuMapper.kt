@@ -20,25 +20,25 @@ class CpuMapper(
   private val apu: Apu,
   private val joypads: Joypads
 ) : Memory {
-  override fun load(addr: Address) = when {
-    addr < 0x2000 -> ram.load(addr % 2048)
+  override fun get(addr: Address) = when {
+    addr < 0x2000 -> ram[addr % 2048]
     addr < 0x4000 -> ppu.readReg(addr % 8)
     addr == ADDR_JOYPAD1 -> joypads.read1()
     addr == ADDR_JOYPAD2 -> joypads.read2()
     addr == ADDR_APU_STATUS -> apu.readStatus()
-    else -> prg.load(addr)
+    else -> prg[addr]
   }
 
-  override fun store(addr: Address, data: Data) = when {
-    addr < 0x2000 -> ram.store(addr % 2048, data)
+  override fun set(addr: Address, data: Data) = when {
+    addr < 0x2000 -> ram[addr % 2048] = data
     addr < 0x4000 -> ppu.writeReg(addr % 8, data)
     addr == ADDR_OAMDMA -> oamDma(page = data)
     addr == ADDR_JOYPADS -> joypads.write(data)
     addr < 0x4020 -> apu.writeReg(addr - 0x4000, data)
-    else -> prg.store(addr, data)
+    else -> prg[addr] = data
   }
 
   private fun oamDma(page: Data) {
-    (0x00..0xFF).forEach { store(ADDR_OAMDATA, load(addr(hi = page, lo = it))) }
+    (0x00..0xFF).forEach { this[ADDR_OAMDATA] = this[addr(hi = page, lo = it)] }
   }
 }

@@ -7,7 +7,7 @@ import choliver.nespot.isBitSet
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Ppu.Companion.BASE_PATTERNS
 import choliver.nespot.ppu.Ppu.Companion.NAMETABLE_SIZE_BYTES
-import choliver.nespot.ppu.model.Coords
+import choliver.nespot.ppu.model.State
 import java.nio.IntBuffer
 import kotlin.math.min
 
@@ -21,25 +21,6 @@ class Renderer(
   private val videoBuffer: IntBuffer,
   private val colors: List<Int> = COLORS
 ) {
-
-  @MutableForPerfReasons
-  data class Input(
-    var bgEnabled: Boolean,
-    var sprEnabled: Boolean,
-    var bgLeftTileEnabled: Boolean,
-    var sprLeftTileEnabled: Boolean,
-    var largeSprites: Boolean,
-    var bgPatternTable: Int,  // 0 or 1
-    var sprPatternTable: Int, // 0 or 1
-    var coords: Coords,
-    var scanline: Int
-  )
-
-  data class Output(
-    val sprite0Hit: Boolean,
-    val spriteOverflow: Boolean
-  )
-
   @MutableForPerfReasons
   private data class Pixel(
     var c: Int = 0,
@@ -58,38 +39,36 @@ class Renderer(
 
   private val pixels = Array(SCREEN_WIDTH) { Pixel() }
 
-  fun renderScanline(ctx: Input): Output {
-    if (ctx.bgEnabled) {
-      prepareBackground(ctx)
+  fun renderScanline(state: State) {
+    if (state.bgEnabled) {
+      prepareBackground(state)
     } else {
       prepareBlankBackground()
     }
 
-    if (!ctx.bgLeftTileEnabled) {
+    if (!state.bgLeftTileEnabled) {
       blankLeftBackgroundTile()
     }
 
-    val sprites = getSpritesForScanline(ctx)
+    val sprites = getSpritesForScanline(state)
 
-    val isHit = if (ctx.sprEnabled) {
-      prepareSpritesAndDetectHit(ctx, sprites.take(MAX_SPRITES_PER_SCANLINE))
+    val isHit = if (state.sprEnabled) {
+      prepareSpritesAndDetectHit(state, sprites.take(MAX_SPRITES_PER_SCANLINE))
     } else {
       false
     }
 
-    renderToBuffer(ctx.scanline)
+    renderToBuffer(state)
 
-    return Output(
-      sprite0Hit = isHit,
-      spriteOverflow = (ctx.bgEnabled || ctx.sprEnabled) && (sprites.size > MAX_SPRITES_PER_SCANLINE)
-    )
+    state.sprite0Hit = isHit
+    state.spriteOverflow = (state.bgEnabled || state.sprEnabled) && (sprites.size > MAX_SPRITES_PER_SCANLINE)
   }
 
-  private fun prepareBackground(ctx: Input) {
+  private fun prepareBackground(state: State) {
     var palette = 0
     var pattern: Data = 0x00
 
-    with (ctx.coords) {
+    with(state.coords) {
       for (x in 0 until SCREEN_WIDTH) {
         if ((x == 0) || (xFine == 0)) {
           val addrNt = BASE_NAMETABLES +
@@ -104,7 +83,7 @@ class Renderer(
             (xCoarse / 4)
 
           palette = (memory.load(addrAttr) shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
-          pattern = getPattern(iTable = ctx.bgPatternTable, iTile = memory.load(addrNt), iRow = yFine)
+          pattern = getPattern(iTable = state.bgPatternTable, iTile = memory.load(addrNt), iRow = yFine)
         }
         with(pixels[x]) {
           c = patternPixel(pattern, xFine)
@@ -136,7 +115,7 @@ class Renderer(
     }
   }
 
-  private fun getSpritesForScanline(ctx: Input): List<SpriteToRender> {
+  private fun getSpritesForScanline(state: State): List<SpriteToRender> {
     val sprites = mutableListOf<SpriteToRender>()
 
     for (iSprite in 0 until NUM_SPRITES) {
@@ -145,21 +124,21 @@ class Renderer(
       val attrs = oam.load(iSprite * 4 + 2)
       val xSprite = oam.load(iSprite * 4 + 3)
 
-      val iRow = ctx.scanline - ySprite
+      val iRow = state.scanline - ySprite
       val flipY = attrs.isBitSet(7)
 
-      val inRange = iRow in 0 until if (ctx.largeSprites) (TILE_SIZE * 2) else TILE_SIZE
+      val inRange = iRow in 0 until if (state.largeSprites) (TILE_SIZE * 2) else TILE_SIZE
 
       if (inRange) {
         sprites += SpriteToRender(
           x = xSprite,
           iSprite = iSprite,
           pattern = getPattern(
-            iTable = when (ctx.largeSprites) {
+            iTable = when (state.largeSprites) {
               true -> iPattern and 0x01
-              false -> ctx.sprPatternTable
+              false -> state.sprPatternTable
             },
-            iTile = when (ctx.largeSprites) {
+            iTile = when (state.largeSprites) {
               true -> (iPattern and 0xFE) + (if (flipY xor (iRow < TILE_SIZE)) 0 else 1)
               false -> iPattern
             },
@@ -175,7 +154,7 @@ class Renderer(
     return sprites
   }
 
-  private fun prepareSpritesAndDetectHit(ctx: Input, sprites: List<SpriteToRender>): Boolean {
+  private fun prepareSpritesAndDetectHit(state: State, sprites: List<SpriteToRender>): Boolean {
     var isHit = false
 
     // Lowest index is highest priority, so render last
@@ -186,7 +165,7 @@ class Renderer(
         val px = pixels[x]
 
         val opaqueSpr = (c != 0)
-        val clipped = !ctx.sprLeftTileEnabled && (x < TILE_SIZE)
+        val clipped = !state.sprLeftTileEnabled && (x < TILE_SIZE)
 
         if (opaqueSpr && !px.opaqueSpr && !clipped) {
           px.opaqueSpr = true
@@ -209,8 +188,8 @@ class Renderer(
     return isHit
   }
 
-  private fun renderToBuffer(yScanline: Int) {
-    videoBuffer.position(yScanline * SCREEN_WIDTH)
+  private fun renderToBuffer(state: State) {
+    videoBuffer.position(state.scanline * SCREEN_WIDTH)
     pixels.forEach {
       val paletteAddr = if (it.c == 0) 0 else (it.p * 4 + it.c) // Background colour is universal
       videoBuffer.put(colors[palette.load(paletteAddr)])

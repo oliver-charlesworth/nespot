@@ -3,8 +3,8 @@ package choliver.nespot.ppu
 import choliver.nespot.Address
 import choliver.nespot.Memory
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
-import choliver.nespot.ppu.Renderer.Input
 import choliver.nespot.ppu.model.Coords
+import choliver.nespot.ppu.model.State
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
@@ -641,7 +641,6 @@ class RendererTest {
   private fun extractScanline() =
     videoBuffer.array().toList().subList(yScanline * SCREEN_WIDTH, (yScanline + 1) * SCREEN_WIDTH)
 
-  // TODO - this helper function adds little value
   private fun render(
     xCoarse: Int = 0,
     xFine: Int = 0,
@@ -652,7 +651,7 @@ class RendererTest {
     bgLeftTileEnabled: Boolean = true,
     sprLeftTileEnabled: Boolean = true,
     largeSprites: Boolean = false
-  ) = renderer.renderScanline(Input(
+  ) = State(
     bgEnabled = bgRenderingEnabled,
     sprEnabled = sprRenderingEnabled,
     bgLeftTileEnabled = bgLeftTileEnabled,
@@ -667,7 +666,7 @@ class RendererTest {
       yFine = yFine
     ),
     scanline = yScanline
-  ))
+  ).apply { renderer.renderScanline(this) }
 
   private fun initNametableMemory(
     nametableEntries: List<Int>,

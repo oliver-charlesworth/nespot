@@ -7,6 +7,7 @@ import java.lang.Integer.max
 import java.lang.Integer.min
 
 // TODO - timing of memory loads is probably important - what if content changes?
+// TODO - memory wraparound
 
 // See http://wiki.nesdev.com/w/index.php/APU_DMC
 class DmcSynth(private val memory: Memory) : Synth {

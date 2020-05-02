@@ -11,7 +11,6 @@ import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
 import choliver.nespot.sixfiveohtwo.InstructionDecoder
 import choliver.nespot.sixfiveohtwo.model.State
-import choliver.nespot.snapshot.Snapshot
 import java.nio.IntBuffer
 
 class Nes(
@@ -106,14 +105,14 @@ class Nes(
     }
   }
 
-  fun snapshot() = Snapshot(
-    cpu = cpu.state,
-    ppu = ppu.state,
-    ram = cpuRam.snapshot(),
-    vram = ppuRam.snapshot(),
-    palette = "",    // TODO
-    oam = ""         // TODO
-  )
+  inner class Inspection2 internal constructor() {
+    val cpu = this@Nes.cpu.inspection
+    val ppu = this@Nes.ppu.inspection
+    val ram = this@Nes.cpuRam
+    val vram = this@Nes.ppuRam
+  }
+
+  val inspection2 = Inspection2()
 
   // TODO - consolidate all the constants
   companion object {

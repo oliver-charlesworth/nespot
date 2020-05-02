@@ -285,6 +285,12 @@ class Cpu(
     _state.p.n = data.isNeg()
   }
 
+  inner class Inspection internal constructor() {
+    val state get() = _state.copy()
+  }
+
+  val inspection = Inspection()
+
   companion object {
     const val VECTOR_NMI: Address = 0xFFFA
     const val VECTOR_RESET: Address = 0xFFFC

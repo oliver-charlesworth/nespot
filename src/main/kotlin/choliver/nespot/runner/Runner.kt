@@ -5,6 +5,7 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
 import choliver.nespot.runner.KeyAction.*
 import choliver.nespot.runner.Screen.Event.*
+import choliver.nespot.snapshot.snapshot
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.ajalt.clikt.core.CliktCommand
@@ -101,7 +102,7 @@ class Runner : CliktCommand(name = "nespot") {
     private fun dumpState() {
       val mapper = jacksonObjectMapper()
       mapper.enable(SerializationFeature.INDENT_OUTPUT)
-      println(mapper.writeValueAsString(nes.snapshot()))
+      println(mapper.writeValueAsString(nes.inspection2.snapshot()))
     }
   }
 }

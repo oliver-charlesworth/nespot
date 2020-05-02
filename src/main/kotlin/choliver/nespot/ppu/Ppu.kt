@@ -12,17 +12,16 @@ class Ppu(
   private val palette: Memory = Palette(),
   private val renderer: Renderer = Renderer(memory, palette, oam, videoBuffer)
 ) {
-  private var _state = State()
-  val state get() = _state.copy()
+  private var state = State()
 
   // TODO - model addr increment quirks during rendering (see wiki.nesdev.com/w/index.php/PPU_scrolling)
   // TODO - add a reset (to clean up counters and stuff)
 
-  val scanline get() = _state.rendererIn.scanline
+  val scanline get() = state.rendererIn.scanline
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   fun executeScanline() {
-    with(_state) {
+    with(state) {
       when (rendererIn.scanline) {
         in (0 until SCREEN_HEIGHT) -> {
           if (rendererIn.bgEnabled || rendererIn.sprEnabled) {
@@ -59,7 +58,7 @@ class Ppu(
     }
   }
 
-  fun readReg(reg: Int) = with(_state) {
+  fun readReg(reg: Int) = with(state) {
     when (reg) {
       REG_PPUSTATUS -> {
         val ret = 0 +
@@ -93,7 +92,7 @@ class Ppu(
   }
 
   fun writeReg(reg: Int, data: Data) {
-    with(_state) {
+    with(state) {
       when (reg) {
         REG_PPUCTRL -> {
           addrInc = if (data.isBitSet(2)) 32 else 1
@@ -180,6 +179,14 @@ class Ppu(
       }
     }
   }
+
+  inner class Inspection internal constructor() {
+    val state get() = this@Ppu.state.copy()
+    val oam = this@Ppu.oam
+    val palette = this@Ppu.palette
+  }
+
+  val inspection = Inspection()
 
   @Suppress("unused")
   companion object {

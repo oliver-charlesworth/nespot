@@ -2,6 +2,7 @@ package choliver.nespot.apu
 
 import choliver.nespot.Data
 import choliver.nespot.apu.Sequencer.Ticks
+import choliver.nespot.observable
 
 class SynthContext<S : Synth>(
   val synth: S,
@@ -26,11 +27,15 @@ class SynthContext<S : Synth>(
   }
 
   var enabled by observable(false) {
-    if (!it) { synth.length = 0 }
+    if (!it) {
+      synth.length = 0
+    }
   }
 
   /** Gates length setting based on whether enabled. */
   var length by observable(0) {
-    if (enabled) { synth.length = it }
+    if (enabled) {
+      synth.length = it
+    }
   }
 }

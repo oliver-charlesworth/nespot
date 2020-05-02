@@ -18,10 +18,15 @@ import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nespot.nes.Nes.Companion.PPU_RAM_SIZE
 import choliver.nespot.runner.FakeJoypads
+import choliver.nespot.runner.KEY_MAPPINGS
+import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
+import choliver.nespot.runner.Screen.Event.KeyDown
+import choliver.nespot.runner.Screen.Event.KeyUp
 import java.io.File
 import java.io.InputStream
 import java.io.PrintStream
+import java.util.concurrent.LinkedBlockingQueue
 
 class Debugger(
   rom: ByteArray,
@@ -41,12 +46,9 @@ class Debugger(
   }
 
   private var nextStep = NextStep.INSTRUCTION
-
+  private val events = LinkedBlockingQueue<Screen.Event>()
   private val joypads = FakeJoypads()
-  private val screen = Screen(
-    onButtonDown = { joypads.down(1, it) },
-    onButtonUp = { joypads.up(1, it) }
-  )
+  private val screen = Screen(onEvent = { events += it })
 
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
 
@@ -89,6 +91,7 @@ class Debugger(
   }
 
   private fun handleCommand(cmd: Command): Boolean {
+    consumeEvents()
     when (cmd) {
       is Script -> script()
       is Repeat -> repeat(cmd.times) { handleCommand(cmd.cmd) }
@@ -107,6 +110,21 @@ class Debugger(
       is Error -> stdout.println(cmd.msg)
     }
     return true
+  }
+
+  private fun consumeEvents() {
+    val myEvents = mutableListOf<Screen.Event>()
+    events.drainTo(myEvents)
+    myEvents.forEach { e ->
+      when (e) {
+        is KeyDown -> when (val action = KEY_MAPPINGS[e.code]) {
+          is Joypad -> joypads.down(1, action.button)
+        }
+        is KeyUp -> when (val action = KEY_MAPPINGS[e.code]) {
+          is Joypad -> joypads.up(1, action.button)
+        }
+      }
+    }
   }
 
   // TODO - this recursion is weird - can we combine this + stdin with flatMap magic?

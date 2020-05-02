@@ -3,13 +3,16 @@ package choliver.nespot.runner
 import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
+import choliver.nespot.runner.KeyAction.Joypad
+import choliver.nespot.runner.KeyAction.ToggleFullScreen
+import choliver.nespot.runner.Screen.Event.*
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.LinkedBlockingQueue
 import kotlin.math.roundToInt
 import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
@@ -30,15 +33,11 @@ class Runner : CliktCommand(name = "nespot") {
     }
   }
 
-  inner class Inner(rom: Rom) {
-    private val isClosed = AtomicBoolean(false)
+  private inner class Inner(rom: Rom) {
+    private val events = LinkedBlockingQueue<Screen.Event>()
+    private var closed = false
     private val joypads = FakeJoypads()
-    private val screen = Screen(
-      isFullScreen = fullScreen,
-      onButtonDown = { joypads.down(1, it) },
-      onButtonUp = { joypads.up(1, it) },
-      onClose = { isClosed.set(true) }
-    )
+    private val screen = Screen(onEvent = { events += it })
     private val audio = Audio(frameRateHz = FRAME_RATE_HZ)
     private val nes = Nes(
       rom = rom,
@@ -48,6 +47,7 @@ class Runner : CliktCommand(name = "nespot") {
     )
 
     fun run() {
+      screen.fullScreen = fullScreen
       nes.inspection.fireReset()
       if (numPerfFrames == null) {
         runNormally(nes)
@@ -60,11 +60,12 @@ class Runner : CliktCommand(name = "nespot") {
       screen.show()
       audio.start()
 
-      while (!isClosed.get()) {
+      while (!closed) {
         measureNanoTime {
           nes.runToEndOfFrame()
           screen.redraw()
           audio.play()
+          consumeEvents()
         }
       }
 
@@ -76,6 +77,23 @@ class Runner : CliktCommand(name = "nespot") {
         repeat(numPerfFrames!!) { nes.runToEndOfFrame() }
       }
       println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")
+    }
+
+    private fun consumeEvents() {
+      val myEvents = mutableListOf<Screen.Event>()
+      events.drainTo(myEvents)
+      myEvents.forEach { e ->
+        when (e) {
+          is KeyDown -> when (val action = KEY_MAPPINGS[e.code]) {
+            is Joypad -> joypads.down(1, action.button)
+            is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
+          }
+          is KeyUp -> when (val action = KEY_MAPPINGS[e.code]) {
+            is Joypad -> joypads.up(1, action.button)
+          }
+          is Close -> closed = true
+        }
+      }
     }
   }
 }

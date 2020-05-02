@@ -1,9 +1,10 @@
 package choliver.nespot.runner
 
-import choliver.nespot.nes.Joypads.Button
+import choliver.nespot.observable
 import choliver.nespot.ppu.SCREEN_HEIGHT
 import choliver.nespot.ppu.SCREEN_WIDTH
 import choliver.nespot.ppu.TILE_SIZE
+import choliver.nespot.runner.Screen.Event.*
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D
 import javafx.scene.Group
@@ -24,17 +25,16 @@ import java.nio.IntBuffer
 
 class Screen(
   private val title: String = "NESpot",
-  private var isFullScreen: Boolean = false,
-  private val onButtonDown: (Button) -> Unit = {},
-  private val onButtonUp: (Button) -> Unit = {},
-  private val onClose: () -> Unit = {}
+  private val onEvent: (e: Event) -> Unit = {}
 ) {
-  companion object {
-    private const val SCALE = 4.0
-    private const val RATIO_STRETCH = (8.0 / 7.0)    // Evidence in forums, etc. that PAR is 8/7, and it looks good
+  sealed class Event {
+    data class KeyDown(val code: KeyCode) : Event()
+    data class KeyUp(val code: KeyCode) : Event()
+    object Close : Event()
   }
 
-  private var isStarted = false
+  var fullScreen by observable(false) { onFxThread { configureStageAndImage() } }
+  private var started = false
   private lateinit var stage: Stage
   private lateinit var imageView: ImageView
   private val _buffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
@@ -47,25 +47,21 @@ class Screen(
   )
 
   fun redraw() {
-    if (isStarted) {
-      Platform.runLater { pixelBuffer.updateBuffer { null } }
-    }
+    onFxThread { pixelBuffer.updateBuffer { null } }
   }
 
   fun show() {
-    if (!isStarted) {
+    if (!started) {
       start()
     }
-    Platform.runLater {
+    onFxThread {
       stage.show()
       stage.toFront()
     }
   }
 
   fun hide() {
-    if (isStarted) {
-      Platform.runLater { stage.hide() }
-    }
+    onFxThread { stage.hide() }
   }
 
   fun exit() {
@@ -79,7 +75,7 @@ class Screen(
       initStage()
       configureStageAndImage()
     }
-    isStarted = true
+    started = true
   }
 
   private fun initImageView() {
@@ -99,26 +95,17 @@ class Screen(
     stage.fullScreenExitKeyCombination = KeyCombination.NO_MATCH
     stage.title = title
     stage.scene = Scene(Group().apply { children.add(imageView) }, Color.BLACK)
-    stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) {
-      if (it.code == KeyCode.F) {
-        isFullScreen = !isFullScreen
-        configureStageAndImage()
-      } else {
-        codeToButton(it)?.let(onButtonDown)
-      }
-    }
-    stage.scene.addEventFilter(KeyEvent.KEY_RELEASED) {
-      codeToButton(it)?.let(onButtonUp)
-    }
+    stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) { onEvent(KeyDown(it.code)) }
+    stage.scene.addEventFilter(KeyEvent.KEY_RELEASED) { onEvent(KeyUp(it.code)) }
     stage.setOnCloseRequest {
       it.consume()
       hide()
-      onClose()
+      onEvent(Close)
     }
   }
 
   private fun configureStageAndImage() {
-    if (isFullScreen) {
+    if (fullScreen) {
       configureForFullScreen()
     } else {
       configureForWindowed()
@@ -162,15 +149,12 @@ class Screen(
     }
   }
 
-  private fun codeToButton(it: KeyEvent) = when (it.code) {
-    KeyCode.Z -> Button.A
-    KeyCode.X -> Button.B
-    KeyCode.CLOSE_BRACKET -> Button.START
-    KeyCode.OPEN_BRACKET -> Button.SELECT
-    KeyCode.LEFT -> Button.LEFT
-    KeyCode.RIGHT -> Button.RIGHT
-    KeyCode.UP -> Button.UP
-    KeyCode.DOWN -> Button.DOWN
-    else -> null
+  private fun onFxThread(block: () -> Unit) {
+    if (started) { Platform.runLater(block) }
+  }
+
+  companion object {
+    private const val SCALE = 4.0
+    private const val RATIO_STRETCH = (8.0 / 7.0)    // Evidence in forums, etc. that PAR is 8/7, and it looks good
   }
 }

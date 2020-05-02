@@ -1,7 +1,6 @@
 package choliver.nespot.runner
 
 import choliver.nespot.observable
-import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.ppu.SCREEN_HEIGHT
 import choliver.nespot.ppu.SCREEN_WIDTH
 import choliver.nespot.ppu.TILE_SIZE
@@ -34,8 +33,8 @@ class Screen(
     private const val RATIO_STRETCH = (8.0 / 7.0)    // Evidence in forums, etc. that PAR is 8/7, and it looks good
   }
 
-  var fullScreen by observable(false) { configureStageAndImage() }  // TODO - Only if showing?
-  private var isStarted = false
+  var fullScreen by observable(false) { onFxThread { configureStageAndImage() } }  // TODO - Only if showing?
+  private var started = false
   private lateinit var stage: Stage
   private lateinit var imageView: ImageView
   private val _buffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
@@ -48,25 +47,21 @@ class Screen(
   )
 
   fun redraw() {
-    if (isStarted) {
-      Platform.runLater { pixelBuffer.updateBuffer { null } }
-    }
+    onFxThread { pixelBuffer.updateBuffer { null } }
   }
 
   fun show() {
-    if (!isStarted) {
+    if (!started) {
       start()
     }
-    Platform.runLater {
+    onFxThread {
       stage.show()
       stage.toFront()
     }
   }
 
   fun hide() {
-    if (isStarted) {
-      Platform.runLater { stage.hide() }
-    }
+    onFxThread { stage.hide() }
   }
 
   fun exit() {
@@ -80,7 +75,7 @@ class Screen(
       initStage()
       configureStageAndImage()
     }
-    isStarted = true
+    started = true
   }
 
   private fun initImageView() {
@@ -154,15 +149,7 @@ class Screen(
     }
   }
 
-  private fun codeToButton(it: KeyEvent) = when (it.code) {
-    KeyCode.Z -> Button.A
-    KeyCode.X -> Button.B
-    KeyCode.CLOSE_BRACKET -> Button.START
-    KeyCode.OPEN_BRACKET -> Button.SELECT
-    KeyCode.LEFT -> Button.LEFT
-    KeyCode.RIGHT -> Button.RIGHT
-    KeyCode.UP -> Button.UP
-    KeyCode.DOWN -> Button.DOWN
-    else -> null
+  private fun onFxThread(block: () -> Unit) {
+    if (started) { Platform.runLater(block) }
   }
 }

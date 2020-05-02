@@ -58,6 +58,7 @@ class Runner : CliktCommand(name = "nespot") {
     )
 
     fun run() {
+      screen.fullScreen = fullScreen
       nes.inspection.fireReset()
       if (numPerfFrames == null) {
         runNormally(nes)
@@ -94,7 +95,12 @@ class Runner : CliktCommand(name = "nespot") {
       events.drainTo(myEvents)
       myEvents.forEach { e ->
         when (e) {
-          is KeyDown -> codeToButton(e.code)?.let { joypads.down(1, it) }
+          is KeyDown -> {
+            when (e.code) {
+              KeyCode.F -> screen.fullScreen = !screen.fullScreen
+              else -> codeToButton(e.code)?.let { joypads.down(1, it) }
+            }
+          }
           is KeyUp -> codeToButton(e.code)?.let { joypads.up(1, it) }
         }
       }

@@ -4,6 +4,7 @@ import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.Rational
 import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
+import choliver.nespot.observable
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 

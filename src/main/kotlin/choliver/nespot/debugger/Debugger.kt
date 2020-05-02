@@ -44,8 +44,8 @@ class Debugger(
 
   private val joypads = FakeJoypads()
   private val screen = Screen(
-    onButtonDown = { joypads.down(1, it) },
-    onButtonUp = { joypads.up(1, it) }
+//    onButtonDown = { joypads.down(1, it) },
+//    onButtonUp = { joypads.up(1, it) }
   )
 
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global

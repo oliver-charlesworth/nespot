@@ -1,5 +1,6 @@
 package choliver.nespot.runner
 
+import choliver.nespot.observable
 import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.ppu.SCREEN_HEIGHT
 import choliver.nespot.ppu.SCREEN_WIDTH
@@ -24,9 +25,8 @@ import java.nio.IntBuffer
 
 class Screen(
   private val title: String = "NESpot",
-  private var isFullScreen: Boolean = false,
-  private val onButtonDown: (Button) -> Unit = {},
-  private val onButtonUp: (Button) -> Unit = {},
+  private val onKeyDown: (code: KeyCode) -> Unit = {},
+  private val onKeyUp: (code: KeyCode) -> Unit = {},
   private val onClose: () -> Unit = {}
 ) {
   companion object {
@@ -34,6 +34,7 @@ class Screen(
     private const val RATIO_STRETCH = (8.0 / 7.0)    // Evidence in forums, etc. that PAR is 8/7, and it looks good
   }
 
+  var fullScreen by observable(false) { configureStageAndImage() }  // TODO - Only if showing?
   private var isStarted = false
   private lateinit var stage: Stage
   private lateinit var imageView: ImageView
@@ -99,17 +100,8 @@ class Screen(
     stage.fullScreenExitKeyCombination = KeyCombination.NO_MATCH
     stage.title = title
     stage.scene = Scene(Group().apply { children.add(imageView) }, Color.BLACK)
-    stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) {
-      if (it.code == KeyCode.F) {
-        isFullScreen = !isFullScreen
-        configureStageAndImage()
-      } else {
-        codeToButton(it)?.let(onButtonDown)
-      }
-    }
-    stage.scene.addEventFilter(KeyEvent.KEY_RELEASED) {
-      codeToButton(it)?.let(onButtonUp)
-    }
+    stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) { onKeyDown(it.code) }
+    stage.scene.addEventFilter(KeyEvent.KEY_RELEASED) { onKeyUp(it.code) }
     stage.setOnCloseRequest {
       it.consume()
       hide()
@@ -118,7 +110,7 @@ class Screen(
   }
 
   private fun configureStageAndImage() {
-    if (isFullScreen) {
+    if (fullScreen) {
       configureForFullScreen()
     } else {
       configureForWindowed()

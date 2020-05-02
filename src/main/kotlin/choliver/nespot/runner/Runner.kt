@@ -2,13 +2,18 @@ package choliver.nespot.runner
 
 import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Nes
+import choliver.nespot.runner.Runner.Event.KeyDown
+import choliver.nespot.runner.Runner.Event.KeyUp
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
+import javafx.scene.input.KeyCode
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 import kotlin.system.measureNanoTime
@@ -30,13 +35,18 @@ class Runner : CliktCommand(name = "nespot") {
     }
   }
 
-  inner class Inner(rom: Rom) {
+  private sealed class Event {
+    data class KeyDown(val code: KeyCode) : Event()
+    data class KeyUp(val code: KeyCode) : Event()
+  }
+
+  private inner class Inner(rom: Rom) {
+    private val events = LinkedBlockingQueue<Event>()
     private val isClosed = AtomicBoolean(false)
     private val joypads = FakeJoypads()
     private val screen = Screen(
-      isFullScreen = fullScreen,
-      onButtonDown = { joypads.down(1, it) },
-      onButtonUp = { joypads.up(1, it) },
+      onKeyDown = { events += KeyDown(it) },
+      onKeyUp = { events += KeyUp(it) },
       onClose = { isClosed.set(true) }
     )
     private val audio = Audio(frameRateHz = FRAME_RATE_HZ)
@@ -65,6 +75,7 @@ class Runner : CliktCommand(name = "nespot") {
           nes.runToEndOfFrame()
           screen.redraw()
           audio.play()
+          consumeEvents()
         }
       }
 
@@ -76,6 +87,29 @@ class Runner : CliktCommand(name = "nespot") {
         repeat(numPerfFrames!!) { nes.runToEndOfFrame() }
       }
       println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")
+    }
+
+    private fun consumeEvents() {
+      val myEvents = mutableListOf<Event>()
+      events.drainTo(myEvents)
+      myEvents.forEach { e ->
+        when (e) {
+          is KeyDown -> codeToButton(e.code)?.let { joypads.down(1, it) }
+          is KeyUp -> codeToButton(e.code)?.let { joypads.up(1, it) }
+        }
+      }
+    }
+
+    private fun codeToButton(code: KeyCode) = when (code) {
+      KeyCode.Z -> Button.A
+      KeyCode.X -> Button.B
+      KeyCode.CLOSE_BRACKET -> Button.START
+      KeyCode.OPEN_BRACKET -> Button.SELECT
+      KeyCode.LEFT -> Button.LEFT
+      KeyCode.RIGHT -> Button.RIGHT
+      KeyCode.UP -> Button.UP
+      KeyCode.DOWN -> Button.DOWN
+      else -> null
     }
   }
 }

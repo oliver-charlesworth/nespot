@@ -1,5 +1,6 @@
 package choliver.nespot.apu
 
+import choliver.nespot.observable
 import kotlin.math.max
 
 // http://wiki.nesdev.com/w/index.php/APU_Noise

@@ -3,6 +3,7 @@ package choliver.nespot.apu
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
+import choliver.nespot.observable
 import java.lang.Integer.max
 import java.lang.Integer.min
 

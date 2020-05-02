@@ -1,4 +1,4 @@
-package choliver.nespot.apu
+package choliver.nespot
 
 import kotlin.properties.Delegates.observable
 

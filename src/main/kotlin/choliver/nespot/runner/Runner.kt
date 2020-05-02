@@ -3,8 +3,7 @@ package choliver.nespot.runner
 import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
-import choliver.nespot.runner.KeyAction.Joypad
-import choliver.nespot.runner.KeyAction.ToggleFullScreen
+import choliver.nespot.runner.KeyAction.*
 import choliver.nespot.runner.Screen.Event.*
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -52,13 +51,13 @@ class Runner : CliktCommand(name = "nespot") {
       screen.fullScreen = fullScreen
       nes.inspection.fireReset()
       if (numPerfFrames == null) {
-        runNormally(nes)
+        runNormally()
       } else {
-        runPerfTest(nes)
+        runPerfTest()
       }
     }
 
-    private fun runNormally(nes: Nes) {
+    private fun runNormally() {
       screen.show()
       audio.start()
 
@@ -74,7 +73,7 @@ class Runner : CliktCommand(name = "nespot") {
       screen.exit()
     }
 
-    private fun runPerfTest(nes: Nes) {
+    private fun runPerfTest() {
       val runtimeMs = measureTimeMillis {
         repeat(numPerfFrames!!) { nes.runToEndOfFrame() }
       }
@@ -89,6 +88,7 @@ class Runner : CliktCommand(name = "nespot") {
           is KeyDown -> when (val action = KEY_MAPPINGS[e.code]) {
             is Joypad -> joypads.down(1, action.button)
             is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
+            is Snapshot -> dumpState()
           }
           is KeyUp -> when (val action = KEY_MAPPINGS[e.code]) {
             is Joypad -> joypads.up(1, action.button)
@@ -98,7 +98,7 @@ class Runner : CliktCommand(name = "nespot") {
       }
     }
 
-    private fun dumpState(nes: Nes) {
+    private fun dumpState() {
       val mapper = jacksonObjectMapper()
       mapper.enable(SerializationFeature.INDENT_OUTPUT)
       mapper.writeValueAsString(nes.snapshot())

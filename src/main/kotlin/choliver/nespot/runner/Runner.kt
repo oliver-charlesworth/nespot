@@ -5,11 +5,7 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
 import choliver.nespot.runner.KeyAction.*
 import choliver.nespot.runner.Screen.Event.*
-import choliver.nespot.snapshot.restoreFrom
-import choliver.nespot.snapshot.toSnapshot
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import choliver.nespot.snapshot.SnapshotManager
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
@@ -50,6 +46,7 @@ class Runner : CliktCommand(name = "nespot") {
       audioBuffer = audio.buffer,
       joypads = joypads
     )
+    private val snapshotManager = SnapshotManager(nes.diagnostics)
 
     fun run() {
       screen.fullScreen = fullScreen
@@ -94,7 +91,7 @@ class Runner : CliktCommand(name = "nespot") {
           is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
             is Joypad -> joypads.down(1, action.button)
             is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
-            is Snapshot -> snapshot()
+            is Snapshot -> snapshotManager.snapshotToStdout()
             is Restore -> restore()
           }
           is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
@@ -107,22 +104,11 @@ class Runner : CliktCommand(name = "nespot") {
 
     private fun restore() {
       if (snapshotFile != null) {
-        restoreFromSnapshot()
+        snapshotManager.restore(snapshotFile!!)
       } else {
         // TODO - reset
         nes.diagnostics.fireReset()
       }
-    }
-
-    private fun restoreFromSnapshot() {
-      val mapper = jacksonObjectMapper()
-      nes.diagnostics.restoreFrom(mapper.readValue(snapshotFile!!))
-    }
-
-    private fun snapshot() {
-      val mapper = jacksonObjectMapper()
-      mapper.enable(SerializationFeature.INDENT_OUTPUT)
-      println(mapper.writeValueAsString(nes.diagnostics.toSnapshot()))
     }
   }
 }

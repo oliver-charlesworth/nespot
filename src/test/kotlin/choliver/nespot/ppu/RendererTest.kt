@@ -661,10 +661,10 @@ class RendererTest {
     bgPatternTable = bgPatternTable,
     sprPatternTable = sprPatternTable,
     coords = Coords(
-            xCoarse = xCoarse,
-            xFine = xFine,
-            yCoarse = yCoarse,
-            yFine = yFine
+      xCoarse = xCoarse,
+      xFine = xFine,
+      yCoarse = yCoarse,
+      yFine = yFine
     ),
     scanline = yScanline
   ))

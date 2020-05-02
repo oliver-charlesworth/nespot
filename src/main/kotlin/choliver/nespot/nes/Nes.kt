@@ -105,6 +105,7 @@ class Nes(
     }
   }
 
+  // TODO - consolidate with Inspection
   inner class Inspection2 internal constructor() {
     val cpu = this@Nes.cpu.inspection
     val ppu = this@Nes.ppu.inspection

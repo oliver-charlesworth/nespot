@@ -42,7 +42,7 @@ class Ppu(
           inVbl = true
 
           // TODO - this is set if isVblEnabled *becomes* true during VBL phase
-          if (isVblEnabled) {
+          if (vblEnabled) {
             onVbl()
           }
         }
@@ -102,7 +102,7 @@ class Ppu(
             largeSprites = data.isBitSet(5)
             // TODO - is master/slave important?
           }
-          isVblEnabled = data.isBitSet(7)
+          vblEnabled = data.isBitSet(7)
           with(coords) {
             xNametable = data and 0x01
             yNametable = (data and 0x02) shr 1
@@ -110,16 +110,16 @@ class Ppu(
         }
 
         REG_PPUMASK -> {
-          isGreyscale = data.isBitSet(0)
+          greyscale = data.isBitSet(0)
           with(rendererIn) {
             bgLeftTileEnabled = data.isBitSet(1)
             sprLeftTileEnabled = data.isBitSet(2)
             bgEnabled = data.isBitSet(3)
             sprEnabled = data.isBitSet(4)
           }
-          isRedEmphasized = data.isBitSet(5)
-          isGreenEmphasized = data.isBitSet(6)
-          isBlueEmphasized = data.isBitSet(7)
+          redEmphasized = data.isBitSet(5)
+          greenEmphasized = data.isBitSet(6)
+          blueEmphasized = data.isBitSet(7)
         }
 
         REG_OAMADDR -> oamAddr = data

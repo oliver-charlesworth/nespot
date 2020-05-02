@@ -36,7 +36,7 @@ class Cpu(
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {
     interrupt(addr, updateStack = updateStack, setBreakFlag = false)
-    state.p.i = disableIrq || state.p.i
+    _state.p.i = disableIrq || _state.p.i
     return NUM_INTERRUPT_CYCLES
   }
 
@@ -213,21 +213,21 @@ class Cpu(
   private fun branch(cond: Boolean) {
     if (cond) {
       extraCycles++
-      if (((state.pc xor addr) and 0xFF00) != 0) {
+      if (((_state.pc xor addr) and 0xFF00) != 0) {
         extraCycles++   // Page change
       }
-      state.pc = addr
+      _state.pc = addr
     }
   }
 
   private fun push(data: Data) {
-    memory.store(state.s or 0x100, data)
-    state.s = (state.s - 1).data()
+    memory.store(_state.s or 0x100, data)
+    _state.s = (_state.s - 1).data()
   }
 
   private fun pop(): Data {
-    state.s = (state.s + 1).data()
-    return memory.load(state.s or 0x100)
+    _state.s = (_state.s + 1).data()
+    return memory.load(_state.s or 0x100)
   }
 
   private fun add(rhs: Data) = _state.apply {
@@ -281,8 +281,8 @@ class Cpu(
   }
 
   private fun updateZN(data: Data) {
-    state.p.z = data.isZero()
-    state.p.n = data.isNeg()
+    _state.p.z = data.isZero()
+    _state.p.n = data.isNeg()
   }
 
   companion object {

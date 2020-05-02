@@ -101,7 +101,7 @@ class Runner : CliktCommand(name = "nespot") {
     private fun dumpState() {
       val mapper = jacksonObjectMapper()
       mapper.enable(SerializationFeature.INDENT_OUTPUT)
-      mapper.writeValueAsString(nes.snapshot())
+      println(mapper.writeValueAsString(nes.snapshot()))
     }
   }
 }

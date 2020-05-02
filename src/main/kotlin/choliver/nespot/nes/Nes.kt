@@ -111,8 +111,8 @@ class Nes(
     ppu = ppu.state,
     ram = cpuRam.snapshot(),
     vram = ppuRam.snapshot(),
-    palette = emptyList(),    // TODO
-    oam = emptyList()         // TODO
+    palette = "",    // TODO
+    oam = ""         // TODO
   )
 
   // TODO - consolidate all the constants

@@ -7,12 +7,14 @@ import javafx.scene.input.KeyCode.*
 sealed class KeyAction {
   object ToggleFullScreen : KeyAction()
   object Snapshot : KeyAction()
+  object Reset : KeyAction()
   data class Joypad(val button: Button) : KeyAction()
 }
 
 val KEY_MAPPINGS = mapOf(
   F to ToggleFullScreen,
   S to Snapshot,
+  R to Reset,
   Z to Joypad(Button.A),
   X to Joypad(Button.B),
   CLOSE_BRACKET to Joypad(Button.START),

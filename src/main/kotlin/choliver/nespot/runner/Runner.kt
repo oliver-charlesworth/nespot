@@ -54,11 +54,7 @@ class Runner : CliktCommand(name = "nespot") {
     fun run() {
       screen.fullScreen = fullScreen
 
-      if (snapshotFile != null) {
-        loadState()
-      } else {
-        nes.inspection.fireReset()
-      }
+      reset()
 
       if (numPerfFrames == null) {
         runNormally()
@@ -98,7 +94,8 @@ class Runner : CliktCommand(name = "nespot") {
           is KeyDown -> when (val action = KEY_MAPPINGS[e.code]) {
             is Joypad -> joypads.down(1, action.button)
             is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
-            is Snapshot -> dumpState()
+            is Snapshot -> snapshot()
+            is Reset -> reset()
           }
           is KeyUp -> when (val action = KEY_MAPPINGS[e.code]) {
             is Joypad -> joypads.up(1, action.button)
@@ -108,12 +105,20 @@ class Runner : CliktCommand(name = "nespot") {
       }
     }
 
-    private fun loadState() {
+    private fun reset() {
+      if (snapshotFile != null) {
+        loadFromSnapshot()
+      } else {
+        nes.inspection.fireReset()
+      }
+    }
+
+    private fun loadFromSnapshot() {
       val mapper = jacksonObjectMapper()
       nes.inspection2.fromSnapshot(mapper.readValue(snapshotFile!!))
     }
 
-    private fun dumpState() {
+    private fun snapshot() {
       val mapper = jacksonObjectMapper()
       mapper.enable(SerializationFeature.INDENT_OUTPUT)
       println(mapper.writeValueAsString(nes.inspection2.toSnapshot()))

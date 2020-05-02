@@ -5,11 +5,7 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
 import choliver.nespot.runner.KeyAction.*
 import choliver.nespot.runner.Screen.Event.*
-import choliver.nespot.snapshot.fromSnapshot
-import choliver.nespot.snapshot.toSnapshot
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import choliver.nespot.snapshot.SnapshotManager
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
@@ -50,11 +46,12 @@ class Runner : CliktCommand(name = "nespot") {
       audioBuffer = audio.buffer,
       joypads = joypads
     )
+    private val snapshotManager = SnapshotManager(nes.diagnostics)
 
     fun run() {
       screen.fullScreen = fullScreen
 
-      reset()
+      restore()
 
       if (numPerfFrames == null) {
         runNormally()
@@ -91,13 +88,13 @@ class Runner : CliktCommand(name = "nespot") {
       events.drainTo(myEvents)
       myEvents.forEach { e ->
         when (e) {
-          is KeyDown -> when (val action = KEY_MAPPINGS[e.code]) {
+          is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
             is Joypad -> joypads.down(1, action.button)
             is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
-            is Snapshot -> snapshot()
-            is Reset -> reset()
+            is Snapshot -> snapshotManager.snapshotToStdout()
+            is Restore -> restore()
           }
-          is KeyUp -> when (val action = KEY_MAPPINGS[e.code]) {
+          is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
             is Joypad -> joypads.up(1, action.button)
           }
           is Close -> closed = true
@@ -105,23 +102,13 @@ class Runner : CliktCommand(name = "nespot") {
       }
     }
 
-    private fun reset() {
+    private fun restore() {
       if (snapshotFile != null) {
-        loadFromSnapshot()
+        snapshotManager.restore(snapshotFile!!)
       } else {
-        nes.inspection.fireReset()
+        // TODO - reset
+        nes.diagnostics.fireReset()
       }
-    }
-
-    private fun loadFromSnapshot() {
-      val mapper = jacksonObjectMapper()
-      nes.inspection2.fromSnapshot(mapper.readValue(snapshotFile!!))
-    }
-
-    private fun snapshot() {
-      val mapper = jacksonObjectMapper()
-      mapper.enable(SerializationFeature.INDENT_OUTPUT)
-      println(mapper.writeValueAsString(nes.inspection2.toSnapshot()))
     }
   }
 }

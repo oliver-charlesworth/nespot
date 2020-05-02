@@ -27,6 +27,7 @@ or:
 | --- | --- |
 | `-f` / `--fullscreen` | Full-screen mode |
 | `-i` / `--info` | Print ROM info |
+| `-s <file>` / `--snapshot <file>` | Restore from snapshot file | 
 
 
 ## Prerequisites
@@ -44,6 +45,8 @@ NESpot is built with JDK 11.  It may work with older Java versions, but this has
 | [ | Controller Select |
 | ] | Controller Start |
 | F | Toggle full-screen mode |
+| R | Restore initial state |
+| S | Create snapshot (currently dumped to console) |
 | Cmd+Q | Quit |
 
 

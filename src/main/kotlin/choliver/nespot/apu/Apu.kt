@@ -1,14 +1,14 @@
 package choliver.nespot.apu
 
 import choliver.nespot.*
-import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
-import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
+import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
+import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
 
 // TODO - frame interrupt
 class Apu(
   private val buffer: ByteArray,
   memory: Memory,
-  private val sequencer: Sequencer = Sequencer(),
+  private val sequencer: FrameSequencer = FrameSequencer(),
   private val channels: Channels = Channels(
     sq1 = SynthContext(SquareSynth()),
     sq2 = SynthContext(SquareSynth()),

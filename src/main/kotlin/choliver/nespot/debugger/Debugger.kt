@@ -18,7 +18,7 @@ import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nespot.nes.Nes.Companion.PPU_RAM_SIZE
 import choliver.nespot.runner.FakeJoypads
-import choliver.nespot.runner.KEY_MAPPINGS
+import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
 import choliver.nespot.runner.Screen.Event.KeyDown
@@ -62,7 +62,7 @@ class Debugger(
     onNmi = { nextStep = NextStep.NMI },
     onIrq = { nextStep = NextStep.IRQ },
     onStore = { addr, data -> stores += (addr to data) }
-  ).inspection
+  ).diagnostics
   private val points = PointManager()
   private val stack = CallStackManager(nes)
   private var stats = Stats(0)
@@ -81,7 +81,7 @@ class Debugger(
   private fun consume(parser: CommandParser, enablePrompts: Boolean) {
     while (true) {
       if (enablePrompts) {
-        stdout.print("[${nes.state.pc.format()}]: ")
+        stdout.print("[${nes.cpu.state.pc.format()}]: ")
       }
 
       if (!handleCommand(parser.next())) {
@@ -117,10 +117,10 @@ class Debugger(
     events.drainTo(myEvents)
     myEvents.forEach { e ->
       when (e) {
-        is KeyDown -> when (val action = KEY_MAPPINGS[e.code]) {
+        is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> joypads.down(1, action.button)
         }
-        is KeyUp -> when (val action = KEY_MAPPINGS[e.code]) {
+        is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> joypads.up(1, action.button)
         }
       }
@@ -168,15 +168,15 @@ class Debugger(
       }
 
       // Prevent Until(currentPC) from doing nothing
-      is Until -> oneThenUntil { nes.state.pc != cmd.pc }
+      is Until -> oneThenUntil { nes.cpu.state.pc != cmd.pc }
 
       is UntilOffset -> {
         val target = nextPc(cmd.offset)
-        until { nes.state.pc != target }
+        until { nes.cpu.state.pc != target }
       }
 
       // Prevent UntilOpcode(currentOpcode) from doing nothing
-      is UntilOpcode -> oneThenUntil { instAt(nes.state.pc).opcode != cmd.op }
+      is UntilOpcode -> oneThenUntil { instAt(nes.cpu.state.pc).opcode != cmd.op }
 
       // One more so that the interrupt actually occurs
       is UntilNmi -> untilThenOne { nextStep != NextStep.NMI }
@@ -233,7 +233,7 @@ class Debugger(
     when (cmd) {
       is Info.Stats -> displayStats()
 
-      is Info.Reg -> stdout.println(nes.state)
+      is Info.Reg -> stdout.println(nes.cpu.state)
 
       is Info.Break -> if (points.breakpoints.isEmpty()) {
         stdout.println("No breakpoints")
@@ -280,7 +280,7 @@ class Debugger(
       is Info.InspectInst -> {
         var pc = cmd.pc
         repeat(cmd.num) {
-          val decoded = nes.decodeAt(pc)
+          val decoded = nes.cpu.decodeAt(pc)
           stdout.println("0x%04x: ${decoded.instruction}".format(pc))
           pc = decoded.nextPc
         }
@@ -327,8 +327,7 @@ class Debugger(
     }
 
     stores.clear()
-    nes.step()
-    if (nes.endOfFrame) {
+    if (nes.sequencer.step()) {
       screen.redraw()
     }
 
@@ -347,7 +346,7 @@ class Debugger(
 
   private fun maybeTraceInstruction() {
     if (isVerbose) {
-      stdout.println("${nes.state.pc.format()}: ${instAt(nes.state.pc)}")  // TODO - de-dupe with InspectInst handler
+      stdout.println("${nes.cpu.state.pc.format()}: ${instAt(nes.cpu.state.pc)}")
     }
   }
 
@@ -374,7 +373,7 @@ class Debugger(
       }
     }
 
-  private fun isBreakpointHit() = when (val bp = points.breakpoints[nes.state.pc]) {
+  private fun isBreakpointHit() = when (val bp = points.breakpoints[nes.cpu.state.pc]) {
     null -> true
     else -> {
       stdout.println("Hit breakpoint #${bp.num}")
@@ -383,9 +382,9 @@ class Debugger(
   }
 
   private fun nextPc(offset: Int = 1) =
-    (0 until offset).fold(nes.state.pc) { pc, _ -> nes.decodeAt(pc).nextPc }
+    (0 until offset).fold(nes.cpu.state.pc) { pc, _ -> nes.cpu.decodeAt(pc).nextPc }
 
-  private fun instAt(pc: Address) = nes.decodeAt(pc).instruction
+  private fun instAt(pc: Address) = nes.cpu.decodeAt(pc).instruction
 
   private fun displayDisplays() {
     displays.forEach { (k, v) ->

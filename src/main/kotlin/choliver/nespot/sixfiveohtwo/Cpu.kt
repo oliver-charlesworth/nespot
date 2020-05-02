@@ -15,34 +15,32 @@ class Cpu(
   private val memory: Memory,
   private val pollReset: () -> Boolean,
   private val pollIrq: () -> Boolean,
-  private val pollNmi: () -> Boolean,
-  initialState: State = State()
+  private val pollNmi: () -> Boolean
 ) {
   // This flattened mutable operating state means this is strictly non-reentrant
   private var extraCycles: Int = 0
   private var operand: Operand = Implied
   private var addr: Address = 0x0000
-  private var _state = initialState
-  val state get() = _state.copy()
+  private var state = State()
 
   private val decoder = InstructionDecoder(memory)
 
   fun executeStep() = when {
     pollReset() -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
     pollNmi() -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
-    pollIrq() -> if (_state.p.i) executeInstruction() else vector(VECTOR_IRQ, updateStack = true, disableIrq = true)
+    pollIrq() -> if (state.p.i) executeInstruction() else vector(VECTOR_IRQ, updateStack = true, disableIrq = true)
     else -> executeInstruction()
   }
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {
     interrupt(addr, updateStack = updateStack, setBreakFlag = false)
-    _state.p.i = disableIrq || _state.p.i
+    state.p.i = state.p.i || disableIrq
     return NUM_INTERRUPT_CYCLES
   }
 
   private fun executeInstruction(): Int {
-    val decoded = decodeAt(_state.pc)
-    _state.pc = decoded.nextPc
+    val decoded = decodeAt(state.pc)
+    state.pc = decoded.nextPc
     operand = decoded.instruction.operand
     addr = decoded.addr
     extraCycles = 0
@@ -50,10 +48,10 @@ class Cpu(
     return decoded.numCycles + extraCycles
   }
 
-  fun decodeAt(pc: Address) = decoder.decode(pc = pc, x = _state.x, y = _state.y)
+  private fun decodeAt(pc: Address) = decoder.decode(pc = pc, x = state.x, y = state.y)
 
   private fun execute(op: Opcode) {
-    _state.apply {
+    state.apply {
       when (op) {
         ADC -> add(resolve())
         SBC -> add(resolve() xor 0xFF)
@@ -213,24 +211,24 @@ class Cpu(
   private fun branch(cond: Boolean) {
     if (cond) {
       extraCycles++
-      if (((_state.pc xor addr) and 0xFF00) != 0) {
+      if (((state.pc xor addr) and 0xFF00) != 0) {
         extraCycles++   // Page change
       }
-      _state.pc = addr
+      state.pc = addr
     }
   }
 
   private fun push(data: Data) {
-    memory[_state.s or 0x100] = data
-    _state.s = (_state.s - 1).data()
+    memory[state.s or 0x100] = data
+    state.s = (state.s - 1).data()
   }
 
   private fun pop(): Data {
-    _state.s = (_state.s + 1).data()
-    return memory[_state.s or 0x100]
+    state.s = (state.s + 1).data()
+    return memory[state.s or 0x100]
   }
 
-  private fun add(rhs: Data) = _state.apply {
+  private fun add(rhs: Data) = state.apply {
     val c = p.c
     val raw = a + rhs + (if (c) 1 else 0)
     val result = raw.data()
@@ -243,7 +241,7 @@ class Cpu(
     updateZN(result)
   }
 
-  private fun compare(lhs: Data, rhs: Data) = _state.apply {
+  private fun compare(lhs: Data, rhs: Data) = state.apply {
     val raw = (lhs + (rhs xor 0xFF) + 1)
     val result = raw.data()
 
@@ -251,7 +249,7 @@ class Cpu(
     updateZN(result)
   }
 
-  private fun interrupt(vector: Address, updateStack: Boolean, setBreakFlag: Boolean) = _state.apply {
+  private fun interrupt(vector: Address, updateStack: Boolean, setBreakFlag: Boolean) = state.apply {
     if (updateStack) {
       push(pc.hi())
       push(pc.lo())
@@ -265,7 +263,7 @@ class Cpu(
   }
 
   private fun resolve() = when (operand) {
-    is Accumulator -> _state.a
+    is Accumulator -> state.a
     is Immediate -> (operand as Immediate).literal
     else -> memory[addr]
   }
@@ -273,7 +271,7 @@ class Cpu(
   private fun storeResult(data: Data) {
     val d = data.data()
     if (operand is Accumulator) {
-      _state.a = d
+      state.a = d
     } else {
       memory[addr] = d
     }
@@ -281,17 +279,18 @@ class Cpu(
   }
 
   private fun updateZN(data: Data) {
-    _state.p.z = data.isZero()
-    _state.p.n = data.isNeg()
+    state.p.z = data.isZero()
+    state.p.n = data.isNeg()
   }
 
-  inner class Inspection internal constructor() {
+  inner class Diagnostics internal constructor() {
     var state
-      get() = _state
-      set(value) { _state = value.copy() }
+      get() = this@Cpu.state
+      set(value) { this@Cpu.state = value.copy() }
+    fun decodeAt(pc: Address) = this@Cpu.decodeAt(pc)
   }
 
-  val inspection = Inspection()
+  val diagnostics = Diagnostics()
 
   companion object {
     const val VECTOR_NMI: Address = 0xFFFA

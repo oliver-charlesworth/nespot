@@ -1,16 +1,16 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
-import choliver.nespot.apu.Sequencer.Mode.FOUR_STEP
-import choliver.nespot.apu.Sequencer.Ticks
+import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
+import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
+import choliver.nespot.apu.FrameSequencer.Ticks
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 import choliver.nespot.toRational
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class SequencerTest {
-  private val sequencer = Sequencer(
+class FrameSequencerTest {
+  private val sequencer = FrameSequencer(
     cyclesPerSample = 4.toRational(),
     frameSequencerFourStepPeriodCycles = 48,
     frameSequencerFiveStepPeriodCycles = 60
@@ -84,5 +84,5 @@ class SequencerTest {
 
   private fun List<Ticks>.replaceFirst(ticks: Ticks) = listOf(ticks) + drop(1)
 
-  private fun Sequencer.take(num: Int) = List(num) { take() }
+  private fun FrameSequencer.take(num: Int) = List(num) { take() }
 }

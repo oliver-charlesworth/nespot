@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.Sequencer.Mode.FIVE_STEP
+import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.toRational
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
@@ -13,7 +13,7 @@ class ApuTest {
   private val tri = spy(SynthContext(synth = mock<TriangleSynth>(), timer = mock()))
   private val noi = spy(SynthContext(synth = mock<NoiseSynth>(), envelope = mock(), timer = mock()))
   private val dmc = spy(SynthContext(synth = mock<DmcSynth>(), timer = mock()))
-  private val sequencer = mock<Sequencer>()
+  private val sequencer = mock<FrameSequencer>()
   private val apu = Apu(
     buffer = ByteArray(0),
     memory = mock(),

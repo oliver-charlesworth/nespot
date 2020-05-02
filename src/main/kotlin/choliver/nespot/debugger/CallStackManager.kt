@@ -14,7 +14,7 @@ import choliver.nespot.sixfiveohtwo.model.Opcode.JSR
 import java.util.*
 
 class CallStackManager(
-  private val nes: Nes.Inspection
+  private val nes: Nes.Diagnostics
 ) {
   enum class FrameType {
     JSR,
@@ -41,7 +41,7 @@ class CallStackManager(
   private var valid = false // Becomes valid once S initialised
 
   fun preInstruction() {
-    val decoded = nes.decodeAt(nes.state.pc)
+    val decoded = nes.cpu.decodeAt(nes.cpu.state.pc)
 
     when (decoded.instruction.opcode) {
       TXS -> if (valid) {
@@ -122,7 +122,7 @@ class CallStackManager(
 
   fun postInstruction() {
     val latest = map.entries.last()
-    latest.setValue(latest.value.copy(current = nes.state.pc))
+    latest.setValue(latest.value.copy(current = nes.cpu.state.pc))
   }
 
   private fun pushFrame(type: FrameType, start: Address, current: Address = start) {

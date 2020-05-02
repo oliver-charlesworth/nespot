@@ -1,6 +1,9 @@
 package choliver.nespot.nes
 
-import choliver.nespot.*
+import choliver.nespot.CYCLES_PER_FRAME
+import choliver.nespot.CYCLES_PER_SAMPLE
+import choliver.nespot.CYCLES_PER_SCANLINE
+import choliver.nespot.Rational
 import choliver.nespot.apu.Apu
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
@@ -10,11 +13,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import kotlin.math.ceil
 
-class OrchestratorTest {
+class SequencerTest {
   private val cpu = mock<Cpu>()
   private val apu = mock<Apu>()
   private val ppu = mock<Ppu>()
-  private val orchestrator = Orchestrator(cpu, apu, ppu)
+  private val sequencer = Sequencer(cpu, apu, ppu)
 
   @Test
   fun `executes APU sample generation continuously`() {
@@ -23,11 +26,11 @@ class OrchestratorTest {
       1
     )
 
-    orchestrator.step()
+    sequencer.step()
 
     verifyZeroInteractions(apu)   // Not quite enough
 
-    orchestrator.step()           // One more cycle
+    sequencer.step()              // One more cycle
 
     verify(apu).generateSample()  // Oh yes
   }
@@ -36,11 +39,11 @@ class OrchestratorTest {
   fun `executes PPU scanline exactly at end of scanline`() {
     whenever(cpu.executeStep()) doReturn 4
 
-    repeat((CYCLES_PER_SCANLINE / 4).roundUp() - 1) { orchestrator.step() } // One before end of scanline
+    repeat((CYCLES_PER_SCANLINE / 4).roundUp() - 1) { sequencer.step() } // One before end of scanline
 
     verifyZeroInteractions(ppu)     // Not quite enough
 
-    orchestrator.step()             // One more step
+    sequencer.step()                // One more step
 
     verify(ppu).executeScanline()   // Oh yes
   }
@@ -49,13 +52,10 @@ class OrchestratorTest {
   fun `sets EOF exactly at end of frame`() {
     whenever(cpu.executeStep()) doReturn 1
 
-    repeat(CYCLES_PER_FRAME.roundUp() - 1) { orchestrator.step() }  // One before end of frame
+    repeat(CYCLES_PER_FRAME.roundUp() - 2) { sequencer.step() }  // Two before end of frame
 
-    assertFalse(orchestrator.endOfFrame)  // Not quite enough
-
-    orchestrator.step()                   // One more step
-
-    assertTrue(orchestrator.endOfFrame)   // Oh yes
+    assertFalse(sequencer.step())  // Not quite enough
+    assertTrue(sequencer.step())   // Oh yes
   }
 
   private fun Rational.roundUp() = ceil(toDouble()).toInt()

@@ -1,7 +1,7 @@
 package choliver.nespot.apu
 
 import choliver.nespot.Data
-import choliver.nespot.apu.Sequencer.Ticks
+import choliver.nespot.apu.FrameSequencer.Ticks
 import choliver.nespot.observable
 
 class SynthContext<S : Synth>(

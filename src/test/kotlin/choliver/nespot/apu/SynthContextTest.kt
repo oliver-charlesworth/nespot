@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.Sequencer.Ticks
+import choliver.nespot.apu.FrameSequencer.Ticks
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

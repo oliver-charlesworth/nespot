@@ -1,4 +1,4 @@
-import org.gradle.api.tasks.testing.logging.TestLogEvent.*
+import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
 
 plugins {
   application
@@ -31,7 +31,6 @@ tasks.test {
   testLogging {
     events(FAILED)
   }
-  maxParallelForks = Runtime.getRuntime().availableProcessors()
 }
 
 application {

@@ -23,7 +23,7 @@ class Cpu(
   private var operand: Operand = Implied
   private var addr: Address = 0x0000
   private var _state = initialState
-  val state get() = _state
+  val state get() = _state.copy()
 
   private val decoder = InstructionDecoder(memory)
 

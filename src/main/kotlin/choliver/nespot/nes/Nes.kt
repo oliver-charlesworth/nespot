@@ -11,6 +11,7 @@ import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
 import choliver.nespot.sixfiveohtwo.InstructionDecoder
 import choliver.nespot.sixfiveohtwo.model.State
+import choliver.nespot.snapshot.Snapshot
 import java.nio.IntBuffer
 
 class Nes(
@@ -104,6 +105,15 @@ class Nes(
       listener()
     }
   }
+
+  fun snapshot() = Snapshot(
+    cpu = cpu.state,
+    ppu = ppu.state,
+    ram = cpuRam.snapshot(),
+    vram = ppuRam.snapshot(),
+    palette = emptyList(),    // TODO
+    oam = emptyList()         // TODO
+  )
 
   // TODO - consolidate all the constants
   companion object {

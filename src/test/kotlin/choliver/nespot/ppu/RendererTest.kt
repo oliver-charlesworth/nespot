@@ -4,6 +4,7 @@ import choliver.nespot.Address
 import choliver.nespot.Memory
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Renderer.Input
+import choliver.nespot.ppu.model.Coords
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
@@ -660,10 +661,10 @@ class RendererTest {
     bgPatternTable = bgPatternTable,
     sprPatternTable = sprPatternTable,
     coords = Coords(
-      xCoarse = xCoarse,
-      xFine = xFine,
-      yCoarse = yCoarse,
-      yFine = yFine
+            xCoarse = xCoarse,
+            xFine = xFine,
+            yCoarse = yCoarse,
+            yFine = yFine
     ),
     scanline = yScanline
   ))

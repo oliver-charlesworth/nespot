@@ -9,4 +9,6 @@ class Ram(size: Int) : Memory {
   override fun store(addr: Address, data: Data) {
     raw[addr] = data
   }
+
+  fun snapshot() = raw.toList()
 }

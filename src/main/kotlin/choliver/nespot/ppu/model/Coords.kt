@@ -1,6 +1,9 @@
-package choliver.nespot.ppu
+package choliver.nespot.ppu.model
 
 import choliver.nespot.MutableForPerfReasons
+import choliver.nespot.ppu.NUM_TILE_COLUMNS
+import choliver.nespot.ppu.NUM_TILE_ROWS
+import choliver.nespot.ppu.TILE_SIZE
 
 @MutableForPerfReasons
 data class Coords(
@@ -11,6 +14,8 @@ data class Coords(
   var yCoarse: Int = 0,       // 0 to 31 inc.
   var yFine: Int = 0          // 0 to 7 inc.
 ) {
+  // TODO - move behaviour out of model type
+
   fun incrementX(): Coords {
     when (xFine) {
       (TILE_SIZE - 1) -> {

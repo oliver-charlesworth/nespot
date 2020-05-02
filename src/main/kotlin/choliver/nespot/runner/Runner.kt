@@ -6,6 +6,8 @@ import choliver.nespot.nes.Nes
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.KeyAction.ToggleFullScreen
 import choliver.nespot.runner.Screen.Event.*
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
@@ -94,6 +96,12 @@ class Runner : CliktCommand(name = "nespot") {
           is Close -> closed = true
         }
       }
+    }
+
+    private fun dumpState(nes: Nes) {
+      val mapper = jacksonObjectMapper()
+      mapper.enable(SerializationFeature.INDENT_OUTPUT)
+      mapper.writeValueAsString(nes.snapshot())
     }
   }
 }

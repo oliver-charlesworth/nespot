@@ -1,8 +1,6 @@
 package choliver.nespot.nes
 
-import choliver.nespot.CYCLES_PER_FRAME
-import choliver.nespot.CYCLES_PER_SCANLINE
-import choliver.nespot.SAMPLES_PER_SCANLINE
+import choliver.nespot.*
 import choliver.nespot.apu.Apu
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
@@ -19,37 +17,46 @@ class OrchestratorTest {
   private val orchestrator = Orchestrator(cpu, apu, ppu)
 
   @Test
-  fun `executes PPU scanline and generates APU samples exactly at end of scanline`() {
-    whenever(cpu.executeStep()) doReturn 4
+  fun `executes APU sample generation continuously`() {
+    whenever(cpu.executeStep()) doReturnConsecutively listOf(
+      CYCLES_PER_SAMPLE.roundUp() - 1,
+      1
+    )
 
-    // One before end of scanline
-    val numSteps = ceil(CYCLES_PER_SCANLINE.toDouble() / 4).toInt() - 1
-    repeat(numSteps) { orchestrator.step() }
-
-    verifyZeroInteractions(ppu)
-    verifyZeroInteractions(apu)
-
-    // One more step
     orchestrator.step()
 
-    // Now everything happens
-    verify(ppu).executeScanline()
-    verify(apu, times(ceil(SAMPLES_PER_SCANLINE.toDouble()).toInt())).generateSample()
+    verifyZeroInteractions(apu)   // Not quite enough
+
+    orchestrator.step()           // One more cycle
+
+    verify(apu).generateSample()  // Oh yes
+  }
+
+  @Test
+  fun `executes PPU scanline exactly at end of scanline`() {
+    whenever(cpu.executeStep()) doReturn 4
+
+    repeat((CYCLES_PER_SCANLINE / 4).roundUp() - 1) { orchestrator.step() } // One before end of scanline
+
+    verifyZeroInteractions(ppu)     // Not quite enough
+
+    orchestrator.step()             // One more step
+
+    verify(ppu).executeScanline()   // Oh yes
   }
 
   @Test
   fun `sets EOF exactly at end of frame`() {
     whenever(cpu.executeStep()) doReturn 1
 
-    // One before end of frame
-    val numSteps = ceil(CYCLES_PER_FRAME.toDouble()).toInt() - 1
-    repeat(numSteps) { orchestrator.step() }
+    repeat(CYCLES_PER_FRAME.roundUp() - 1) { orchestrator.step() }  // One before end of frame
 
-    assertFalse(orchestrator.endOfFrame)
+    assertFalse(orchestrator.endOfFrame)  // Not quite enough
 
-    // One more step
-    orchestrator.step()
+    orchestrator.step()                   // One more step
 
-    assertTrue(orchestrator.endOfFrame)
+    assertTrue(orchestrator.endOfFrame)   // Oh yes
   }
+
+  private fun Rational.roundUp() = ceil(toDouble()).toInt()
 }

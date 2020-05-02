@@ -2,19 +2,17 @@ package choliver.nespot.runner
 
 import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Nes
-import choliver.nespot.runner.Runner.Event.KeyDown
-import choliver.nespot.runner.Runner.Event.KeyUp
+import choliver.nespot.runner.KeyAction.Joypad
+import choliver.nespot.runner.KeyAction.ToggleFullScreen
+import choliver.nespot.runner.Screen.Event.*
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
-import javafx.scene.input.KeyCode
 import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
@@ -35,20 +33,11 @@ class Runner : CliktCommand(name = "nespot") {
     }
   }
 
-  private sealed class Event {
-    data class KeyDown(val code: KeyCode) : Event()
-    data class KeyUp(val code: KeyCode) : Event()
-  }
-
   private inner class Inner(rom: Rom) {
-    private val events = LinkedBlockingQueue<Event>()
-    private val isClosed = AtomicBoolean(false)
+    private val events = LinkedBlockingQueue<Screen.Event>()
+    private var closed = false
     private val joypads = FakeJoypads()
-    private val screen = Screen(
-      onKeyDown = { events += KeyDown(it) },
-      onKeyUp = { events += KeyUp(it) },
-      onClose = { isClosed.set(true) }
-    )
+    private val screen = Screen(onEvent = { events += it })
     private val audio = Audio(frameRateHz = FRAME_RATE_HZ)
     private val nes = Nes(
       rom = rom,
@@ -71,7 +60,7 @@ class Runner : CliktCommand(name = "nespot") {
       screen.show()
       audio.start()
 
-      while (!isClosed.get()) {
+      while (!closed) {
         measureNanoTime {
           nes.runToEndOfFrame()
           screen.redraw()
@@ -91,31 +80,20 @@ class Runner : CliktCommand(name = "nespot") {
     }
 
     private fun consumeEvents() {
-      val myEvents = mutableListOf<Event>()
+      val myEvents = mutableListOf<Screen.Event>()
       events.drainTo(myEvents)
       myEvents.forEach { e ->
         when (e) {
-          is KeyDown -> {
-            when (e.code) {
-              KeyCode.F -> screen.fullScreen = !screen.fullScreen
-              else -> codeToButton(e.code)?.let { joypads.down(1, it) }
-            }
+          is KeyDown -> when (val action = KEY_MAPPINGS[e.code]) {
+            is Joypad -> joypads.down(1, action.button)
+            is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
           }
-          is KeyUp -> codeToButton(e.code)?.let { joypads.up(1, it) }
+          is KeyUp -> when (val action = KEY_MAPPINGS[e.code]) {
+            is Joypad -> joypads.up(1, action.button)
+          }
+          is Close -> closed = true
         }
       }
-    }
-
-    private fun codeToButton(code: KeyCode) = when (code) {
-      KeyCode.Z -> Button.A
-      KeyCode.X -> Button.B
-      KeyCode.CLOSE_BRACKET -> Button.START
-      KeyCode.OPEN_BRACKET -> Button.SELECT
-      KeyCode.LEFT -> Button.LEFT
-      KeyCode.RIGHT -> Button.RIGHT
-      KeyCode.UP -> Button.UP
-      KeyCode.DOWN -> Button.DOWN
-      else -> null
     }
   }
 }

@@ -4,6 +4,7 @@ import choliver.nespot.observable
 import choliver.nespot.ppu.SCREEN_HEIGHT
 import choliver.nespot.ppu.SCREEN_WIDTH
 import choliver.nespot.ppu.TILE_SIZE
+import choliver.nespot.runner.Screen.Event.*
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D
 import javafx.scene.Group
@@ -24,16 +25,15 @@ import java.nio.IntBuffer
 
 class Screen(
   private val title: String = "NESpot",
-  private val onKeyDown: (code: KeyCode) -> Unit = {},
-  private val onKeyUp: (code: KeyCode) -> Unit = {},
-  private val onClose: () -> Unit = {}
+  private val onEvent: (e: Event) -> Unit = {}
 ) {
-  companion object {
-    private const val SCALE = 4.0
-    private const val RATIO_STRETCH = (8.0 / 7.0)    // Evidence in forums, etc. that PAR is 8/7, and it looks good
+  sealed class Event {
+    data class KeyDown(val code: KeyCode) : Event()
+    data class KeyUp(val code: KeyCode) : Event()
+    object Close : Event()
   }
 
-  var fullScreen by observable(false) { onFxThread { configureStageAndImage() } }  // TODO - Only if showing?
+  var fullScreen by observable(false) { onFxThread { configureStageAndImage() } }
   private var started = false
   private lateinit var stage: Stage
   private lateinit var imageView: ImageView
@@ -95,12 +95,12 @@ class Screen(
     stage.fullScreenExitKeyCombination = KeyCombination.NO_MATCH
     stage.title = title
     stage.scene = Scene(Group().apply { children.add(imageView) }, Color.BLACK)
-    stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) { onKeyDown(it.code) }
-    stage.scene.addEventFilter(KeyEvent.KEY_RELEASED) { onKeyUp(it.code) }
+    stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) { onEvent(KeyDown(it.code)) }
+    stage.scene.addEventFilter(KeyEvent.KEY_RELEASED) { onEvent(KeyUp(it.code)) }
     stage.setOnCloseRequest {
       it.consume()
       hide()
-      onClose()
+      onEvent(Close)
     }
   }
 
@@ -151,5 +151,10 @@ class Screen(
 
   private fun onFxThread(block: () -> Unit) {
     if (started) { Platform.runLater(block) }
+  }
+
+  companion object {
+    private const val SCALE = 4.0
+    private const val RATIO_STRETCH = (8.0 / 7.0)    // Evidence in forums, etc. that PAR is 8/7, and it looks good
   }
 }

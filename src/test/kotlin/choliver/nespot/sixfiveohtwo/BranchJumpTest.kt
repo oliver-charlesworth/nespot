@@ -1,10 +1,6 @@
-package choliver.nespot.sixfiveohtwo.instructions
+package choliver.nespot.sixfiveohtwo
 
-import choliver.nespot.sixfiveohtwo.BASE_USER
 import choliver.nespot.sixfiveohtwo.Cpu.Companion.VECTOR_IRQ
-import choliver.nespot.sixfiveohtwo.SCARY_ADDR
-import choliver.nespot.sixfiveohtwo.addrToMem
-import choliver.nespot.sixfiveohtwo.assertForAddressModes
 import choliver.nespot.sixfiveohtwo.model.Opcode
 import choliver.nespot.sixfiveohtwo.model.Opcode.*
 import choliver.nespot.sixfiveohtwo.model.State

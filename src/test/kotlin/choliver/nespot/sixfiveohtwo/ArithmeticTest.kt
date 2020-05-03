@@ -1,11 +1,8 @@
-package choliver.nespot.sixfiveohtwo.instructions
+package choliver.nespot.sixfiveohtwo
 
 import choliver.nespot.Data
 import choliver.nespot.hi
 import choliver.nespot.lo
-import choliver.nespot.sixfiveohtwo.OPCODES_TO_ENCODINGS
-import choliver.nespot.sixfiveohtwo.assertCpuEffects
-import choliver.nespot.sixfiveohtwo.assertForAddressModes
 import choliver.nespot.sixfiveohtwo.model.AddressMode.ACCUMULATOR
 import choliver.nespot.sixfiveohtwo.model.Instruction
 import choliver.nespot.sixfiveohtwo.model.Opcode

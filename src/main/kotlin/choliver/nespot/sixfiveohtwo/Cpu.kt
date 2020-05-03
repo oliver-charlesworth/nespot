@@ -310,7 +310,7 @@ class Cpu(
     var state
       get() = this@Cpu.state
       set(value) { this@Cpu.state = value.copy() }
-    var nextStepType
+    var nextStep
       get() = nextStepType()
       set(value) { nextStepOverride = value }
     fun decodeAt(pc: Address) = this@Cpu.decodeAt(pc)

@@ -108,7 +108,7 @@ class Runner : CliktCommand(name = "nespot") {
         snapshotManager.restore(snapshotFile!!)
       } else {
         // TODO - reset
-        nes.diagnostics.cpu.nextStepType = RESET
+        nes.diagnostics.cpu.nextStep = RESET
       }
     }
   }

@@ -170,7 +170,7 @@ class Debugger(
       is UntilOpcode -> onePlusUntil { instAt(nes.cpu.state.pc).opcode == cmd.op }
 
       // One more so that the interrupt actually occurs
-      is UntilNmi -> untilPlusOne { nes.cpu.nextStepType == NextStep.NMI }
+      is UntilNmi -> untilPlusOne { nes.cpu.nextStep == NextStep.NMI }
 
       is Continue -> until { false }
 
@@ -280,7 +280,7 @@ class Debugger(
   }
 
   private fun event(cmd: Event) {
-    nes.cpu.nextStepType = when (cmd) {
+    nes.cpu.nextStep = when (cmd) {
       is Reset -> NextStep.RESET
       is Nmi -> NextStep.NMI
       is Irq -> NextStep.IRQ
@@ -296,7 +296,7 @@ class Debugger(
   }
 
   private fun step(): Boolean {
-    val thisStep = nes.cpu.nextStepType // nextStep might be modified
+    val thisStep = nes.cpu.nextStep // nextStep might be modified
 
     when (thisStep) {
       NextStep.INSTRUCTION -> {

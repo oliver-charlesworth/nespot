@@ -97,7 +97,7 @@ fun assertForAddressModes(
   target: Data = 0x00,
   initState: State.() -> State = { this },
   initStores: Map<Address, Data> = emptyMap(),
-  expectedStores: (operandAddr: Address) -> Map<Address, Data> = { emptyMap() },
+  expectedStores: (operandAddr: Address) -> List<Pair<Address, Data>> = { emptyList() },
   expectedState: State.() -> State = { this }
 ) {
   modes.forEach { mode ->
@@ -121,15 +121,16 @@ fun assertForAddressModes(
 
 fun assertCpuEffects(
   instructions: List<Instruction>,
+  numStepsToExecute: Int = instructions.size,
   initState: State,
   initStores: Map<Address, Data> = emptyMap(),
   expectedState: State? = null,
-  expectedStores: Map<Address, Data> = emptyMap(),
+  expectedStores: List<Pair<Address, Data>> = emptyList(),
   expectedCycles: Int? = null,
   pollReset: () -> Boolean = { _0 },
   pollNmi: () -> Boolean = { _0 },
   pollIrq: () -> Boolean = { _0 },
-  name: String = ""
+  name: String = "???"
 ) {
   val memory = mockMemory(instructions.memoryMap(BASE_USER) + initStores)
 
@@ -143,11 +144,12 @@ fun assertCpuEffects(
   cpu.diagnostics.state = initState.with(pc = BASE_USER)
 
   var numCycles = 0
-  repeat(instructions.size) { numCycles += cpu.executeStep() }
+  repeat(numStepsToExecute) { numCycles += cpu.executeStep() }
 
   if (expectedState != null) {
     assertEquals(expectedState, cpu.diagnostics.state, "Unexpected state for [${name}]")
   }
+
   expectedStores.forEach { (addr, data) -> verify(memory)[addr] = data }
   verify(memory, times(expectedStores.size))[any()] = any()
   if (expectedCycles != null) {

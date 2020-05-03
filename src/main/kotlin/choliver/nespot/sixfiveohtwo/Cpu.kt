@@ -13,23 +13,32 @@ import choliver.nespot.sixfiveohtwo.utils._1
 
 class Cpu(
   private val memory: Memory,
-  private val pollReset: () -> Boolean,
-  private val pollIrq: () -> Boolean,
-  private val pollNmi: () -> Boolean
+  private val pollReset: () -> Boolean,   // Level-triggered
+  private val pollIrq: () -> Boolean,     // Level-triggered
+  private val pollNmi: () -> Boolean      // Edge-triggered
 ) {
-  // This flattened mutable operating state means this is strictly non-reentrant
+  // Instance-level variables to keep the code clean
   private var extraCycles: Int = 0
   private var operand: Operand = Implied
   private var addr: Address = 0x0000
   private var state = State()
+  private var prevNmi = _0
 
   private val decoder = InstructionDecoder(memory)
 
-  fun executeStep() = when {
-    pollReset() -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
-    pollNmi() -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
-    pollIrq() -> if (state.p.i) executeInstruction() else vector(VECTOR_IRQ, updateStack = true, disableIrq = true)
-    else -> executeInstruction()
+  // The order here represents interrupt priority
+  fun executeStep(): Int {
+    val reset = pollReset()
+    val nmi = pollNmi()
+    val irq = pollIrq()
+    val ret = when {
+      reset -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
+      nmi && !prevNmi -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
+      irq && !state.p.i -> vector(VECTOR_IRQ, updateStack = true, disableIrq = true)
+      else -> executeInstruction()
+    }
+    prevNmi = nmi
+    return ret
   }
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {

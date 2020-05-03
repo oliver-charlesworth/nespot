@@ -7,7 +7,6 @@ import java.nio.IntBuffer
 class Ppu(
   private val memory: Memory,
   videoBuffer: IntBuffer,
-  private val onVbl: () -> Unit,
   private val oam: Memory = Ram(256),
   private val palette: Memory = Palette(),
   private val renderer: Renderer = Renderer(memory, palette, oam, videoBuffer)
@@ -18,6 +17,7 @@ class Ppu(
   // TODO - add a reset (to clean up counters and stuff)
 
   val scanline get() = state.scanline
+  val vbl get() = state.inVbl && state.vblEnabled
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   fun executeScanline() {
@@ -38,14 +38,7 @@ class Ppu(
           renderer.renderScanline(state)
         }
 
-        (SCREEN_HEIGHT + 1) -> {
-          inVbl = true
-
-          // TODO - this is set if isVblEnabled *becomes* true during VBL phase
-          if (vblEnabled) {
-            onVbl()
-          }
-        }
+        (SCREEN_HEIGHT + 1) -> inVbl = true
 
         // Pre-render line
         (SCANLINES_PER_FRAME - 1) -> {

@@ -39,8 +39,7 @@ class Nes(
 
   private val ppu = Ppu(
     memory = ppuMapper,
-    videoBuffer = videoBuffer,
-    onVbl = nmi::set
+    videoBuffer = videoBuffer
   )
 
   private val cpuMapper = CpuMapper(
@@ -60,8 +59,8 @@ class Nes(
       }
     },
     pollReset = reset::poll,
-    pollIrq = apu::irq, // TODO
-    pollNmi = nmi::poll
+    pollIrq = apu::irq, // TODO - wire up to debugger (in both directions)
+    pollNmi = ppu::vbl  // TODO - wire up to debugger (in both directions)
   )
 
   private val sequencer = Sequencer(cpu, apu, ppu)

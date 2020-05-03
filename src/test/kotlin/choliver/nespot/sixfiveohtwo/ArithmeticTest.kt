@@ -1,11 +1,8 @@
-package choliver.nespot.sixfiveohtwo.instructions
+package choliver.nespot.sixfiveohtwo
 
 import choliver.nespot.Data
 import choliver.nespot.hi
 import choliver.nespot.lo
-import choliver.nespot.sixfiveohtwo.OPCODES_TO_ENCODINGS
-import choliver.nespot.sixfiveohtwo.assertCpuEffects
-import choliver.nespot.sixfiveohtwo.assertForAddressModes
 import choliver.nespot.sixfiveohtwo.model.AddressMode.ACCUMULATOR
 import choliver.nespot.sixfiveohtwo.model.Instruction
 import choliver.nespot.sixfiveohtwo.model.Opcode
@@ -77,7 +74,7 @@ class ArithmeticTest {
           Instruction(STA, ZeroPage(0x01))
         ),
         initState = State(),
-        expectedStores = mapOf(0x00 to expected.lo(), 0x01 to expected.hi())
+        expectedStores = listOf(0x00 to expected.lo(), 0x01 to expected.hi())
       )
     }
 
@@ -169,7 +166,7 @@ class ArithmeticTest {
           Instruction(STA, ZeroPage(0x01))
         ),
         initState = State(),
-        expectedStores = mapOf(0x00 to expected.lo(), 0x01 to expected.hi())
+        expectedStores = listOf(0x00 to expected.lo(), 0x01 to expected.hi())
       )
     }
 
@@ -291,19 +288,19 @@ class ArithmeticTest {
       DEC,
       target = 0x02,
       expectedState = { with(z = _0, n = _0) },
-      expectedStores = { mapOf(it to 0x01) }
+      expectedStores = { listOf(it to 0x01) }
     )
     assertForAddressModes(
       DEC,
       target = 0x01,
       expectedState = { with(z = _1, n = _0) },
-      expectedStores = { mapOf(it to 0x00) }
+      expectedStores = { listOf(it to 0x00) }
     )
     assertForAddressModes(
       DEC,
       target = 0xFF,
       expectedState = { with(z = _0, n = _1) },
-      expectedStores = { mapOf(it to 0xFE) }
+      expectedStores = { listOf(it to 0xFE) }
     )
   }
 
@@ -351,19 +348,19 @@ class ArithmeticTest {
       INC,
       target = 0x01,
       expectedState = { with(z = _0, n = _0) },
-      expectedStores = { mapOf(it to 0x02) }
+      expectedStores = { listOf(it to 0x02) }
     )
     assertForAddressModes(
       INC,
       target = 0xFF,
       expectedState = { with(z = _1, n = _0) },
-      expectedStores = { mapOf(it to 0x00) }
+      expectedStores = { listOf(it to 0x00) }
     )
     assertForAddressModes(
       INC,
       target = 0xFE,
       expectedState = { with(z = _0, n = _1) },
-      expectedStores = { mapOf(it to 0xFF) }
+      expectedStores = { listOf(it to 0xFF) }
     )
   }
 
@@ -458,7 +455,7 @@ class ArithmeticTest {
       target = target,
       initState = initState,
       expectedState = expectedState,
-      expectedStores = { mapOf(it to expected) }
+      expectedStores = { listOf(it to expected) }
     )
   }
 }

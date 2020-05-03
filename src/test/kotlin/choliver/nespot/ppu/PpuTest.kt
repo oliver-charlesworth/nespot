@@ -22,11 +22,9 @@ import org.junit.jupiter.api.assertDoesNotThrow
 class PpuTest {
   private val memory = mock<Memory>()
   private val renderer = mock<Renderer>()
-  private val onVbl = mock<() -> Unit>()
   private val ppu = Ppu(
     memory = memory,
     videoBuffer = mock(),
-    onVbl = onVbl,
     renderer = renderer
   )
 
@@ -163,71 +161,89 @@ class PpuTest {
   @Nested
   inner class Vbl {
     @Test
-    fun `interrupt not fired if disabled`() {
-      repeat(SCANLINES_PER_FRAME) { ppu.executeScanline() }
-      verifyZeroInteractions(onVbl)
+    fun `interrupt not asserted if disabled`() {
+      repeat(SCREEN_HEIGHT + 2) { ppu.executeScanline() }
+      assertFalse(ppu.vbl)
     }
 
     @Test
-    fun `interrupt fired only on scanline (SCREEN_HEIGHT + 1) if enabled`() {
+    fun `interrupt asserted during VBL phase`() {
       ppu.writeReg(REG_PPUCTRL, 0x80)
 
       repeat(SCREEN_HEIGHT + 1) { ppu.executeScanline() }
-      verifyZeroInteractions(onVbl)
+      assertFalse(ppu.vbl)
 
       ppu.executeScanline()
-      verify(onVbl)()
+      assertTrue(ppu.vbl)
 
       repeat(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2) { ppu.executeScanline() }
-      verifyZeroInteractions(onVbl)
+      assertFalse(ppu.vbl)
+    }
+
+    @Test
+    fun `interrupt assertion can be modulated`() {
+      repeat(SCREEN_HEIGHT + 2) { ppu.executeScanline() }
+      assertFalse(ppu.vbl)
+
+      ppu.writeReg(REG_PPUCTRL, 0x80)
+      ppu.executeScanline()
+      assertTrue(ppu.vbl)
+
+      ppu.writeReg(REG_PPUCTRL, 0x00)
+      ppu.executeScanline()
+      assertFalse(ppu.vbl)
+
+      ppu.writeReg(REG_PPUCTRL, 0x80)
+      ppu.executeScanline()
+      assertTrue(ppu.vbl)
     }
 
     @Test
     fun `status flag not set on scanline 0`() {
-      assertEquals(_0, getVblStatus())
+      assertEquals(_0, getVblStatusFromReg())
     }
 
     @Test
     fun `status flag still not set after scanline SCREEN_HEIGHT`() {
       for (i in 0..SCREEN_HEIGHT) { ppu.executeScanline() }
 
-      assertEquals(_0, getVblStatus())
+      assertEquals(_0, getVblStatusFromReg())
     }
 
     @Test
     fun `status flag set after scanline (SCREEN_HEIGHT + 1)`() {
       for (i in 0..(SCREEN_HEIGHT + 1)) { ppu.executeScanline() }
 
-      assertEquals(_1, getVblStatus())
+      assertEquals(_1, getVblStatusFromReg())
     }
 
     @Test
     fun `status flag still set on penultimate scanline`() {
       for (i in 0..(SCANLINES_PER_FRAME - 2)) { ppu.executeScanline() }
 
-      assertEquals(_1, getVblStatus())
+      assertEquals(_1, getVblStatusFromReg())
     }
 
     @Test
     fun `status flag cleared on final scanline`() {
       for (i in 0..(SCANLINES_PER_FRAME - 1)) { ppu.executeScanline() }
 
-      assertEquals(_0, getVblStatus())
+      assertEquals(_0, getVblStatusFromReg())
     }
 
     @Test
     fun `status flag cleared by reading it, and not set again on next scanline`() {
       for (i in 0..(SCREEN_HEIGHT + 1)) { ppu.executeScanline() }
 
-      assertEquals(_1, getVblStatus())
-      assertEquals(_0, getVblStatus())
+      assertEquals(_1, getVblStatusFromReg())
+      assertEquals(_0, getVblStatusFromReg())
 
       ppu.executeScanline()
 
-      assertEquals(_0, getVblStatus())
+      assertEquals(_0, getVblStatusFromReg())
     }
 
-    private fun getVblStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(7)
+    private fun getVblStatusFromReg() = ppu.readReg(REG_PPUSTATUS).isBitSet(7)
   }
 
   @Nested

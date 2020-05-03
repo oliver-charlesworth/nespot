@@ -12,7 +12,6 @@ import java.nio.IntBuffer
 import kotlin.math.min
 
 // TODO - eliminate all the magic numbers here
-// TODO - grayscale
 // TODO - emphasize
 class Renderer(
   private val memory: Memory,
@@ -190,9 +189,10 @@ class Renderer(
 
   private fun renderToBuffer(state: State) {
     videoBuffer.position(state.scanline * SCREEN_WIDTH)
+    val mask = if (state.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
     pixels.forEach {
       val paletteAddr = if (it.c == 0) 0 else (it.p * 4 + it.c) // Background colour is universal
-      videoBuffer.put(colors[palette[paletteAddr]])
+      videoBuffer.put(colors[palette[paletteAddr] and mask])
     }
   }
 

@@ -27,12 +27,19 @@ class Cpu(
   private val decoder = InstructionDecoder(memory)
 
   // The order here represents interrupt priority
-  fun executeStep() = when {
-    pollReset() -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
-    pollNmi() && !prevNmi -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
-    pollIrq() && !state.p.i -> vector(VECTOR_IRQ, updateStack = true, disableIrq = true)
-    else -> executeInstruction()
-  }.also { prevNmi = pollNmi() }
+  fun executeStep(): Int {
+    val reset = pollReset()
+    val nmi = pollNmi()
+    val irq = pollIrq()
+    val ret = when {
+      reset -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
+      nmi && !prevNmi -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
+      irq && !state.p.i -> vector(VECTOR_IRQ, updateStack = true, disableIrq = true)
+      else -> executeInstruction()
+    }
+    prevNmi = nmi
+    return ret
+  }
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {
     interrupt(addr, updateStack = updateStack, setBreakFlag = false)

@@ -15,7 +15,7 @@ import java.nio.IntBuffer
 class Nes(
   rom: Rom,
   videoBuffer: IntBuffer,
-  audioBuffer: ByteArray,
+  audioBuffer: FloatArray,
   joypads: Joypads,
   private val onStore: (Address, Data) -> Unit = { _: Address, _: Data -> }
 ) {

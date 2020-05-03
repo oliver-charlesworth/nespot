@@ -11,15 +11,15 @@ internal class Mixer(
   private val sequencer: FrameSequencer,
   private val channels: Channels
 ) {
-  private val alpha: Double
-  private var state: Double = 0.0
+  private val alpha: Float
+  private var state: Float = 0.0f
 
   init {
     val omega = 2 * PI * 14e3 / SAMPLE_RATE_HZ
-    alpha = cos(omega) - 1 + sqrt(cos(omega) * cos(omega) - 4 * cos(omega) + 3)
+    alpha = (cos(omega) - 1 + sqrt(cos(omega) * cos(omega) - 4 * cos(omega) + 3)).toFloat()
   }
 
-  fun take(): Int {
+  fun take(): Float {
     val ticks = sequencer.take()
 
     val pulse1Out = channels.sq1.take(ticks)
@@ -31,17 +31,17 @@ internal class Mixer(
     val pulseSum = pulse1Out + pulse2Out
     val otherSum = triangleOut + noiseOut + dmcOut
 
-    val pulseOut = if (pulseSum == 0) 0.0 else {
-      95.88 / ((8128.0 / pulseSum) + 100.0)
+    val pulseOut = if (pulseSum == 0) 0.0f else {
+      95.88f / ((8128.0f / pulseSum) + 100.0f)
     }
-    val otherOut = if (otherSum == 0) 0.0 else {
-      159.79 / ((1.0 / ((triangleOut / 8227.0) + (noiseOut / 12241.0) + (dmcOut / 22638.0))) + 100.0)
+    val otherOut = if (otherSum == 0) 0.0f else {
+      159.79f / ((1.0f / ((triangleOut / 8227.0f) + (noiseOut / 12241.0f) + (dmcOut / 22638.0f))) + 100.0f)
     }
     val mixed = pulseOut + otherOut
 
     // TODO - validate this filter
     val filtered = alpha * mixed + (1 - alpha) * state
     state = filtered
-    return (filtered * 100).toInt()
+    return filtered
   }
 }

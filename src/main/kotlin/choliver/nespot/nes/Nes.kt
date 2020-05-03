@@ -53,7 +53,7 @@ class Nes(
       }
     },
     pollReset = { _0 },
-    pollIrq = apu::irq,
+    pollIrq = { apu.irq || cartridge.irq },
     pollNmi = ppu::vbl
   )
 

@@ -12,6 +12,8 @@ class UxRomMapper(private val rom: Rom) : Mapper {
   private val numPrgBanks = (rom.prgData.size / 16384)
   private var prg0Bank = 0
 
+  override val irq = false
+
   override val prg = object : Memory {
     override operator fun get(addr: Address) = getFromBank(
       addr,

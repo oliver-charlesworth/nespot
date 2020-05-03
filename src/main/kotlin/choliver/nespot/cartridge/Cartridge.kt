@@ -2,6 +2,7 @@ package choliver.nespot.cartridge
 
 import choliver.nespot.Memory
 import choliver.nespot.cartridge.mappers.Mmc1Mapper
+import choliver.nespot.cartridge.mappers.Mmc3Mapper
 import choliver.nespot.cartridge.mappers.NromMapper
 import choliver.nespot.cartridge.mappers.UxRomMapper
 
@@ -23,7 +24,8 @@ class Cartridge(rom: Rom) {
     0 -> NromMapper(rom)
     1 -> Mmc1Mapper(rom)
     2 -> UxRomMapper(rom)
-    71 -> UxRomMapper(rom)  // See https://wiki.nesdev.com/w/index.php/INES_Mapper_071
+    4 -> Mmc3Mapper(rom)
+    71 -> UxRomMapper(rom)  // Can re-use MMC1 (see https://wiki.nesdev.com/w/index.php/INES_Mapper_071)
     else -> throw RuntimeException("Mapper #${rom.mapper}")
   }
 }

@@ -10,7 +10,7 @@ import choliver.nespot.sixfiveohtwo.model.Flags
 import choliver.nespot.sixfiveohtwo.model.Instruction
 import choliver.nespot.sixfiveohtwo.model.Opcode.CLI
 import choliver.nespot.sixfiveohtwo.model.Opcode.NOP
-import choliver.nespot.sixfiveohtwo.model.State
+import choliver.nespot.sixfiveohtwo.model.Regs
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Nested
@@ -27,9 +27,9 @@ class InterruptsTest {
     fun `follows vector and sets I`(I: Boolean) {
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(s = 0xFF, p = Flags(i = I)),
+        initRegs = Regs(s = 0xFF, p = Flags(i = I)),
         initStores = MEMORY,
-        expectedState = State(s = 0xFF, p = Flags(i = _1), pc = BASE_RESET),
+        expectedRegs = Regs(s = 0xFF, p = Flags(i = _1), pc = BASE_RESET),
         expectedCycles = NUM_INTERRUPT_CYCLES,
         pollReset = { _1 }
       )
@@ -51,9 +51,9 @@ class InterruptsTest {
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
         numStepsToExecute = 2,                                                // Run multiple steps
-        initState = State(s = 0xFF, p = Flags(i = _0)),
+        initRegs = Regs(s = 0xFF, p = Flags(i = _0)),
         initStores = MEMORY + isr,
-        expectedState = State(s = 0xFF, p = Flags(i = _1), pc = BASE_RESET),  // Back at the ISR base
+        expectedRegs = Regs(s = 0xFF, p = Flags(i = _1), pc = BASE_RESET),  // Back at the ISR base
         pollReset = { _1 }
       )
     }
@@ -67,9 +67,9 @@ class InterruptsTest {
       val flags = Flags(i = I)
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(s = 0xFF, p = flags),
+        initRegs = Regs(s = 0xFF, p = flags),
         initStores = MEMORY,
-        expectedState = State(s = 0xFC, p = flags, pc = BASE_NMI),
+        expectedRegs = Regs(s = 0xFC, p = flags, pc = BASE_NMI),
         expectedStores = listOf(
           0x1FF to BASE_USER.hi(),
           0x1FE to BASE_USER.lo(),
@@ -95,9 +95,9 @@ class InterruptsTest {
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
         numStepsToExecute = 2,                                              // Enough for [Vector, NOP]
-        initState = State(s = 0xFF, p = flags),
+        initRegs = Regs(s = 0xFF, p = flags),
         initStores = MEMORY + isr,
-        expectedState = State(s = 0xFC, p = flags, pc = BASE_NMI + 1),      // PC has advanced
+        expectedRegs = Regs(s = 0xFC, p = flags, pc = BASE_NMI + 1),      // PC has advanced
         expectedStores = listOf(
           0x1FF to BASE_USER.hi(),
           0x1FE to BASE_USER.lo(),
@@ -120,9 +120,9 @@ class InterruptsTest {
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
         numStepsToExecute = 3,                                              // Enough for [Vector, NOP, Vector]
-        initState = State(s = 0xFF, p = flags),
+        initRegs = Regs(s = 0xFF, p = flags),
         initStores = MEMORY + isr,
-        expectedState = State(s = 0xF9, p = flags, pc = BASE_NMI),          // Stack is twice as big!
+        expectedRegs = Regs(s = 0xF9, p = flags, pc = BASE_NMI),          // Stack is twice as big!
         expectedStores = listOf(
           0x1FF to BASE_USER.hi(),
           0x1FE to BASE_USER.lo(),
@@ -142,9 +142,9 @@ class InterruptsTest {
     fun `follows vector and sets I if I == _0`() {
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(s = 0xFF, p = Flags(i = _0)),
+        initRegs = Regs(s = 0xFF, p = Flags(i = _0)),
         initStores = MEMORY,
-        expectedState = State(s = 0xFC, p = Flags(i = _1), pc = BASE_IRQ),
+        expectedRegs = Regs(s = 0xFC, p = Flags(i = _1), pc = BASE_IRQ),
         expectedStores = listOf(
           0x1FF to BASE_USER.hi(),
           0x1FE to BASE_USER.lo(),
@@ -160,9 +160,9 @@ class InterruptsTest {
       val flags = Flags(i = _1)
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(s = 0xFF, p = flags),
+        initRegs = Regs(s = 0xFF, p = flags),
         initStores = MEMORY,
-        expectedState = State(s = 0xFF, p = flags, pc = (BASE_USER + 1)),
+        expectedRegs = Regs(s = 0xFF, p = flags, pc = (BASE_USER + 1)),
         pollIrq = { _1 }
       )
     }
@@ -185,9 +185,9 @@ class InterruptsTest {
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
         numStepsToExecute = 3,                                              // Enough for [Vector, CLI, vector]
-        initState = State(s = 0xFF, p = Flags(i = _0)),
+        initRegs = Regs(s = 0xFF, p = Flags(i = _0)),
         initStores = MEMORY + isr,
-        expectedState = State(s = 0xF9, p = Flags(i = _1), pc = BASE_IRQ),  // Stack is twice as big!
+        expectedRegs = Regs(s = 0xF9, p = Flags(i = _1), pc = BASE_IRQ),  // Stack is twice as big!
         expectedStores = listOf(
           0x1FF to BASE_USER.hi(),
           0x1FE to BASE_USER.lo(),
@@ -207,9 +207,9 @@ class InterruptsTest {
     fun `reset has highest priority`() {
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(s = 0xFF, p = Flags(i = _0)),
+        initRegs = Regs(s = 0xFF, p = Flags(i = _0)),
         initStores = MEMORY,
-        expectedState = State(s = 0xFF, p = Flags(i = _1), pc = BASE_RESET),
+        expectedRegs = Regs(s = 0xFF, p = Flags(i = _1), pc = BASE_RESET),
         pollReset = { _1 },
         pollNmi = { _1 },
         pollIrq = { _1 }
@@ -221,9 +221,9 @@ class InterruptsTest {
       val flags = Flags(i = _0)
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
-        initState = State(s = 0xFF, p = flags),
+        initRegs = Regs(s = 0xFF, p = flags),
         initStores = MEMORY,
-        expectedState = State(s = 0xFC, p = flags, pc = BASE_NMI),
+        expectedRegs = Regs(s = 0xFC, p = flags, pc = BASE_NMI),
         expectedStores = listOf(
           0x1FF to BASE_USER.hi(),
           0x1FE to BASE_USER.lo(),

@@ -2,7 +2,7 @@ package choliver.nespot.snapshot
 
 import choliver.nespot.nes.Sequencer.State as SequencerState
 import choliver.nespot.ppu.model.State as PpuState
-import choliver.nespot.sixfiveohtwo.model.State as CpuState
+import choliver.nespot.sixfiveohtwo.model.Regs as CpuState
 
 typealias Base64Encoded = String
 

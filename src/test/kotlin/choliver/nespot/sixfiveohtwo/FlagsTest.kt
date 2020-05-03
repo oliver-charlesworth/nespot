@@ -2,7 +2,7 @@ package choliver.nespot.sixfiveohtwo
 
 import choliver.nespot.sixfiveohtwo.model.Opcode
 import choliver.nespot.sixfiveohtwo.model.Opcode.*
-import choliver.nespot.sixfiveohtwo.model.State
+import choliver.nespot.sixfiveohtwo.model.Regs
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
@@ -43,8 +43,8 @@ class FlagsTest {
     assertFlagModified(SEI, _1) { with(i = it) }
   }
 
-  private fun assertFlagModified(op: Opcode, expected: Boolean, state: State.(b: Boolean) -> State) {
-    assertForAddressModes(op, initState = { state(_1) }, expectedState = { state(expected) })
-    assertForAddressModes(op, initState = { state(_0) }, expectedState = { state(expected) })
+  private fun assertFlagModified(op: Opcode, expected: Boolean, regs: Regs.(b: Boolean) -> Regs) {
+    assertForAddressModes(op, initRegs = { regs(_1) }, expectedRegs = { regs(expected) })
+    assertForAddressModes(op, initRegs = { regs(_0) }, expectedRegs = { regs(expected) })
   }
 }

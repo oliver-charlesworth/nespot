@@ -19,7 +19,7 @@ class SnapshotManager(private val nes: Nes.Diagnostics) {
   }
 
   fun snapshot() = Snapshot(
-    cpu = nes.cpu.state,
+    cpu = nes.cpu.regs,
     ppu = nes.ppu.state,
     ram = encodeMemory(2048, nes.ram),
     vram = encodeMemory(2048, nes.vram),
@@ -32,7 +32,7 @@ class SnapshotManager(private val nes: Nes.Diagnostics) {
   }
 
   fun restore(snapshot: Snapshot) {
-    nes.cpu.state = snapshot.cpu
+    nes.cpu.regs = snapshot.cpu
     nes.ppu.state = snapshot.ppu
     decodeMemory(2048, nes.ram, snapshot.ram)
     decodeMemory(2048, nes.vram, snapshot.vram)

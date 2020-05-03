@@ -31,8 +31,8 @@ class LoadStoreTest {
   fun sta() {
     assertForAddressModes(
       STA,
-      initState = { with(a = 0x69) },
-      expectedState = { with(a = 0x69) },
+      initRegs = { with(a = 0x69) },
+      expectedRegs = { with(a = 0x69) },
       expectedStores = { listOf(it to 0x69) }
     )
   }
@@ -41,8 +41,8 @@ class LoadStoreTest {
   fun stx() {
     assertForAddressModes(
       STX,
-      initState = { with(x = 0x69) },
-      expectedState = { with(x = 0x69) },
+      initRegs = { with(x = 0x69) },
+      expectedRegs = { with(x = 0x69) },
       expectedStores = { listOf(it to 0x69) }
     )
   }
@@ -51,8 +51,8 @@ class LoadStoreTest {
   fun sty() {
     assertForAddressModes(
       STY,
-      initState = { with(y = 0x69) },
-      expectedState = { with(y = 0x69) },
+      initRegs = { with(y = 0x69) },
+      expectedRegs = { with(y = 0x69) },
       expectedStores = { listOf(it to 0x69) }
     )
   }

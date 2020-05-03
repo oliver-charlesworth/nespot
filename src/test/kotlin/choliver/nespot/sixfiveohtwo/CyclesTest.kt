@@ -6,7 +6,7 @@ import choliver.nespot.sixfiveohtwo.model.Opcode.*
 import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nespot.sixfiveohtwo.model.Operand.Relative
 import choliver.nespot.sixfiveohtwo.model.Operand.ZeroPageIndexed
-import choliver.nespot.sixfiveohtwo.model.State
+import choliver.nespot.sixfiveohtwo.model.Regs
 import choliver.nespot.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
 
@@ -18,7 +18,7 @@ class CyclesTest {
         Instruction(NOP), // 2 cycles
         Instruction(ADC, ZeroPageIndexed(0x12, X)) // 4 cycles
       ),
-      initState = State(),
+      initRegs = Regs(),
       expectedCycles = 6
     )
   }
@@ -29,7 +29,7 @@ class CyclesTest {
       instructions = listOf(
         Instruction(BEQ, Relative(0x01)) // Normally 2 cycles
       ),
-      initState = State(),
+      initRegs = Regs(),
       expectedCycles = 2
     )
 
@@ -38,7 +38,7 @@ class CyclesTest {
       instructions = listOf(
         Instruction(BEQ, Relative(0x01))
       ),
-      initState = State(p = Flags(z = _1)),
+      initRegs = Regs(p = Flags(z = _1)),
       expectedCycles = 3
     )
 
@@ -47,7 +47,7 @@ class CyclesTest {
       instructions = listOf(
         Instruction(BEQ, Relative(0x80))
       ),
-      initState = State(p = Flags(z = _1)),
+      initRegs = Regs(p = Flags(z = _1)),
       expectedCycles = 4
     )
   }

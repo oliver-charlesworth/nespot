@@ -6,7 +6,7 @@ import choliver.nespot.MutableForPerfReasons
 import choliver.nespot.isBitSet
 
 @MutableForPerfReasons
-data class State(
+data class Regs(
   var pc: Address = 0x0000,
   var a: Data = 0x00,
   var x: Data = 0x00,

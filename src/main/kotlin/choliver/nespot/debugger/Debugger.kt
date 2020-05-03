@@ -72,7 +72,7 @@ class Debugger(
   private fun consume(parser: CommandParser, enablePrompts: Boolean) {
     while (true) {
       if (enablePrompts) {
-        stdout.print("[${nes.cpu.state.pc.format()}]: ")
+        stdout.print("[${nes.cpu.regs.pc.format()}]: ")
       }
 
       if (!handleCommand(parser.next())) {
@@ -159,15 +159,15 @@ class Debugger(
       }
 
       // Prevent Until(currentPC) from doing nothing
-      is Until -> onePlusUntil { nes.cpu.state.pc == cmd.pc }
+      is Until -> onePlusUntil { nes.cpu.regs.pc == cmd.pc }
 
       is UntilOffset -> {
         val target = nextPc(cmd.offset)
-        until { nes.cpu.state.pc == target }
+        until { nes.cpu.regs.pc == target }
       }
 
       // Prevent UntilOpcode(currentOpcode) from doing nothing
-      is UntilOpcode -> onePlusUntil { instAt(nes.cpu.state.pc).opcode == cmd.op }
+      is UntilOpcode -> onePlusUntil { instAt(nes.cpu.regs.pc).opcode == cmd.op }
 
       // One more so that the interrupt actually occurs
       is UntilNmi -> untilPlusOne { nes.cpu.nextStep == NextStep.NMI }
@@ -224,7 +224,7 @@ class Debugger(
     when (cmd) {
       is Info.Stats -> displayStats()
 
-      is Info.Reg -> stdout.println(nes.cpu.state)
+      is Info.Reg -> stdout.println(nes.cpu.regs)
 
       is Info.Break -> if (points.breakpoints.isEmpty()) {
         stdout.println("No breakpoints")
@@ -334,7 +334,7 @@ class Debugger(
 
   private fun maybeTraceInstruction() {
     if (isVerbose) {
-      stdout.println("${nes.cpu.state.pc.format()}: ${instAt(nes.cpu.state.pc)}")
+      stdout.println("${nes.cpu.regs.pc.format()}: ${instAt(nes.cpu.regs.pc)}")
     }
   }
 
@@ -361,7 +361,7 @@ class Debugger(
       }
     }
 
-  private fun isBreakpointHit() = when (val bp = points.breakpoints[nes.cpu.state.pc]) {
+  private fun isBreakpointHit() = when (val bp = points.breakpoints[nes.cpu.regs.pc]) {
     null -> true
     else -> {
       stdout.println("Hit breakpoint #${bp.num}")
@@ -370,7 +370,7 @@ class Debugger(
   }
 
   private fun nextPc(offset: Int = 1) =
-    (0 until offset).fold(nes.cpu.state.pc) { pc, _ -> nes.cpu.decodeAt(pc).nextPc }
+    (0 until offset).fold(nes.cpu.regs.pc) { pc, _ -> nes.cpu.decodeAt(pc).nextPc }
 
   private fun instAt(pc: Address) = nes.cpu.decodeAt(pc).instruction
 

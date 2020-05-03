@@ -6,7 +6,7 @@ import choliver.nespot.sixfiveohtwo.model.Opcode
 import choliver.nespot.sixfiveohtwo.model.Opcode.*
 import choliver.nespot.sixfiveohtwo.model.Operand
 import choliver.nespot.sixfiveohtwo.model.Operand.*
-import choliver.nespot.sixfiveohtwo.model.State
+import choliver.nespot.sixfiveohtwo.model.Regs
 import choliver.nespot.sixfiveohtwo.model.toFlags
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
@@ -22,7 +22,7 @@ class Cpu(
   private var extraCycles: Int = 0
   private var operand: Operand = Implied
   private var addr: Address = 0x0000
-  private var state = State()
+  private var regs = Regs()
   private var prevNmi = _0
   private var nextStepOverride: NextStep? = null
 
@@ -44,19 +44,19 @@ class Cpu(
   private fun nextStepType() = nextStepOverride ?: when {
     pollReset() -> RESET
     pollNmi() && !prevNmi -> NMI
-    pollIrq() && !state.p.i -> IRQ
+    pollIrq() && !regs.p.i -> IRQ
     else -> INSTRUCTION
   }
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {
     interrupt(addr, updateStack = updateStack, setBreakFlag = false)
-    state.p.i = state.p.i || disableIrq
+    regs.p.i = regs.p.i || disableIrq
     return NUM_INTERRUPT_CYCLES
   }
 
   private fun executeInstruction(): Int {
-    val decoded = decodeAt(state.pc)
-    state.pc = decoded.nextPc
+    val decoded = decodeAt(regs.pc)
+    regs.pc = decoded.nextPc
     operand = decoded.instruction.operand
     addr = decoded.addr
     extraCycles = 0
@@ -64,10 +64,10 @@ class Cpu(
     return decoded.numCycles + extraCycles
   }
 
-  private fun decodeAt(pc: Address) = decoder.decode(pc = pc, x = state.x, y = state.y)
+  private fun decodeAt(pc: Address) = decoder.decode(pc = pc, x = regs.x, y = regs.y)
 
   private fun execute(op: Opcode) {
-    state.apply {
+    regs.apply {
       when (op) {
         ADC -> add(resolve())
         SBC -> add(resolve() xor 0xFF)
@@ -227,24 +227,24 @@ class Cpu(
   private fun branch(cond: Boolean) {
     if (cond) {
       extraCycles++
-      if (((state.pc xor addr) and 0xFF00) != 0) {
+      if (((regs.pc xor addr) and 0xFF00) != 0) {
         extraCycles++   // Page change
       }
-      state.pc = addr
+      regs.pc = addr
     }
   }
 
   private fun push(data: Data) {
-    memory[state.s or 0x100] = data
-    state.s = (state.s - 1).data()
+    memory[regs.s or 0x100] = data
+    regs.s = (regs.s - 1).data()
   }
 
   private fun pop(): Data {
-    state.s = (state.s + 1).data()
-    return memory[state.s or 0x100]
+    regs.s = (regs.s + 1).data()
+    return memory[regs.s or 0x100]
   }
 
-  private fun add(rhs: Data) = state.apply {
+  private fun add(rhs: Data) = regs.apply {
     val c = p.c
     val raw = a + rhs + (if (c) 1 else 0)
     val result = raw.data()
@@ -257,7 +257,7 @@ class Cpu(
     updateZN(result)
   }
 
-  private fun compare(lhs: Data, rhs: Data) = state.apply {
+  private fun compare(lhs: Data, rhs: Data) = regs.apply {
     val raw = (lhs + (rhs xor 0xFF) + 1)
     val result = raw.data()
 
@@ -265,7 +265,7 @@ class Cpu(
     updateZN(result)
   }
 
-  private fun interrupt(vector: Address, updateStack: Boolean, setBreakFlag: Boolean) = state.apply {
+  private fun interrupt(vector: Address, updateStack: Boolean, setBreakFlag: Boolean) = regs.apply {
     if (updateStack) {
       push(pc.hi())
       push(pc.lo())
@@ -279,7 +279,7 @@ class Cpu(
   }
 
   private fun resolve() = when (operand) {
-    is Accumulator -> state.a
+    is Accumulator -> regs.a
     is Immediate -> (operand as Immediate).literal
     else -> memory[addr]
   }
@@ -287,7 +287,7 @@ class Cpu(
   private fun storeResult(data: Data) {
     val d = data.data()
     if (operand is Accumulator) {
-      state.a = d
+      regs.a = d
     } else {
       memory[addr] = d
     }
@@ -295,8 +295,8 @@ class Cpu(
   }
 
   private fun updateZN(data: Data) {
-    state.p.z = data.isZero()
-    state.p.n = data.isNeg()
+    regs.p.z = data.isZero()
+    regs.p.n = data.isNeg()
   }
 
   enum class NextStep {
@@ -307,9 +307,9 @@ class Cpu(
   }
 
   inner class Diagnostics internal constructor() {
-    var state
-      get() = this@Cpu.state
-      set(value) { this@Cpu.state = value.copy() }
+    var regs
+      get() = this@Cpu.regs
+      set(value) { this@Cpu.regs = value.copy() }
     var nextStep
       get() = nextStepType()
       set(value) { nextStepOverride = value }

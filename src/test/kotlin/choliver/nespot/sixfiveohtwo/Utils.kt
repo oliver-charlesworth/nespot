@@ -12,23 +12,23 @@ import org.junit.jupiter.api.Assertions.assertEquals
 
 private data class Case(
   val operand: (value: Data) -> Operand,
-  val state: State.() -> State = { this },
+  val regs: Regs.() -> Regs = { this },
   val mem: Map<Address, Data> = emptyMap(),
   val targetAddr: Address = 0x0000
 )
 
-private val PROTO_STATES = listOf(
-  State(),
-  State(p = Flags(c = true)),
-  State(p = Flags(z = true)),
-  State(p = Flags(i = true)),
-  State(p = Flags(d = true)),
-  State(p = Flags(v = true)),
-  State(p = Flags(n = true)),
-  State(a = 0xAA),
-  State(x = 0xAA),
-  State(y = 0xAA),
-  State(s = 0xAA)
+private val PROTO_REGS = listOf(
+  Regs(),
+  Regs(p = Flags(c = true)),
+  Regs(p = Flags(z = true)),
+  Regs(p = Flags(i = true)),
+  Regs(p = Flags(d = true)),
+  Regs(p = Flags(v = true)),
+  Regs(p = Flags(n = true)),
+  Regs(a = 0xAA),
+  Regs(x = 0xAA),
+  Regs(y = 0xAA),
+  Regs(s = 0xAA)
 )
 
 const val BASE_ZERO_PAGE: Address = 0x0000
@@ -51,12 +51,12 @@ private val CASES = mapOf(
   ),
   ZERO_PAGE_X to Case(
     operand = { ZeroPageIndexed(0x30, X) },
-    state = { with(x = 0x20) },
+    regs = { with(x = 0x20) },
     targetAddr = 0x0050
   ),
   ZERO_PAGE_Y to Case(
     operand = { ZeroPageIndexed(0x30, Y) },
-    state = { with(y = 0x20) },
+    regs = { with(y = 0x20) },
     targetAddr = 0x0050
   ),
   ABSOLUTE to Case(
@@ -65,12 +65,12 @@ private val CASES = mapOf(
   ),
   ABSOLUTE_X to Case(
     operand = { AbsoluteIndexed(SCARY_ADDR - 0x20, X) },
-    state = { with(x = 0x20) },
+    regs = { with(x = 0x20) },
     targetAddr = SCARY_ADDR
   ),
   ABSOLUTE_Y to Case(
     operand = { AbsoluteIndexed(SCARY_ADDR - 0x20, Y) },
-    state = { with(y = 0x20) },
+    regs = { with(y = 0x20) },
     targetAddr = SCARY_ADDR
   ),
   INDIRECT to Case(
@@ -79,13 +79,13 @@ private val CASES = mapOf(
   ),
   INDEXED_INDIRECT to Case(
     operand = { IndexedIndirect(0x30) },
-    state = { with(x = 0x10) },
+    regs = { with(x = 0x10) },
     mem = addrToMem(0x0040, SCARY_ADDR),
     targetAddr = SCARY_ADDR
   ),
   INDIRECT_INDEXED to Case(
     operand = { IndirectIndexed(0x30) },
-    state = { with(y = 0x10) },
+    regs = { with(y = 0x10) },
     mem = addrToMem(0x0030, SCARY_ADDR - 0x10),
     targetAddr = SCARY_ADDR
   )
@@ -95,23 +95,23 @@ fun assertForAddressModes(
   op: Opcode,
   modes: Set<AddressMode> = OPCODES_TO_ENCODINGS[op]?.keys ?: error("Unhandled opcode ${op.name}"),
   target: Data = 0x00,
-  initState: State.() -> State = { this },
+  initRegs: Regs.() -> Regs = { this },
   initStores: Map<Address, Data> = emptyMap(),
   expectedStores: (operandAddr: Address) -> List<Pair<Address, Data>> = { emptyList() },
-  expectedState: State.() -> State = { this }
+  expectedRegs: Regs.() -> Regs = { this }
 ) {
   modes.forEach { mode ->
-    PROTO_STATES.forEach { proto ->
+    PROTO_REGS.forEach { proto ->
       val case = CASES[mode] ?: error("Unhandled mode ${mode}")
       val instruction = Instruction(op, case.operand(target))
 
       assertCpuEffects(
         instructions = listOf(instruction),
-        initState = case.state(proto).initState(),
+        initRegs = case.regs(proto).initRegs(),
         initStores = case.mem +             // Indirection / pointer
           (case.targetAddr to target) +     // Target (user-defined value, case-defined location)
           initStores,                       // User-defined
-        expectedState = case.state(proto).with(pc = BASE_USER + instruction.encode().size).expectedState(),
+        expectedRegs = case.regs(proto).with(pc = BASE_USER + instruction.encode().size).expectedRegs(),
         expectedStores = expectedStores(case.targetAddr),
         name = instruction.toString()
       )
@@ -122,9 +122,9 @@ fun assertForAddressModes(
 fun assertCpuEffects(
   instructions: List<Instruction>,
   numStepsToExecute: Int = instructions.size,
-  initState: State,
+  initRegs: Regs,
   initStores: Map<Address, Data> = emptyMap(),
-  expectedState: State? = null,
+  expectedRegs: Regs? = null,
   expectedStores: List<Pair<Address, Data>> = emptyList(),
   expectedCycles: Int? = null,
   pollReset: (iStep: Int) -> Boolean = { _0 },
@@ -144,15 +144,15 @@ fun assertCpuEffects(
     pollIrq = { pollIrq(iStep) }
   )
 
-  cpu.diagnostics.state = initState.with(pc = BASE_USER)
+  cpu.diagnostics.regs = initRegs.with(pc = BASE_USER)
 
   repeat(numStepsToExecute) {
     numCycles += cpu.executeStep()
     iStep++
   }
 
-  if (expectedState != null) {
-    assertEquals(expectedState, cpu.diagnostics.state, "Unexpected state for [${name}]")
+  if (expectedRegs != null) {
+    assertEquals(expectedRegs, cpu.diagnostics.regs, "Unexpected registers for [${name}]")
   }
 
   expectedStores.forEach { (addr, data) -> verify(memory)[addr] = data }

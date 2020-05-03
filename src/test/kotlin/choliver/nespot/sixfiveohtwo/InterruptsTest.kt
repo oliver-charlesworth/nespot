@@ -116,8 +116,6 @@ class InterruptsTest {
         Instruction(NOP)
       ).memoryMap(BASE_NMI)
 
-      var iPoll = 0
-
       val flags = Flags(i = _0)
       assertCpuEffects(
         instructions = listOf(Instruction(NOP)),
@@ -133,7 +131,7 @@ class InterruptsTest {
           0x1FB to (BASE_NMI + 1).lo(),
           0x1FA to flags.data()
         ),
-        pollNmi = { listOf(_1, _0, _1)[iPoll++] }   // Assert, de-assert, assert
+        pollNmi = { listOf(_1, _0, _1)[it] }   // Assert, de-assert, assert
       )
     }
   }

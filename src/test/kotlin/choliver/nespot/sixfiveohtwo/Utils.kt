@@ -127,24 +127,29 @@ fun assertCpuEffects(
   expectedState: State? = null,
   expectedStores: List<Pair<Address, Data>> = emptyList(),
   expectedCycles: Int? = null,
-  pollReset: () -> Boolean = { _0 },
-  pollNmi: () -> Boolean = { _0 },
-  pollIrq: () -> Boolean = { _0 },
+  pollReset: (iStep: Int) -> Boolean = { _0 },
+  pollNmi: (iStep: Int) -> Boolean = { _0 },
+  pollIrq: (iStep: Int) -> Boolean = { _0 },
   name: String = "???"
 ) {
+  var numCycles = 0
+  var iStep = 0
+
   val memory = mockMemory(instructions.memoryMap(BASE_USER) + initStores)
 
   val cpu = Cpu(
     memory,
-    pollReset = pollReset,
-    pollNmi = pollNmi,
-    pollIrq = pollIrq
+    pollReset = { pollReset(iStep) },
+    pollNmi = { pollNmi(iStep) },
+    pollIrq = { pollIrq(iStep) }
   )
 
   cpu.diagnostics.state = initState.with(pc = BASE_USER)
 
-  var numCycles = 0
-  repeat(numStepsToExecute) { numCycles += cpu.executeStep() }
+  repeat(numStepsToExecute) {
+    numCycles += cpu.executeStep()
+    iStep++
+  }
 
   if (expectedState != null) {
     assertEquals(expectedState, cpu.diagnostics.state, "Unexpected state for [${name}]")

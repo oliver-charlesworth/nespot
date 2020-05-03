@@ -24,13 +24,15 @@ class Cpu(
   private var addr: Address = 0x0000
   private var state = State()
   private var prevNmi = _0
+  private var nextStepOverride: NextStep? = null
 
   private val decoder = InstructionDecoder(memory)
 
   // The order here represents interrupt priority
   fun executeStep(): Int {
-    val next = nextStep()
-    prevNmi = (next == NMI)
+    val next = nextStepType()
+    prevNmi = pollNmi()
+    nextStepOverride = null   // Clear the override
     return when (next) {
       RESET -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
       NMI -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
@@ -39,7 +41,7 @@ class Cpu(
     }
   }
 
-  private fun nextStep() = when {
+  private fun nextStepType() = nextStepOverride ?: when {
     pollReset() -> RESET
     pollNmi() && !prevNmi -> NMI
     pollIrq() && !state.p.i -> IRQ
@@ -308,7 +310,9 @@ class Cpu(
     var state
       get() = this@Cpu.state
       set(value) { this@Cpu.state = value.copy() }
-    val nextStep get() = nextStep()
+    var nextStepType
+      get() = nextStepType()
+      set(value) { nextStepOverride = value }
     fun decodeAt(pc: Address) = this@Cpu.decodeAt(pc)
   }
 

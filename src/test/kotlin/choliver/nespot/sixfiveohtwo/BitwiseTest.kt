@@ -1,6 +1,5 @@
 package choliver.nespot.sixfiveohtwo
 
-import choliver.nespot.sixfiveohtwo.assertForAddressModes
 import choliver.nespot.sixfiveohtwo.model.Opcode.*
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1

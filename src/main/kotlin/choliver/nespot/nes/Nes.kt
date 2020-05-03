@@ -9,6 +9,7 @@ import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
+import choliver.nespot.sixfiveohtwo.utils._0
 import java.nio.IntBuffer
 
 class Nes(
@@ -51,9 +52,9 @@ class Nes(
         onStore(addr, data)
       }
     },
-    pollReset = reset::poll,
-    pollIrq = apu::irq, // TODO - wire up to debugger (in both directions)
-    pollNmi = ppu::vbl  // TODO - wire up to debugger (in both directions)
+    pollReset = { _0 },
+    pollIrq = apu::irq,
+    pollNmi = ppu::vbl
   )
 
   private val sequencer = Sequencer(cpu, apu, ppu)
@@ -70,9 +71,6 @@ class Nes(
     val vram = this@Nes.ppuRam
     fun peek(addr: Address) = cpuMapper[addr]
     fun peekV(addr: Address) = ppuMapper[addr]
-    fun fireReset() = reset.set()
-    fun fireNmi() = nmi.set()
-    fun fireIrq() = irq.set()
   }
 
   val diagnostics = Diagnostics()

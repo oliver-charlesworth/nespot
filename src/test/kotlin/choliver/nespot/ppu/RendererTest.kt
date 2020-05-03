@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.nio.IntBuffer
 
-// TODO - greyscale
 // TODO - colour emphasis
 class RendererTest {
   private val colors = (0..63).toList()
@@ -631,6 +630,25 @@ class RendererTest {
     // TODO - ensure we do minimal memory loads
   }
 
+  @Test
+  fun `greyscale mode`() {
+    val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
+    val attrEntries = List(NUM_METATILE_COLUMNS) { 3 }
+    initAttributeMemory(attrEntries)
+    initBgPatternMemory(mapOf(0 to pattern))
+
+    render(greyscale = true)
+
+    assertEquals(
+      (0 until SCREEN_WIDTH).map {
+        val p = pattern[it % TILE_SIZE]
+        colors[paletteEntries[if (p == 0) 0 else (p + NUM_ENTRIES_PER_PALETTE * 3)] and 0x30]
+      },
+      extractScanline()
+    )
+  }
+
+
   private fun assertBuffer(expected: (Int) -> Int) {
     assertEquals(
       (0 until SCREEN_WIDTH).map { colors[paletteEntries[expected(it)]] },
@@ -650,7 +668,8 @@ class RendererTest {
     sprRenderingEnabled: Boolean = true,
     bgLeftTileEnabled: Boolean = true,
     sprLeftTileEnabled: Boolean = true,
-    largeSprites: Boolean = false
+    largeSprites: Boolean = false,
+    greyscale: Boolean = false
   ) = State(
     bgEnabled = bgRenderingEnabled,
     sprEnabled = sprRenderingEnabled,
@@ -659,6 +678,7 @@ class RendererTest {
     largeSprites = largeSprites,
     bgPatternTable = bgPatternTable,
     sprPatternTable = sprPatternTable,
+    greyscale = greyscale,
     coords = Coords(
       xCoarse = xCoarse,
       xFine = xFine,

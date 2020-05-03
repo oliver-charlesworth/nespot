@@ -6,7 +6,7 @@ import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
 
 // TODO - frame interrupt
 class Apu(
-  private val buffer: ByteArray,
+  private val buffer: FloatArray,
   memory: Memory,
   private val sequencer: FrameSequencer = FrameSequencer(),
   private val channels: Channels = Channels(
@@ -147,12 +147,7 @@ class Apu(
   }
 
   fun generateSample() {
-    val rounded = mixer.take()
-
-    // This seems to be the opposite of little-endian
-    buffer[_iSample * 2] = (rounded shr 8).toByte()
-    buffer[_iSample * 2 + 1] = rounded.toByte()
-
+    buffer[_iSample] = mixer.take()
     _iSample = (_iSample + 1) % SAMPLES_PER_FRAME
   }
 

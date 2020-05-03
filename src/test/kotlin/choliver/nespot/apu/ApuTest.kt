@@ -15,7 +15,7 @@ class ApuTest {
   private val dmc = spy(SynthContext(synth = mock<DmcSynth>(), timer = mock()))
   private val sequencer = mock<FrameSequencer>()
   private val apu = Apu(
-    buffer = ByteArray(0),
+    buffer = FloatArray(0),
     memory = mock(),
     sequencer = sequencer,
     channels = Channels(

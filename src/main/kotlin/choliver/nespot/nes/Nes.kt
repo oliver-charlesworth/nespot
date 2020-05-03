@@ -16,15 +16,8 @@ class Nes(
   videoBuffer: IntBuffer,
   audioBuffer: ByteArray,
   joypads: Joypads,
-  onReset: () -> Unit = {},
-  onNmi: () -> Unit = {},
-  onIrq: () -> Unit = {},
   private val onStore: (Address, Data) -> Unit = { _: Address, _: Data -> }
 ) {
-  private val reset = InterruptSource(onReset)
-  private val nmi = InterruptSource(onNmi)
-  private val irq = InterruptSource(onIrq)
-
   private val cartridge = Cartridge(rom)
 
   private val apu = Apu(
@@ -67,15 +60,6 @@ class Nes(
 
   fun runToEndOfFrame() {
     sequencer.runToEndOfFrame()
-  }
-
-  private class InterruptSource(private val listener: () -> Unit) {
-    private var b = false
-    fun poll() = b.also { b = false }
-    fun set() {
-      b = true
-      listener()
-    }
   }
 
   inner class Diagnostics internal constructor() {

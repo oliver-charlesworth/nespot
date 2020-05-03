@@ -64,5 +64,4 @@ class TransferTest {
       expectedRegs = { source(0x00).dest(0x00).with(z = _1, n = _0) }
     )
   }
-
 }

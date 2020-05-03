@@ -144,7 +144,7 @@ fun assertCpuEffects(
     pollIrq = { pollIrq(iStep) }
   )
 
-  cpu.diagnostics.regs = initRegs.with(pc = BASE_USER)
+  cpu.diagnostics.state.regs = initRegs.with(pc = BASE_USER)
 
   repeat(numStepsToExecute) {
     numCycles += cpu.executeStep()
@@ -152,7 +152,7 @@ fun assertCpuEffects(
   }
 
   if (expectedRegs != null) {
-    assertEquals(expectedRegs, cpu.diagnostics.regs, "Unexpected registers for [${name}]")
+    assertEquals(expectedRegs, cpu.diagnostics.state.regs, "Unexpected registers for [${name}]")
   }
 
   expectedStores.forEach { (addr, data) -> verify(memory)[addr] = data }

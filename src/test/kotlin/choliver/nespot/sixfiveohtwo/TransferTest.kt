@@ -3,7 +3,7 @@ package choliver.nespot.sixfiveohtwo
 import choliver.nespot.Data
 import choliver.nespot.sixfiveohtwo.model.Opcode
 import choliver.nespot.sixfiveohtwo.model.Opcode.*
-import choliver.nespot.sixfiveohtwo.model.State
+import choliver.nespot.sixfiveohtwo.model.Regs
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Test
@@ -38,31 +38,30 @@ class TransferTest {
   fun txs() {
     assertForAddressModes(
       TXS,
-      initState = { with(x = 0x10) },
-      expectedState = { with(x = 0x10, s = 0x10) }
+      initRegs = { with(x = 0x10) },
+      expectedRegs = { with(x = 0x10, s = 0x10) }
     )
   }
 
   private fun assertTransferAndFlags(
     op: Opcode,
-    source: State.(Data) -> State,
-    dest: State.(Data) -> State
+    source: Regs.(Data) -> Regs,
+    dest: Regs.(Data) -> Regs
   ) {
     assertForAddressModes(
       op,
-      initState = { source(0x10) },
-      expectedState = { source(0x10).dest(0x10).with(z = _0, n = _0) }
+      initRegs = { source(0x10) },
+      expectedRegs = { source(0x10).dest(0x10).with(z = _0, n = _0) }
     )
     assertForAddressModes(
       op,
-      initState = { source(0xF0) },
-      expectedState = { source(0xF0).dest(0xF0).with(z = _0, n = _1) }
+      initRegs = { source(0xF0) },
+      expectedRegs = { source(0xF0).dest(0xF0).with(z = _0, n = _1) }
     )
     assertForAddressModes(
       op,
-      initState = { source(0x00) },
-      expectedState = { source(0x00).dest(0x00).with(z = _1, n = _0) }
+      initRegs = { source(0x00) },
+      expectedRegs = { source(0x00).dest(0x00).with(z = _1, n = _0) }
     )
   }
-
 }

@@ -11,8 +11,8 @@ class StackTest {
   fun pha() {
     assertForAddressModes(
       PHA,
-      initState = { with(s = 0x30, a = 0x20) },
-      expectedState = { with(s = 0x2F, a = 0x20) },
+      initRegs = { with(s = 0x30, a = 0x20) },
+      expectedRegs = { with(s = 0x2F, a = 0x20) },
       expectedStores = { listOf(0x0130 to 0x20) }
     )
   }
@@ -21,8 +21,8 @@ class StackTest {
   fun php() {
     assertForAddressModes(
       PHP,
-      initState = { with(s = 0x30, n = _1, v = _1, d = _1, i = _1, z = _1, c = _1) },
-      expectedState = { with(s = 0x2F, n = _1, v = _1, d = _1, i = _1, z = _1, c = _1) },
+      initRegs = { with(s = 0x30, n = _1, v = _1, d = _1, i = _1, z = _1, c = _1) },
+      expectedRegs = { with(s = 0x2F, n = _1, v = _1, d = _1, i = _1, z = _1, c = _1) },
       expectedStores = { listOf(0x0130 to 0xDF) }  // Note B is also set on stack
     )
   }
@@ -33,8 +33,8 @@ class StackTest {
       assertForAddressModes(
         PLA,
         initStores = mapOf(0x123 to data),
-        initState = { with(s = 0x22) },
-        expectedState = { with(s = 0x23, a = data, z = z, n = n) }
+        initRegs = { with(s = 0x22) },
+        expectedRegs = { with(s = 0x23, a = data, z = z, n = n) }
       )
     }
 
@@ -48,8 +48,8 @@ class StackTest {
     assertForAddressModes(
       PLP,
       initStores = mapOf(0x123 to 0xCF),
-      initState = { with(s = 0x22) },
-      expectedState = { with(s = 0x23, n = _1, v = _1, d = _1, i = _1, z = _1, c = _1) }
+      initRegs = { with(s = 0x22) },
+      expectedRegs = { with(s = 0x23, n = _1, v = _1, d = _1, i = _1, z = _1, c = _1) }
     )
   }
 }

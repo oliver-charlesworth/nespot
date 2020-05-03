@@ -9,7 +9,7 @@ import choliver.nespot.sixfiveohtwo.model.Opcode
 import choliver.nespot.sixfiveohtwo.model.Opcode.*
 import choliver.nespot.sixfiveohtwo.model.Operand.Immediate
 import choliver.nespot.sixfiveohtwo.model.Operand.ZeroPage
-import choliver.nespot.sixfiveohtwo.model.State
+import choliver.nespot.sixfiveohtwo.model.Regs
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Nested
@@ -73,7 +73,7 @@ class ArithmeticTest {
           Instruction(ADC, Immediate(b.lo())),
           Instruction(STA, ZeroPage(0x01))
         ),
-        initState = State(),
+        initRegs = Regs(),
         expectedStores = listOf(0x00 to expected.lo(), 0x01 to expected.hi())
       )
     }
@@ -94,15 +94,15 @@ class ArithmeticTest {
       assertForAddressModes(
         ADC,
         target = rhs,
-        initState = { with(a = originalA, c = _0, d = _0) },
-        expectedState = { with(a = a, v = v, c = c, n = n, z = z, d = _0) }
+        initRegs = { with(a = originalA, c = _0, d = _0) },
+        expectedRegs = { with(a = a, v = v, c = c, n = n, z = z, d = _0) }
       )
 
       assertForAddressModes(
         ADC,
         target = rhs,
-        initState = { with(a = (originalA - 1), c = _1, d = _0) },
-        expectedState = { with(a = a, v = v, c = c, n = n, z = z, d = _0) }
+        initRegs = { with(a = (originalA - 1), c = _1, d = _0) },
+        expectedRegs = { with(a = a, v = v, c = c, n = n, z = z, d = _0) }
       )
     }
   }
@@ -165,7 +165,7 @@ class ArithmeticTest {
           Instruction(SBC, Immediate(b.lo())),
           Instruction(STA, ZeroPage(0x01))
         ),
-        initState = State(),
+        initRegs = Regs(),
         expectedStores = listOf(0x00 to expected.lo(), 0x01 to expected.hi())
       )
     }
@@ -186,15 +186,15 @@ class ArithmeticTest {
       assertForAddressModes(
         SBC,
         target = rhs,
-        initState = { with(a = originalA, c = _1, d = _0) },
-        expectedState = { with(a = a, v = v, c = c, n = n, z = z, d = _0) }
+        initRegs = { with(a = originalA, c = _1, d = _0) },
+        expectedRegs = { with(a = a, v = v, c = c, n = n, z = z, d = _0) }
       )
 
       assertForAddressModes(
         SBC,
         target = rhs,
-        initState = { with(a = (originalA + 1), c = _0, d = _0) },
-        expectedState = { with(a = a, v = v, c = c, n = n, z = z, d = _0) }
+        initRegs = { with(a = (originalA + 1), c = _0, d = _0) },
+        expectedRegs = { with(a = a, v = v, c = c, n = n, z = z, d = _0) }
       )
     }
   }
@@ -206,8 +206,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CMP,
         target = 0xFD,
-        initState = { with(a = 0xFE) },
-        expectedState = { with(a = 0xFE, c = _1, n = _0, z = _0) }
+        initRegs = { with(a = 0xFE) },
+        expectedRegs = { with(a = 0xFE, c = _1, n = _0, z = _0) }
       )
     }
 
@@ -216,8 +216,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CMP,
         target = 0xFF,
-        initState = { with(a = 0xFE) },
-        expectedState = { with(a = 0xFE, c = _0, n = _1, z = _0) }
+        initRegs = { with(a = 0xFE) },
+        expectedRegs = { with(a = 0xFE, c = _0, n = _1, z = _0) }
       )
     }
 
@@ -226,8 +226,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CMP,
         target = 0xFE,
-        initState = { with(a = 0xFE) },
-        expectedState = { with(a = 0xFE, c = _1, n = _0, z = _1) }
+        initRegs = { with(a = 0xFE) },
+        expectedRegs = { with(a = 0xFE, c = _1, n = _0, z = _1) }
       )
     }
 
@@ -236,8 +236,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CMP,
         target = 0x7F,
-        initState = { with(a = 0x80) },
-        expectedState = { with(a = 0x80, c = _1, n = _0, z = _0) } // 0x80 > 0x7F only if unsigned
+        initRegs = { with(a = 0x80) },
+        expectedRegs = { with(a = 0x80, c = _1, n = _0, z = _0) } // 0x80 > 0x7F only if unsigned
       )
     }
 
@@ -246,8 +246,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CMP,
         target = 0x00,
-        initState = { with(a = 0xFE) },
-        expectedState = { with(a = 0xFE, c = _1, n = _1, z = _0) }
+        initRegs = { with(a = 0xFE) },
+        expectedRegs = { with(a = 0xFE, c = _1, n = _1, z = _0) }
       )
     }
   }
@@ -259,8 +259,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CPX,
         target = 0xFD,
-        initState = { with(x = 0xFE) },
-        expectedState = { with(x = 0xFE, c = _1, n = _0, z = _0) }
+        initRegs = { with(x = 0xFE) },
+        expectedRegs = { with(x = 0xFE, c = _1, n = _0, z = _0) }
       )
     }
 
@@ -274,8 +274,8 @@ class ArithmeticTest {
       assertForAddressModes(
         CPY,
         target = 0xFD,
-        initState = { with(y = 0xFE) },
-        expectedState = { with(y = 0xFE, c = _1, n = _0, z = _0) }
+        initRegs = { with(y = 0xFE) },
+        expectedRegs = { with(y = 0xFE, c = _1, n = _0, z = _0) }
       )
     }
 
@@ -287,19 +287,19 @@ class ArithmeticTest {
     assertForAddressModes(
       DEC,
       target = 0x02,
-      expectedState = { with(z = _0, n = _0) },
+      expectedRegs = { with(z = _0, n = _0) },
       expectedStores = { listOf(it to 0x01) }
     )
     assertForAddressModes(
       DEC,
       target = 0x01,
-      expectedState = { with(z = _1, n = _0) },
+      expectedRegs = { with(z = _1, n = _0) },
       expectedStores = { listOf(it to 0x00) }
     )
     assertForAddressModes(
       DEC,
       target = 0xFF,
-      expectedState = { with(z = _0, n = _1) },
+      expectedRegs = { with(z = _0, n = _1) },
       expectedStores = { listOf(it to 0xFE) }
     )
   }
@@ -308,18 +308,18 @@ class ArithmeticTest {
   fun dex() {
     assertForAddressModes(
       DEX,
-      initState = { with(x = 0x02) },
-      expectedState = { with(x = 0x01, z = _0, n = _0) }
+      initRegs = { with(x = 0x02) },
+      expectedRegs = { with(x = 0x01, z = _0, n = _0) }
     )
     assertForAddressModes(
       DEX,
-      initState = { with(x = 0x01) },
-      expectedState = { with(x = 0x00, z = _1, n = _0) }
+      initRegs = { with(x = 0x01) },
+      expectedRegs = { with(x = 0x00, z = _1, n = _0) }
     )
     assertForAddressModes(
       DEX,
-      initState = { with(x = 0xFF) },
-      expectedState = { with(x = 0xFE, z = _0, n = _1) }
+      initRegs = { with(x = 0xFF) },
+      expectedRegs = { with(x = 0xFE, z = _0, n = _1) }
     )
   }
 
@@ -327,18 +327,18 @@ class ArithmeticTest {
   fun dey() {
     assertForAddressModes(
       DEY,
-      initState = { with(y = 0x02) },
-      expectedState = { with(y = 0x01, z = _0, n = _0) }
+      initRegs = { with(y = 0x02) },
+      expectedRegs = { with(y = 0x01, z = _0, n = _0) }
     )
     assertForAddressModes(
       DEY,
-      initState = { with(y = 0x01) },
-      expectedState = { with(y = 0x00, z = _1, n = _0) }
+      initRegs = { with(y = 0x01) },
+      expectedRegs = { with(y = 0x00, z = _1, n = _0) }
     )
     assertForAddressModes(
       DEY,
-      initState = { with(y = 0xFF) },
-      expectedState = { with(y = 0xFE, z = _0, n = _1) }
+      initRegs = { with(y = 0xFF) },
+      expectedRegs = { with(y = 0xFE, z = _0, n = _1) }
     )
   }
 
@@ -347,19 +347,19 @@ class ArithmeticTest {
     assertForAddressModes(
       INC,
       target = 0x01,
-      expectedState = { with(z = _0, n = _0) },
+      expectedRegs = { with(z = _0, n = _0) },
       expectedStores = { listOf(it to 0x02) }
     )
     assertForAddressModes(
       INC,
       target = 0xFF,
-      expectedState = { with(z = _1, n = _0) },
+      expectedRegs = { with(z = _1, n = _0) },
       expectedStores = { listOf(it to 0x00) }
     )
     assertForAddressModes(
       INC,
       target = 0xFE,
-      expectedState = { with(z = _0, n = _1) },
+      expectedRegs = { with(z = _0, n = _1) },
       expectedStores = { listOf(it to 0xFF) }
     )
   }
@@ -368,18 +368,18 @@ class ArithmeticTest {
   fun inx() {
     assertForAddressModes(
       INX,
-      initState = { with(x = 0x01) },
-      expectedState = { with(x = 0x02, z = _0, n = _0) }
+      initRegs = { with(x = 0x01) },
+      expectedRegs = { with(x = 0x02, z = _0, n = _0) }
     )
     assertForAddressModes(
       INX,
-      initState = { with(x = 0xFF) },
-      expectedState = { with(x = 0x00, z = _1, n = _0) }
+      initRegs = { with(x = 0xFF) },
+      expectedRegs = { with(x = 0x00, z = _1, n = _0) }
     )
     assertForAddressModes(
       INX,
-      initState = { with(x = 0xFE) },
-      expectedState = { with(x = 0xFF, z = _0, n = _1) }
+      initRegs = { with(x = 0xFE) },
+      expectedRegs = { with(x = 0xFF, z = _0, n = _1) }
     )
   }
 
@@ -387,18 +387,18 @@ class ArithmeticTest {
   fun iny() {
     assertForAddressModes(
       INY,
-      initState = { with(y = 0x01) },
-      expectedState = { with(y = 0x02, z = _0, n = _0) }
+      initRegs = { with(y = 0x01) },
+      expectedRegs = { with(y = 0x02, z = _0, n = _0) }
     )
     assertForAddressModes(
       INY,
-      initState = { with(y = 0xFF) },
-      expectedState = { with(y = 0x00, z = _1, n = _0) }
+      initRegs = { with(y = 0xFF) },
+      expectedRegs = { with(y = 0x00, z = _1, n = _0) }
     )
     assertForAddressModes(
       INY,
-      initState = { with(y = 0xFE) },
-      expectedState = { with(y = 0xFF, z = _0, n = _1) }
+      initRegs = { with(y = 0xFE) },
+      expectedRegs = { with(y = 0xFF, z = _0, n = _1) }
     )
   }
 
@@ -439,22 +439,22 @@ class ArithmeticTest {
     op: Opcode,
     target: Data,
     expected: Data,
-    initState: State.() -> State = { this },
-    expectedState: State.() -> State
+    initRegs: Regs.() -> Regs = { this },
+    expectedRegs: Regs.() -> Regs
   ) {
     assertForAddressModes(
       op,
       modes = setOf(ACCUMULATOR),
-      initState = { with(a = target).initState() },
-      expectedState = { with(a = expected).expectedState() }
+      initRegs = { with(a = target).initRegs() },
+      expectedRegs = { with(a = expected).expectedRegs() }
     )
 
     assertForAddressModes(
       op,
       modes = OPCODES_TO_ENCODINGS[op]!!.keys - ACCUMULATOR,
       target = target,
-      initState = initState,
-      expectedState = expectedState,
+      initRegs = initRegs,
+      expectedRegs = expectedRegs,
       expectedStores = { listOf(it to expected) }
     )
   }

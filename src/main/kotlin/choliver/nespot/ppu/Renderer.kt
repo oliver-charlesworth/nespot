@@ -9,6 +9,7 @@ import choliver.nespot.ppu.Ppu.Companion.BASE_PATTERNS
 import choliver.nespot.ppu.Ppu.Companion.NAMETABLE_SIZE_BYTES
 import choliver.nespot.ppu.model.State
 import java.nio.IntBuffer
+import kotlin.math.max
 import kotlin.math.min
 
 // TODO - eliminate all the magic numbers here
@@ -128,26 +129,40 @@ class Renderer(
 
       val inRange = iRow in 0 until if (state.largeSprites) (TILE_SIZE * 2) else TILE_SIZE
 
+      // TODO - test that we *always* load a pattern (neeeded for MMC3 IRQ)
+
       if (inRange) {
+        val pattern = getPattern(
+          iTable = when (state.largeSprites) {
+            true -> iPattern and 0x01
+            false -> state.sprPatternTable
+          },
+          iTile = when (state.largeSprites) {
+            true -> (iPattern and 0xFE) + (if (flipY xor (iRow < TILE_SIZE)) 0 else 1)
+            false -> iPattern
+          },
+          iRow = maybeFlip(iRow % TILE_SIZE, flipY)
+        )
         sprites += SpriteToRender(
           x = xSprite,
           iSprite = iSprite,
-          pattern = getPattern(
-            iTable = when (state.largeSprites) {
-              true -> iPattern and 0x01
-              false -> state.sprPatternTable
-            },
-            iTile = when (state.largeSprites) {
-              true -> (iPattern and 0xFE) + (if (flipY xor (iRow < TILE_SIZE)) 0 else 1)
-              false -> iPattern
-            },
-            iRow = maybeFlip(iRow % TILE_SIZE, flipY)
-          ),
+          pattern = pattern,
           palette = (attrs and 0x03) + 4,
           flipX = attrs.isBitSet(6),
           behind = attrs.isBitSet(5)
         )
       }
+      if (sprites.size == MAX_SPRITES_PER_SCANLINE) {
+        break
+      }
+    }
+
+    repeat(max(0, MAX_SPRITES_PER_SCANLINE - sprites.size)) {
+      getPattern(
+        iTable = 1,
+        iTile = 0xFF,
+        iRow = 0
+      )
     }
 
     return sprites

@@ -22,6 +22,7 @@ class Ppu(
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   fun executeScanline() {
     with(state) {
+      println("Scanline = ${scanline}")
       when (scanline) {
         in (0 until SCREEN_HEIGHT) -> {
           if (bgEnabled || sprEnabled) {

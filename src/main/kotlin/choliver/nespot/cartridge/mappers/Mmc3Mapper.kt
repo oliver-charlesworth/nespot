@@ -14,8 +14,13 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
   private var prgModeFlag = false
   private var regSelect = 0
   private val regs = IntArray(8) { 0 }
+  private var irqReload = false
+  private var irqReloadValue: Data = 0x00
+  private var irqEnabled = false
+  private var irqCounter = 0x00
+  private var prevA12 = false
 
-  override val irq = false
+  override val irq get() = irqEnabled && (irqCounter == 0)
 
   override val prg = object : Memory {
     override operator fun get(addr: Address) = when {
@@ -51,12 +56,12 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
               true -> mirrorModeFlag = data.isBitSet(0)
             }
             2 -> when (even) {
-              false -> Unit // TODO - IRQ reload
-              true -> Unit // TODO - IRQ latch
+              false -> irqReload = true
+              true -> irqReloadValue = data
             }
             3 -> when (even) {
-              false -> Unit // TODO - IRQ enable
-              true -> Unit // TODO - IRQ disable
+              false -> irqEnabled = true
+              true -> irqEnabled = false  // TODO - "acknowledge any pending interrupts"
             }
           }
         }
@@ -66,26 +71,32 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
   }
 
   override fun chr(vram: Memory) = object : Memory {
-    override fun get(addr: Address) = when {
-      (addr >= BASE_VRAM) -> vram[mapToVram(addr)]  // This maps everything >= 0x4000 too
-      else -> {
-        val a = if (chrModeFlag) (addr xor 0x1000) else addr
-        val iBank = when (a shr 10) {
-          0 -> regs[0] and 0xFE
-          1 -> regs[0] or 0x01
-          2 -> regs[1] and 0xFE
-          3 -> regs[1] or 0x01
-          4 -> regs[2]
-          5 -> regs[3]
-          6 -> regs[4]
-          7 -> regs[5]
-          else -> throw IllegalArgumentException()  // Should never happen
+    override fun get(addr: Address): Data {
+
+      return when {
+        (addr >= BASE_VRAM) -> vram[mapToVram(addr)]  // This maps everything >= 0x4000 too
+        else -> {
+          updateIrqState(addr)
+
+          val a = if (chrModeFlag) (addr xor 0x1000) else addr
+          val iBank = when (a shr 10) {
+            0 -> regs[0] and 0xFE
+            1 -> regs[0] or 0x01
+            2 -> regs[1] and 0xFE
+            3 -> regs[1] or 0x01
+            4 -> regs[2]
+            5 -> regs[3]
+            6 -> regs[4]
+            7 -> regs[5]
+            else -> throw IllegalArgumentException()  // Should never happen
+          }
+          rom.chrData[(a and 0x03FF) + 0x0400 * iBank].data()
         }
-        rom.chrData[(a and 0x03FF) + 0x0400 * iBank].data()
       }
     }
 
     override fun set(addr: Address, data: Data) {
+//      updateIrqState(addr)
       when {
         (addr >= BASE_VRAM) -> vram[mapToVram(addr)] = data  // This maps everything >= 0x4000 too
       }
@@ -94,6 +105,22 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
     private fun mapToVram(addr: Address): Address = when (mirrorModeFlag) {
       false -> (addr and 2047)
       true -> (addr and 1023) or ((addr and 2048) shr 1)
+    }
+
+    private fun updateIrqState(addr: Address) {
+      val newA12 = addr.isBitSet(12)
+
+      if (!prevA12 && newA12) {
+        if ((irqCounter == 0) || irqReload) {
+//          println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx")
+          irqReload = false
+          irqCounter = irqReloadValue
+        } else {
+          irqCounter--
+        }
+        println("irqCounter = ${irqCounter}")
+      }
+      prevA12 = newA12
     }
   }
 

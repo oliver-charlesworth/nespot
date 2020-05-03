@@ -11,6 +11,8 @@ import choliver.nespot.data
 
 // https://wiki.nesdev.com/w/index.php/NROM
 class NromMapper(private val rom: Rom) : Mapper {
+  override val irq = false
+
   override val prg = object : Memory {
     // Just map everything to PRG-ROM
     override fun get(addr: Address) = rom.prgData[addr and (rom.prgData.size - 1)].data()

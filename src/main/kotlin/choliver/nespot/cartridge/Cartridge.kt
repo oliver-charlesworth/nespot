@@ -8,6 +8,7 @@ import choliver.nespot.cartridge.mappers.UxRomMapper
 // See https://wiki.nesdev.com/w/index.php/INES
 class Cartridge(rom: Rom) {
   private val mapper = createMapper(rom)
+  val irq get() = mapper.irq
   val prg = mapper.prg
   fun chr(vram: Memory) = mapper.chr(vram)
 

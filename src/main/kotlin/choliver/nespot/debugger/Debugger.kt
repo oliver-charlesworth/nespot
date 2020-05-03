@@ -2,6 +2,7 @@ package choliver.nespot.debugger
 
 import choliver.nespot.Address
 import choliver.nespot.Data
+import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
 import choliver.nespot.debugger.CallStackManager.FrameType.NMI
@@ -17,12 +18,14 @@ import choliver.nespot.debugger.PointManager.Point.Watchpoint
 import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nespot.nes.Nes.Companion.PPU_RAM_SIZE
+import choliver.nespot.runner.Audio
 import choliver.nespot.runner.FakeJoypads
 import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
 import choliver.nespot.runner.Screen.Event.KeyDown
 import choliver.nespot.runner.Screen.Event.KeyUp
+import choliver.nespot.sixfiveohtwo.Cpu.NextStep
 import java.io.File
 import java.io.InputStream
 import java.io.PrintStream
@@ -38,14 +41,6 @@ class Debugger(
     val numInstructions: Int
   )
 
-  private enum class NextStep {
-    INSTRUCTION,
-    RESET,
-    NMI,
-    IRQ
-  }
-
-  private var nextStep = NextStep.INSTRUCTION
   private val events = LinkedBlockingQueue<Screen.Event>()
   private val joypads = FakeJoypads()
   private val screen = Screen(onEvent = { events += it })
@@ -55,12 +50,8 @@ class Debugger(
   private val nes = Nes(
     rom = Rom.parse(rom),
     videoBuffer = screen.buffer,
-    audioBuffer = ByteArray(0),
+    audioBuffer = Audio(frameRateHz = FRAME_RATE_HZ).buffer,
     joypads = joypads,
-    // TODO - this is not correct - doesn't take priority into account, and isn't edge-triggered
-    onReset = { nextStep = NextStep.RESET },
-    onNmi = { nextStep = NextStep.NMI },
-    onIrq = { nextStep = NextStep.IRQ },
     onStore = { addr, data -> stores += (addr to data) }
   ).diagnostics
   private val points = PointManager()
@@ -136,25 +127,25 @@ class Debugger(
 
   private fun execute(cmd: Execute) {
     fun until(cond: () -> Boolean) {
-      while (cond()) {
+      while (!cond()) {
         if (!step()) return
       }
     }
 
-    fun oneThenUntil(cond: () -> Boolean) {
-      var first = true
-      until { (first || cond()).also { first = false } }
+    fun onePlusUntil(cond: () -> Boolean) {
+      var tail = false
+      until { (tail && cond()).also { tail = true } }
     }
 
-    fun untilThenOne(cond: () -> Boolean) {
-      var incomplete = true
-      until { incomplete.also { incomplete = incomplete && cond() } }
+    fun untilPlusOne(cond: () -> Boolean) {
+      var complete = false
+      until { complete.also { complete = complete || cond() } }
     }
 
     when (cmd) {
       is Step -> {
         var i = 0
-        until { ++i <= cmd.num }
+        until { ++i > cmd.num }
       }
 
       // Perform specified number of instructions, but only within this stack frame
@@ -163,29 +154,29 @@ class Debugger(
         var i = 0
         until {
           if (stack.depth == myDepth) i++
-          (i <= cmd.num) && (stack.depth >= myDepth)
+          (i > cmd.num) || (stack.depth < myDepth)
         }
       }
 
       // Prevent Until(currentPC) from doing nothing
-      is Until -> oneThenUntil { nes.cpu.state.pc != cmd.pc }
+      is Until -> onePlusUntil { nes.cpu.state.pc == cmd.pc }
 
       is UntilOffset -> {
         val target = nextPc(cmd.offset)
-        until { nes.cpu.state.pc != target }
+        until { nes.cpu.state.pc == target }
       }
 
       // Prevent UntilOpcode(currentOpcode) from doing nothing
-      is UntilOpcode -> oneThenUntil { instAt(nes.cpu.state.pc).opcode != cmd.op }
+      is UntilOpcode -> onePlusUntil { instAt(nes.cpu.state.pc).opcode == cmd.op }
 
       // One more so that the interrupt actually occurs
-      is UntilNmi -> untilThenOne { nextStep != NextStep.NMI }
+      is UntilNmi -> untilPlusOne { nes.cpu.nextStep == NextStep.NMI }
 
-      is Continue -> until { true }
+      is Continue -> until { false }
 
       is Finish -> {
         val myDepth = stack.depth
-        until { stack.depth >= myDepth }
+        until { stack.depth < myDepth }
       }
     }
 
@@ -289,10 +280,10 @@ class Debugger(
   }
 
   private fun event(cmd: Event) {
-    when (cmd) {
-      is Reset -> nes.fireReset()
-      is Nmi -> nes.fireNmi()
-      is Irq -> nes.fireIrq()
+    nes.cpu.nextStep = when (cmd) {
+      is Reset -> NextStep.RESET
+      is Nmi -> NextStep.NMI
+      is Irq -> NextStep.IRQ
     }
     step()  // Perform one step so the interrupt actually gets handled
   }
@@ -305,7 +296,7 @@ class Debugger(
   }
 
   private fun step(): Boolean {
-    val thisStep = nextStep // nextStep might be modified
+    val thisStep = nes.cpu.nextStep // nextStep might be modified
 
     when (thisStep) {
       NextStep.INSTRUCTION -> {
@@ -333,12 +324,9 @@ class Debugger(
 
     maybeTraceStores()
 
-    when (thisStep) {
-      NextStep.INSTRUCTION -> {
-        stack.postInstruction()
-        stats = stats.copy(numInstructions = stats.numInstructions + 1)
-      }
-      else -> nextStep = NextStep.INSTRUCTION
+    if (thisStep == NextStep.INSTRUCTION) {
+      stack.postInstruction()
+      stats = stats.copy(numInstructions = stats.numInstructions + 1)
     }
 
     return isWatchpointHit() && isBreakpointHit()

@@ -1,6 +1,7 @@
 package choliver.nespot.sixfiveohtwo
 
 import choliver.nespot.*
+import choliver.nespot.sixfiveohtwo.Cpu.NextStep.*
 import choliver.nespot.sixfiveohtwo.model.Opcode
 import choliver.nespot.sixfiveohtwo.model.Opcode.*
 import choliver.nespot.sixfiveohtwo.model.Operand
@@ -23,22 +24,28 @@ class Cpu(
   private var addr: Address = 0x0000
   private var state = State()
   private var prevNmi = _0
+  private var nextStepOverride: NextStep? = null
 
   private val decoder = InstructionDecoder(memory)
 
   // The order here represents interrupt priority
   fun executeStep(): Int {
-    val reset = pollReset()
-    val nmi = pollNmi()
-    val irq = pollIrq()
-    val ret = when {
-      reset -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
-      nmi && !prevNmi -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
-      irq && !state.p.i -> vector(VECTOR_IRQ, updateStack = true, disableIrq = true)
-      else -> executeInstruction()
+    val next = nextStepType()
+    prevNmi = pollNmi()
+    nextStepOverride = null   // Clear the override
+    return when (next) {
+      RESET -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
+      NMI -> vector(VECTOR_NMI, updateStack = true, disableIrq = false)
+      IRQ -> vector(VECTOR_IRQ, updateStack = true, disableIrq = true)
+      INSTRUCTION -> executeInstruction()
     }
-    prevNmi = nmi
-    return ret
+  }
+
+  private fun nextStepType() = nextStepOverride ?: when {
+    pollReset() -> RESET
+    pollNmi() && !prevNmi -> NMI
+    pollIrq() && !state.p.i -> IRQ
+    else -> INSTRUCTION
   }
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {
@@ -292,10 +299,20 @@ class Cpu(
     state.p.n = data.isNeg()
   }
 
+  enum class NextStep {
+    RESET,
+    NMI,
+    IRQ,
+    INSTRUCTION
+  }
+
   inner class Diagnostics internal constructor() {
     var state
       get() = this@Cpu.state
       set(value) { this@Cpu.state = value.copy() }
+    var nextStep
+      get() = nextStepType()
+      set(value) { nextStepOverride = value }
     fun decodeAt(pc: Address) = this@Cpu.decodeAt(pc)
   }
 

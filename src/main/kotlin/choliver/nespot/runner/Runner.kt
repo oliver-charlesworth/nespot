@@ -5,6 +5,7 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
 import choliver.nespot.runner.KeyAction.*
 import choliver.nespot.runner.Screen.Event.*
+import choliver.nespot.sixfiveohtwo.Cpu.NextStep.RESET
 import choliver.nespot.snapshot.SnapshotManager
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -107,7 +108,7 @@ class Runner : CliktCommand(name = "nespot") {
         snapshotManager.restore(snapshotFile!!)
       } else {
         // TODO - reset
-        nes.diagnostics.fireReset()
+        nes.diagnostics.cpu.nextStep = RESET
       }
     }
   }

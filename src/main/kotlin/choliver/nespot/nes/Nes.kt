@@ -9,6 +9,7 @@ import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
+import choliver.nespot.sixfiveohtwo.utils._0
 import java.nio.IntBuffer
 
 class Nes(
@@ -16,15 +17,8 @@ class Nes(
   videoBuffer: IntBuffer,
   audioBuffer: ByteArray,
   joypads: Joypads,
-  onReset: () -> Unit = {},
-  onNmi: () -> Unit = {},
-  onIrq: () -> Unit = {},
   private val onStore: (Address, Data) -> Unit = { _: Address, _: Data -> }
 ) {
-  private val reset = InterruptSource(onReset)
-  private val nmi = InterruptSource(onNmi)
-  private val irq = InterruptSource(onIrq)
-
   private val cartridge = Cartridge(rom)
 
   private val apu = Apu(
@@ -58,24 +52,15 @@ class Nes(
         onStore(addr, data)
       }
     },
-    pollReset = reset::poll,
-    pollIrq = apu::irq, // TODO - wire up to debugger (in both directions)
-    pollNmi = ppu::vbl  // TODO - wire up to debugger (in both directions)
+    pollReset = { _0 },
+    pollIrq = apu::irq,
+    pollNmi = ppu::vbl
   )
 
   private val sequencer = Sequencer(cpu, apu, ppu)
 
   fun runToEndOfFrame() {
     sequencer.runToEndOfFrame()
-  }
-
-  private class InterruptSource(private val listener: () -> Unit) {
-    private var b = false
-    fun poll() = b.also { b = false }
-    fun set() {
-      b = true
-      listener()
-    }
   }
 
   inner class Diagnostics internal constructor() {
@@ -86,9 +71,6 @@ class Nes(
     val vram = this@Nes.ppuRam
     fun peek(addr: Address) = cpuMapper[addr]
     fun peekV(addr: Address) = ppuMapper[addr]
-    fun fireReset() = reset.set()
-    fun fireNmi() = nmi.set()
-    fun fireIrq() = irq.set()
   }
 
   val diagnostics = Diagnostics()

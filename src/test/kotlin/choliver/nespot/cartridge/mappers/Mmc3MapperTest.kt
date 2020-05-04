@@ -2,9 +2,15 @@ package choliver.nespot.cartridge.mappers
 
 import choliver.nespot.Address
 import choliver.nespot.Data
+import choliver.nespot.Memory
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.mappers.Mmc3Mapper.Companion.BASE_PRG_ROM
 import choliver.nespot.cartridge.mappers.Mmc3Mapper.Companion.PRG_BANK_SIZE
+import choliver.nespot.data
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -105,7 +111,63 @@ class Mmc3MapperTest {
   }
 
 
-  // TODO - mirroring modes
+  @Nested
+  inner class Vram {
+    @Test
+    fun `vertical mirroring`() {
+      val cases = mapOf(
+        // Nametable 0
+        0x2000 to 0x0000,
+        0x23FF to 0x03FF,
+        // Nametable 1
+        0x2400 to 0x0400,
+        0x27FF to 0x07FF,
+        // Nametable 2
+        0x2800 to 0x0000,
+        0x2BFF to 0x03FF,
+        // Nametable 3
+        0x2C00 to 0x0400,
+        0x2FFF to 0x07FF
+      )
+
+      cases.forEach { (source, target) -> assertLoadAndStore(mode = 0, source = source, target = target) }
+    }
+
+    @Test
+    fun `horizontal mirroring`() {
+      val cases = mapOf(
+        // Nametable 0
+        0x2000 to 0x0000,
+        0x23FF to 0x03FF,
+        // Nametable 1
+        0x2400 to 0x0000,
+        0x27FF to 0x03FF,
+        // Nametable 2
+        0x2800 to 0x0400,
+        0x2BFF to 0x07FF,
+        // Nametable 3
+        0x2C00 to 0x0400,
+        0x2FFF to 0x07FF
+      )
+
+      cases.forEach { (source, target) -> assertLoadAndStore(mode = 1, source = source, target = target) }
+    }
+
+    private fun assertLoadAndStore(mode: Int, source: Address, target: Address) {
+      val mapper = Mmc3Mapper(Rom())
+      val vram = mock<Memory>()
+      val chr = mapper.chr(vram)
+      mapper.prg[0xA000] = mode
+
+      val data = (target + 23).data() // Arbitrary payload
+      whenever(vram[target]) doReturn data
+
+      assertEquals(data, chr[source])
+
+      chr[source] = data
+      verify(vram)[target] = data
+    }
+  }
 
   // TODO - chr modes (all banks * 2)
 

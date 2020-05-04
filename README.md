@@ -66,11 +66,11 @@ NESpot is built with JDK 11.  It may work with older Java versions, but this has
 | Micro Machines        | `C7FD43041FC139DC8440C95C28A0115DC79E2691` | 71 | ✅ Very playable.  [A few graphical glitches](https://github.com/oliver-charlesworth/nespot/issues/88). |
 | Bomberman II          | `2E401097B7B6F5DE5B0F88E6A97C5675BD916801` | 1  | ✅ Very playable.  [Vertical scroll of splash screen not quite right](https://github.com/oliver-charlesworth/nespot/issues/91). |
 | Kirby's Adventure     | `118307DA6C77A592F0884BAAD14120301D8D3A1B` | 4  | ✅ Very playable.  [Start menu judders](TODO). |
+| Super Mario Bros 3    | `A611B90B4833B20A364BF06EE3BE3B9093EA4DF9` | 4  | ✅ Very playable.  [Minor graphical glitches (e.g. floor on splash screen judders)].(TODO). |
 | MIG-29 Soviet Fighter | `B74802F946D99A83E8E223B6F987E6482A8EC41D` | 71 | ❌ Mostly unplayable.  [Gameplay is flickery and slow](https://github.com/oliver-charlesworth/nespot/issues/96). |
 | Xenophobe             | `2C430A5D4AF069A4C4B9082422B7F570ADA5AE31` | 1  | ❌ Unplayable.  [Freezes on splash screen](https://github.com/oliver-charlesworth/nespot/issues/97). |
 | New Zealand Story     | `EA388B7B826E14CB907FBEDC1651EE831FB22D41` | 4  | ❌ Unplayable.  [Freezes after splash screen].(TODO). |
-| Super Mario Bros 3    | `A611B90B4833B20A364BF06EE3BE3B9093EA4DF9` | 4  | ❌ Unplayable.  [Crashes on splash screen].(TODO). |
-| Jurassic Park         | `57F755C6A10C6681761070B0350DA72432A534E9` | 4  | ❌ Unplayable.  [Just a black screen].(TODO). |
+| Jurassic Park         | `57F755C6A10C6681761070B0350DA72432A534E9` | 4  | ❌ Mostly unplayable.  [Fairly severe graphical glitches].(TODO). |
 
 
 ## Implementation resources

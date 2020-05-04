@@ -22,7 +22,7 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
   private var prevA12 = false
   private var _irq = false
 
-  override val irq get() = _irq && irqEnabled
+  override val irq get() = _irq
 
   override val prg = object : Memory {
     override operator fun get(addr: Address) = when {
@@ -62,12 +62,10 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
               true -> irqReloadValue = data
             }
             3 -> when (even) {
-              false -> {
-                irqEnabled = true
-                _irq = false
-              }
+              false -> irqEnabled = true
               true -> {
                 irqEnabled = false
+                _irq = false
               }
             }
           }

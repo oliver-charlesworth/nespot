@@ -20,8 +20,9 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
   private var irqEnabled = false
   private var irqCounter = 0x00
   private var prevA12 = false
+  private var _irq = false
 
-  override val irq get() = irqEnabled && (irqCounter == 0)
+  override val irq get() = _irq && irqEnabled
 
   override val prg = object : Memory {
     override operator fun get(addr: Address) = when {
@@ -60,7 +61,15 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
               false -> irqReload = true
               true -> irqReloadValue = data
             }
-            3 -> irqEnabled = !even
+            3 -> when (even) {
+              false -> {
+                irqEnabled = true
+                _irq = false
+              }
+              true -> {
+                irqEnabled = false
+              }
+            }
           }
         }
         (addr >= BASE_PRG_RAM) -> prgRam[addr and 0x1FFF] = data
@@ -110,13 +119,14 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
 
       if (!prevA12 && newA12) {
         if ((irqCounter == 0) || irqReload) {
-//          println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx")
+          if (irqEnabled && (irqCounter == 0)) {
+            _irq = true
+          }
           irqReload = false
           irqCounter = irqReloadValue
         } else {
           irqCounter--
         }
-//        println("irqCounter = ${irqCounter}")
       }
       prevA12 = newA12
     }

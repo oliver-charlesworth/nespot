@@ -77,11 +77,11 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
 
   override fun chr(vram: Memory) = object : Memory {
     override fun get(addr: Address): Data {
+      updateIrqState(addr)
 
       return when {
         (addr >= BASE_VRAM) -> vram[mapToVram(addr)]  // This maps everything >= 0x4000 too
         else -> {
-          updateIrqState(addr)
 
           val a = if (chrModeFlag) (addr xor 0x1000) else addr
           val iBank = when (a shr 10) {
@@ -101,7 +101,7 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
     }
 
     override fun set(addr: Address, data: Data) {
-//      updateIrqState(addr)
+      updateIrqState(addr)
       when {
         (addr >= BASE_VRAM) -> vram[mapToVram(addr)] = data  // This maps everything >= 0x4000 too
       }

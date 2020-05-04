@@ -19,7 +19,7 @@ import org.junit.jupiter.params.provider.ValueSource
 class Mmc1MapperTest {
   @Nested
   inner class PrgRam {
-    private val mapper = Mmc1Mapper(Rom(chrData = ByteArray(0)))
+    private val mapper = Mmc1Mapper(Rom())
 
     @Test
     fun `load and store`() {
@@ -122,7 +122,7 @@ class Mmc1MapperTest {
       ))
     }
 
-    private fun configure(mode: Int, bank: Int?, data: Map<Int, Data>) {
+    private fun configure(mode: Int, bank: Int?, data: Map<Address, Data>) {
       data.forEach { (addr, data) -> prgData[addr] = data.toByte() }
       mapper.writeReg(0, mode shl 2)
       if (bank != null) {

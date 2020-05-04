@@ -1,15 +1,15 @@
 package choliver.nespot.cartridge.mappers
 
 import choliver.nespot.*
+import choliver.nespot.cartridge.*
 import choliver.nespot.cartridge.BASE_VRAM
-import choliver.nespot.cartridge.Mapper
-import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.mirrorHorizontal
+import choliver.nespot.cartridge.mirrorVertical
 
 // See https://wiki.nesdev.com/w/index.php/MMC3
 class Mmc3Mapper(private val rom: Rom) : Mapper {
-  private val prgRam = Ram(8192)
+  private val prgRam = Ram(PRG_RAM_SIZE)
   private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
-  private val numChrBanks = (rom.chrData.size / CHR_BANK_SIZE)
   private var mirrorModeFlag = false
   private var chrModeFlag = false
   private var prgModeFlag = false
@@ -26,51 +26,15 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
 
   override val prg = object : Memory {
     override operator fun get(addr: Address) = when {
-      (addr >= BASE_PRG_ROM) -> {
-        val iBank = when ((addr and 0x6000) shr 13) {
-          0 -> if (prgModeFlag) (numPrgBanks - 2) else regs[6]
-          1 -> regs[7]
-          2 -> if (prgModeFlag) regs[6] else (numPrgBanks - 2)
-          3 -> (numPrgBanks - 1)
-          else -> throw IllegalArgumentException()  // Should never happen
-        }
-        rom.prgData[(addr and (PRG_BANK_SIZE - 1)) + PRG_BANK_SIZE * iBank].data()
-      }
-      (addr >= BASE_PRG_RAM) -> prgRam[addr and 0x1FFF]
+      (addr >= BASE_PRG_ROM) -> loadFromPrgRom(addr)
+      (addr >= BASE_PRG_RAM) -> prgRam[addr and (PRG_RAM_SIZE - 1)]
       else -> 0x00
     }
 
     override fun set(addr: Address, data: Data) {
-      val even = (addr % 2) == 0
       when {
-        (addr >= BASE_PRG_ROM) -> {
-          when ((addr and 0x6000) shr 13) {
-            0 -> when (even) {
-              false -> regs[regSelect] = data
-              true -> {
-                chrModeFlag = data.isBitSet(7)
-                prgModeFlag = data.isBitSet(6)
-                regSelect = data and 0b00000111
-              }
-            }
-            1 -> when (even) {
-              false -> Unit // TODO - PRG-RAM protect
-              true -> mirrorModeFlag = data.isBitSet(0)
-            }
-            2 -> when (even) {
-              false -> irqReload = true
-              true -> irqReloadValue = data
-            }
-            3 -> when (even) {
-              false -> irqEnabled = true
-              true -> {
-                irqEnabled = false
-                _irq = false
-              }
-            }
-          }
-        }
-        (addr >= BASE_PRG_RAM) -> prgRam[addr and 0x1FFF] = data
+        (addr >= BASE_REG) -> writeReg(addr, data)
+        (addr >= BASE_PRG_RAM) -> prgRam[addr and (PRG_RAM_SIZE - 1)] = data
       }
     }
   }
@@ -78,25 +42,9 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
   override fun chr(vram: Memory) = object : Memory {
     override fun get(addr: Address): Data {
       updateIrqState(addr)
-
       return when {
         (addr >= BASE_VRAM) -> vram[mapToVram(addr)]  // This maps everything >= 0x4000 too
-        else -> {
-
-          val a = if (chrModeFlag) (addr xor 0x1000) else addr
-          val iBank = when (a shr 10) {
-            0 -> regs[0] and 0xFE
-            1 -> regs[0] or 0x01
-            2 -> regs[1] and 0xFE
-            3 -> regs[1] or 0x01
-            4 -> regs[2]
-            5 -> regs[3]
-            6 -> regs[4]
-            7 -> regs[5]
-            else -> throw IllegalArgumentException()  // Should never happen
-          }
-          rom.chrData[(a and 0x03FF) + 0x0400 * (iBank and (numChrBanks - 1))].data() // TODO - horrible wrapping
-        }
+        else -> loadFromChrRom(addr)
       }
     }
 
@@ -108,26 +56,82 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
     }
 
     private fun mapToVram(addr: Address): Address = when (mirrorModeFlag) {
-      false -> (addr and 2047)
-      true -> (addr and 1023) or ((addr and 2048) shr 1)
+      false -> mirrorVertical(addr)
+      true -> mirrorHorizontal(addr)
     }
+  }
 
-    private fun updateIrqState(addr: Address) {
-      val newA12 = addr.isBitSet(12)
+  private fun loadFromPrgRom(addr: Address): Data {
+    val iBank = when ((addr and 0x6000) shr 13) {
+      0 -> if (prgModeFlag) (numPrgBanks - 2) else regs[6]
+      1 -> regs[7]
+      2 -> if (prgModeFlag) regs[6] else (numPrgBanks - 2)
+      3 -> (numPrgBanks - 1)
+      else -> throw IllegalArgumentException()  // Should never happen
+    }
+    return rom.prgData[(addr and (PRG_BANK_SIZE - 1)) + PRG_BANK_SIZE * iBank].data()
+  }
 
-      if (!prevA12 && newA12) {
-        if ((irqCounter == 0) || irqReload) {
-          if (irqEnabled && (irqCounter == 0)) {
-            _irq = true
-          }
-          irqReload = false
-          irqCounter = irqReloadValue
-        } else {
-          irqCounter--
+  private fun loadFromChrRom(addr: Address): Data {
+    val a = if (chrModeFlag) (addr xor 0x1000) else addr  // Conditional inversion of A12
+    val iBank = when (a shr 10) {
+      0 -> regs[0] and 0xFE
+      1 -> regs[0] or 0x01
+      2 -> regs[1] and 0xFE
+      3 -> regs[1] or 0x01
+      4 -> regs[2]
+      5 -> regs[3]
+      6 -> regs[4]
+      7 -> regs[5]
+      else -> throw IllegalArgumentException()  // Should never happen
+    }
+    return rom.chrData[(a and (CHR_BANK_SIZE - 1)) + CHR_BANK_SIZE * iBank].data()
+  }
+
+  private fun writeReg(addr: Address, data: Data) {
+    val even = (addr % 2) == 0
+    when ((addr and 0x6000) shr 13) {
+      0 -> when (even) {
+        false -> regs[regSelect] = data
+        true -> {
+          chrModeFlag = data.isBitSet(7)
+          prgModeFlag = data.isBitSet(6)
+          regSelect = data and 0b00000111
         }
       }
-      prevA12 = newA12
+      1 -> when (even) {
+        false -> Unit // TODO - PRG-RAM protect
+        true -> mirrorModeFlag = data.isBitSet(0)
+      }
+      2 -> when (even) {
+        false -> irqReload = true
+        true -> irqReloadValue = data
+      }
+      3 -> when (even) {
+        false -> irqEnabled = true
+        true -> {
+          irqEnabled = false
+          _irq = false
+        }
+      }
     }
+  }
+
+  private fun updateIrqState(addr: Address) {
+    val newA12 = addr.isBitSet(12)
+
+    if (!prevA12 && newA12) {
+      if ((irqCounter == 0) || irqReload) {
+        if (irqEnabled && (irqCounter == 0)) {
+          _irq = true
+        }
+        irqReload = false
+        irqCounter = irqReloadValue
+      } else {
+        irqCounter--
+      }
+    }
+    prevA12 = newA12
   }
 
   @Suppress("unused")
@@ -136,6 +140,7 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
     const val BASE_PRG_ROM = 0x8000
     const val BASE_REG = 0x8000
 
+    const val PRG_RAM_SIZE = 0x2000
     const val PRG_BANK_SIZE = 0x2000
     const val CHR_BANK_SIZE = 0x0400
   }

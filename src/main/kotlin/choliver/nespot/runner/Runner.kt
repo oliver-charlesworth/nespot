@@ -65,16 +65,19 @@ class Runner : CliktCommand(name = "nespot") {
       screen.show()
       audio.start()
 
-      while (!closed) {
-        measureNanoTime {
-          nes.runToEndOfFrame()
-          screen.redraw()
-          audio.play()
-          consumeEvents()
+      try {
+        while (!closed) {
+          measureNanoTime {
+            nes.runToEndOfFrame()
+            screen.redraw()
+            audio.play()
+            consumeEvents()
+          }
         }
+      } finally {
+        screen.hide()
+        screen.exit()
       }
-
-      screen.exit()
     }
 
     private fun runPerfTest() {

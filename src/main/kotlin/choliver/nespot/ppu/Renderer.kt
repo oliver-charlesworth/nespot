@@ -31,7 +31,7 @@ class Renderer(
   private data class SpriteToRender(
     val x: Int,
     val iSprite: Int,
-    val pattern: Int,
+    val patternAddr: Int,
     val palette: Int,
     val flipX: Boolean,
     val behind: Boolean
@@ -83,7 +83,7 @@ class Renderer(
             (xCoarse / 4)
 
           palette = (memory[addrAttr] shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
-          pattern = getPattern(iTable = state.bgPatternTable, iTile = memory[addrNt], iRow = yFine)
+          pattern = loadPattern(patternAddr(iTable = state.bgPatternTable, iTile = memory[addrNt], iRow = yFine))
         }
         with(pixels[x]) {
           c = patternPixel(pattern, xFine)
@@ -132,21 +132,20 @@ class Renderer(
       // TODO - test that we *always* load a pattern (neeeded for MMC3 IRQ)
 
       if (inRange) {
-        val pattern = getPattern(
-          iTable = when (state.largeSprites) {
-            true -> iPattern and 0x01
-            false -> state.sprPatternTable
-          },
-          iTile = when (state.largeSprites) {
-            true -> (iPattern and 0xFE) + (if (flipY xor (iRow < TILE_SIZE)) 0 else 1)
-            false -> iPattern
-          },
-          iRow = maybeFlip(iRow % TILE_SIZE, flipY)
-        )
         sprites += SpriteToRender(
           x = xSprite,
           iSprite = iSprite,
-          pattern = pattern,
+          patternAddr = patternAddr(
+            iTable = when (state.largeSprites) {
+              true -> iPattern and 0x01
+              false -> state.sprPatternTable
+            },
+            iTile = when (state.largeSprites) {
+              true -> (iPattern and 0xFE) + (if (flipY xor (iRow < TILE_SIZE)) 0 else 1)
+              false -> iPattern
+            },
+            iRow = maybeFlip(iRow % TILE_SIZE, flipY)
+          ),
           palette = (attrs and 0x03) + 4,
           flipX = attrs.isBitSet(6),
           behind = attrs.isBitSet(5)
@@ -158,11 +157,7 @@ class Renderer(
     }
 
     repeat(max(0, MAX_SPRITES_PER_SCANLINE - sprites.size)) {
-      getPattern(
-        iTable = 1,
-        iTile = 0xFF,
-        iRow = 0
-      )
+      loadPattern(patternAddr(iTable = 1, iTile = 0xFF, iRow = 0))
     }
 
     return sprites
@@ -173,9 +168,11 @@ class Renderer(
 
     // Lowest index is highest priority, so render last
     sprites.forEach { spr ->
+      val pattern = loadPattern(spr.patternAddr)
+
       for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - spr.x)) {
         val x = spr.x + xPixel
-        val c = patternPixel(spr.pattern, maybeFlip(xPixel, spr.flipX))
+        val c = patternPixel(pattern, maybeFlip(xPixel, spr.flipX))
         val px = pixels[x]
 
         val opaqueSpr = (c != 0)
@@ -216,12 +213,13 @@ class Renderer(
   private fun patternPixel(pattern: Int, xPixel: Int) =
     ((pattern shr (7 - xPixel)) and 1) or (((pattern shr (14 - xPixel)) and 2))
 
-  private fun getPattern(iTable: Int, iTile: Int, iRow: Int): Int {
-    val addr = (iTable * 4096) + (iTile * 16) + iRow
+  private fun loadPattern(addr: Int): Int {
     val p0 = memory[BASE_PATTERNS + addr]
     val p1 = memory[BASE_PATTERNS + addr + TILE_SIZE]
     return (p1 shl 8) or p0
   }
+
+  private fun patternAddr(iTable: Int, iTile: Int, iRow: Int) = (iTable * 4096) + (iTile * 16) + iRow
 
   companion object {
     const val MAX_SPRITES_PER_SCANLINE = 8

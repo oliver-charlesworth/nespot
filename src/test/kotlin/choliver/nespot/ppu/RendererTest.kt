@@ -542,14 +542,14 @@ class RendererTest {
     }
 
     @Test
-    fun `doesn't trigger overflow if rendering disabled`() {
+    fun `doesn't trigger overflow if rendering completely disabled`() {
       repeat(9) {
         initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
       }
 
-      assertFalse(render(bgRenderingEnabled = false, sprRenderingEnabled = false).spriteOverflow)
       assertTrue(render(sprRenderingEnabled = false).spriteOverflow)
       assertTrue(render(bgRenderingEnabled = false).spriteOverflow)
+      assertFalse(render(bgRenderingEnabled = false, sprRenderingEnabled = false).spriteOverflow)
     }
 
     @Test

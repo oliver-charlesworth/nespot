@@ -9,6 +9,7 @@ import choliver.nespot.cartridge.Rom
 class Mmc3Mapper(private val rom: Rom) : Mapper {
   private val prgRam = Ram(8192)
   private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
+  private val numChrBanks = (rom.chrData.size / CHR_BANK_SIZE)
   private var mirrorModeFlag = false
   private var chrModeFlag = false
   private var prgModeFlag = false
@@ -59,10 +60,7 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
               false -> irqReload = true
               true -> irqReloadValue = data
             }
-            3 -> when (even) {
-              false -> irqEnabled = true
-              true -> irqEnabled = false  // TODO - "acknowledge any pending interrupts"
-            }
+            3 -> irqEnabled = !even
           }
         }
         (addr >= BASE_PRG_RAM) -> prgRam[addr and 0x1FFF] = data
@@ -90,7 +88,7 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
             7 -> regs[5]
             else -> throw IllegalArgumentException()  // Should never happen
           }
-          rom.chrData[(a and 0x03FF) + 0x0400 * iBank].data()
+          rom.chrData[(a and 0x03FF) + 0x0400 * (iBank and (numChrBanks - 1))].data() // TODO - horrible wrapping
         }
       }
     }
@@ -118,7 +116,7 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
         } else {
           irqCounter--
         }
-        println("irqCounter = ${irqCounter}")
+//        println("irqCounter = ${irqCounter}")
       }
       prevA12 = newA12
     }

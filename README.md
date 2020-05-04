@@ -69,7 +69,7 @@ NESpot is built with JDK 11.  It may work with older Java versions, but this has
 | MIG-29 Soviet Fighter | `B74802F946D99A83E8E223B6F987E6482A8EC41D` | 71 | ❌ Mostly unplayable.  [Gameplay is flickery and slow](https://github.com/oliver-charlesworth/nespot/issues/96). |
 | Xenophobe             | `2C430A5D4AF069A4C4B9082422B7F570ADA5AE31` | 1  | ❌ Unplayable.  [Freezes on splash screen](https://github.com/oliver-charlesworth/nespot/issues/97). |
 | New Zealand Story     | `EA388B7B826E14CB907FBEDC1651EE831FB22D41` | 4  | ❌ Unplayable.  [Freezes after splash screen].(TODO). |
-| Super Mario Bros 3    | `31144C7C436CC78D7FD3AC42B224EEE3A6C2BABC` | 4  | ❌ Unplayable.  [Crashes on splash screen].(TODO). |
+| Super Mario Bros 3    | `A611B90B4833B20A364BF06EE3BE3B9093EA4DF9` | 4  | ❌ Unplayable.  [Crashes on splash screen].(TODO). |
 | Jurassic Park         | `57F755C6A10C6681761070B0350DA72432A534E9` | 4  | ❌ Unplayable.  [Just a black screen].(TODO). |
 
 

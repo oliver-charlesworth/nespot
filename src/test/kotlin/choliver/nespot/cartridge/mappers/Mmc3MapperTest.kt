@@ -3,21 +3,22 @@ package choliver.nespot.cartridge.mappers
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
+import choliver.nespot.apu.repeat
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.mappers.Mmc3Mapper.Companion.BASE_PRG_ROM
 import choliver.nespot.cartridge.mappers.Mmc3Mapper.Companion.CHR_BANK_SIZE
 import choliver.nespot.cartridge.mappers.Mmc3Mapper.Companion.PRG_BANK_SIZE
 import choliver.nespot.data
+import choliver.nespot.sixfiveohtwo.utils._0
+import choliver.nespot.sixfiveohtwo.utils._1
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
 
 
 class Mmc3MapperTest {
@@ -41,7 +42,7 @@ class Mmc3MapperTest {
     private val mapper = Mmc3Mapper(Rom(prgData = prgData))
 
     @Test
-    fun `mode 0`() {
+    fun `mode 0 - variable bank 0, fixed bank 2`() {
       mapper.setModeAndReg(prgMode = 0, reg = 6, data = 3)
       mapper.setModeAndReg(prgMode = 0, reg = 7, data = 5)
 
@@ -52,7 +53,7 @@ class Mmc3MapperTest {
     }
 
     @Test
-    fun `mode 1`() {
+    fun `mode 1 - fixed bank 0, variable bank 2`() {
       mapper.setModeAndReg(prgMode = 1, reg = 6, data = 3)
       mapper.setModeAndReg(prgMode = 1, reg = 7, data = 5)
 
@@ -82,7 +83,7 @@ class Mmc3MapperTest {
     private val mapper = Mmc3Mapper(Rom(chrData = chrData))
 
     @Test
-    fun `low banks are 2k, high banks are 1k`() {
+    fun `mode 0 - low banks are 2k, high banks are 1k`() {
       mapper.setModeAndReg(chrMode = 0, reg = 0, data = 5) // Note we ignore LSB of selected bank
       mapper.setModeAndReg(chrMode = 0, reg = 1, data = 0) // Note we ignore LSB of selected bank
       mapper.setModeAndReg(chrMode = 0, reg = 2, data = 3)
@@ -101,7 +102,7 @@ class Mmc3MapperTest {
     }
 
     @Test
-    fun `low banks are 1k, high banks are 2k`() {
+    fun `mode 1 - low banks are 1k, high banks are 2k`() {
       mapper.setModeAndReg(chrMode = 1, reg = 0, data = 5) // Note we ignore LSB of selected bank
       mapper.setModeAndReg(chrMode = 1, reg = 1, data = 0) // Note we ignore LSB of selected bank
       mapper.setModeAndReg(chrMode = 1, reg = 2, data = 3)
@@ -192,18 +193,137 @@ class Mmc3MapperTest {
     }
   }
 
-  // TODO - irq asserted when countdown complete
+  @Nested
+  inner class Irq {
+    private val mapper = Mmc3Mapper(Rom(chrData = ByteArray(CHR_BANK_SIZE)))
+    private val chr = mapper.chr(mock())
 
-  // TODO - irq cleared (statefully) by disable/enable loop
+    init {
+      setNewValue(3)
+    }
 
-  // TODO - doesn't need to be enabled during the whole countdown
+    @Test
+    fun `irq asserted on (N+1)-th rising edge`() {
+      enable()
 
-  // TODO - irq not asserted if enable low when counter reaches zero
+      assertEquals(
+        listOf(_0, _0, _0, _0, _0, _0, _0, _1),
+        pumpAndCollect(enoughToTrigger)
+      )
+    }
 
-  // TODO - reloads new value when reaches zero
+    @Test
+    fun `irq stays asserted`() {
+      enable()
+      pumpAndCollect(enoughToTrigger)
 
-  // TODO - reloads new value immediately if reload flag set
+      assertEquals(
+        listOf(_1).repeat(4),
+        pumpAndCollect(listOf(lo, hi, lo, hi))
+      )
+    }
 
+    @Test
+    fun `irq de-asserted when disabled`() {
+      enable()
+      pumpAndCollect(enoughToTrigger)
+      disable()
+
+      assertEquals(
+        listOf(_0).repeat(4),
+        pumpAndCollect(listOf(lo, hi, lo, hi))
+      )
+    }
+
+    @Test
+    fun `irq asserted so long as it's enabled for final rising edge`() {
+      disable()
+      pumpAndCollect(enoughToTrigger.dropLast(1)) // Just before (N+1)-th rising edge
+      enable()
+
+      assertEquals(
+        listOf(_1),
+        pumpAndCollect(listOf(hi))
+      )
+    }
+
+    @Test
+    fun `irq not asserted if not enabled for final rising edge`() {
+      enable()
+      pumpAndCollect(enoughToTrigger.dropLast(1)) // Just before (N+1)-th rising edge
+      disable()
+
+      assertEquals(
+        listOf(_0),
+        pumpAndCollect(listOf(hi))
+      )
+    }
+
+    @Test
+    fun `new value doesn't affect current countdown`() {
+      enable()
+      pumpAndCollect(enoughToTrigger.dropLast(2))
+      setNewValue(5)
+
+      assertEquals(
+        listOf(_0, _1),   // We still trigger, meaning we ignore the new value
+        pumpAndCollect(listOf(lo, hi))
+      )
+    }
+
+    @Test
+    fun `new value affects next countdown`() {
+      enable()
+      pumpAndCollect(enoughToTrigger.dropLast(2))
+      setNewValue(5)
+      pumpAndCollect(listOf(lo, hi))
+      disable()   // Clear IRQ
+      enable()
+
+      assertEquals(
+        listOf(_0, _0, _0, _0, _0, _0, _0, _0, _0, _0, _0, _1),
+        pumpAndCollect(listOf(lo, hi, lo, hi, lo, hi, lo, hi, lo, hi, lo, hi))
+      )
+    }
+
+    @Test
+    fun `current countdown restarted if reload flag set`() {
+      enable()
+      pumpAndCollect(enoughToTrigger.dropLast(2))
+      reload()
+
+      assertEquals(
+        listOf(_0, _0, _0, _0, _0, _0, _0, _1),
+        pumpAndCollect(enoughToTrigger)
+      )
+    }
+
+    private fun enable() {
+      mapper.prg[0xE001] = 0xCC
+    }
+
+    private fun disable() {
+      mapper.prg[0xE000] = 0xCC
+    }
+
+    private fun setNewValue(n: Int) {
+      mapper.prg[0xC000] = n
+    }
+
+    private fun reload() {
+      mapper.prg[0xC001] = 0xCC
+    }
+
+    private fun pumpAndCollect(addrs: List<Address>): List<Boolean> {
+      val ret = mutableListOf<Boolean>()
+      addrs.forEach { chr[it]; ret += mapper.irq }
+      return ret
+    }
+
+    private val lo = 0x0000
+    private val hi = 0x1000
+    private val enoughToTrigger = listOf(lo, hi, lo, hi, lo, hi, lo, hi)
+  }
 
   private fun Mapper.setModeAndReg(chrMode: Int = 0, prgMode: Int = 0, reg: Int, data: Data) {
     prg[0x8000] = (chrMode shl 7) or (prgMode shl 6) or reg

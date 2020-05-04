@@ -2,9 +2,7 @@ package choliver.nespot.cartridge.mappers
 
 import choliver.nespot.*
 import choliver.nespot.cartridge.*
-import choliver.nespot.cartridge.BASE_VRAM
-import choliver.nespot.cartridge.mirrorHorizontal
-import choliver.nespot.cartridge.mirrorVertical
+
 
 // See https://wiki.nesdev.com/w/index.php/MMC3
 class Mmc3Mapper(private val rom: Rom) : Mapper {
@@ -118,20 +116,27 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
   }
 
   private fun updateIrqState(addr: Address) {
-    val newA12 = addr.isBitSet(12)
+    if (detectRisingEdge(addr)) {
+      val prevCounter = irqCounter
 
-    if (!prevA12 && newA12) {
       if ((irqCounter == 0) || irqReload) {
-        if (irqEnabled && (irqCounter == 0)) {
-          _irq = true
-        }
         irqReload = false
         irqCounter = irqReloadValue
       } else {
         irqCounter--
       }
+
+      if (irqEnabled && (prevCounter == 1) && (irqCounter == 0)) {
+        _irq = true
+      }
     }
+  }
+
+  private fun detectRisingEdge(addr: Address): Boolean {
+    val newA12 = addr.isBitSet(12)
+    val clockEdge = !prevA12 && newA12
     prevA12 = newA12
+    return clockEdge
   }
 
   @Suppress("unused")

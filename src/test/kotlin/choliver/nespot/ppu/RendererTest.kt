@@ -13,6 +13,10 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.nio.IntBuffer
 
+
+// TODO - test that we *always* load 8 sprite patterns, including dummy sprites (needed for MMC3 IRQ)
+// TODO - renders all eight sprites
+// TODO - only renders valid sprites
 // TODO - colour emphasis
 class RendererTest {
   private val colors = (0..63).toList()

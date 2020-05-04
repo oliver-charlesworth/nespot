@@ -1,15 +1,11 @@
 package choliver.nespot.ppu
 
-import choliver.nespot.Data
-import choliver.nespot.Memory
-import choliver.nespot.MutableForPerfReasons
-import choliver.nespot.isBitSet
+import choliver.nespot.*
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Ppu.Companion.BASE_PATTERNS
 import choliver.nespot.ppu.Ppu.Companion.NAMETABLE_SIZE_BYTES
 import choliver.nespot.ppu.model.State
 import java.nio.IntBuffer
-import kotlin.math.max
 import kotlin.math.min
 
 // TODO - eliminate all the magic numbers here
@@ -28,16 +24,20 @@ class Renderer(
     var opaqueSpr: Boolean = false  // Is an opaque sprite placed here?
   )
 
+  @MutableForPerfReasons
   private data class SpriteToRender(
-    val x: Int,
-    val iSprite: Int,
-    val patternAddr: Int,
-    val palette: Int,
-    val flipX: Boolean,
-    val behind: Boolean
+    var x: Int = 0,
+    var sprite0: Boolean = false,
+    var patternAddr: Address = 0x0000,
+    var palette: Int = 0,
+    var flipX: Boolean = false,
+    var behind: Boolean = false,
+    var valid: Boolean = false
   )
 
   private val pixels = Array(SCREEN_WIDTH) { Pixel() }
+  // One extra to detect overflow
+  private val sprites = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender()}.toList()
 
   fun renderScanline(state: State) {
     if (state.bgEnabled) {
@@ -50,18 +50,18 @@ class Renderer(
       blankLeftBackgroundTile()
     }
 
-    val sprites = getSpritesForScanline(state)
+    val overflow = selectSpritesAndDetectOverflow(state)
 
-    val isHit = if (state.sprEnabled) {
-      prepareSpritesAndDetectHit(state, sprites.take(MAX_SPRITES_PER_SCANLINE))
+    val hit = if (state.sprEnabled) {
+      prepareSpritesAndDetectHit(state)
     } else {
       false
     }
 
     renderToBuffer(state)
 
-    state.sprite0Hit = isHit
-    state.spriteOverflow = (state.bgEnabled || state.sprEnabled) && (sprites.size > MAX_SPRITES_PER_SCANLINE)
+    state.sprite0Hit = hit
+    state.spriteOverflow = (state.bgEnabled || state.sprEnabled) && overflow
   }
 
   private fun prepareBackground(state: State) {
@@ -115,26 +115,28 @@ class Renderer(
     }
   }
 
-  private fun getSpritesForScanline(state: State): List<SpriteToRender> {
-    val sprites = mutableListOf<SpriteToRender>()
+  private fun selectSpritesAndDetectOverflow(state: State): Boolean {
+    var iCandidate = 0
 
-    for (iSprite in 0 until NUM_SPRITES) {
-      val ySprite = oam[iSprite * 4 + 0] + 1   // Offset of one scanline
-      val iPattern = oam[iSprite * 4 + 1]
-      val attrs = oam[iSprite * 4 + 2]
-      val xSprite = oam[iSprite * 4 + 3]
+    sprites.forEach { spr ->
+      spr.valid = false
 
-      val iRow = state.scanline - ySprite
-      val flipY = attrs.isBitSet(7)
+      // Scan until we find a matching sprite
+      while (!spr.valid && (iCandidate < NUM_SPRITES)) {
+        val y = oam[iCandidate * 4 + 0] + 1   // Offset of one scanline
+        val iPattern = oam[iCandidate * 4 + 1]
+        val attrs = oam[iCandidate * 4 + 2]
+        val x = oam[iCandidate * 4 + 3]
 
-      val inRange = iRow in 0 until if (state.largeSprites) (TILE_SIZE * 2) else TILE_SIZE
+        val iRow = state.scanline - y
+        val flipY = attrs.isBitSet(7)
 
-      // TODO - test that we *always* load a pattern (neeeded for MMC3 IRQ)
-
-      if (inRange) {
-        sprites += SpriteToRender(
-          x = xSprite,
-          iSprite = iSprite,
+        with(spr) {
+          this.x = x
+          sprite0 = (iCandidate == 0)
+          palette = (attrs and 0x03) + 4
+          flipX = attrs.isBitSet(6)
+          behind = attrs.isBitSet(5)
           patternAddr = patternAddr(
             iTable = when (state.largeSprites) {
               true -> iPattern and 0x01
@@ -145,58 +147,54 @@ class Renderer(
               false -> iPattern
             },
             iRow = maybeFlip(iRow % TILE_SIZE, flipY)
-          ),
-          palette = (attrs and 0x03) + 4,
-          flipX = attrs.isBitSet(6),
-          behind = attrs.isBitSet(5)
-        )
-      }
-      if (sprites.size == MAX_SPRITES_PER_SCANLINE) {
-        break
+          )
+          valid = iRow in 0 until if (state.largeSprites) (TILE_SIZE * 2) else TILE_SIZE
+        }
+
+        iCandidate++
       }
     }
 
-    repeat(max(0, MAX_SPRITES_PER_SCANLINE - sprites.size)) {
-      loadPattern(patternAddr(iTable = 1, iTile = 0xFF, iRow = 0))
-    }
-
-    return sprites
+    return sprites.last().valid
   }
 
-  private fun prepareSpritesAndDetectHit(state: State, sprites: List<SpriteToRender>): Boolean {
-    var isHit = false
+  // Lowest index is highest priority, so render last
+  private fun prepareSpritesAndDetectHit(state: State) = sprites
+    .dropLast(1)
+    .filter { it.valid }
+    .map { spr -> prepareSpriteAndDetectHit(spr, state) }
+    .any()
 
-    // Lowest index is highest priority, so render last
-    sprites.forEach { spr ->
-      val pattern = loadPattern(spr.patternAddr)
+  private fun prepareSpriteAndDetectHit(spr: SpriteToRender, state: State): Boolean {
+    var hit = false
+    val pattern = loadPattern(spr.patternAddr)
 
-      for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - spr.x)) {
-        val x = spr.x + xPixel
-        val c = patternPixel(pattern, maybeFlip(xPixel, spr.flipX))
-        val px = pixels[x]
+    for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - spr.x)) {
+      val x = spr.x + xPixel
+      val c = patternPixel(pattern, maybeFlip(xPixel, spr.flipX))
+      val px = pixels[x]
 
-        val opaqueSpr = (c != 0)
-        val clipped = !state.sprLeftTileEnabled && (x < TILE_SIZE)
+      val opaqueSpr = (c != 0)
+      val clipped = !state.sprLeftTileEnabled && (x < TILE_SIZE)
 
-        if (opaqueSpr && !px.opaqueSpr && !clipped) {
-          px.opaqueSpr = true
+      if (opaqueSpr && !px.opaqueSpr && !clipped) {
+        px.opaqueSpr = true
 
-          // There is no previous opaque sprite, so if pixel is opaque then it must be background
-          val opaqueBg = (px.c != 0)
+        // There is no previous opaque sprite, so if pixel is opaque then it must be background
+        val opaqueBg = (px.c != 0)
 
-          if (!(spr.behind && opaqueBg)) {
-            px.c = c
-            px.p = spr.palette
-          }
+        if (!(spr.behind && opaqueBg)) {
+          px.c = c
+          px.p = spr.palette
+        }
 
-          if ((spr.iSprite == 0) && opaqueBg && (x < (SCREEN_WIDTH - 1))) {
-            isHit = true
-          }
+        if (spr.sprite0 && opaqueBg && (x < (SCREEN_WIDTH - 1))) {
+          hit = true
         }
       }
     }
 
-    return isHit
+    return hit
   }
 
   private fun renderToBuffer(state: State) {

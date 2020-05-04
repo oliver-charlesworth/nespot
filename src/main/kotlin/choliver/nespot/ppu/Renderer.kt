@@ -161,8 +161,13 @@ class Renderer(
   // Lowest index is highest priority, so render last
   private fun prepareSpritesAndDetectHit(state: State) = sprites
     .dropLast(1)
-    .filter { it.valid }
-    .map { spr -> prepareSpriteAndDetectHit(spr, state) }
+    .map { spr ->
+      if (spr.valid) {
+        prepareSpriteAndDetectHit(spr, state)
+      } else {
+        performDummyRead()
+      }
+    }
     .any()
 
   private fun prepareSpriteAndDetectHit(spr: SpriteToRender, state: State): Boolean {
@@ -197,6 +202,10 @@ class Renderer(
     return hit
   }
 
+  private fun performDummyRead() {
+    loadPattern(DUMMY_SPRITE_PATTERN_ADDR)
+  }
+
   private fun renderToBuffer(state: State) {
     videoBuffer.position(state.scanline * SCREEN_WIDTH)
     val mask = if (state.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
@@ -221,5 +230,6 @@ class Renderer(
 
   companion object {
     const val MAX_SPRITES_PER_SCANLINE = 8
+    private const val DUMMY_SPRITE_PATTERN_ADDR = 0x1FF0
   }
 }

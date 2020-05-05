@@ -169,9 +169,60 @@ class DmcSynthTest {
     assertFalse(synth.hasRemainingOutput)
   }
 
+  @Test
+  fun `irq cleared on enable`() {
+    synth.length = 2
+    synth.irqEnabled = true
+    synth.enabled = true
+    whenever(memory[0xC230]) doReturn 0xFF
+    whenever(memory[0xC231]) doReturn 0xAA
+
+    synth.take(33)
+
+    assertTrue(synth.irq)
+  }
+
+  @Test
+  fun `sample not restarted on enable if mid-sample`() {
+    synth.length = 2
+    synth.enabled = true
+    whenever(memory[0xC230]) doReturn 0xFF
+    whenever(memory[0xC231]) doReturn 0xAA
+
+    val seq1 = synth.take(4)
+    synth.enabled = true
+    val seq2 = synth.take(13)
+
+    val expected = listOf(
+      0,
+      2,  4,  6,  8,  10, 12, 14, 16,   // Up up up
+      14, 16, 14, 16, 14, 16, 14, 16    // Down and up
+    )
+
+    assertEquals(expected, seq1 + seq2)
+  }
+
+  @Test
+  fun `sample restarted on enable if exhausted`() {
+    synth.length = 2
+    synth.enabled = true
+    whenever(memory[0xC230]) doReturn 0xFF
+    whenever(memory[0xC231]) doReturn 0xAA
+
+    val seq1 = synth.take(9)  // Just after final load
+    synth.enabled = true
+    val seq2 = synth.take(24)
+
+    val expected = listOf(
+      0,
+      2,  4,  6,  8,  10, 12, 14, 16,   // Up up up
+      14, 16, 14, 16, 14, 16, 14, 16,   // Down and up
+      18, 20, 22, 24, 26, 28, 30, 32,   // Up up up
+      30, 32, 30, 32, 30, 32, 30, 32    // Down and up
+    )
+
+    assertEquals(expected, seq1 + seq2)
+  }
+
   // TODO - play what's left on disable
-  // TODO - clear IRQ on enable / disable
-  // TODO - don't restart on enable if length > 0
-  // TODO - do restart on enable if length == 0
-  // TODO - wraparound
 }

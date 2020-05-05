@@ -5,7 +5,7 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sqrt
 
-// TODO - non-linear mixing (used by SMB to set triangle/noise level)
+
 // See https://wiki.nesdev.com/w/index.php/APU_Mixer
 internal class Mixer(
   private val sequencer: FrameSequencer,
@@ -25,8 +25,8 @@ internal class Mixer(
     val pulse1Out = channels.sq1.take(ticks)
     val pulse2Out = channels.sq2.take(ticks)
     val triangleOut = channels.tri.take(ticks)
-    val noiseOut = channels.noi.take(ticks)
-    val dmcOut = channels.dmc.take(ticks)
+    val noiseOut = 0//channels.noi.take(ticks)
+    val dmcOut = 0//channels.dmc.take(ticks)
 
     val pulseSum = pulse1Out + pulse2Out
     val otherSum = triangleOut + noiseOut + dmcOut

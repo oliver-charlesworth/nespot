@@ -7,7 +7,7 @@ class TriangleSynthTest {
   private val synth = TriangleSynth().apply {
     enabled = true
     length = 4
-    linear = 4
+    linLength = 4
     haltLength = false
     preventReloadClear = false
     onQuarterFrame()  // Reload linear counter
@@ -66,7 +66,7 @@ class TriangleSynthTest {
 
   @Test
   fun `linear exhaustion is not visible`() {
-    synth.linear = 4
+    synth.linLength = 4
     repeat(4) { synth.onQuarterFrame() }     // Exhaust counter
 
     assertTrue(synth.hasRemainingOutput)        // Not affected
@@ -114,7 +114,7 @@ class TriangleSynthTest {
     repeat(2) { synth.onQuarterFrame() }   // Not all the way
     synth.length = 5                             // Arbitrary value, but will trigger a reload
     synth.onQuarterFrame()                       // Cause reload
-    synth.linear = 10                            // Should be ignored
+    synth.linLength = 10                            // Should be ignored
     repeat(4) { synth.onQuarterFrame() }   // Should exhaust linear counter
   }
 }

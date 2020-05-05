@@ -2,18 +2,18 @@ package choliver.nespot.apu
 
 // http://wiki.nesdev.com/w/index.php/APU_Noise
 class NoiseSynth : Synth {
-  private val duration = Duration()
+  private val lc = LengthCounter()
   private var sr = 0x0001
 
   var length
-    get() = duration.length
-    set(value) { duration.length = value }
+    get() = lc.length
+    set(value) { lc.length = value }
 
   override var enabled
-    get() = duration.enabled
-    set(value) { duration.enabled = value }
+    get() = lc.enabled
+    set(value) { lc.enabled = value }
 
-  override val hasRemainingOutput get() = duration.remaining > 0
+  override val hasRemainingOutput get() = lc.remaining > 0
   override val output get() = if (hasRemainingOutput) (sr and 1) else 0
 
   var haltLength = false
@@ -26,7 +26,7 @@ class NoiseSynth : Synth {
 
   override fun onHalfFrame() {
     if (!haltLength) {
-      duration.decrement()
+      lc.decrement()
     }
   }
 }

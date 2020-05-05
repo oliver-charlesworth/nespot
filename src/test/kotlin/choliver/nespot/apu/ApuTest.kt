@@ -107,7 +107,7 @@ class ApuTest {
       verify(tri.synth).preventReloadClear = true
 
       apu.writeReg(8, 0b0_1010101)
-      verify(tri.synth).linear = 0b1010101
+      verify(tri.synth).linLength = 0b1010101
     }
 
     @Test

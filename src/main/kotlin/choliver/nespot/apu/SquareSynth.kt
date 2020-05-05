@@ -2,20 +2,20 @@ package choliver.nespot.apu
 
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
 class SquareSynth : Synth {
-  private var duration = Duration()
+  private val lc = LengthCounter()
   private var iSeq = 0
   var haltLength = false
   var dutyCycle = 0
 
   var length
-    get() = duration.length
-    set(value) { duration.length = value }
+    get() = lc.length
+    set(value) { lc.length = value }
 
   override var enabled
-    get() = duration.enabled
-    set(value) { duration.enabled = value }
+    get() = lc.enabled
+    set(value) { lc.enabled = value }
 
-  override val hasRemainingOutput get() = duration.remaining > 0
+  override val hasRemainingOutput get() = lc.remaining > 0
   override val output get() = if (hasRemainingOutput) SEQUENCES[dutyCycle][iSeq] else 0
 
   override fun onTimer() {
@@ -24,7 +24,7 @@ class SquareSynth : Synth {
 
   override fun onHalfFrame() {
     if (!haltLength) {
-     duration.decrement()
+     lc.decrement()
     }
   }
 

@@ -2,7 +2,7 @@ package choliver.nespot.apu
 
 import kotlin.math.max
 
-class Duration {
+class LengthCounter {
   private var _remaining = 0
   private var _length = 0
 

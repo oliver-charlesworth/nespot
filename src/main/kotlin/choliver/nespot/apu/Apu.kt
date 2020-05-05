@@ -91,7 +91,7 @@ class Apu(
       0 -> {
         synth.haltLength = data.isBitSet(7)
         synth.preventReloadClear = data.isBitSet(7)
-        synth.linear = data and 0x7F
+        synth.linLength = data and 0x7F
       }
 
       2 -> timer.periodCycles = extractPeriodCycles()

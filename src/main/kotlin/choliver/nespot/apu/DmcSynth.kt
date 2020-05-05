@@ -10,24 +10,29 @@ import java.lang.Integer.min
 
 // See http://wiki.nesdev.com/w/index.php/APU_DMC
 class DmcSynth(private val memory: Memory) : Synth {
+  private var addrCurrent: Address = 0x0000
   private var numBitsRemaining = 0
   private var numBytesRemaining = 0
   private var sample: Data = 0
   private var _irq = false
+
   var irqEnabled by observable(false) { if (!it) _irq = false }
   var loop = false
   var level: Data = 0
-  private var addrCurrent: Address = 0x0000
   var address: Address = 0x0000
+  var length = 0
 
-  override var length = 0
-  override val hasRemainingOutput get() = numBytesRemaining > 0
-  override val output get() = level
-  val irq get() = _irq
-
-  fun clearIrq() {
+  override var enabled by observable(false) {
+    when {
+      (it && (numBytesRemaining > 0)) -> restart()
+      !it -> clear()
+    }
     _irq = false
   }
+  override val hasRemainingOutput get() = numBytesRemaining > 0
+  override val output get() = level
+
+  val irq get() = _irq
 
   override fun onTimer() {
     maybeLoadSample()

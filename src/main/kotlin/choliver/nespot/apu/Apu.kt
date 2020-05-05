@@ -39,18 +39,11 @@ class Apu(
       in REG_DMC_RANGE -> channels.dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
 
       REG_SND_CHN -> {
-        channels.dmc.synth.clearIrq()
-        if (data.isBitSet(4)) {
-          if (!channels.dmc.synth.hasRemainingOutput) {
-            channels.dmc.synth.restart()
-          }
-        } else {
-          channels.dmc.synth.clear()
-        }
-        channels.noi.enabled = data.isBitSet(3)
-        channels.tri.enabled = data.isBitSet(2)
-        channels.sq2.enabled = data.isBitSet(1)
-        channels.sq1.enabled = data.isBitSet(0)
+        channels.dmc.synth.enabled = data.isBitSet(4)
+        channels.noi.synth.enabled = data.isBitSet(3)
+        channels.tri.synth.enabled = data.isBitSet(2)
+        channels.sq2.synth.enabled = data.isBitSet(1)
+        channels.sq1.synth.enabled = data.isBitSet(0)
       }
 
       REG_FRAME_COUNTER_CTRL -> {
@@ -83,7 +76,7 @@ class Apu(
 
       3 -> {
         timer.periodCycles = extractPeriodCycles().toRational()
-        length = extractLength()
+        synth.length = extractLength()
         envelope.restart()
       }
     }
@@ -105,7 +98,7 @@ class Apu(
 
       3 -> {
         timer.periodCycles = extractPeriodCycles()
-        length = extractLength()
+        synth.length = extractLength()
       }
     }
   }
@@ -125,7 +118,7 @@ class Apu(
       }
 
       3 -> {
-        length = extractLength()
+        synth.length = extractLength()
         envelope.restart()
       }
     }

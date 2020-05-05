@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 
 class TriangleSynthTest {
   private val synth = TriangleSynth().apply {
+    enabled = true
     length = 4
     linear = 4
     haltLength = false

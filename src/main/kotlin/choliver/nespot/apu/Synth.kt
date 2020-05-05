@@ -1,7 +1,7 @@
 package choliver.nespot.apu
 
 interface Synth {
-  var length: Int
+  var enabled: Boolean
   val output: Int
   val hasRemainingOutput: Boolean
 

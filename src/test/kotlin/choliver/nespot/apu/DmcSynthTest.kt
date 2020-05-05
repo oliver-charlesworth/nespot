@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test
 class DmcSynthTest {
   private val memory = mock<Memory>()
   private val synth = DmcSynth(memory = memory).apply {
+    enabled = true
     address = 0x1230
   }
 

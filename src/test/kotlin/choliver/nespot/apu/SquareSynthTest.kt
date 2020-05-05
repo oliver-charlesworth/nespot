@@ -5,12 +5,11 @@ import org.junit.jupiter.api.Test
 
 class SquareSynthTest {
   private val synth = SquareSynth().apply {
+    enabled = true
     dutyCycle = 0
     length = 8
     haltLength = false
   }
-
-  // TODO - muted
 
   @Test
   fun `12,5% duty cycle`() {

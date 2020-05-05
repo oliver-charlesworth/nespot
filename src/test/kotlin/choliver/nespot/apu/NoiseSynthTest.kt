@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 
 class NoiseSynthTest {
   private val synth = NoiseSynth().apply {
+    enabled = true
     length = 1
     haltLength = false
   }

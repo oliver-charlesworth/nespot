@@ -1,4 +1,4 @@
-package choliver.nespot.cartridge.mappers
+package choliver.nespot.mappers
 
 import choliver.nespot.Address
 import choliver.nespot.Data

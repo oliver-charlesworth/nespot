@@ -1,4 +1,4 @@
-package choliver.nespot.cartridge.mappers
+package choliver.nespot.mappers
 
 import choliver.nespot.Address
 import choliver.nespot.Data
@@ -7,8 +7,8 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring
 import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
-import choliver.nespot.cartridge.mappers.UxRomMapper.Companion.BASE_BANK_SELECT
 import choliver.nespot.data
+import choliver.nespot.mappers.UxRomMapper.Companion.BASE_BANK_SELECT
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify

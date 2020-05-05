@@ -1,4 +1,4 @@
-package choliver.nespot.cartridge.mappers
+package choliver.nespot.mappers
 
 import choliver.nespot.Address
 import choliver.nespot.Data
@@ -6,10 +6,10 @@ import choliver.nespot.Memory
 import choliver.nespot.apu.repeat
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.mappers.Mmc3Mapper.Companion.BASE_PRG_ROM
-import choliver.nespot.cartridge.mappers.Mmc3Mapper.Companion.CHR_BANK_SIZE
-import choliver.nespot.cartridge.mappers.Mmc3Mapper.Companion.PRG_BANK_SIZE
 import choliver.nespot.data
+import choliver.nespot.mappers.Mmc3Mapper.Companion.BASE_PRG_ROM
+import choliver.nespot.mappers.Mmc3Mapper.Companion.CHR_BANK_SIZE
+import choliver.nespot.mappers.Mmc3Mapper.Companion.PRG_BANK_SIZE
 import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.sixfiveohtwo.utils._1
 import com.nhaarman.mockitokotlin2.doReturn

@@ -24,7 +24,7 @@ class DmcSynth(private val memory: Memory) : Synth {
 
   override var enabled by observable(false) {
     when {
-      (it && (numBytesRemaining > 0)) -> restart()
+      (it && (numBytesRemaining == 0)) -> restart()
       !it -> clear()
     }
     _irq = false

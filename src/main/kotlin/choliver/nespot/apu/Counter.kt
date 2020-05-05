@@ -2,7 +2,6 @@ package choliver.nespot.apu
 
 import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.Rational
-import choliver.nespot.observable
 import choliver.nespot.toRational
 
 class Counter(

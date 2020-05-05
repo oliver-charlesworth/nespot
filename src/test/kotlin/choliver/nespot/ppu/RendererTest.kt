@@ -14,9 +14,6 @@ import org.junit.jupiter.api.Test
 import java.nio.IntBuffer
 
 
-// TODO - test that we *always* load 8 sprite patterns, including dummy sprites (needed for MMC3 IRQ)
-// TODO - renders all eight sprites
-// TODO - only renders valid sprites
 // TODO - colour emphasis
 class RendererTest {
   private val colors = (0..63).toList()
@@ -557,7 +554,7 @@ class RendererTest {
     }
 
     @Test
-    fun `only renders the 8 sprites with highest priority`() {
+    fun `renders at most 8 sprites, with the highest priority`() {
       val pattern = List(TILE_SIZE) { 1 }
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       repeat(9) {
@@ -567,6 +564,19 @@ class RendererTest {
       render()
 
       assertEquals(8 * 8, extractScanline().count { it != colors[paletteEntries[0]] })
+    }
+
+    @Test
+    fun `renders less than 8 sprites`() {
+      val pattern = List(TILE_SIZE) { 1 }
+      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
+      repeat(6) {
+        initSpriteMemory(x = (it * (TILE_SIZE + 1)), y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+      }
+
+      render()
+
+      assertEquals(6 * 8, extractScanline().count { it != colors[paletteEntries[0]] })
     }
   }
 
@@ -630,8 +640,14 @@ class RendererTest {
 
       assertBuffer { patterns[nametableEntries[(it + 5) / TILE_SIZE]]!![(it + 5) % TILE_SIZE] }
     }
+  }
 
-    // TODO - ensure we do minimal memory loads
+  // MMC3 relies on very specific PPU memory access pattern during scanline
+  @Nested
+  inner class MemoryAccessPattern {
+    // TODO - test that we *always* load 8 sprite patterns, including dummy sprites (needed for MMC3 IRQ)
+    // TODO - test we do all background loads before sprite loads
+    // TODO - test we do minimal memory loads
   }
 
   @Test
@@ -651,7 +667,6 @@ class RendererTest {
       extractScanline()
     )
   }
-
 
   private fun assertBuffer(expected: (Int) -> Int) {
     assertEquals(

@@ -168,7 +168,7 @@ class Renderer(
         performDummyRead()
       }
     }
-    .any()
+    .any { it }
 
   private fun prepareSpriteAndDetectHit(spr: SpriteToRender, state: State): Boolean {
     var hit = false
@@ -202,8 +202,9 @@ class Renderer(
     return hit
   }
 
-  private fun performDummyRead() {
+  private fun performDummyRead(): Boolean {
     loadPattern(DUMMY_SPRITE_PATTERN_ADDR)
+    return false
   }
 
   private fun renderToBuffer(state: State) {

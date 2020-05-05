@@ -10,7 +10,7 @@ class Envelope {
 
   val level get() = if (directMode) param else iDecay
 
-  fun reset() {
+  fun restart() {
     start = true
   }
 

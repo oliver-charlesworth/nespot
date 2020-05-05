@@ -44,9 +44,9 @@ class EnvelopeTest {
   }
 
   @Test
-  fun `resets mid-decay`() {
+  fun `restarts mid-decay`() {
     env.take(16) // Arbitrary number of advances
-    env.reset()
+    env.restart()
 
     assertEquals(
       (15 downTo 0).toList().repeatEach(3),

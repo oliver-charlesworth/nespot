@@ -76,7 +76,7 @@ class Apu(
         sweep.divider = (data and 0x70) shr 4
         sweep.negate = data.isBitSet(3)
         sweep.shift = data and 0x07
-        sweep.reset()
+        sweep.restart()
       }
 
       2 -> timer.periodCycles = extractPeriodCycles().toRational()
@@ -84,7 +84,7 @@ class Apu(
       3 -> {
         timer.periodCycles = extractPeriodCycles().toRational()
         length = extractLength()
-        envelope.reset()
+        envelope.restart()
       }
     }
   }
@@ -126,7 +126,7 @@ class Apu(
 
       3 -> {
         length = extractLength()
-        envelope.reset()
+        envelope.restart()
       }
     }
   }

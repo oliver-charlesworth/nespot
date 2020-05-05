@@ -22,7 +22,7 @@ class Counter(
     return ret
   }
 
-  fun reset() {
+  fun restart() {
     pos = periodCycles
   }
 }

@@ -81,7 +81,7 @@ class ApuTest {
       apu.writeReg(reg, 0b1_000_0_101)
       verify(ctx.sweep).shift = 0b101
 
-      verify(ctx.sweep, times(4)).reset()
+      verify(ctx.sweep, times(4)).restart()
     }
 
     private fun assertPeriod(regLo: Int, regHi: Int, ctx: SynthContext<*>) {
@@ -94,7 +94,7 @@ class ApuTest {
     private fun assertLength(reg: Int, ctx: SynthContext<*>) {
       apu.writeReg(reg, 0b10101_000)
       verify(ctx).length = 20 // See the length table
-      verify(ctx.envelope).reset()
+      verify(ctx.envelope).restart()
     }
   }
 
@@ -153,7 +153,7 @@ class ApuTest {
     fun length() {
       apu.writeReg(15, 0b10101_000)
       verify(noi).length = 20 // See the length table
-      verify(noi.envelope).reset()
+      verify(noi.envelope).restart()
     }
   }
 

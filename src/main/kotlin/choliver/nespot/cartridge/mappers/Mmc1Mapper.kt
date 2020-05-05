@@ -3,6 +3,8 @@ package choliver.nespot.cartridge.mappers
 import choliver.nespot.*
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.mirrorHorizontal
+import choliver.nespot.cartridge.mirrorVertical
 
 // https://wiki.nesdev.com/w/index.php/MMC1
 class Mmc1Mapper(private val rom: Rom) : Mapper {
@@ -97,8 +99,8 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
     private fun mapToVram(addr: Address): Address = when (mirrorMode) {
       0 -> (addr and 1023)
       1 -> (addr and 1023) + 1024
-      2 -> (addr and 2047)
-      3 -> (addr and 1023) or ((addr and 2048) shr 1)
+      2 -> mirrorVertical(addr)
+      3 -> mirrorHorizontal(addr)
       else -> throw UnsupportedOperationException()   // Should never happen
     }
   }

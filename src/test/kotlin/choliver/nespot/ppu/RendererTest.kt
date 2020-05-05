@@ -2,16 +2,17 @@ package choliver.nespot.ppu
 
 import choliver.nespot.Address
 import choliver.nespot.Memory
+import choliver.nespot.isBitSet
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
+import choliver.nespot.ppu.Renderer.Companion.MAX_SPRITES_PER_SCANLINE
 import choliver.nespot.ppu.model.Coords
 import choliver.nespot.ppu.model.State
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.nio.IntBuffer
+
 
 // TODO - colour emphasis
 class RendererTest {
@@ -35,8 +36,8 @@ class RendererTest {
   )
 
   private val nametable = 0
-  private val bgPatternTable = 1
-  private val sprPatternTable = 0
+  private val bgPatternTable = 0
+  private val sprPatternTable = 1
 
   // Chosen offset and scanline - these are *not* the same!  They have no relationship.
   private val yCoarse = 14
@@ -542,18 +543,18 @@ class RendererTest {
     }
 
     @Test
-    fun `doesn't trigger overflow if rendering disabled`() {
+    fun `doesn't trigger overflow if rendering completely disabled`() {
       repeat(9) {
         initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
       }
 
-      assertFalse(render(bgRenderingEnabled = false, sprRenderingEnabled = false).spriteOverflow)
       assertTrue(render(sprRenderingEnabled = false).spriteOverflow)
       assertTrue(render(bgRenderingEnabled = false).spriteOverflow)
+      assertFalse(render(bgRenderingEnabled = false, sprRenderingEnabled = false).spriteOverflow)
     }
 
     @Test
-    fun `only renders the 8 sprites with highest priority`() {
+    fun `renders at most 8 sprites, with the highest priority`() {
       val pattern = List(TILE_SIZE) { 1 }
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       repeat(9) {
@@ -563,6 +564,19 @@ class RendererTest {
       render()
 
       assertEquals(8 * 8, extractScanline().count { it != colors[paletteEntries[0]] })
+    }
+
+    @Test
+    fun `renders less than 8 sprites`() {
+      val pattern = List(TILE_SIZE) { 1 }
+      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
+      repeat(6) {
+        initSpriteMemory(x = (it * (TILE_SIZE + 1)), y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+      }
+
+      render()
+
+      assertEquals(6 * 8, extractScanline().count { it != colors[paletteEntries[0]] })
     }
   }
 
@@ -626,8 +640,32 @@ class RendererTest {
 
       assertBuffer { patterns[nametableEntries[(it + 5) / TILE_SIZE]]!![(it + 5) % TILE_SIZE] }
     }
+  }
 
-    // TODO - ensure we do minimal memory loads
+  // MMC3 relies on specific PPU memory access pattern during scanline
+  @Nested
+  inner class MemoryAccessPattern {
+    @Test
+    fun `loads background patterns before sprite patterns`() {
+      val numBgLoads = NUM_TILE_COLUMNS * 4
+      val numSprLoads = MAX_SPRITES_PER_SCANLINE * 2
+
+      render()
+
+      val captor = argumentCaptor<Address>()
+      verify(memory, times(numBgLoads + numSprLoads))[captor.capture()]
+      assertTrue(captor.allValues.take(numBgLoads).all { !it.isBitSet(12) })
+      assertTrue(captor.allValues.takeLast(numSprLoads).all { it.isBitSet(12) })
+    }
+
+    @Test
+    fun `performs dummy loads from pattern table #1 for invalid sprites`() {
+      // Note - no valid sprites at all!
+      render(bgRenderingEnabled = false)
+
+      verify(memory, times(8))[0x1FF0]
+      verify(memory, times(8))[0x1FF8]
+    }
   }
 
   @Test
@@ -647,7 +685,6 @@ class RendererTest {
       extractScanline()
     )
   }
-
 
   private fun assertBuffer(expected: (Int) -> Int) {
     assertEquals(

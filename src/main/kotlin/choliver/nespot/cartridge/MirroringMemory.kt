@@ -11,8 +11,8 @@ class MirroringMemory(
   private val ram: Memory
 ) : Memory {
   private val mapToVram: (Address) -> Address = when (mirroring) {
-    HORIZONTAL -> { addr -> (addr and 1023) or ((addr and 2048) shr 1) }
-    VERTICAL -> { addr -> addr and 2047 }
+    HORIZONTAL -> ::mirrorHorizontal
+    VERTICAL -> ::mirrorVertical
     IGNORED -> throw UnsupportedOperationException()
   }
 
@@ -22,3 +22,6 @@ class MirroringMemory(
     ram[mapToVram(addr)] = data
   }
 }
+
+internal fun mirrorHorizontal(addr: Address): Address = (addr and 1023) or ((addr and 2048) shr 1)
+internal fun mirrorVertical(addr: Address): Address = addr and 2047

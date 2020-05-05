@@ -2,12 +2,12 @@ package choliver.nespot.ppu
 
 import choliver.nespot.Address
 import choliver.nespot.Memory
+import choliver.nespot.isBitSet
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
+import choliver.nespot.ppu.Renderer.Companion.MAX_SPRITES_PER_SCANLINE
 import choliver.nespot.ppu.model.Coords
 import choliver.nespot.ppu.model.State
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -36,8 +36,8 @@ class RendererTest {
   )
 
   private val nametable = 0
-  private val bgPatternTable = 1
-  private val sprPatternTable = 0
+  private val bgPatternTable = 0
+  private val sprPatternTable = 1
 
   // Chosen offset and scanline - these are *not* the same!  They have no relationship.
   private val yCoarse = 14
@@ -642,12 +642,30 @@ class RendererTest {
     }
   }
 
-  // MMC3 relies on very specific PPU memory access pattern during scanline
+  // MMC3 relies on specific PPU memory access pattern during scanline
   @Nested
   inner class MemoryAccessPattern {
-    // TODO - test that we *always* load 8 sprite patterns, including dummy sprites (needed for MMC3 IRQ)
-    // TODO - test we do all background loads before sprite loads
-    // TODO - test we do minimal memory loads
+    @Test
+    fun `loads background patterns before sprite patterns`() {
+      val numBgLoads = NUM_TILE_COLUMNS * 4
+      val numSprLoads = MAX_SPRITES_PER_SCANLINE * 2
+
+      render()
+
+      val captor = argumentCaptor<Address>()
+      verify(memory, times(numBgLoads + numSprLoads))[captor.capture()]
+      assertTrue(captor.allValues.take(numBgLoads).all { !it.isBitSet(12) })
+      assertTrue(captor.allValues.takeLast(numSprLoads).all { it.isBitSet(12) })
+    }
+
+    @Test
+    fun `performs dummy loads from pattern table #1 for invalid sprites`() {
+      // Note - no valid sprites at all!
+      render(bgRenderingEnabled = false)
+
+      verify(memory, times(8))[0x1FF0]
+      verify(memory, times(8))[0x1FF8]
+    }
   }
 
   @Test

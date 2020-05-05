@@ -35,9 +35,9 @@ class SweepTest {
   }
 
   @Test
-  fun `resets mid-decay`() {
+  fun `restarts mid-decay`() {
     take(2) // Part way through division
-    sweep.reset()
+    sweep.restart()
 
     // Sequence is the same as if none of the above had happened
     assertEquals(

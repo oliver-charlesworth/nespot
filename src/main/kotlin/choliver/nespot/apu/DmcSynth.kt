@@ -7,28 +7,32 @@ import choliver.nespot.observable
 import java.lang.Integer.max
 import java.lang.Integer.min
 
-// TODO - timing of memory loads is probably important - what if content changes?
-// TODO - memory wraparound
 
 // See http://wiki.nesdev.com/w/index.php/APU_DMC
 class DmcSynth(private val memory: Memory) : Synth {
+  private var addrCurrent: Address = 0x0000
   private var numBitsRemaining = 0
   private var numBytesRemaining = 0
   private var sample: Data = 0
   private var _irq = false
+
   var irqEnabled by observable(false) { if (!it) _irq = false }
   var loop = false
   var level: Data = 0
-  var address: Address by observable(0x0000) { resetPattern() }
+  var address: Address = 0x0000
+  var length = 0
 
-  override var length by observable(0) { resetPattern() }
-  override val hasRemainingOutput get() = numBytesRemaining > 0
-  override val output get() = level
-  val irq get() = _irq
-
-  fun clearIrq() {
+  override var enabled by observable(false) {
+    when {
+      (it && (numBytesRemaining == 0)) -> restart()
+      !it -> clear()
+    }
     _irq = false
   }
+  override val hasRemainingOutput get() = numBytesRemaining > 0
+  override val output get() = level
+
+  val irq get() = _irq
 
   override fun onTimer() {
     maybeLoadSample()
@@ -37,12 +41,19 @@ class DmcSynth(private val memory: Memory) : Synth {
 
   private fun maybeLoadSample() {
     if ((numBitsRemaining == 0) && (numBytesRemaining > 0)) {
-      sample = memory[address + length - numBytesRemaining]
+      sample = memory[addrCurrent]
       numBitsRemaining = 8
+
+      if (addrCurrent == 0xFFFF) {
+        addrCurrent = 0x8000
+      } else {
+        addrCurrent++
+      }
+
       numBytesRemaining--
       if (numBytesRemaining == 0) {
         if (loop) {
-          resetPattern()
+          restart()
         } else if (irqEnabled) {
           _irq = true
         }
@@ -61,7 +72,12 @@ class DmcSynth(private val memory: Memory) : Synth {
     }
   }
 
-  private fun resetPattern() {
+  fun restart() {
     numBytesRemaining = length
+    addrCurrent = address
+  }
+
+  fun clear() {
+    numBytesRemaining = 0
   }
 }

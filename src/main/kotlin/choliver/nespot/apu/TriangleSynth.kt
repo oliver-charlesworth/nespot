@@ -1,35 +1,38 @@
 package choliver.nespot.apu
 
-import choliver.nespot.observable
-import kotlin.math.max
-
 // See http://wiki.nesdev.com/w/index.php/APU_Triangle
 class TriangleSynth : Synth {
+  private val lc = LengthCounter()
   private var reload = false  // i.e. reload the linear counter
   private var iSeq = 0
-  private var iLinear = 0
-  private var iLength = 0
+  private var linRemaining = 0
   var preventReloadClear = false
   var haltLength = false
-  var linear = 0
+  var linLength = 0
 
-  override var length by observable(0) { iLength = it; reload = true } // Reloads both counters
-  override val hasRemainingOutput get() = iLength > 0   // Doesn't account for linear counter
+  var length
+    get() = lc.length
+    set(value) { lc.length = value; reload = true } // Reloads both counters
+
+  override var enabled
+    get() = lc.enabled
+    set(value) { lc.enabled = value }
+
+  override val hasRemainingOutput get() = lc.remaining > 0   // Doesn't account for linear counter
   override val output get() = SEQUENCE[iSeq]
 
   // Counters gate sequence generation, rather than muting the channel
   override fun onTimer() {
-    if ((iLinear != 0) && (iLength != 0)) {
+    if ((linRemaining > 0) && (lc.remaining > 0)) {
       iSeq = (iSeq + 1) % SEQUENCE_LENGTH
     }
   }
 
   override fun onQuarterFrame() {
     if (reload) {
-      iLinear = linear
-
-    } else if (iLinear > 0) {
-      iLinear--
+      linRemaining = linLength
+    } else if (linRemaining > 0) {
+      linRemaining--
     }
     if (!preventReloadClear) {
       reload = false
@@ -38,7 +41,7 @@ class TriangleSynth : Synth {
 
   override fun onHalfFrame() {
     if (!haltLength) {
-      iLength = max(iLength - 1, 0)
+      lc.decrement()
     }
   }
 

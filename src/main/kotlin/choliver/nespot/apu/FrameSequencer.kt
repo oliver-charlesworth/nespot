@@ -38,7 +38,7 @@ class FrameSequencer(
       FOUR_STEP -> fourStepPeriod
       FIVE_STEP -> fiveStepPeriod
     }
-    counter.reset()
+    counter.restart()
     iSeq = 0
     justReset = true
   }

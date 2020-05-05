@@ -5,12 +5,11 @@ import org.junit.jupiter.api.Test
 
 class SquareSynthTest {
   private val synth = SquareSynth().apply {
+    enabled = true
     dutyCycle = 0
     length = 8
     haltLength = false
   }
-
-  // TODO - muted
 
   @Test
   fun `12,5% duty cycle`() {
@@ -77,6 +76,14 @@ class SquareSynthTest {
 
     synth.onHalfFrame()
 
+    assertFalse(synth.hasRemainingOutput)
+  }
+
+  @Test
+  fun `exhausts if disabled`() {
+    synth.enabled = false
+
+    assertEquals(0, synth.length)
     assertFalse(synth.hasRemainingOutput)
   }
 }

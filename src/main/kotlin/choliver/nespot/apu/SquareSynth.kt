@@ -1,17 +1,21 @@
 package choliver.nespot.apu
 
-import choliver.nespot.observable
-import kotlin.math.max
-
 // See http://wiki.nesdev.com/w/index.php/APU_Pulse
 class SquareSynth : Synth {
+  private val lc = LengthCounter()
   private var iSeq = 0
-  private var iLength = 0
   var haltLength = false
   var dutyCycle = 0
 
-  override var length by observable(0) { iLength = it }
-  override val hasRemainingOutput get() = iLength > 0
+  var length
+    get() = lc.length
+    set(value) { lc.length = value }
+
+  override var enabled
+    get() = lc.enabled
+    set(value) { lc.enabled = value }
+
+  override val hasRemainingOutput get() = lc.remaining > 0
   override val output get() = if (hasRemainingOutput) SEQUENCES[dutyCycle][iSeq] else 0
 
   override fun onTimer() {
@@ -20,7 +24,7 @@ class SquareSynth : Synth {
 
   override fun onHalfFrame() {
     if (!haltLength) {
-      iLength = max(iLength - 1, 0)
+     lc.decrement()
     }
   }
 

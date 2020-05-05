@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 
 class NoiseSynthTest {
   private val synth = NoiseSynth().apply {
+    enabled = true
     length = 1
     haltLength = false
   }
@@ -68,6 +69,14 @@ class NoiseSynthTest {
 
     synth.onHalfFrame()
 
+    assertFalse(synth.hasRemainingOutput)
+  }
+
+  @Test
+  fun `exhausts if disabled`() {
+    synth.enabled = false
+
+    assertEquals(0, synth.length)
     assertFalse(synth.hasRemainingOutput)
   }
 }

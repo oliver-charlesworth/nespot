@@ -18,29 +18,6 @@ class SynthContextTest {
   )
 
   @Test
-  fun `prevents length setting if disabled`() {
-    ctx.enabled = false
-    ctx.length = 3
-
-    verify(synth, never()).length = 3
-  }
-
-  @Test
-  fun `allows length setting if enabled`() {
-    ctx.enabled = true
-    ctx.length = 3
-
-    verify(synth).length = 3
-  }
-
-  @Test
-  fun `sets length to zero when disabled`() {
-    ctx.enabled = false
-
-    verify(synth).length = 0
-  }
-
-  @Test
   fun `applies level to synth output`() {
     whenever(sweep.mute) doReturn false
     whenever(synth.output) doReturn 5

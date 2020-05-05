@@ -5,7 +5,7 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sqrt
 
-// TODO - non-linear mixing (used by SMB to set triangle/noise level)
+
 // See https://wiki.nesdev.com/w/index.php/APU_Mixer
 internal class Mixer(
   private val sequencer: FrameSequencer,

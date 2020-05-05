@@ -14,7 +14,7 @@ class Sweep(private val timer: Counter) {
 
   val mute get() = !inhibitMute && ((currentPeriod() < MIN_PERIOD) || (targetPeriod() > MAX_PERIOD))
 
-  fun reset() {
+  fun restart() {
     reload = true
   }
 

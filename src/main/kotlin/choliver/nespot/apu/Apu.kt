@@ -39,12 +39,11 @@ class Apu(
       in REG_DMC_RANGE -> channels.dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
 
       REG_SND_CHN -> {
-        channels.dmc.synth.clearIrq()
-        channels.dmc.enabled = data.isBitSet(4)
-        channels.noi.enabled = data.isBitSet(3)
-        channels.tri.enabled = data.isBitSet(2)
-        channels.sq2.enabled = data.isBitSet(1)
-        channels.sq1.enabled = data.isBitSet(0)
+        channels.dmc.synth.enabled = data.isBitSet(4)
+        channels.noi.synth.enabled = data.isBitSet(3)
+        channels.tri.synth.enabled = data.isBitSet(2)
+        channels.sq2.synth.enabled = data.isBitSet(1)
+        channels.sq1.synth.enabled = data.isBitSet(0)
       }
 
       REG_FRAME_COUNTER_CTRL -> {
@@ -70,15 +69,15 @@ class Apu(
         sweep.divider = (data and 0x70) shr 4
         sweep.negate = data.isBitSet(3)
         sweep.shift = data and 0x07
-        sweep.reset()
+        sweep.restart()
       }
 
       2 -> timer.periodCycles = extractPeriodCycles().toRational()
 
       3 -> {
         timer.periodCycles = extractPeriodCycles().toRational()
-        length = extractLength()
-        envelope.reset()
+        synth.length = extractLength()
+        envelope.restart()
       }
     }
   }
@@ -92,14 +91,14 @@ class Apu(
       0 -> {
         synth.haltLength = data.isBitSet(7)
         synth.preventReloadClear = data.isBitSet(7)
-        synth.linear = data and 0x7F
+        synth.linLength = data and 0x7F
       }
 
       2 -> timer.periodCycles = extractPeriodCycles()
 
       3 -> {
         timer.periodCycles = extractPeriodCycles()
-        length = extractLength()
+        synth.length = extractLength()
       }
     }
   }
@@ -119,8 +118,8 @@ class Apu(
       }
 
       3 -> {
-        length = extractLength()
-        envelope.reset()
+        synth.length = extractLength()
+        envelope.restart()
       }
     }
   }
@@ -136,7 +135,7 @@ class Apu(
       }
       1 -> synth.level = data and 0x7F
       2 -> synth.address = 0xC000 + (data * 64)
-      3 -> length = (data * 16) + 1
+      3 -> synth.length = (data * 16) + 1
     }
   }
 

@@ -81,20 +81,20 @@ class ApuTest {
       apu.writeReg(reg, 0b1_000_0_101)
       verify(ctx.sweep).shift = 0b101
 
-      verify(ctx.sweep, times(4)).reset()
+      verify(ctx.sweep, times(4)).restart()
     }
 
-    private fun assertPeriod(regLo: Int, regHi: Int, ctx: SynthContext<*>) {
+    private fun assertPeriod(regLo: Int, regHi: Int, ctx: SynthContext<SquareSynth>) {
       apu.writeReg(regLo, 0b11001010)
       apu.writeReg(regHi, 0b00000_101)
       verify(ctx.timer).periodCycles = 0b000110010110.toRational()
       verify(ctx.timer).periodCycles = 0b101110010110.toRational()
     }
 
-    private fun assertLength(reg: Int, ctx: SynthContext<*>) {
+    private fun assertLength(reg: Int, ctx: SynthContext<SquareSynth>) {
       apu.writeReg(reg, 0b10101_000)
-      verify(ctx).length = 20 // See the length table
-      verify(ctx.envelope).reset()
+      verify(ctx.synth).length = 20 // See the length table
+      verify(ctx.envelope).restart()
     }
   }
 
@@ -107,7 +107,7 @@ class ApuTest {
       verify(tri.synth).preventReloadClear = true
 
       apu.writeReg(8, 0b0_1010101)
-      verify(tri.synth).linear = 0b1010101
+      verify(tri.synth).linLength = 0b1010101
     }
 
     @Test
@@ -121,7 +121,7 @@ class ApuTest {
     @Test
     fun length() {
       apu.writeReg(11, 0b10101_000)
-      verify(tri).length = 20 // See the length table
+      verify(tri.synth).length = 20 // See the length table
     }
   }
 
@@ -152,8 +152,8 @@ class ApuTest {
     @Test
     fun length() {
       apu.writeReg(15, 0b10101_000)
-      verify(noi).length = 20 // See the length table
-      verify(noi.envelope).reset()
+      verify(noi.synth).length = 20 // See the length table
+      verify(noi.envelope).restart()
     }
   }
 
@@ -192,7 +192,7 @@ class ApuTest {
     @Test
     fun length() {
       apu.writeReg(19, 0xCA)
-      verify(dmc).length = 0xCA1
+      verify(dmc.synth).length = 0xCA1
     }
   }
 
@@ -200,38 +200,18 @@ class ApuTest {
   inner class Status {
     @Test
     fun `enable normal channels`() {
-      apu.writeReg(21, 0x0F)
-      listOf(sq1, sq2, tri, noi).forEach {
-        assertTrue(it.enabled)
-        verifyZeroInteractions(it.synth)
+      apu.writeReg(21, 0x1F)
+      listOf(sq1, sq2, tri, noi, dmc).forEach {
+        verify(it.synth).enabled = true
       }
-    }
-
-    @Test
-    fun `enable DMC clears IRQ as well`() {
-      apu.writeReg(21, 0x10)
-      assertTrue(dmc.enabled)
-      verify(dmc.synth).clearIrq()
-      verifyNoMoreInteractions(dmc.synth)
     }
 
     @Test
     fun `disable normal channels`() {
       apu.writeReg(21, 0x00)
-      listOf(sq1, sq2, tri, noi).forEach {
-        assertFalse(it.enabled)
-        verify(it.synth).length = 0
-        verifyNoMoreInteractions(it.synth)
+      listOf(sq1, sq2, tri, noi, dmc).forEach {
+        verify(it.synth).enabled = false
       }
-    }
-
-    @Test
-    fun `disable DMC clears IRQ as well`() {
-      apu.writeReg(21, 0x00)
-      assertFalse(dmc.enabled)
-      verify(dmc.synth).length = 0
-      verify(dmc.synth).clearIrq()
-      verifyNoMoreInteractions(dmc.synth)
     }
 
     @Test

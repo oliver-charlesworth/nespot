@@ -1,18 +1,23 @@
 package choliver.nespot.apu
 
-import choliver.nespot.observable
-import kotlin.math.max
-
 // http://wiki.nesdev.com/w/index.php/APU_Noise
 class NoiseSynth : Synth {
-  private var iLength = 0
+  private val lc = LengthCounter()
   private var sr = 0x0001
+
+  var length
+    get() = lc.length
+    set(value) { lc.length = value }
+
+  override var enabled
+    get() = lc.enabled
+    set(value) { lc.enabled = value }
+
+  override val hasRemainingOutput get() = lc.remaining > 0
+  override val output get() = if (hasRemainingOutput) (sr and 1) else 0
+
   var haltLength = false
   var mode = 0
-
-  override var length by observable(0) { iLength = it }
-  override val hasRemainingOutput get() = iLength > 0
-  override val output get() = if (hasRemainingOutput) (sr and 1) else 0
 
   override fun onTimer() {
     val fb = (sr and 0x01) xor ((if (mode == 0) (sr shr 1) else (sr shr 6)) and 0x01)
@@ -21,7 +26,7 @@ class NoiseSynth : Synth {
 
   override fun onHalfFrame() {
     if (!haltLength) {
-      iLength = max(iLength - 1, 0)
+      lc.decrement()
     }
   }
 }

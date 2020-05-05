@@ -78,4 +78,12 @@ class SquareSynthTest {
 
     assertFalse(synth.hasRemainingOutput)
   }
+
+  @Test
+  fun `exhausts if disabled`() {
+    synth.enabled = false
+
+    assertEquals(0, synth.length)
+    assertFalse(synth.hasRemainingOutput)
+  }
 }

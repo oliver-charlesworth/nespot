@@ -73,6 +73,14 @@ class TriangleSynthTest {
   }
 
   @Test
+  fun `exhausts if disabled`() {
+    synth.enabled = false
+
+    assertEquals(0, synth.length)
+    assertFalse(synth.hasRemainingOutput)
+  }
+
+  @Test
   fun `setting length counter reloads linear counter`() {
     repeat(2) { synth.onQuarterFrame() }   // Not all the way
     synth.length = 5                             // Arbitrary value, but will trigger a reload

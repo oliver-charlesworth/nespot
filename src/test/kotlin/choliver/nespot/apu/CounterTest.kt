@@ -12,7 +12,7 @@ class CounterTest {
     }
 
     assertEquals(
-      listOf(0, 0, 0, 1).repeat(3),
+      listOf(0, 0, 0, 1).repeat(3).adjustForStartup(),
       counter.take(12)
     )
   }
@@ -24,7 +24,7 @@ class CounterTest {
     }
 
     assertEquals(
-      listOf(0, 0, 1, 0, 1).repeat(6),
+      listOf(0, 0, 1, 0, 1).repeat(6).adjustForStartup(),
       counter.take(30)
     )
   }
@@ -36,7 +36,7 @@ class CounterTest {
     }
 
     assertEquals(
-      listOf(1).repeat(20),
+      listOf(1).repeat(20).adjustForStartup(),
       counter.take(20)
     )
   }
@@ -48,7 +48,7 @@ class CounterTest {
     }
 
     assertEquals(
-      listOf(2).repeat(20),
+      listOf(2).repeat(20).adjustForStartup(),
       counter.take(20)
     )
   }
@@ -60,13 +60,13 @@ class CounterTest {
     }
 
     assertEquals(
-      listOf(2, 3).repeat(10),
+      listOf(2, 3).repeat(10).adjustForStartup(),
       counter.take(20)
     )
   }
 
   @Test
-  fun `immediately starts new period`() {
+  fun `doesn't immediately restart on new period`() {
     val counter = Counter(cyclesPerSample = 4.toRational()).apply {
       periodCycles = 16.toRational()
     }
@@ -75,10 +75,13 @@ class CounterTest {
     counter.periodCycles = 4.toRational()
 
     assertEquals(
-      listOf(1, 1, 1, 1, 1, 1), // If the period didn't immediately reset, then some of these would be zero
+      listOf(0, 0, 1, 1, 1, 1), // If the period immediately reset, then these would all be 1's
       counter.take(6)
     )
   }
 
   private fun Counter.take(num: Int) = List(num) { take() }
+
+  // Always an initial tick because pos starts at zero
+  private fun List<Int>.adjustForStartup() = listOf(first() + 1) + drop(1)
 }

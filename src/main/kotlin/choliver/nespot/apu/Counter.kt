@@ -7,7 +7,7 @@ import choliver.nespot.toRational
 
 class Counter(private val cyclesPerSample: Rational = CYCLES_PER_SAMPLE) {
   private var pos = 0.toRational()
-  var periodCycles by observable(1.toRational()) { pos = it } // TODO - can this be Int ?
+  var periodCycles = 1.toRational() // TODO - can this be Int ?
 
   fun take(): Int {
     pos -= cyclesPerSample

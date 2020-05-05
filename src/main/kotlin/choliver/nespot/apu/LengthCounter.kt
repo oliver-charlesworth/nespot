@@ -21,8 +21,10 @@ class LengthCounter {
   var enabled = false
     set(value) {
       field = value
-      _length = 0
-      _remaining = 0
+      if (!value) {
+        _length = 0
+        _remaining = 0
+      }
     }
 
   fun decrement() {

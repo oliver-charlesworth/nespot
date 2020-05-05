@@ -40,7 +40,13 @@ class Apu(
 
       REG_SND_CHN -> {
         channels.dmc.synth.clearIrq()
-        channels.dmc.enabled = data.isBitSet(4)
+        if (data.isBitSet(4)) {
+          if (!channels.dmc.synth.hasRemainingOutput) {
+            channels.dmc.synth.restart()
+          }
+        } else {
+          channels.dmc.synth.clear()
+        }
         channels.noi.enabled = data.isBitSet(3)
         channels.tri.enabled = data.isBitSet(2)
         channels.sq2.enabled = data.isBitSet(1)
@@ -136,7 +142,7 @@ class Apu(
       }
       1 -> synth.level = data and 0x7F
       2 -> synth.address = 0xC000 + (data * 64)
-      3 -> length = (data * 16) + 1
+      3 -> synth.length = (data * 16) + 1
     }
   }
 

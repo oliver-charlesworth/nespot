@@ -72,7 +72,6 @@ class DmcSynthTest {
     )
 
     assertEquals(expected, synth.take(33))
-
   }
 
   @Test

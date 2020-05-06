@@ -29,6 +29,7 @@ class Renderer(
     var x: Int = 0,
     var sprite0: Boolean = false,
     var patternAddr: Address = 0x0000,
+    var pattern: Int = 0,
     var palette: Int = 0,
     var flipX: Boolean = false,
     var behind: Boolean = false,
@@ -40,6 +41,8 @@ class Renderer(
   private val sprites = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender()}.toList()
 
   fun renderScanline(state: State) {
+    val overflow = evaluateSprites(state)
+
     if (state.bgEnabled) {
       prepareBackground(state)
     } else {
@@ -50,7 +53,7 @@ class Renderer(
       blankLeftBackgroundTile()
     }
 
-    val overflow = selectSpritesAndDetectOverflow(state)
+    loadSprites()
 
     val hit = if (state.sprEnabled) {
       prepareSpritesAndDetectHit(state)
@@ -115,7 +118,7 @@ class Renderer(
     }
   }
 
-  private fun selectSpritesAndDetectOverflow(state: State): Boolean {
+  private fun evaluateSprites(state: State): Boolean {
     var iCandidate = 0
 
     sprites.forEach { spr ->
@@ -158,25 +161,31 @@ class Renderer(
     return sprites.last().valid
   }
 
+  private fun loadSprites() {
+    sprites
+      .dropLast(1)
+      .forEach { spr ->
+        spr.pattern = if (spr.valid) {
+          loadPattern(spr.patternAddr)
+        } else {
+          loadPattern(DUMMY_SPRITE_PATTERN_ADDR)
+          0   // All-transparent
+        }
+      }
+  }
+
   // Lowest index is highest priority, so render last
   private fun prepareSpritesAndDetectHit(state: State) = sprites
     .dropLast(1)
-    .map { spr ->
-      if (spr.valid) {
-        prepareSpriteAndDetectHit(spr, state)
-      } else {
-        performDummyRead()
-      }
-    }
+    .map { spr -> prepareSpriteAndDetectHit(spr, state) }
     .any { it }
 
   private fun prepareSpriteAndDetectHit(spr: SpriteToRender, state: State): Boolean {
     var hit = false
-    val pattern = loadPattern(spr.patternAddr)
 
     for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - spr.x)) {
       val x = spr.x + xPixel
-      val c = patternPixel(pattern, maybeFlip(xPixel, spr.flipX))
+      val c = patternPixel(spr.pattern, maybeFlip(xPixel, spr.flipX))
       val px = pixels[x]
 
       val opaqueSpr = (c != 0)
@@ -200,11 +209,6 @@ class Renderer(
     }
 
     return hit
-  }
-
-  private fun performDummyRead(): Boolean {
-    loadPattern(DUMMY_SPRITE_PATTERN_ADDR)
-    return false
   }
 
   private fun renderToBuffer(state: State) {

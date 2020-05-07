@@ -35,7 +35,9 @@ class Ppu(
               }
             }
           }
+          renderer.prepareYeah(state)
           renderer.renderScanline(state)
+          renderer.prepareSprites(state)
         }
 
         (SCREEN_HEIGHT + 1) -> inVbl = true
@@ -45,6 +47,8 @@ class Ppu(
           inVbl = false
           sprite0Hit = false
           spriteOverflow = false
+          renderer.prepareYeah(state)
+          renderer.prepareSprites(state)
         }
       }
 

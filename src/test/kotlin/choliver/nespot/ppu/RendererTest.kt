@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test
 import java.nio.IntBuffer
 
 
-// TODO - colour emphasis
 class RendererTest {
   private val colors = (0..63).toList()
   private val paletteEntries = (0..31).map { it + 5 }

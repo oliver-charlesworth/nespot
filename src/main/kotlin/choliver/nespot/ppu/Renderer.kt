@@ -9,7 +9,7 @@ import java.nio.IntBuffer
 import kotlin.math.min
 
 // TODO - eliminate all the magic numbers here
-// TODO - emphasize
+// TODO - colour emphasis
 class Renderer(
   private val memory: Memory,
   private val palette: Memory,
@@ -38,11 +38,15 @@ class Renderer(
 
   private val pixels = Array(SCREEN_WIDTH) { Pixel() }
   // One extra to detect overflow
-  private val sprites = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender()}.toList()
+  private val sprites = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender() }.toList()
 
-  fun renderScanline(state: State) {
-    val overflow = evaluateSprites(state)
+  fun prepareSprites(state: State) {
+    // TODO - validate this gating of evaluation happens
+    state.spriteOverflow = (state.bgEnabled || state.sprEnabled) && evaluateSprites(state)
+    loadSprites()
+  }
 
+  fun prepareYeah(state: State) {
     if (state.bgEnabled) {
       prepareBackground(state)
     } else {
@@ -52,19 +56,16 @@ class Renderer(
     if (!state.bgLeftTileEnabled) {
       blankLeftBackgroundTile()
     }
+  }
 
-    loadSprites()
-
-    val hit = if (state.sprEnabled) {
+  fun renderScanline(state: State) {
+    state.sprite0Hit = if (state.sprEnabled) {
       prepareSpritesAndDetectHit(state)
     } else {
       false
     }
 
     renderToBuffer(state)
-
-    state.sprite0Hit = hit
-    state.spriteOverflow = (state.bgEnabled || state.sprEnabled) && overflow
   }
 
   private fun prepareBackground(state: State) {
@@ -126,7 +127,7 @@ class Renderer(
 
       // Scan until we find a matching sprite
       while (!spr.valid && (iCandidate < NUM_SPRITES)) {
-        val y = oam[iCandidate * 4 + 0] + 1   // Offset of one scanline
+        val y = oam[iCandidate * 4 + 0]
         val iPattern = oam[iCandidate * 4 + 1]
         val attrs = oam[iCandidate * 4 + 2]
         val x = oam[iCandidate * 4 + 3]

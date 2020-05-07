@@ -13,6 +13,7 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
+import java.io.File
 import java.util.concurrent.LinkedBlockingQueue
 import kotlin.math.roundToInt
 import kotlin.system.measureNanoTime
@@ -35,7 +36,7 @@ class Runner : CliktCommand(name = "nespot") {
     }
   }
 
-  private inner class Inner(rom: Rom) {
+  private inner class Inner(private val rom: Rom) {
     private val events = LinkedBlockingQueue<Screen.Event>()
     private var closed = false
     private val joypads = FakeJoypads()
@@ -62,6 +63,7 @@ class Runner : CliktCommand(name = "nespot") {
     }
 
     private fun runNormally() {
+      maybeRestoreFromBackup()
       screen.show()
       audio.start()
 
@@ -77,15 +79,27 @@ class Runner : CliktCommand(name = "nespot") {
       } finally {
         screen.hide()
         screen.exit()
+        maybeSaveToBackup()
       }
     }
 
-    private fun runPerfTest() {
-      val runtimeMs = measureTimeMillis {
-        repeat(numPerfFrames!!) { nes.runToEndOfFrame() }
+    private fun maybeRestoreFromBackup() {
+      with(File(backupFileName())) {
+        if (exists()) {
+          nes.backup = readBytes()
+        }
       }
-      println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")
     }
+
+    private fun maybeSaveToBackup() {
+      with(nes.backup) {
+        if (isNotEmpty()) {
+          File(backupFileName()).writeBytes(this)
+        }
+      }
+    }
+
+    private fun backupFileName() = "backup/${rom.hash}.backup.dat"
 
     private fun consumeEvents() {
       val myEvents = mutableListOf<Screen.Event>()
@@ -113,6 +127,13 @@ class Runner : CliktCommand(name = "nespot") {
         // TODO - reset
         nes.diagnostics.cpu.nextStep = RESET
       }
+    }
+
+    private fun runPerfTest() {
+      val runtimeMs = measureTimeMillis {
+        repeat(numPerfFrames!!) { nes.runToEndOfFrame() }
+      }
+      println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")
     }
   }
 }

@@ -73,6 +73,10 @@ class Nes(
     fun peekV(addr: Address) = ppuMapper[addr]
   }
 
+  var backup
+    get() = cartridge.backup
+    set(value) { cartridge.backup = value }
+
   val diagnostics = Diagnostics()
 
   // TODO - consolidate all the constants

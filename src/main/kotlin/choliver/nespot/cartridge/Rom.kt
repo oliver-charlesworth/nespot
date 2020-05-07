@@ -30,13 +30,15 @@ data class Rom(
     PAL
   }
 
+  val hash = (prgData + chrData).sha1()
+
   fun printInfo() {
     println("Magic #:       ${String(magic)}")
     println("PRG-ROM size:  ${prgData.size}")
     println("CHR-ROM size:  ${chrData.size}")
     println("Trainer size:  ${trainerData.size}")
     println("PRG-RAM:       ${if (prgRam) "yes" else "no"}")
-    println("Mapper #:      $mapper")
+    println("Mapper #:      ${mapper}")
     println("Mirroring:     ${mirroring.name.toLowerCase()}")
     println("NES 2.0:       ${if (nes2) "yes" else "no"}")
     println("TV system:     ${tvSystem.name}")

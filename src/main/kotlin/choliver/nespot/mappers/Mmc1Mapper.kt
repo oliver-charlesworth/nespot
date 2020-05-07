@@ -24,6 +24,8 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
 
   override val irq = false
 
+  override var backup = byteArrayOf()
+
   override val prg = object : Memory {
     override fun get(addr: Address) = when {
       addr < BASE_PRG0_ROM -> prgRam[addr and 0x1FFF]

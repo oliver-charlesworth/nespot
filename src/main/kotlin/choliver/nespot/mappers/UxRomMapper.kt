@@ -14,6 +14,8 @@ class UxRomMapper(private val rom: Rom) : Mapper {
 
   override val irq = false
 
+  override var backup = byteArrayOf()
+
   override val prg = object : Memory {
     override operator fun get(addr: Address) = getFromBank(
       addr,

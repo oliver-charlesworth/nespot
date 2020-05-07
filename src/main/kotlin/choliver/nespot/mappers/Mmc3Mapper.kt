@@ -22,6 +22,10 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
 
   override val irq get() = _irq
 
+  override var backup
+    get() = ByteArray(PRG_RAM_SIZE) { prgRam[it].toByte() }
+    set(value) { for (i in 0 until PRG_RAM_SIZE) { prgRam[i] = value[i].data() } }
+
   override val prg = object : Memory {
     override operator fun get(addr: Address) = when {
       (addr >= BASE_PRG_ROM) -> loadFromPrgRom(addr)

@@ -10,6 +10,9 @@ import choliver.nespot.mappers.UxRomMapper
 class Cartridge(rom: Rom) {
   private val mapper = createMapper(rom)
   val irq get() = mapper.irq
+  var backup
+    get() = mapper.backup
+    set(value) { mapper.backup = value }
   val prg = mapper.prg
   fun chr(vram: Memory) = mapper.chr(vram)
 

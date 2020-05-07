@@ -13,6 +13,8 @@ import choliver.nespot.data
 class NromMapper(private val rom: Rom) : Mapper {
   override val irq = false
 
+  override var backup = byteArrayOf()
+
   override val prg = object : Memory {
     // Just map everything to PRG-ROM
     override fun get(addr: Address) = rom.prgData[addr and (rom.prgData.size - 1)].data()

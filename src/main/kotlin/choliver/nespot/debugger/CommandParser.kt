@@ -65,6 +65,7 @@ class CommandParser(
       "u", "until" -> when (tokens.size) {
         2 -> when {
           tokens[1] == "nmi" -> UntilNmi
+          tokens[1] == "irq" -> UntilIrq
           tokens[1].startsWith("+") -> cmd(::UntilOffset, tokens[1].removePrefix("+").toIntOrNull())
           tokens[1].startsWith("0x") -> cmd(::Until, tokens[1].toAddressOrNull())
           else -> cmd(::UntilOpcode, tokens[1].toEnumOrNull<Opcode>())

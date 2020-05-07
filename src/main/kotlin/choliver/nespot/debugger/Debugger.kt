@@ -172,6 +172,9 @@ class Debugger(
       // One more so that the interrupt actually occurs
       is UntilNmi -> untilPlusOne { nes.cpu.nextStep == NextStep.NMI }
 
+      // One more so that the interrupt actually occurs
+      is UntilIrq -> untilPlusOne { nes.cpu.nextStep == NextStep.IRQ }
+
       is Continue -> until { false }
 
       is Finish -> {

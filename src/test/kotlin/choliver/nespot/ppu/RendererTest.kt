@@ -10,6 +10,8 @@ import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.nio.IntBuffer
 
 
@@ -139,6 +141,220 @@ class RendererTest {
   }
 
   @Nested
+  inner class SpriteEvaluation {
+    @Test
+    fun `address of top row`() {
+      val iPattern = 33
+      initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = iPattern, attrs = 0)
+
+      evaluate()
+
+      assertEquals(SPR_PATTERN_TABLE * 4096 + iPattern * 16, sprites[0].patternAddr)
+    }
+
+    @Test
+    fun `address of bottom row`() {
+      val iPattern = 33
+      initSpriteMemory(x = 0, y = Y_SCANLINE - 7, iPattern = iPattern, attrs = 0)
+
+      evaluate()
+
+      assertEquals(SPR_PATTERN_TABLE * 4096 + iPattern * 16 + 7, sprites[0].patternAddr)
+    }
+
+    @Test
+    fun `address of top row if bottom row specified when vertically flipped`() {
+      val iPattern = 33
+      initSpriteMemory(x = 0, y = Y_SCANLINE - 7, iPattern = iPattern, attrs = 0x80)
+
+      evaluate()
+
+      assertEquals(SPR_PATTERN_TABLE * 4096 + iPattern * 16, sprites[0].patternAddr)
+    }
+
+    @Test
+    fun `large sprite - address of top row`() {
+      val iPattern = 32
+      initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = iPattern, attrs = 0)
+
+      evaluate(largeSprites = true)
+
+      assertEquals(iPattern * 16, sprites[0].patternAddr)
+    }
+
+    @Test
+    fun `large sprite - address of bottom row`() {
+      val iPattern = 32
+      initSpriteMemory(x = 0, y = Y_SCANLINE - 15, iPattern = iPattern, attrs = 0)
+
+      evaluate(largeSprites = true)
+
+      assertEquals((iPattern + 1) * 16 + 7, sprites[0].patternAddr)
+    }
+
+    @Test
+    fun `large sprite - address of top row if bottom row specified when vertically flipped`() {
+      val iPattern = 32
+      initSpriteMemory(x = 0, y = Y_SCANLINE - 15, iPattern = iPattern, attrs = 0x80)
+
+      evaluate(largeSprites = true)
+
+      assertEquals(iPattern * 16, sprites[0].patternAddr)
+    }
+
+    @Test
+    fun `large sprite - address of bottom row if top row specified when vertically flipped`() {
+      val iPattern = 32
+      initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = iPattern, attrs = 0x80)
+
+      evaluate(largeSprites = true)
+
+      assertEquals((iPattern + 1) * 16 + 7, sprites[0].patternAddr)
+    }
+
+    @Test
+    fun `large sprite - upper pattern table`() {
+      val iPattern = 33 // LSB specifies which pattern table
+      initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = iPattern, attrs = 0)
+
+      evaluate(largeSprites = true)
+
+      assertEquals(4096 + (iPattern - 1) * 16, sprites[0].patternAddr)
+    }
+
+    @Test
+    fun `specifies x`() {
+      val x = 5
+      initSpriteMemory(x = x, y = Y_SCANLINE, iPattern = 0, attrs = 0x00)
+
+      evaluate()
+
+      assertEquals(x, sprites[0].x)
+    }
+
+    @Test
+    fun `specifies palette`() {
+      val palette = 2
+      initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = 0, attrs = palette)
+
+      evaluate()
+
+      assertEquals(palette + 4, sprites[0].palette) // Sprite palette, so offset by 4
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `specifies behind`(behind: Boolean) {
+      initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = 0, attrs = if (behind) 0x20 else 0x00)
+
+      evaluate()
+
+      assertEquals(behind, sprites[0].behind)
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `specifies flipX`(flipX: Boolean) {
+      initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = 0, attrs = if (flipX) 0x40 else 0x00)
+
+      evaluate()
+
+      assertEquals(flipX, sprites[0].flipX)
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `specifies whether sprite #0`(sprite0InRange: Boolean) {
+      initSpriteMemory(x = 0, y = Y_SCANLINE + if (sprite0InRange) 0 else 1, iPattern = 0, attrs = 0x00, iSprite = 0)
+      initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = 0, attrs = 0x00, iSprite = 5)
+
+      evaluate()
+
+      assertEquals(sprite0InRange, sprites[0].sprite0)
+    }
+
+    @Test
+    fun `lowest-index output corresponds to lowest-index OAM entries`() {
+      val oamIndices = listOf(1, 2, 3, 5, 8, 13, 21, 34)
+      oamIndices.forEach {
+        initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = it, attrs = 0x00, iSprite = it)
+      }
+
+      evaluate()
+
+      oamIndices.forEachIndexed { idx, oamIdx ->
+        assertEquals(SPR_PATTERN_TABLE * 4096 + oamIdx * 16, sprites[idx].patternAddr)
+      }
+    }
+
+    @Test
+    fun `creates invalid entries if not enough in-range sprites`() {
+      initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = 0, attrs = 0x00, iSprite = 0)
+      initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = 0, attrs = 0x00, iSprite = 1)
+      initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = 0, attrs = 0x00, iSprite = 2)
+
+      evaluate()
+
+      assertTrue(sprites[0].valid)
+      assertTrue(sprites[1].valid)
+      assertTrue(sprites[2].valid)
+      assertFalse(sprites[3].valid)
+      assertFalse(sprites[4].valid)
+      assertFalse(sprites[5].valid)
+      assertFalse(sprites[6].valid)
+      assertFalse(sprites[7].valid)
+    }
+
+    @Test
+    fun `sets overflow if more than 8 valid sprites`() {
+      val oamIndices = listOf(1, 2, 3, 5, 8, 13, 21, 34, 55)
+      oamIndices.forEach {
+        initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = it, attrs = 0x00, iSprite = it)
+      }
+
+      assertTrue(evaluate().spriteOverflow)
+    }
+
+    @Test
+    fun `doesn't set overflow if only 8 valid sprites`() {
+      val oamIndices = listOf(1, 2, 3, 5, 8, 13, 21, 34)
+      oamIndices.forEach {
+        initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = it, attrs = 0x00, iSprite = it)
+      }
+
+      assertFalse(evaluate().spriteOverflow)
+    }
+
+    @Test
+    fun `sets overflow if rendering disabled`() {
+      val oamIndices = listOf(1, 2, 3, 5, 8, 13, 21, 34, 55)
+      oamIndices.forEach {
+        initSpriteMemory(x = 0, y = Y_SCANLINE, iPattern = it, attrs = 0x00, iSprite = it)
+      }
+
+      assertTrue(evaluate(bgEnabled = false, sprEnabled = true).spriteOverflow)
+      assertTrue(evaluate(bgEnabled = true, sprEnabled = false).spriteOverflow)
+      assertFalse(evaluate(bgEnabled = false, sprEnabled = false).spriteOverflow)
+    }
+
+    private fun evaluate(
+      bgEnabled: Boolean = true,
+      sprEnabled: Boolean = true,
+      largeSprites: Boolean = false
+    ): State {
+      val state = State(
+        bgEnabled = bgEnabled,
+        sprEnabled = sprEnabled,
+        sprPatternTable = SPR_PATTERN_TABLE,
+        scanline = Y_SCANLINE,
+        largeSprites = largeSprites
+      )
+      renderer.evaluateSprites(state)
+      return state
+    }
+  }
+
+  @Nested
   inner class Sprite {
     private val xOffset = 5
     private val pattern = listOf(1, 2, 3, 3, 2, 1, 1, 2)  // No zero values
@@ -235,90 +451,6 @@ class RendererTest {
       val state = State(
         sprEnabled = sprEnabled,
         sprLeftTileEnabled = sprLeftTileEnabled,
-        sprPatternTable = SPR_PATTERN_TABLE,
-        scanline = Y_SCANLINE
-      )
-      renderer.evaluateSprites(state)
-      renderer.loadSprites(state)
-      renderer.renderSprites(state)
-    }
-  }
-
-  @Nested
-  inner class LargeSprite {
-    private val iPalette = 0
-    private val xOffset = 5
-    private val pattern = listOf(1, 2, 3, 3, 2, 1, 1, 2)  // No zero values
-
-    @Test
-    fun `top row`() {
-      initSprPatternMemory(mapOf(2 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 2, attrs = 0)
-
-      render()
-
-      assertBuffer { calcPalIdx(x = it) }
-    }
-
-    @Test
-    fun `bottom row`() {
-      initSprPatternMemory(mapOf(3 to pattern), yRow = 7) // Note - next pattern index!
-      initSpriteMemory(x = xOffset, y = Y_SCANLINE - 15, iPattern = 2, attrs = 0)
-
-      render()
-
-      assertBuffer { calcPalIdx(x = it) }
-    }
-
-    @Test
-    fun `top row - vertically-flipped`() {
-      initSprPatternMemory(mapOf(3 to pattern), yRow = 7) // Note - next pattern index!
-      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 2, attrs = 0x80)
-
-      render()
-
-      assertBuffer { calcPalIdx(x = it) }
-    }
-
-    @Test
-    fun `bottom row - vertically-flipped`() {
-      initSprPatternMemory(mapOf(2 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = Y_SCANLINE - 15, iPattern = 2, attrs = 0x80)
-
-      render()
-
-      assertBuffer { calcPalIdx(x = it) }
-    }
-
-    @Test
-    fun `ignore sprPatternTable`() {
-      val largeIdx = 258  // Larger than one palette table
-      initSprPatternMemory(mapOf(largeIdx to pattern), yRow = 0)
-      initSpriteMemory(
-        x = xOffset,
-        y = Y_SCANLINE,
-        iPattern = (largeIdx and 0xFE) or (largeIdx shr 8), // Munged to fit in one byte
-        attrs = 0
-      )
-
-      render()
-
-      assertBuffer { calcPalIdx(x = it) }
-    }
-
-    private fun calcPalIdx(x: Int) = if (x in xOffset until TILE_SIZE + xOffset) {
-      pattern[x - xOffset] + ((NUM_PALETTES + iPalette) * NUM_ENTRIES_PER_PALETTE)
-    } else 0
-
-    private fun initSprPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int) {
-      initPatternMemory(patterns, yRow, 0x0000)
-    }
-
-    private fun render() {
-      val state = State(
-        largeSprites = true,
-        sprEnabled = true,
-        sprLeftTileEnabled = true,
         sprPatternTable = SPR_PATTERN_TABLE,
         scanline = Y_SCANLINE
       )
@@ -457,7 +589,7 @@ class RendererTest {
 
     private fun assertPixelColour(expected: Int) {
       render()
-      assertEquals(expected, renderer.diagnostics.state.paletteIndices[0])
+      assertEquals(expected, paletteIndices[0])
     }
 
     private fun render() {
@@ -597,78 +729,7 @@ class RendererTest {
     }
   }
 
-  @Nested
-  inner class Overflow {
-    @Test
-    fun `doesn't trigger overflow for 8 or less`() {
-      repeat(8) {
-        initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
-      }
-
-      assertFalse(render().spriteOverflow)
-    }
-
-    @Test
-    fun `triggers overflow for 9 or more`() {
-      repeat(9) {
-        initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
-      }
-
-      assertTrue(render().spriteOverflow)
-    }
-
-    @Test
-    fun `doesn't trigger overflow if rendering completely disabled`() {
-      repeat(9) {
-        initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
-      }
-
-      assertTrue(render(sprEnabled = false).spriteOverflow)
-      assertTrue(render(bgEnabled = false).spriteOverflow)
-      assertFalse(render(bgEnabled = false, sprEnabled = false).spriteOverflow)
-    }
-
-    @Test
-    fun `renders at most 8 sprites, with the highest priority`() {
-      val pattern = List(TILE_SIZE) { 1 }
-      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      repeat(9) {
-        initSpriteMemory(x = (it * (TILE_SIZE + 1)), y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
-      }
-
-      render()
-
-      assertEquals(8 * 8, extractScanline().count { it != paletteEntries[0] })
-    }
-
-    @Test
-    fun `renders less than 8 sprites`() {
-      val pattern = List(TILE_SIZE) { 1 }
-      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      repeat(6) {
-        initSpriteMemory(x = (it * (TILE_SIZE + 1)), y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
-      }
-
-      render()
-
-      assertEquals(6 * 8, extractScanline().count { it != paletteEntries[0] })
-    }
-
-    private fun render(
-      bgEnabled: Boolean = true,
-      sprEnabled: Boolean = true
-    ): State {
-      val state = State(
-        bgEnabled = bgEnabled,
-        sprEnabled = sprEnabled,
-        sprLeftTileEnabled = true,
-        sprPatternTable = SPR_PATTERN_TABLE,
-        scanline = Y_SCANLINE
-      )
-      renderer.evaluateSprites(state)
-      return state
-    }
-  }
+  // TODO - doesn't render invalid sprites
 
   // Renderer knows nothing of vertical scroll, so we only test horizontal scroll
   @Nested
@@ -803,18 +864,19 @@ class RendererTest {
         val p = pattern[it % TILE_SIZE]
         colors[paletteEntries[if (p == 0) 0 else (p + NUM_ENTRIES_PER_PALETTE * 3)] and 0x30]
       },
-      extractScanline()
+      paletteIndices
     )
   }
 
   private fun assertBuffer(expected: (Int) -> Int) {
     assertEquals(
       (0 until SCREEN_WIDTH).map { expected(it) },
-      renderer.diagnostics.state.paletteIndices
+      paletteIndices
     )
   }
 
-  private fun extractScanline() = renderer.diagnostics.state.paletteIndices
+  private val paletteIndices = renderer.diagnostics.state.paletteIndices
+  private val sprites = renderer.diagnostics.state.sprites
 
   private fun initNametableMemory(
     nametableEntries: List<Int>,

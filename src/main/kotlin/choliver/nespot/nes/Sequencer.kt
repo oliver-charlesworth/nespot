@@ -19,11 +19,6 @@ class Sequencer(
 
   private var state = State()
 
-  fun runToEndOfFrame() {
-    @Suppress("ControlFlowWithEmptyBody")
-    while (!step()) {}
-  }
-
   fun step() = with(state) {
     val cycles = cpu.executeStep()
     cyclesRemainingInScanline -= cycles
@@ -39,9 +34,6 @@ class Sequencer(
 
     if (scanlinesRemainingInFrame == 0) {
       finishFrame()
-      true
-    } else {
-      false
     }
   }
 

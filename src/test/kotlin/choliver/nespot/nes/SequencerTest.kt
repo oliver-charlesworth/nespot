@@ -1,6 +1,5 @@
 package choliver.nespot.nes
 
-import choliver.nespot.CYCLES_PER_FRAME
 import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.CYCLES_PER_SCANLINE
 import choliver.nespot.Rational
@@ -8,8 +7,6 @@ import choliver.nespot.apu.Apu
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
 import com.nhaarman.mockitokotlin2.*
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import kotlin.math.ceil
 
@@ -46,16 +43,6 @@ class SequencerTest {
     sequencer.step()                // One more step
 
     verify(ppu).executeScanline()   // Oh yes
-  }
-
-  @Test
-  fun `sets EOF exactly at end of frame`() {
-    whenever(cpu.executeStep()) doReturn 1
-
-    repeat(CYCLES_PER_FRAME.roundUp() - 2) { sequencer.step() }  // Two before end of frame
-
-    assertFalse(sequencer.step())  // Not quite enough
-    assertTrue(sequencer.step())   // Oh yes
   }
 
   private fun Rational.roundUp() = ceil(toDouble()).toInt()

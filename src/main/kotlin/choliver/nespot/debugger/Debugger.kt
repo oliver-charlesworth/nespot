@@ -2,7 +2,6 @@ package choliver.nespot.debugger
 
 import choliver.nespot.Address
 import choliver.nespot.Data
-import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
 import choliver.nespot.debugger.CallStackManager.FrameType.NMI

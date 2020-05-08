@@ -67,8 +67,8 @@ class Nes(
     ppu = ppu
   )
 
-  fun runToEndOfFrame() {
-    sequencer.runToEndOfFrame()
+  fun step() {
+    sequencer.step()
   }
 
   inner class Diagnostics internal constructor() {

@@ -5,6 +5,7 @@ import choliver.nespot.nes.Nes
 import choliver.nespot.persistence.BackupManager
 import choliver.nespot.persistence.SnapshotManager
 import choliver.nespot.runner.KeyAction.*
+import choliver.nespot.runner.Screen.Event
 import choliver.nespot.runner.Screen.Event.*
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep.RESET
 import com.github.ajalt.clikt.core.CliktCommand
@@ -36,8 +37,10 @@ class Runner : CliktCommand(name = "nespot") {
   }
 
   private inner class Inner(rom: Rom) {
-    private val events = LinkedBlockingQueue<Screen.Event>()
+    private val events = LinkedBlockingQueue<Event>()
     private var closed = false
+    private var redraw = false
+    private var play = false
     private val joypads = FakeJoypads()
     private val screen = Screen(onEvent = { events += it })
     private val audio = Audio()
@@ -46,8 +49,8 @@ class Runner : CliktCommand(name = "nespot") {
       videoBuffer = screen.buffer,
       audioBuffer = audio.buffer,
       joypads = joypads,
-      onAudioBufferReady = { audio.play() },
-      onVideoBufferReady = { screen.redraw() }
+      onAudioBufferReady = { play = true },
+      onVideoBufferReady = { redraw = true }
     )
     private val backupManager = BackupManager(rom, nes.prgRam, BACKUP_DIR)
     private val snapshotManager = SnapshotManager(nes.diagnostics)
@@ -71,13 +74,29 @@ class Runner : CliktCommand(name = "nespot") {
 
       try {
         while (!closed) {
-          nes.diagnostics.sequencer.step()  // TODO
+          nes.step()
+          maybeRedraw()
+          maybePlay()
           consumeEvent()
         }
         backupManager.maybeSave()
       } finally {
         screen.hide()
         screen.exit()
+      }
+    }
+
+    private fun maybeRedraw() {
+      if (redraw) {
+        redraw = false
+        screen.redraw()
+      }
+    }
+
+    private fun maybePlay() {
+      if (play) {
+        play = false
+        audio.play()
       }
     }
 
@@ -107,7 +126,10 @@ class Runner : CliktCommand(name = "nespot") {
 
     private fun runPerfTest() {
       val runtimeMs = measureTimeMillis {
-        repeat(numPerfFrames!!) { nes.runToEndOfFrame() }
+        repeat(numPerfFrames!!) {
+          while (!redraw) { nes.step() }
+          redraw = false
+        }
       }
       println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")
     }

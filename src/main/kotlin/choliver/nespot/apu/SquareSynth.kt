@@ -9,7 +9,10 @@ class SquareSynth : Synth {
 
   var length
     get() = lc.length
-    set(value) { lc.length = value }
+    set(value) {
+      lc.length = value
+      iSeq = 0  // Restarts phase
+    }
 
   override var enabled
     get() = lc.enabled

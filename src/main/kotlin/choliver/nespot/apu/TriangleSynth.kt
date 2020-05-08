@@ -12,7 +12,10 @@ class TriangleSynth : Synth {
 
   var length
     get() = lc.length
-    set(value) { lc.length = value; reload = true } // Reloads both counters
+    set(value) {
+      lc.length = value
+      reload = true  // Reloads both counters
+    }
 
   override var enabled
     get() = lc.enabled

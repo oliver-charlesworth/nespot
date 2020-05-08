@@ -12,7 +12,7 @@ class Ppu(
   private val renderer: Renderer = Renderer(memory, palette, oam, videoBuffer),
   private val onVideoBufferReady: () -> Unit
 ) {
-  private var state = State(untilNextScanline = CYCLES_PER_SCANLINE.a)
+  private var state = State()
 
   // TODO - model addr increment quirks during rendering (see wiki.nesdev.com/w/index.php/PPU_scrolling)
   // TODO - add a reset (to clean up counters and stuff)
@@ -21,49 +21,92 @@ class Ppu(
 
   fun advance(numCycles: Int) {
     with(state) {
-      untilNextScanline -= numCycles * CYCLES_PER_SCANLINE.b
-
-      while (untilNextScanline <= 0) {
-        untilNextScanline += CYCLES_PER_SCANLINE.a
-        executeScanline()
+      repeat(numCycles * DOTS_PER_CYCLE) {
+        doStuff()
+        dot++
+        if (dot == DOTS_PER_SCANLINE) {
+          dot = 0
+          scanline++
+          if (scanline == SCANLINES_PER_FRAME) {
+            scanline = 0
+          }
+        }
       }
     }
   }
 
+  // TODO - we'll need to remove the +1 from renderer
+
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
-  private fun executeScanline() {
+  private fun doStuff() {
     with(state) {
       when (scanline) {
         in (0 until SCREEN_HEIGHT) -> {
-          if (bgEnabled || sprEnabled) {
-            when (scanline) {
-              0 -> coords = coordsBacking.copy()
-              else -> {
-                coords.xFine = coordsBacking.xFine
-                coords.xCoarse = coordsBacking.xCoarse
-                coords.xNametable = coordsBacking.xNametable
-                coords.incrementY()
+          when (dot) {
+            255 -> {
+              renderer.prepareBackground(state)
+              state.sprite0Hit = state.sprEnabled && renderer.prepareSpritesAndDetectHit(state)
+              renderer.renderToBuffer(state)
+            }
+            256 -> {
+              state.spriteOverflow = renderer.evaluateSprites(state) && (state.bgEnabled || state.sprEnabled)
+            }
+            257 -> updateAndPartiallyRestoreCoords()
+            320 -> {
+              if (state.sprEnabled) {
+                renderer.loadSprites()
               }
             }
           }
-          renderer.renderScanline(state)
         }
 
         (SCREEN_HEIGHT + 1) -> {
-          inVbl = true
-          onVideoBufferReady()
+          // Could go earlier, but this is fine
+          when (dot) {
+            1 -> setVblFlag()   // Could go earlier, but this is fine
+          }
         }
 
         // Pre-render line
         (SCANLINES_PER_FRAME - 1) -> {
-          inVbl = false
-          sprite0Hit = false
-          spriteOverflow = false
+          when (dot) {
+            1 -> clearFlags()
+            255 -> renderer.prepareBackground(state)
+            257 -> updateAndPartiallyRestoreCoords()
+            304 -> totallyRestoreCoords()
+            320 -> {
+              if (state.sprEnabled) {
+                renderer.loadSprites()
+              }
+            }
+          }
         }
       }
-
-      scanline = (scanline + 1) % SCANLINES_PER_FRAME
     }
+  }
+
+  private fun State.setVblFlag() {
+    inVbl = true
+    onVideoBufferReady()
+  }
+
+  private fun State.clearFlags() {
+    inVbl = false
+    sprite0Hit = false
+    spriteOverflow = false
+  }
+
+  // TODO - better name
+  private fun State.updateAndPartiallyRestoreCoords() {
+    coords.xFine = coordsBacking.xFine
+    coords.xCoarse = coordsBacking.xCoarse
+    coords.xNametable = coordsBacking.xNametable
+    coords.incrementY()
+  }
+
+  // TODO - better name
+  private fun State.totallyRestoreCoords() {
+    coords = coordsBacking.copy()
   }
 
   fun readReg(reg: Int) = with(state) {

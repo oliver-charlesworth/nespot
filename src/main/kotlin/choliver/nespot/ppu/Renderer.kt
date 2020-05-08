@@ -44,20 +44,7 @@ class Renderer(
   // One extra to detect overflow
   private val sprites = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender() }.toList()
 
-  fun renderScanline(state: State) {
-    state.spriteOverflow = evaluateSprites(state) && (state.bgEnabled || state.sprEnabled)
-
-    prepareBackground(state)
-
-    if (state.sprEnabled) {
-      loadSprites()
-      state.sprite0Hit = prepareSpritesAndDetectHit(state)
-    }
-
-    renderToBuffer(state)
-  }
-
-  private fun prepareBackground(state: State) {
+  fun prepareBackground(state: State) {
     with(state.coords) {
       for (x in 0 until SCREEN_WIDTH) {
         if (state.bgEnabled) {
@@ -107,7 +94,7 @@ class Renderer(
     opaqueSpr = false
   }
 
-  private fun evaluateSprites(state: State): Boolean {
+  fun evaluateSprites(state: State): Boolean {
     var iCandidate = 0
 
     sprites.forEach { spr ->
@@ -115,7 +102,7 @@ class Renderer(
 
       // Scan until we find a matching sprite
       while (!spr.valid && (iCandidate < NUM_SPRITES)) {
-        val y = oam[iCandidate * 4 + 0] + 1
+        val y = oam[iCandidate * 4 + 0]
         val iPattern = oam[iCandidate * 4 + 1]
         val attrs = oam[iCandidate * 4 + 2]
         val x = oam[iCandidate * 4 + 3]
@@ -150,7 +137,7 @@ class Renderer(
     return sprites.last().valid
   }
 
-  private fun loadSprites() {
+  fun loadSprites() {
     sprites
       .dropLast(1)
       .forEach { spr -> spr.pattern = loadSpritePattern(spr) }
@@ -164,7 +151,7 @@ class Renderer(
   }
 
   // Lowest index is highest priority, so render last
-  private fun prepareSpritesAndDetectHit(state: State) = sprites
+  fun prepareSpritesAndDetectHit(state: State) = sprites
     .dropLast(1)
     .map { spr -> prepareSpriteAndDetectHit(spr, state) }
     .any { it }
@@ -200,7 +187,7 @@ class Renderer(
     return hit
   }
 
-  private fun renderToBuffer(state: State) {
+  fun renderToBuffer(state: State) {
     videoBuffer.position(state.scanline * SCREEN_WIDTH)
     val mask = if (state.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
     pixels.forEach {

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test
 import java.nio.IntBuffer
 
 
+// TODO - test that we load tiles during left-tile clipping
 class RendererTest {
   private val colors = (0..63).toList()
   private val paletteEntries = (0..31).map { it + 5 }

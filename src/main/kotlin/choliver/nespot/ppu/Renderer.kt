@@ -4,6 +4,7 @@ import choliver.nespot.*
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Ppu.Companion.BASE_PATTERNS
 import choliver.nespot.ppu.Ppu.Companion.NAMETABLE_SIZE_BYTES
+import choliver.nespot.ppu.model.Coords
 import choliver.nespot.ppu.model.State
 import java.nio.IntBuffer
 import kotlin.math.min
@@ -37,6 +38,10 @@ class Renderer(
     var valid: Boolean = false
   )
 
+  private var paletteEntry = 0
+  private var pattern: Data = 0x00
+
+
   private val pixels = Array(SCREEN_WIDTH) { Pixel() }
   // One extra to detect overflow
   private val sprites = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender() }.toList()
@@ -47,77 +52,61 @@ class Renderer(
 
     loadSprites()
 
-    // TODO - Calculate colours (inc. hit detect)
-
-    prepareYeah(state)
+    prepareBackground(state)
 
     state.sprite0Hit = state.sprEnabled && prepareSpritesAndDetectHit(state)
 
     renderToBuffer(state)
   }
 
-
-  private fun prepareYeah(state: State) {
-    if (state.bgEnabled) {
-      prepareBackground(state)
-    } else {
-      prepareBlankBackground()
-    }
-
-    if (!state.bgLeftTileEnabled) {
-      blankLeftBackgroundTile()
-    }
-  }
-
   private fun prepareBackground(state: State) {
-    var palette = 0
-    var pattern: Data = 0x00
-
     with(state.coords) {
       for (x in 0 until SCREEN_WIDTH) {
-        if ((x == 0) || (xFine == 0)) {
-          val addrNt = BASE_NAMETABLES +
-            ((yNametable * 2 + xNametable) * NAMETABLE_SIZE_BYTES) +
-            (yCoarse * NUM_TILE_COLUMNS) +
-            xCoarse
-
-          val addrAttr = BASE_NAMETABLES +
-            ((yNametable * 2 + xNametable) * NAMETABLE_SIZE_BYTES) +
-            960 +
-            (yCoarse / 4) * (NUM_TILE_COLUMNS / 4) +
-            (xCoarse / 4)
-
-          palette = (memory[addrAttr] shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
-          pattern = loadPattern(patternAddr(iTable = state.bgPatternTable, iTile = memory[addrNt], iRow = yFine))
+        if (state.bgEnabled) {
+          if ((x == 0) || (xFine == 0)) {
+            loadNextBackgroundTile(state)
+          }
+          if (state.bgLeftTileEnabled || (x >= TILE_SIZE)) {
+            pixels[x].setBackgroundValue(state)
+          } else {
+            pixels[x].setBlankValue()
+          }
+          incrementX()
+        } else {
+          pixels[x].setBlankValue()
         }
-        with(pixels[x]) {
-          c = patternPixel(pattern, xFine)
-          p = palette
-          opaqueSpr = false
-        }
-        incrementX()
       }
     }
   }
 
-  private fun prepareBlankBackground() {
-    for (x in 0 until SCREEN_WIDTH) {
-      with(pixels[x]) {
-        c = 0
-        p = 0
-        opaqueSpr = false
-      }
+  private fun loadNextBackgroundTile(state: State) {
+    with(state.coords) {
+      val addrNt = BASE_NAMETABLES +
+        ((yNametable * 2 + xNametable) * NAMETABLE_SIZE_BYTES) +
+        (yCoarse * NUM_TILE_COLUMNS) +
+        xCoarse
+
+      val addrAttr = BASE_NAMETABLES +
+        ((yNametable * 2 + xNametable) * NAMETABLE_SIZE_BYTES) +
+        960 +
+        (yCoarse / 4) * (NUM_TILE_COLUMNS / 4) +
+        (xCoarse / 4)
+
+      paletteEntry = (memory[addrAttr] shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
+      pattern = loadPattern(patternAddr(iTable = state.bgPatternTable, iTile = memory[addrNt], iRow = yFine))
     }
   }
 
-  private fun blankLeftBackgroundTile() {
-    for (x in 0 until TILE_SIZE) {
-      with(pixels[x]) {
-        c = 0
-        p = 0
-        opaqueSpr = false
-      }
-    }
+  private fun Pixel.setBackgroundValue(state: State) {
+    c = patternPixel(pattern, state.coords.xFine)
+    p = paletteEntry
+    opaqueSpr = false
+  }
+
+  private fun Pixel.setBlankValue() {
+    c = 0
+    p = 0
+    opaqueSpr = false
   }
 
   private fun evaluateSprites(state: State): Boolean {

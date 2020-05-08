@@ -21,7 +21,7 @@ class Ppu(
 
   fun advance(numCycles: Int) {
     repeat(numCycles * DOTS_PER_CYCLE) {
-      doStuff()
+      handleDot()
       incrementFramePos()
     }
   }
@@ -34,7 +34,7 @@ class Ppu(
   }
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
-  private fun doStuff() {
+  private fun handleDot() {
     when (state.scanline) {
       in (0 until SCREEN_HEIGHT) -> when (state.dot) {
         255 -> {
@@ -48,7 +48,7 @@ class Ppu(
       }
 
       (SCREEN_HEIGHT + 1) -> when (state.dot) {
-        1 -> setVblFlag()   // Could go earlier, but this is fine
+        1 -> setVblFlag()
       }
 
       // Pre-render line
@@ -64,7 +64,7 @@ class Ppu(
 
   private fun setVblFlag() {
     state.inVbl = true
-    onVideoBufferReady()
+    onVideoBufferReady()    // Could go earlier, but this is fine
   }
 
   private fun clearFlags() {

@@ -44,6 +44,16 @@ class SquareSynthTest {
   }
 
   @Test
+  fun `setting length restarts phase`() {
+    synth.dutyCycle = 3
+    synth.take(3)
+    synth.length = 8
+    val seq = synth.take(16)
+
+    assertEquals(listOf(1, 0, 0, 1, 1, 1, 1, 1).repeat(2), seq) // Starts from beginning of sequence
+  }
+
+  @Test
   fun `freezes once length counter exhausted`() {
     synth.dutyCycle = 3 // Easiest to see the impact on
     synth.nextNonZeroOutput()

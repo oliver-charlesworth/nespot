@@ -14,7 +14,7 @@ class LengthCounter {
     set(value) {
       if (enabled) {
         _length = value
-        _remaining = value
+        restart()
       }
     }
 

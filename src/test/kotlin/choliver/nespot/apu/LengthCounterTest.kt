@@ -57,4 +57,16 @@ class LengthCounterTest {
     assertEquals(0, lc.length)
     assertEquals(0, lc.remaining)
   }
+
+  @Test
+  fun `setting length restarts counter`() {
+    lc.enabled = true
+    lc.length = 3
+    lc.decrement()
+    lc.decrement()
+    lc.length = 5
+
+    assertEquals(5, lc.length)
+    assertEquals(5, lc.remaining)
+  }
 }

@@ -3,9 +3,7 @@ package choliver.nespot.ppu
 import choliver.nespot.Address
 import choliver.nespot.Memory
 import choliver.nespot.apu.repeat
-import choliver.nespot.isBitSet
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
-import choliver.nespot.ppu.Renderer.Companion.MAX_SPRITES_PER_SCANLINE
 import choliver.nespot.ppu.model.Coords
 import choliver.nespot.ppu.model.State
 import com.nhaarman.mockitokotlin2.*
@@ -15,6 +13,7 @@ import org.junit.jupiter.api.Test
 import java.nio.IntBuffer
 
 
+// TODO - separate test for commit-to-buffer
 class RendererTest {
   private val colors = (0..63).toList()
   private val paletteEntries = (0..31).map { it + 5 }
@@ -133,11 +132,9 @@ class RendererTest {
         bgEnabled = bgEnabled,
         bgLeftTileEnabled = bgLeftTileEnabled,
         bgPatternTable = BG_PATTERN_TABLE,
-        coords = Coords(xCoarse = 0, xFine = 0, yCoarse = yCoarse, yFine = Y_FINE),
-        scanline = Y_SCANLINE
+        coords = Coords(xCoarse = 0, xFine = 0, yCoarse = yCoarse, yFine = Y_FINE)
       )
       renderer.renderBackground(state)
-      renderer.commitToBuffer(state)
     }
   }
 
@@ -646,7 +643,7 @@ class RendererTest {
 
       render()
 
-      assertEquals(8 * 8, extractScanline().count { it != colors[paletteEntries[0]] })
+      assertEquals(8 * 8, extractScanline().count { it != paletteEntries[0] })
     }
 
     @Test
@@ -659,7 +656,7 @@ class RendererTest {
 
       render()
 
-      assertEquals(6 * 8, extractScanline().count { it != colors[paletteEntries[0]] })
+      assertEquals(6 * 8, extractScanline().count { it != paletteEntries[0] })
     }
 
     private fun render(
@@ -821,13 +818,12 @@ class RendererTest {
 
   private fun assertBuffer(expected: (Int) -> Int) {
     assertEquals(
-      (0 until SCREEN_WIDTH).map { colors[paletteEntries[expected(it)]] },
-      extractScanline()
+      (0 until SCREEN_WIDTH).map { expected(it) },
+      renderer.diagnostics.state.paletteIndices
     )
   }
 
-  private fun extractScanline() =
-    videoBuffer.array().toList().subList(Y_SCANLINE * SCREEN_WIDTH, (Y_SCANLINE + 1) * SCREEN_WIDTH)
+  private fun extractScanline() = renderer.diagnostics.state.paletteIndices
 
   private fun initNametableMemory(
     nametableEntries: List<Int>,

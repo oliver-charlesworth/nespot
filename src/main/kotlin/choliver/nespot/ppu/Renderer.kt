@@ -19,16 +19,10 @@ class Renderer(
   private val colors: List<Int> = COLORS
 ) {
   data class State(
-    val pixels: List<Pixel> = List(SCREEN_WIDTH) { Pixel() },
+    val paletteIndices: MutableList<Int> = MutableList(SCREEN_WIDTH) { 0 },
+    val opaqueSpr: MutableList<Boolean> = MutableList(SCREEN_WIDTH) { false },  // Is an opaque sprite placed here?
     // One extra to detect overflow
     val sprites: List<SpriteToRender> = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender() }.toList()
-  )
-
-  @MutableForPerfReasons
-  data class Pixel(
-    var c: Int = 0,
-    var p: Int = 0,
-    var opaqueSpr: Boolean = false  // Is an opaque sprite placed here?
   )
 
   @MutableForPerfReasons
@@ -44,7 +38,7 @@ class Renderer(
   )
 
   // Don't persist beyond intenal call, so need to be in State
-  private var paletteEntry = 0
+  private var iPalette = 0
   private var pattern: Data = 0x00
 
   private var state = State()
@@ -57,14 +51,15 @@ class Renderer(
             loadNextBackgroundTile(ppu)
           }
           if (ppu.bgLeftTileEnabled || (x >= TILE_SIZE)) {
-            state.pixels[x].setBackgroundValue(ppu)
+            state.paletteIndices[x] = paletteIndex(patternPixel(pattern, xFine), iPalette)
           } else {
-            state.pixels[x].setBlankValue()
+            state.paletteIndices[x] = 0
           }
           incrementX()
         } else {
-          state.pixels[x].setBlankValue()
+          state.paletteIndices[x] = 0
         }
+        state.opaqueSpr[x] = false
       }
     }
   }
@@ -82,21 +77,9 @@ class Renderer(
         (yCoarse / 4) * (NUM_TILE_COLUMNS / 4) +
         (xCoarse / 4)
 
-      paletteEntry = (memory[addrAttr] shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
+      iPalette = (memory[addrAttr] shr (((yCoarse / 2) % 2) * 4 + ((xCoarse / 2) % 2) * 2)) and 0x03
       pattern = loadPattern(patternAddr(iTable = state.bgPatternTable, iTile = memory[addrNt], iRow = yFine))
     }
-  }
-
-  private fun Pixel.setBackgroundValue(state: PpuState) {
-    c = patternPixel(pattern, state.coords.xFine)
-    p = paletteEntry
-    opaqueSpr = false
-  }
-
-  private fun Pixel.setBlankValue() {
-    c = 0
-    p = 0
-    opaqueSpr = false
   }
 
   fun evaluateSprites(ppu: PpuState) {
@@ -170,20 +153,18 @@ class Renderer(
     for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - spr.x)) {
       val x = spr.x + xPixel
       val c = patternPixel(spr.pattern, maybeFlip(xPixel, spr.flipX))
-      val px = state.pixels[x]
 
       val opaqueSpr = (c != 0)
       val clipped = !ppu.sprLeftTileEnabled && (x < TILE_SIZE)
 
-      if (opaqueSpr && !px.opaqueSpr && !clipped) {
-        px.opaqueSpr = true
+      if (opaqueSpr && !state.opaqueSpr[x] && !clipped) {
+        state.opaqueSpr[x] = true
 
         // There is no previous opaque sprite, so if pixel is opaque then it must be background
-        val opaqueBg = (px.c != 0)
+        val opaqueBg = (state.paletteIndices[x] != 0)
 
         if (!(spr.behind && opaqueBg)) {
-          px.c = c
-          px.p = spr.palette
+          state.paletteIndices[x] = paletteIndex(c, spr.palette)
         }
 
         if (spr.sprite0 && opaqueBg && (x < (SCREEN_WIDTH - 1))) {
@@ -196,9 +177,8 @@ class Renderer(
   fun commitToBuffer(ppu: PpuState) {
     videoBuffer.position(ppu.scanline * SCREEN_WIDTH)
     val mask = if (ppu.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
-    state.pixels.forEach {
-      val paletteAddr = if (it.c == 0) 0 else (it.p * 4 + it.c) // Background colour is universal
-      videoBuffer.put(colors[palette[paletteAddr] and mask])
+    state.paletteIndices.forEach {
+      videoBuffer.put(colors[palette[it] and mask])
     }
   }
 
@@ -214,6 +194,9 @@ class Renderer(
   }
 
   private fun patternAddr(iTable: Int, iTile: Int, iRow: Int) = (iTable * 4096) + (iTile * 16) + iRow
+
+  // Background colour is universal
+  private fun paletteIndex(entry: Int, palette: Int) = if (entry == 0) 0 else (palette * 4 + entry)
 
   inner class Diagnostics internal constructor() {
     var state

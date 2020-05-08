@@ -361,7 +361,6 @@ class PpuTest {
       val ctx = captureContext(2)
       assertEquals(0b00001, ctx[1].coords.yCoarse)
       assertEquals(0b000, ctx[1].coords.yFine)
-      assertEquals(2, ppu.scanline)
     }
 
     @Test

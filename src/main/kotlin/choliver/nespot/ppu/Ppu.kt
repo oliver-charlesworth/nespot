@@ -17,7 +17,6 @@ class Ppu(
   // TODO - model addr increment quirks during rendering (see wiki.nesdev.com/w/index.php/PPU_scrolling)
   // TODO - add a reset (to clean up counters and stuff)
 
-  val scanline get() = state.scanline
   val vbl get() = state.inVbl && state.vblEnabled
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png

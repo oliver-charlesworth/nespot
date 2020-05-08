@@ -49,9 +49,6 @@ class Sequencer(
   }
 
   private fun finishFrame() = with(state) {
-    if (ppu.scanline != 0) {
-      throw IllegalStateException("Unexpected PPU rate mismatch")
-    }
     scanlinesRemainingInFrame = SCANLINES_PER_FRAME
   }
 

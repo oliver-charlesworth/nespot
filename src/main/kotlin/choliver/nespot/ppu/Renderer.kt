@@ -4,9 +4,9 @@ import choliver.nespot.*
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Ppu.Companion.BASE_PATTERNS
 import choliver.nespot.ppu.Ppu.Companion.NAMETABLE_SIZE_BYTES
-import choliver.nespot.ppu.model.State
 import java.nio.IntBuffer
 import kotlin.math.min
+import choliver.nespot.ppu.model.State as PpuState
 
 
 // TODO - eliminate all the magic numbers here
@@ -18,15 +18,21 @@ class Renderer(
   private val videoBuffer: IntBuffer,
   private val colors: List<Int> = COLORS
 ) {
+  data class State(
+    val pixels: List<Pixel> = List(SCREEN_WIDTH) { Pixel() },
+    // One extra to detect overflow
+    val sprites: List<SpriteToRender> = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender() }.toList()
+  )
+
   @MutableForPerfReasons
-  private data class Pixel(
+  data class Pixel(
     var c: Int = 0,
     var p: Int = 0,
     var opaqueSpr: Boolean = false  // Is an opaque sprite placed here?
   )
 
   @MutableForPerfReasons
-  private data class SpriteToRender(
+  data class SpriteToRender(
     var x: Int = 0,
     var sprite0: Boolean = false,
     var patternAddr: Address = 0x0000,
@@ -37,34 +43,33 @@ class Renderer(
     var valid: Boolean = false
   )
 
+  // Don't persist beyond intenal call, so need to be in State
   private var paletteEntry = 0
   private var pattern: Data = 0x00
 
-  private val pixels = Array(SCREEN_WIDTH) { Pixel() }
-  // One extra to detect overflow
-  private val sprites = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender() }.toList()
+  private var state = State()
 
-  fun renderBackground(state: State) {
-    with(state.coords) {
+  fun renderBackground(ppu: PpuState) {
+    with(ppu.coords) {
       for (x in 0 until SCREEN_WIDTH) {
-        if (state.bgEnabled) {
+        if (ppu.bgEnabled) {
           if ((x == 0) || (xFine == 0)) {
-            loadNextBackgroundTile(state)
+            loadNextBackgroundTile(ppu)
           }
-          if (state.bgLeftTileEnabled || (x >= TILE_SIZE)) {
-            pixels[x].setBackgroundValue(state)
+          if (ppu.bgLeftTileEnabled || (x >= TILE_SIZE)) {
+            state.pixels[x].setBackgroundValue(ppu)
           } else {
-            pixels[x].setBlankValue()
+            state.pixels[x].setBlankValue()
           }
           incrementX()
         } else {
-          pixels[x].setBlankValue()
+          state.pixels[x].setBlankValue()
         }
       }
     }
   }
 
-  private fun loadNextBackgroundTile(state: State) {
+  private fun loadNextBackgroundTile(state: PpuState) {
     with(state.coords) {
       val addrNt = BASE_NAMETABLES +
         ((yNametable * 2 + xNametable) * NAMETABLE_SIZE_BYTES) +
@@ -82,7 +87,7 @@ class Renderer(
     }
   }
 
-  private fun Pixel.setBackgroundValue(state: State) {
+  private fun Pixel.setBackgroundValue(state: PpuState) {
     c = patternPixel(pattern, state.coords.xFine)
     p = paletteEntry
     opaqueSpr = false
@@ -94,10 +99,10 @@ class Renderer(
     opaqueSpr = false
   }
 
-  fun evaluateSprites(state: State) {
+  fun evaluateSprites(ppu: PpuState) {
     var iCandidate = 0
 
-    sprites.forEach { spr ->
+    state.sprites.forEach { spr ->
       spr.valid = false
 
       // Scan until we find a matching sprite
@@ -107,7 +112,7 @@ class Renderer(
         val attrs = oam[iCandidate * 4 + 2]
         val x = oam[iCandidate * 4 + 3]
 
-        val iRow = state.scanline - y
+        val iRow = ppu.scanline - y
         val flipY = attrs.isBitSet(7)
 
         with(spr) {
@@ -117,29 +122,29 @@ class Renderer(
           flipX = attrs.isBitSet(6)
           behind = attrs.isBitSet(5)
           patternAddr = patternAddr(
-            iTable = when (state.largeSprites) {
+            iTable = when (ppu.largeSprites) {
               true -> iPattern and 0x01
-              false -> state.sprPatternTable
+              false -> ppu.sprPatternTable
             },
-            iTile = when (state.largeSprites) {
+            iTile = when (ppu.largeSprites) {
               true -> (iPattern and 0xFE) + (if (flipY xor (iRow < TILE_SIZE)) 0 else 1)
               false -> iPattern
             },
             iRow = maybeFlip(iRow % TILE_SIZE, flipY)
           )
-          valid = iRow in 0 until if (state.largeSprites) (TILE_SIZE * 2) else TILE_SIZE
+          valid = iRow in 0 until if (ppu.largeSprites) (TILE_SIZE * 2) else TILE_SIZE
         }
 
         iCandidate++
       }
     }
 
-    state.spriteOverflow = (state.bgEnabled || state.sprEnabled) && sprites.last().valid
+    ppu.spriteOverflow = (ppu.bgEnabled || ppu.sprEnabled) && state.sprites.last().valid
   }
 
-  fun loadSprites(state: State) {
-    if (state.sprEnabled) {
-      sprites
+  fun loadSprites(ppu: PpuState) {
+    if (ppu.sprEnabled) {
+      state.sprites
         .dropLast(1)
         .forEach { spr ->
           spr.pattern = if (spr.valid) {
@@ -153,22 +158,22 @@ class Renderer(
   }
 
   // Lowest index is highest priority, so render last
-  fun renderSprites(state: State) {
-    if (state.sprEnabled) {
-      sprites
+  fun renderSprites(ppu: PpuState) {
+    if (ppu.sprEnabled) {
+      state.sprites
         .dropLast(1)
-        .forEach { spr -> renderSprite(spr, state) }
+        .forEach { spr -> renderSprite(spr, ppu) }
     }
   }
 
-  private fun renderSprite(spr: SpriteToRender, state: State) {
+  private fun renderSprite(spr: SpriteToRender, ppu: PpuState) {
     for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - spr.x)) {
       val x = spr.x + xPixel
       val c = patternPixel(spr.pattern, maybeFlip(xPixel, spr.flipX))
-      val px = pixels[x]
+      val px = state.pixels[x]
 
       val opaqueSpr = (c != 0)
-      val clipped = !state.sprLeftTileEnabled && (x < TILE_SIZE)
+      val clipped = !ppu.sprLeftTileEnabled && (x < TILE_SIZE)
 
       if (opaqueSpr && !px.opaqueSpr && !clipped) {
         px.opaqueSpr = true
@@ -182,16 +187,16 @@ class Renderer(
         }
 
         if (spr.sprite0 && opaqueBg && (x < (SCREEN_WIDTH - 1))) {
-          state.sprite0Hit = true
+          ppu.sprite0Hit = true
         }
       }
     }
   }
 
-  fun commitToBuffer(state: State) {
-    videoBuffer.position(state.scanline * SCREEN_WIDTH)
-    val mask = if (state.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
-    pixels.forEach {
+  fun commitToBuffer(ppu: PpuState) {
+    videoBuffer.position(ppu.scanline * SCREEN_WIDTH)
+    val mask = if (ppu.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
+    state.pixels.forEach {
       val paletteAddr = if (it.c == 0) 0 else (it.p * 4 + it.c) // Background colour is universal
       videoBuffer.put(colors[palette[paletteAddr] and mask])
     }
@@ -209,6 +214,14 @@ class Renderer(
   }
 
   private fun patternAddr(iTable: Int, iTile: Int, iRow: Int) = (iTable * 4096) + (iTile * 16) + iRow
+
+  inner class Diagnostics internal constructor() {
+    var state
+      get() = this@Renderer.state
+      set(value) { this@Renderer.state = value }
+  }
+
+  val diagnostics = Diagnostics()
 
   companion object {
     const val MAX_SPRITES_PER_SCANLINE = 8

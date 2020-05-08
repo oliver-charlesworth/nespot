@@ -206,6 +206,7 @@ class Ppu(
     var state
       get() = this@Ppu.state
       set(value) { this@Ppu.state = value }
+    val renderer = this@Ppu.renderer.diagnostics
     val oam = this@Ppu.oam
     val palette = this@Ppu.palette
   }

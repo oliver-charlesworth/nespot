@@ -20,93 +20,68 @@ class Ppu(
   val vbl get() = state.inVbl && state.vblEnabled
 
   fun advance(numCycles: Int) {
-    with(state) {
-      repeat(numCycles * DOTS_PER_CYCLE) {
-        doStuff()
-        dot++
-        if (dot == DOTS_PER_SCANLINE) {
-          dot = 0
-          scanline++
-          if (scanline == SCANLINES_PER_FRAME) {
-            scanline = 0
-          }
-        }
-      }
+    repeat(numCycles * DOTS_PER_CYCLE) {
+      doStuff()
+      incrementFramePos()
     }
   }
 
-  // TODO - we'll need to remove the +1 from renderer
+  private fun incrementFramePos() {
+    state.dot = (state.dot + 1) % DOTS_PER_SCANLINE
+    if (state.dot == 0) {
+      state.scanline = (state.scanline + 1) % SCANLINES_PER_FRAME
+    }
+  }
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   private fun doStuff() {
-    with(state) {
-      when (scanline) {
-        in (0 until SCREEN_HEIGHT) -> {
-          when (dot) {
-            255 -> {
-              renderer.prepareBackground(state)
-              state.sprite0Hit = state.sprEnabled && renderer.prepareSpritesAndDetectHit(state)
-              renderer.renderToBuffer(state)
-            }
-            256 -> {
-              state.spriteOverflow = renderer.evaluateSprites(state) && (state.bgEnabled || state.sprEnabled)
-            }
-            257 -> updateAndPartiallyRestoreCoords()
-            320 -> {
-              if (state.sprEnabled) {
-                renderer.loadSprites()
-              }
-            }
-          }
+    when (state.scanline) {
+      in (0 until SCREEN_HEIGHT) -> when (state.dot) {
+        255 -> {
+          renderer.renderBackground(state)
+          renderer.renderSprites(state)
+          renderer.commitToBuffer(state)
         }
+        256 -> renderer.evaluateSprites(state)
+        257 -> updateCoordsForScanline()
+        320 -> renderer.loadSprites(state)
+      }
 
-        (SCREEN_HEIGHT + 1) -> {
-          // Could go earlier, but this is fine
-          when (dot) {
-            1 -> setVblFlag()   // Could go earlier, but this is fine
-          }
-        }
+      (SCREEN_HEIGHT + 1) -> when (state.dot) {
+        1 -> setVblFlag()   // Could go earlier, but this is fine
+      }
 
-        // Pre-render line
-        (SCANLINES_PER_FRAME - 1) -> {
-          when (dot) {
-            1 -> clearFlags()
-            255 -> renderer.prepareBackground(state)
-            257 -> updateAndPartiallyRestoreCoords()
-            304 -> totallyRestoreCoords()
-            320 -> {
-              if (state.sprEnabled) {
-                renderer.loadSprites()
-              }
-            }
-          }
-        }
+      // Pre-render line
+      (SCANLINES_PER_FRAME - 1) -> when (state.dot) {
+        1 -> clearFlags()
+        255 -> renderer.renderBackground(state)
+        257 -> updateCoordsForScanline()
+        304 -> updateCoordsForFrame()
+        320 -> renderer.loadSprites(state)
       }
     }
   }
 
-  private fun State.setVblFlag() {
-    inVbl = true
+  private fun setVblFlag() {
+    state.inVbl = true
     onVideoBufferReady()
   }
 
-  private fun State.clearFlags() {
-    inVbl = false
-    sprite0Hit = false
-    spriteOverflow = false
+  private fun clearFlags() {
+    state.inVbl = false
+    state.sprite0Hit = false
+    state.spriteOverflow = false
   }
 
-  // TODO - better name
-  private fun State.updateAndPartiallyRestoreCoords() {
-    coords.xFine = coordsBacking.xFine
-    coords.xCoarse = coordsBacking.xCoarse
-    coords.xNametable = coordsBacking.xNametable
-    coords.incrementY()
+  private fun updateCoordsForScanline() {
+    state.coords.xFine = state.coordsBacking.xFine
+    state.coords.xCoarse = state.coordsBacking.xCoarse
+    state.coords.xNametable = state.coordsBacking.xNametable
+    state.coords.incrementY()
   }
 
-  // TODO - better name
-  private fun State.totallyRestoreCoords() {
-    coords = coordsBacking.copy()
+  private fun updateCoordsForFrame() {
+    state.coords = state.coordsBacking.copy()
   }
 
   fun readReg(reg: Int) = with(state) {

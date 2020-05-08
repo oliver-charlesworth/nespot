@@ -44,7 +44,7 @@ class Renderer(
   // One extra to detect overflow
   private val sprites = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender() }.toList()
 
-  fun prepareBackground(state: State) {
+  fun renderBackground(state: State) {
     with(state.coords) {
       for (x in 0 until SCREEN_WIDTH) {
         if (state.bgEnabled) {
@@ -94,7 +94,7 @@ class Renderer(
     opaqueSpr = false
   }
 
-  fun evaluateSprites(state: State): Boolean {
+  fun evaluateSprites(state: State) {
     var iCandidate = 0
 
     sprites.forEach { spr ->
@@ -134,31 +134,34 @@ class Renderer(
       }
     }
 
-    return sprites.last().valid
+    state.spriteOverflow = (state.bgEnabled || state.sprEnabled) && sprites.last().valid
   }
 
-  fun loadSprites() {
-    sprites
-      .dropLast(1)
-      .forEach { spr -> spr.pattern = loadSpritePattern(spr) }
-  }
-
-  private fun loadSpritePattern(spr: SpriteToRender) = if (spr.valid) {
-    loadPattern(spr.patternAddr)
-  } else {
-    loadPattern(DUMMY_SPRITE_PATTERN_ADDR)
-    0   // All-transparent
+  fun loadSprites(state: State) {
+    if (state.sprEnabled) {
+      sprites
+        .dropLast(1)
+        .forEach { spr ->
+          spr.pattern = if (spr.valid) {
+            loadPattern(spr.patternAddr)
+          } else {
+            loadPattern(DUMMY_SPRITE_PATTERN_ADDR)
+            0   // All-transparent
+          }
+        }
+    }
   }
 
   // Lowest index is highest priority, so render last
-  fun prepareSpritesAndDetectHit(state: State) = sprites
-    .dropLast(1)
-    .map { spr -> prepareSpriteAndDetectHit(spr, state) }
-    .any { it }
+  fun renderSprites(state: State) {
+    if (state.sprEnabled) {
+      sprites
+        .dropLast(1)
+        .forEach { spr -> renderSprite(spr, state) }
+    }
+  }
 
-  private fun prepareSpriteAndDetectHit(spr: SpriteToRender, state: State): Boolean {
-    var hit = false
-
+  private fun renderSprite(spr: SpriteToRender, state: State) {
     for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - spr.x)) {
       val x = spr.x + xPixel
       val c = patternPixel(spr.pattern, maybeFlip(xPixel, spr.flipX))
@@ -179,15 +182,13 @@ class Renderer(
         }
 
         if (spr.sprite0 && opaqueBg && (x < (SCREEN_WIDTH - 1))) {
-          hit = true
+          state.sprite0Hit = true
         }
       }
     }
-
-    return hit
   }
 
-  fun renderToBuffer(state: State) {
+  fun commitToBuffer(state: State) {
     videoBuffer.position(state.scanline * SCREEN_WIDTH)
     val mask = if (state.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
     pixels.forEach {

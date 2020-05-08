@@ -12,8 +12,8 @@ class Sequencer(
 ) {
   @MutableForPerfReasons
   data class State(
-    var cyclesTilNextSample: Rational = CYCLES_PER_SAMPLE,
-    var cyclesRemainingInScanline: Rational = CYCLES_PER_SCANLINE,
+    var cyclesTilNextSampleCounter: Int = CYCLES_PER_SAMPLE.a,
+    var cyclesRemainingInScanlineCounter: Int = CYCLES_PER_SCANLINE.a,
     var scanlinesRemainingInFrame: Int = SCANLINES_PER_FRAME
   )
 
@@ -21,14 +21,14 @@ class Sequencer(
 
   fun step() = with(state) {
     val cycles = cpu.executeStep()
-    cyclesRemainingInScanline -= cycles
-    cyclesTilNextSample -= cycles
+    cyclesRemainingInScanlineCounter -= cycles * CYCLES_PER_SCANLINE.b
+    cyclesTilNextSampleCounter -= cycles * CYCLES_PER_SAMPLE.b
 
-    if (cyclesTilNextSample <= 0) {
+    if (cyclesTilNextSampleCounter <= 0) {
       generateSample()
     }
 
-    if (cyclesRemainingInScanline <= 0) {
+    if (cyclesRemainingInScanlineCounter <= 0) {
       finishScanline()
     }
 
@@ -39,11 +39,11 @@ class Sequencer(
 
   private fun generateSample() = with(state) {
     apu.generateSample()
-    cyclesTilNextSample += CYCLES_PER_SAMPLE
+    cyclesTilNextSampleCounter += CYCLES_PER_SAMPLE.a
   }
 
   private fun finishScanline() = with(state) {
-    cyclesRemainingInScanline += CYCLES_PER_SCANLINE
+    cyclesRemainingInScanlineCounter += CYCLES_PER_SCANLINE.a
     ppu.executeScanline()
     scanlinesRemainingInFrame--
   }

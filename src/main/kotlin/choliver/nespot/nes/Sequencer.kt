@@ -1,9 +1,7 @@
 package choliver.nespot.nes
 
-import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.CYCLES_PER_SCANLINE
 import choliver.nespot.MutableForPerfReasons
-import choliver.nespot.SCANLINES_PER_FRAME
 import choliver.nespot.apu.Apu
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
@@ -15,44 +13,21 @@ class Sequencer(
 ) {
   @MutableForPerfReasons
   data class State(
-    var cyclesTilNextSampleCounter: Int = CYCLES_PER_SAMPLE.a,
-    var cyclesRemainingInScanlineCounter: Int = CYCLES_PER_SCANLINE.a,
-    var scanlinesRemainingInFrame: Int = SCANLINES_PER_FRAME
+    var untilNextScanline: Int = CYCLES_PER_SCANLINE.a
   )
 
   private var state = State()
 
   fun step() = with(state) {
     val cycles = cpu.executeStep()
-    cyclesRemainingInScanlineCounter -= cycles * CYCLES_PER_SCANLINE.b
-    cyclesTilNextSampleCounter -= cycles * CYCLES_PER_SAMPLE.b
+    untilNextScanline -= cycles * CYCLES_PER_SCANLINE.b
 
-    if (cyclesTilNextSampleCounter <= 0) {
-      generateSample()
+    apu.advance(cycles)
+
+    if (untilNextScanline <= 0) {
+      untilNextScanline += CYCLES_PER_SCANLINE.a
+      ppu.executeScanline()
     }
-
-    if (cyclesRemainingInScanlineCounter <= 0) {
-      finishScanline()
-    }
-
-    if (scanlinesRemainingInFrame == 0) {
-      finishFrame()
-    }
-  }
-
-  private fun generateSample() = with(state) {
-    apu.generateSample()
-    cyclesTilNextSampleCounter += CYCLES_PER_SAMPLE.a
-  }
-
-  private fun finishScanline() = with(state) {
-    cyclesRemainingInScanlineCounter += CYCLES_PER_SCANLINE.a
-    ppu.executeScanline()
-    scanlinesRemainingInFrame--
-  }
-
-  private fun finishFrame() = with(state) {
-    scanlinesRemainingInFrame = SCANLINES_PER_FRAME
   }
 
   inner class Diagnostics internal constructor() {

@@ -1,6 +1,5 @@
 package choliver.nespot.nes
 
-import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.CYCLES_PER_SCANLINE
 import choliver.nespot.Rational
 import choliver.nespot.apu.Apu
@@ -10,6 +9,7 @@ import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Test
 import kotlin.math.ceil
 
+
 class SequencerTest {
   private val cpu = mock<Cpu>()
   private val apu = mock<Apu>()
@@ -18,18 +18,16 @@ class SequencerTest {
 
   @Test
   fun `executes APU sample generation continuously`() {
-    whenever(cpu.executeStep()) doReturnConsecutively listOf(
-      CYCLES_PER_SAMPLE.roundUp() - 1,
-      1
-    )
+    whenever(cpu.executeStep()) doReturnConsecutively listOf(5, 2, 3, 4)
 
-    sequencer.step()
+    repeat(4) { sequencer.step() }
 
-    verifyZeroInteractions(apu)   // Not quite enough
-
-    sequencer.step()              // One more cycle
-
-    verify(apu).generateSample()  // Oh yes
+    inOrder(apu) {
+      verify(apu).advance(5)
+      verify(apu).advance(2)
+      verify(apu).advance(3)
+      verify(apu).advance(4)
+    }
   }
 
   @Test

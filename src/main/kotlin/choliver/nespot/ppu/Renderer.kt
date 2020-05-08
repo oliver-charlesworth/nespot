@@ -4,7 +4,6 @@ import choliver.nespot.*
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Ppu.Companion.BASE_PATTERNS
 import choliver.nespot.ppu.Ppu.Companion.NAMETABLE_SIZE_BYTES
-import choliver.nespot.ppu.model.Coords
 import choliver.nespot.ppu.model.State
 import java.nio.IntBuffer
 import kotlin.math.min

@@ -24,8 +24,9 @@ class Nes(
   private val mapper = createMapper(rom)
 
   private val apu = Apu(
-    buffer = audioBuffer,
-    memory = mapper.prg  // DMC can only read from PRG space
+    audioBuffer = audioBuffer,
+    memory = mapper.prg,  // DMC can only read from PRG space
+    onAudioBufferReady = onAudioBufferReady
   )
 
   private val cpuRam = Ram(CPU_RAM_SIZE)
@@ -63,8 +64,7 @@ class Nes(
   private val sequencer = Sequencer(
     cpu = cpu,
     apu = apu,
-    ppu = ppu,
-    onAudioBufferReady = onAudioBufferReady
+    ppu = ppu
   )
 
   fun runToEndOfFrame() {

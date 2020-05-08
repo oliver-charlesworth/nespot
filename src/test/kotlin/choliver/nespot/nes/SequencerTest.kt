@@ -17,14 +17,7 @@ class SequencerTest {
   private val cpu = mock<Cpu>()
   private val apu = mock<Apu>()
   private val ppu = mock<Ppu>()
-  private val onAudioBufferReady = mock<() -> Unit>()
-  private val onVideoBufferReady = mock<() -> Unit>()
-  private val sequencer = Sequencer(
-    cpu = cpu,
-    apu = apu,
-    ppu = ppu,
-    onAudioBufferReady = onAudioBufferReady
-  )
+  private val sequencer = Sequencer(cpu, apu, ppu)
 
   @Test
   fun `executes APU sample generation continuously`() {
@@ -56,16 +49,13 @@ class SequencerTest {
   }
 
   @Test
-  fun `sets EOF and invokes callbacks exactly at end of frame`() {
+  fun `sets EOF exactly at end of frame`() {
     whenever(cpu.executeStep()) doReturn 1
 
     repeat(CYCLES_PER_FRAME.roundUp() - 2) { sequencer.step() }  // Two before end of frame
 
     assertFalse(sequencer.step())  // Not quite enough
-    verifyZeroInteractions(onAudioBufferReady)
-
     assertTrue(sequencer.step())   // Oh yes
-    verify(onAudioBufferReady)()
   }
 
   private fun Rational.roundUp() = ceil(toDouble()).toInt()

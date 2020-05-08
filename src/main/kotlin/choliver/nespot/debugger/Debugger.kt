@@ -31,7 +31,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.File
 import java.io.InputStream
 import java.io.PrintStream
-import java.io.SerializablePermission
 import java.util.concurrent.LinkedBlockingQueue
 
 class Debugger(

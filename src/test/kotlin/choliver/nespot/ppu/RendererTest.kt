@@ -35,15 +35,6 @@ class RendererTest {
     colors = colors
   )
 
-  private val nametable = 0
-  private val bgPatternTable = 0
-  private val sprPatternTable = 1
-
-  // Chosen offset and scanline - these are *not* the same!  They have no relationship.
-  private val yCoarse = 14
-  private val yFine = 4
-  private val yScanline = 53
-
   @Nested
   inner class Background {
     @Test
@@ -112,7 +103,7 @@ class RendererTest {
       val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
       initBgPatternMemory(mapOf(0 to pattern))
 
-      render(bgRenderingEnabled = false)
+      render(bgEnabled = false)
 
       assertBuffer { 0 }
     }
@@ -132,6 +123,28 @@ class RendererTest {
 
       assertBuffer { if (it < TILE_SIZE) 0 else (it / TILE_SIZE + 1) % 4 }
     }
+
+    private fun render(
+      bgEnabled: Boolean = true,
+      bgLeftTileEnabled: Boolean = true,
+      yCoarse: Int = Y_COARSE
+    ) {
+      val state = State(
+        bgEnabled = bgEnabled,
+        bgLeftTileEnabled = bgLeftTileEnabled,
+        bgPatternTable = BG_PATTERN_TABLE,
+        sprPatternTable = SPR_PATTERN_TABLE,
+        coords = Coords(
+          xCoarse = 0,
+          xFine = 0,
+          yCoarse = yCoarse,
+          yFine = Y_FINE
+        ),
+        scanline = Y_SCANLINE
+      )
+      renderer.renderBackground(state)
+      renderer.commitToBuffer(state)
+    }
   }
 
   @Nested
@@ -142,7 +155,7 @@ class RendererTest {
     @Test
     fun `top row`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
       render()
 
@@ -152,7 +165,7 @@ class RendererTest {
     @Test
     fun `bottom row`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
-      initSpriteMemory(x = xOffset, y = yScanline - 7, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = xOffset, y = Y_SCANLINE - 7, iPattern = 1, attrs = 0)
 
       render()
 
@@ -162,7 +175,7 @@ class RendererTest {
     @Test
     fun `horizontally-flipped`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0x40)
+      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 0x40)
 
       render()
 
@@ -172,7 +185,7 @@ class RendererTest {
     @Test
     fun `vertically-flipped`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
-      initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0x80)
+      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 0x80)
 
       render()
 
@@ -182,7 +195,7 @@ class RendererTest {
     @Test
     fun `with different palette`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 2)
+      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 2)
 
       render()
 
@@ -192,7 +205,7 @@ class RendererTest {
     @Test
     fun `partially off the right-hand-edge`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = 252, y = yScanline, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = 252, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
       render()
 
@@ -202,7 +215,7 @@ class RendererTest {
     @Test
     fun `not rendered if disabled`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
       render(sprRenderingEnabled = false)
 
@@ -212,7 +225,7 @@ class RendererTest {
     @Test
     fun `not rendered if clipped`() {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = yScanline, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
       render(sprLeftTileEnabled = false)
 
@@ -234,7 +247,7 @@ class RendererTest {
     @Test
     fun `top row`() {
       initSprPatternMemory(mapOf(2 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = yScanline, iPattern = 2, attrs = 0)
+      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 2, attrs = 0)
 
       render(largeSprites = true)
 
@@ -244,7 +257,7 @@ class RendererTest {
     @Test
     fun `bottom row`() {
       initSprPatternMemory(mapOf(3 to pattern), yRow = 7) // Note - next pattern index!
-      initSpriteMemory(x = xOffset, y = yScanline - 15, iPattern = 2, attrs = 0)
+      initSpriteMemory(x = xOffset, y = Y_SCANLINE - 15, iPattern = 2, attrs = 0)
 
       render(largeSprites = true)
 
@@ -254,7 +267,7 @@ class RendererTest {
     @Test
     fun `top row - vertically-flipped`() {
       initSprPatternMemory(mapOf(3 to pattern), yRow = 7) // Note - next pattern index!
-      initSpriteMemory(x = xOffset, y = yScanline, iPattern = 2, attrs = 0x80)
+      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 2, attrs = 0x80)
 
       render(largeSprites = true)
 
@@ -264,7 +277,7 @@ class RendererTest {
     @Test
     fun `bottom row - vertically-flipped`() {
       initSprPatternMemory(mapOf(2 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = yScanline - 15, iPattern = 2, attrs = 0x80)
+      initSpriteMemory(x = xOffset, y = Y_SCANLINE - 15, iPattern = 2, attrs = 0x80)
 
       render(largeSprites = true)
 
@@ -277,7 +290,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(largeIdx to pattern), yRow = 0)
       initSpriteMemory(
         x = xOffset,
-        y = yScanline,
+        y = Y_SCANLINE,
         iPattern = (largeIdx and 0xFE) or (largeIdx shr 8), // Munged to fit in one byte
         attrs = 0
       )
@@ -410,7 +423,7 @@ class RendererTest {
     private fun initSprite(iSprite: Int = 0, behind: Boolean, opaque: Boolean, palette: Int) {
       initSpriteMemory(
         x = 0,
-        y = yScanline,
+        y = Y_SCANLINE,
         iPattern = iSprite,
         attrs = (if (behind) 0x20 else 0x00) or palette,
         iSprite = iSprite
@@ -426,7 +439,7 @@ class RendererTest {
     private fun assertPixelColour(expected: Int) {
       render()
 
-      assertEquals(colors[paletteEntries[expected]], videoBuffer.array()[yScanline * SCREEN_WIDTH])
+      assertEquals(colors[paletteEntries[expected]], videoBuffer.array()[Y_SCANLINE * SCREEN_WIDTH])
     }
   }
 
@@ -436,7 +449,7 @@ class RendererTest {
     fun `triggers hit if opaque sprite #0 overlaps opaque background`() {
       initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
       assertTrue(render().sprite0Hit)
     }
@@ -445,7 +458,7 @@ class RendererTest {
     fun `doesn't trigger hit if opaque sprite #0 overlaps transparent background`() {
       initBgPatternMemory(mapOf(0 to listOf(0, 0, 0, 0, 0, 0, 0, 0)))
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
       assertFalse(render().sprite0Hit)
     }
@@ -454,7 +467,7 @@ class RendererTest {
     fun `doesn't trigger hit if transparent sprite #0 overlaps opaque background`() {
       initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
       initSprPatternMemory(mapOf(1 to listOf(0, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
       assertFalse(render().sprite0Hit)
     }
@@ -463,7 +476,7 @@ class RendererTest {
     fun `triggers single hit even when multiple sprite #0 overlaps`() {
       initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 1, 0, 1, 0, 1, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
       assertTrue(render().sprite0Hit)
     }
@@ -472,7 +485,7 @@ class RendererTest {
     fun `doesn't trigger from overlap from sprites other than #0`() {
       initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = 1)
+      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = 1)
 
       assertFalse(render().sprite0Hit)
     }
@@ -481,7 +494,7 @@ class RendererTest {
     fun `doesn't trigger from overlap at x == 255`() {
       initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 255, y = yScanline, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = 255, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
       assertFalse(render().sprite0Hit)
     }
@@ -490,7 +503,7 @@ class RendererTest {
     fun `triggers hit from behind`() {
       initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0x20) // Behind
+      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0x20) // Behind
 
       assertTrue(render().sprite0Hit)
     }
@@ -499,7 +512,7 @@ class RendererTest {
     fun `doesn't trigger hit if rendering disabled`() {
       initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
       assertFalse(render(sprRenderingEnabled = false).sprite0Hit)
       assertFalse(render(bgRenderingEnabled = false).sprite0Hit)
@@ -509,7 +522,7 @@ class RendererTest {
     fun `doesn't trigger hit if clipped`() {
       initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0)
+      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
       assertFalse(render(sprLeftTileEnabled = false).sprite0Hit)
       assertFalse(render(bgLeftTileEnabled = false).sprite0Hit)
@@ -519,8 +532,8 @@ class RendererTest {
     fun `doesn't trigger hit if opaque sprite overlaps opaque sprite`() {
       initBgPatternMemory(mapOf(0 to listOf(0, 0, 0, 0, 0, 0, 0, 0)))
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = 0)
-      initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = 1)
+      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = 0)
+      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = 1)
 
       assertFalse(render().sprite0Hit)
     }
@@ -531,7 +544,7 @@ class RendererTest {
     @Test
     fun `doesn't trigger overflow for 8 or less`() {
       repeat(8) {
-        initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+        initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
       }
 
       assertFalse(render().spriteOverflow)
@@ -540,7 +553,7 @@ class RendererTest {
     @Test
     fun `triggers overflow for 9 or more`() {
       repeat(9) {
-        initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+        initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
       }
 
       assertTrue(render().spriteOverflow)
@@ -549,7 +562,7 @@ class RendererTest {
     @Test
     fun `doesn't trigger overflow if rendering completely disabled`() {
       repeat(9) {
-        initSpriteMemory(x = 5, y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+        initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
       }
 
       assertTrue(render(sprRenderingEnabled = false).spriteOverflow)
@@ -562,7 +575,7 @@ class RendererTest {
       val pattern = List(TILE_SIZE) { 1 }
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       repeat(9) {
-        initSpriteMemory(x = (it * (TILE_SIZE + 1)), y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+        initSpriteMemory(x = (it * (TILE_SIZE + 1)), y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
       }
 
       render()
@@ -575,7 +588,7 @@ class RendererTest {
       val pattern = List(TILE_SIZE) { 1 }
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       repeat(6) {
-        initSpriteMemory(x = (it * (TILE_SIZE + 1)), y = yScanline, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
+        initSpriteMemory(x = (it * (TILE_SIZE + 1)), y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
       }
 
       render()
@@ -705,13 +718,13 @@ class RendererTest {
   }
 
   private fun extractScanline() =
-    videoBuffer.array().toList().subList(yScanline * SCREEN_WIDTH, (yScanline + 1) * SCREEN_WIDTH)
+    videoBuffer.array().toList().subList(Y_SCANLINE * SCREEN_WIDTH, (Y_SCANLINE + 1) * SCREEN_WIDTH)
 
   private fun render(
     xCoarse: Int = 0,
     xFine: Int = 0,
-    yCoarse: Int = this.yCoarse,
-    yFine: Int = this.yFine,
+    yCoarse: Int = Y_COARSE,
+    yFine: Int = Y_FINE,
     bgRenderingEnabled: Boolean = true,
     sprRenderingEnabled: Boolean = true,
     bgLeftTileEnabled: Boolean = true,
@@ -724,8 +737,8 @@ class RendererTest {
     bgLeftTileEnabled = bgLeftTileEnabled,
     sprLeftTileEnabled = sprLeftTileEnabled,
     largeSprites = largeSprites,
-    bgPatternTable = bgPatternTable,
-    sprPatternTable = sprPatternTable,
+    bgPatternTable = BG_PATTERN_TABLE,
+    sprPatternTable = SPR_PATTERN_TABLE,
     greyscale = greyscale,
     coords = Coords(
       xCoarse = xCoarse,
@@ -733,13 +746,19 @@ class RendererTest {
       yCoarse = yCoarse,
       yFine = yFine
     ),
-    scanline = yScanline
-  ).apply { renderer.renderScanline(this) }
+    scanline = Y_SCANLINE
+  ).apply {
+    renderer.renderBackground(this)
+    renderer.evaluateSprites(this)
+    renderer.loadSprites(this)
+    renderer.renderSprites(this)
+    renderer.commitToBuffer(this)
+  }
 
   private fun initNametableMemory(
     nametableEntries: List<Int>,
-    nametable: Int = this.nametable,
-    yTile: Int = this.yCoarse
+    nametable: Int = NAMETABLE,
+    yTile: Int = Y_COARSE
   ) {
     nametableEntries.forEachIndexed { idx, data ->
       whenever(memory[BASE_NAMETABLES + (nametable * 0x400) + (yTile * NUM_TILE_COLUMNS) + idx]) doReturn data
@@ -748,8 +767,8 @@ class RendererTest {
 
   private fun initAttributeMemory(
     attrEntries: List<Int>,
-    nametable: Int = this.nametable,
-    yTile: Int = this.yCoarse
+    nametable: Int = NAMETABLE,
+    yTile: Int = Y_COARSE
   ) {
     attrEntries.chunked(2).forEachIndexed { idx, data ->
       val attr = if ((yTile % 4) / 2 == 0) {
@@ -762,12 +781,12 @@ class RendererTest {
     }
   }
 
-  private fun initBgPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int = this.yFine) {
-    initPatternMemory(patterns, yRow, bgPatternTable * 0x1000)
+  private fun initBgPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int = Y_FINE) {
+    initPatternMemory(patterns, yRow, BG_PATTERN_TABLE * 0x1000)
   }
 
   private fun initSprPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int) {
-    initPatternMemory(patterns, yRow, sprPatternTable * 0x1000)
+    initPatternMemory(patterns, yRow, SPR_PATTERN_TABLE * 0x1000)
   }
 
   private fun initPatternMemory(patterns: Map<Int, List<Int>>, yFine: Int, baseAddr: Address) {
@@ -789,5 +808,16 @@ class RendererTest {
     whenever(oam[base + 1]) doReturn iPattern
     whenever(oam[base + 2]) doReturn attrs
     whenever(oam[base + 3]) doReturn x
+  }
+
+  companion object {
+    private const val NAMETABLE = 0
+    private const val BG_PATTERN_TABLE = 0
+    private const val SPR_PATTERN_TABLE = 1
+
+    // Chosen offset and scanline - these are *not* the same!  They have no relationship.
+    private const val Y_COARSE = 14
+    private const val Y_FINE = 4
+    private const val Y_SCANLINE = 53
   }
 }

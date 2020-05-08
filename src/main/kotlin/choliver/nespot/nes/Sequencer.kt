@@ -23,11 +23,7 @@ class Sequencer(
     untilNextScanline -= cycles * CYCLES_PER_SCANLINE.b
 
     apu.advance(cycles)
-
-    if (untilNextScanline <= 0) {
-      untilNextScanline += CYCLES_PER_SCANLINE.a
-      ppu.executeScanline()
-    }
+    ppu.advance(cycles)
   }
 
   inner class Diagnostics internal constructor() {

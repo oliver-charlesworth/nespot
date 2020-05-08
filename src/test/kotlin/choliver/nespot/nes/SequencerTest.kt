@@ -30,18 +30,5 @@ class SequencerTest {
     }
   }
 
-  @Test
-  fun `executes PPU scanline exactly at end of scanline`() {
-    whenever(cpu.executeStep()) doReturn 4
-
-    repeat((CYCLES_PER_SCANLINE / 4).roundUp() - 1) { sequencer.step() } // One before end of scanline
-
-    verifyZeroInteractions(ppu)     // Not quite enough
-
-    sequencer.step()                // One more step
-
-    verify(ppu).executeScanline()   // Oh yes
-  }
-
   private fun Rational.roundUp() = ceil(toDouble()).toInt()
 }

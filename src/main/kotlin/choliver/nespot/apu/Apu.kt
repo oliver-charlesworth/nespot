@@ -154,13 +154,16 @@ class Apu(
 
     while (untilNextSample <= 0) {
       untilNextSample += CYCLES_PER_SAMPLE.a
-      audioBuffer[iSample] = mixer.take()
+      generateSample()
+    }
+  }
 
-      iSample++
-      if (iSample == audioBuffer.size) {
-        iSample = 0
-        onAudioBufferReady()
-      }
+  private fun generateSample() {
+    audioBuffer[iSample] = mixer.take()
+    iSample++
+    if (iSample == audioBuffer.size) {
+      iSample = 0
+      onAudioBufferReady()
     }
   }
 

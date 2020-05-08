@@ -12,15 +12,26 @@ class Ppu(
   private val renderer: Renderer = Renderer(memory, palette, oam, videoBuffer),
   private val onVideoBufferReady: () -> Unit
 ) {
-  private var state = State()
+  private var state = State(untilNextScanline = CYCLES_PER_SCANLINE.a)
 
   // TODO - model addr increment quirks during rendering (see wiki.nesdev.com/w/index.php/PPU_scrolling)
   // TODO - add a reset (to clean up counters and stuff)
 
   val vbl get() = state.inVbl && state.vblEnabled
 
+  fun advance(numCycles: Int) {
+    with(state) {
+      untilNextScanline -= numCycles * CYCLES_PER_SCANLINE.b
+
+      while (untilNextScanline <= 0) {
+        untilNextScanline += CYCLES_PER_SCANLINE.a
+        executeScanline()
+      }
+    }
+  }
+
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
-  fun executeScanline() {
+  private fun executeScanline() {
     with(state) {
       when (scanline) {
         in (0 until SCREEN_HEIGHT) -> {

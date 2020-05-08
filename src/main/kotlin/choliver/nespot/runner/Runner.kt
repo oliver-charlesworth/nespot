@@ -42,7 +42,7 @@ class Runner : CliktCommand(name = "nespot") {
     private var closed = false
     private val joypads = FakeJoypads()
     private val screen = Screen(onEvent = { events += it })
-    private val audio = Audio(frameRateHz = FRAME_RATE_HZ)
+    private val audio = Audio()
     private val nes = Nes(
       rom = rom,
       videoBuffer = screen.buffer,

@@ -21,10 +21,9 @@ class Apu(
   ),
   private val onAudioBufferReady: () -> Unit
 ) {
-  private var _iSample = 0
+  private var iSample = 0
   private val mixer = Mixer(sequencer, channels)
 
-  val iSample get() = _iSample
   val irq get() = channels.dmc.synth.irq
 
   fun readStatus() = 0 +
@@ -150,10 +149,10 @@ class Apu(
   }
 
   fun generateSample() {
-    audioBuffer[_iSample] = mixer.take()
-    _iSample++
-    if (_iSample == audioBuffer.size) {
-      _iSample = 0
+    audioBuffer[iSample] = mixer.take()
+    iSample++
+    if (iSample == audioBuffer.size) {
+      iSample = 0
       onAudioBufferReady()
     }
   }

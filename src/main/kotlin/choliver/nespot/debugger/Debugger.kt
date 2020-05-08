@@ -53,7 +53,7 @@ class Debugger(
   private val nes = Nes(
     rom = Rom.parse(rom),
     videoBuffer = screen.buffer,
-    audioBuffer = Audio(frameRateHz = FRAME_RATE_HZ).buffer,
+    audioBuffer = Audio().buffer,
     joypads = joypads,
     onVideoBufferReady = { redraw = true },
     onStore = { addr, data -> stores += (addr to data) }

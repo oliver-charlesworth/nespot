@@ -26,14 +26,14 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
   override val prg = object : Memory {
     override operator fun get(addr: Address) = when {
       (addr >= BASE_PRG_ROM) -> loadFromPrgRom(addr)
-      (addr >= BASE_PRG_RAM) -> this@Mmc3Mapper.prgRam[addr and (PRG_RAM_SIZE - 1)]
+      (addr >= BASE_PRG_RAM) -> prgRam[addr and (PRG_RAM_SIZE - 1)]
       else -> 0x00
     }
 
     override fun set(addr: Address, data: Data) {
       when {
         (addr >= BASE_REG) -> writeReg(addr, data)
-        (addr >= BASE_PRG_RAM) -> this@Mmc3Mapper.prgRam[addr and (PRG_RAM_SIZE - 1)] = data
+        (addr >= BASE_PRG_RAM) -> prgRam[addr and (PRG_RAM_SIZE - 1)] = data
       }
     }
   }

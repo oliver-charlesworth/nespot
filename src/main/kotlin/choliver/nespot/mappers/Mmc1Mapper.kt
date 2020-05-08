@@ -27,7 +27,7 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
 
   override val prg = object : Memory {
     override fun get(addr: Address) = when {
-      addr < BASE_PRG0_ROM -> this@Mmc1Mapper.prgRam[addr and 0x1FFF]
+      addr < BASE_PRG0_ROM -> prgRam[addr and 0x1FFF]
       addr < BASE_PRG1_ROM -> getFromBank(addr, when (prgMode) {
         0, 1 -> (prgBank and 0x0E) // 32k mode
         2 -> 0 // Fixed
@@ -46,7 +46,7 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
 
     override fun set(addr: Address, data: Data) {
       when {
-        addr < BASE_PRG0_ROM -> this@Mmc1Mapper.prgRam[addr and 0x1FFF] = data
+        addr < BASE_PRG0_ROM -> prgRam[addr and 0x1FFF] = data
         addr >= BASE_SR -> updateShiftRegister(addr, data)
       }
     }

@@ -133,13 +133,7 @@ class RendererTest {
         bgEnabled = bgEnabled,
         bgLeftTileEnabled = bgLeftTileEnabled,
         bgPatternTable = BG_PATTERN_TABLE,
-        sprPatternTable = SPR_PATTERN_TABLE,
-        coords = Coords(
-          xCoarse = 0,
-          xFine = 0,
-          yCoarse = yCoarse,
-          yFine = Y_FINE
-        ),
+        coords = Coords(xCoarse = 0, xFine = 0, yCoarse = yCoarse, yFine = Y_FINE),
         scanline = Y_SCANLINE
       )
       renderer.renderBackground(state)
@@ -217,7 +211,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
       initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
-      render(sprRenderingEnabled = false)
+      render(sprEnabled = false)
 
       assertBuffer { 0 }
     }
@@ -236,6 +230,22 @@ class RendererTest {
       if (x in xOffset until TILE_SIZE + xOffset) {
         pattern[x - xOffset] + ((NUM_PALETTES + iPalette) * NUM_ENTRIES_PER_PALETTE)
       } else 0
+
+    private fun render(
+      sprEnabled: Boolean = true,
+      sprLeftTileEnabled: Boolean = true
+    ) {
+      val state = State(
+        sprEnabled = sprEnabled,
+        sprLeftTileEnabled = sprLeftTileEnabled,
+        sprPatternTable = SPR_PATTERN_TABLE,
+        scanline = Y_SCANLINE
+      )
+      renderer.evaluateSprites(state)
+      renderer.loadSprites(state)
+      renderer.renderSprites(state)
+      renderer.commitToBuffer(state)
+    }
   }
 
   @Nested
@@ -249,7 +259,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(2 to pattern), yRow = 0)
       initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 2, attrs = 0)
 
-      render(largeSprites = true)
+      render()
 
       assertBuffer { calcPalIdx(x = it) }
     }
@@ -259,7 +269,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(3 to pattern), yRow = 7) // Note - next pattern index!
       initSpriteMemory(x = xOffset, y = Y_SCANLINE - 15, iPattern = 2, attrs = 0)
 
-      render(largeSprites = true)
+      render()
 
       assertBuffer { calcPalIdx(x = it) }
     }
@@ -269,7 +279,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(3 to pattern), yRow = 7) // Note - next pattern index!
       initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 2, attrs = 0x80)
 
-      render(largeSprites = true)
+      render()
 
       assertBuffer { calcPalIdx(x = it) }
     }
@@ -279,7 +289,7 @@ class RendererTest {
       initSprPatternMemory(mapOf(2 to pattern), yRow = 0)
       initSpriteMemory(x = xOffset, y = Y_SCANLINE - 15, iPattern = 2, attrs = 0x80)
 
-      render(largeSprites = true)
+      render()
 
       assertBuffer { calcPalIdx(x = it) }
     }
@@ -295,7 +305,7 @@ class RendererTest {
         attrs = 0
       )
 
-      render(largeSprites = true)
+      render()
 
       assertBuffer { calcPalIdx(x = it) }
     }
@@ -306,6 +316,20 @@ class RendererTest {
 
     private fun initSprPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int) {
       initPatternMemory(patterns, yRow, 0x0000)
+    }
+
+    private fun render() {
+      val state = State(
+        largeSprites = true,
+        sprEnabled = true,
+        sprLeftTileEnabled = true,
+        sprPatternTable = SPR_PATTERN_TABLE,
+        scanline = Y_SCANLINE
+      )
+      renderer.evaluateSprites(state)
+      renderer.loadSprites(state)
+      renderer.renderSprites(state)
+      renderer.commitToBuffer(state)
     }
   }
 
@@ -441,6 +465,24 @@ class RendererTest {
 
       assertEquals(colors[paletteEntries[expected]], videoBuffer.array()[Y_SCANLINE * SCREEN_WIDTH])
     }
+
+    private fun render() {
+      val state = State(
+        bgEnabled = true,
+        bgLeftTileEnabled = true,
+        bgPatternTable = BG_PATTERN_TABLE,
+        sprEnabled = true,
+        sprLeftTileEnabled = true,
+        sprPatternTable = SPR_PATTERN_TABLE,
+        coords = Coords(xCoarse = 0, xFine = 0, yCoarse = Y_COARSE, yFine = Y_FINE),
+        scanline = Y_SCANLINE
+      )
+      renderer.renderBackground(state)
+      renderer.evaluateSprites(state)
+      renderer.loadSprites(state)
+      renderer.renderSprites(state)
+      renderer.commitToBuffer(state)
+    }
   }
 
   @Nested
@@ -514,8 +556,8 @@ class RendererTest {
       initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
       initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
 
-      assertFalse(render(sprRenderingEnabled = false).sprite0Hit)
-      assertFalse(render(bgRenderingEnabled = false).sprite0Hit)
+      assertFalse(render(sprEnabled = false).sprite0Hit)
+      assertFalse(render(bgEnabled = false).sprite0Hit)
     }
 
     @Test
@@ -536,6 +578,30 @@ class RendererTest {
       initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = 1)
 
       assertFalse(render().sprite0Hit)
+    }
+
+    private fun render(
+      bgEnabled: Boolean = true,
+      sprEnabled: Boolean = true,
+      bgLeftTileEnabled: Boolean = true,
+      sprLeftTileEnabled: Boolean = true
+    ): State {
+      val state = State(
+        bgEnabled = bgEnabled,
+        bgLeftTileEnabled = bgLeftTileEnabled,
+        bgPatternTable = BG_PATTERN_TABLE,
+        sprEnabled = sprEnabled,
+        sprLeftTileEnabled = sprLeftTileEnabled,
+        sprPatternTable = SPR_PATTERN_TABLE,
+        coords = Coords(xCoarse = 0, xFine = 0, yCoarse = Y_COARSE, yFine = Y_FINE),
+        scanline = Y_SCANLINE
+      )
+      renderer.renderBackground(state)
+      renderer.evaluateSprites(state)
+      renderer.loadSprites(state)
+      renderer.renderSprites(state)
+      renderer.commitToBuffer(state)
+      return state
     }
   }
 
@@ -565,9 +631,9 @@ class RendererTest {
         initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = (it * 2) + 1)
       }
 
-      assertTrue(render(sprRenderingEnabled = false).spriteOverflow)
-      assertTrue(render(bgRenderingEnabled = false).spriteOverflow)
-      assertFalse(render(bgRenderingEnabled = false, sprRenderingEnabled = false).spriteOverflow)
+      assertTrue(render(sprEnabled = false).spriteOverflow)
+      assertTrue(render(bgEnabled = false).spriteOverflow)
+      assertFalse(render(bgEnabled = false, sprEnabled = false).spriteOverflow)
     }
 
     @Test
@@ -594,6 +660,24 @@ class RendererTest {
       render()
 
       assertEquals(6 * 8, extractScanline().count { it != colors[paletteEntries[0]] })
+    }
+
+    private fun render(
+      bgEnabled: Boolean = true,
+      sprEnabled: Boolean = true
+    ): State {
+      val state = State(
+        bgEnabled = bgEnabled,
+        sprEnabled = sprEnabled,
+        sprLeftTileEnabled = true,
+        sprPatternTable = SPR_PATTERN_TABLE,
+        scanline = Y_SCANLINE
+      )
+      renderer.evaluateSprites(state)
+      renderer.loadSprites(state)
+      renderer.renderSprites(state)
+      renderer.commitToBuffer(state)
+      return state
     }
   }
 
@@ -657,28 +741,30 @@ class RendererTest {
 
       assertBuffer { patterns[nametableEntries[(it + 5) / TILE_SIZE]]!![(it + 5) % TILE_SIZE] }
     }
+
+    private fun render(
+      xCoarse: Int = 0,
+      xFine: Int = 0
+    ) {
+      val state = State(
+        bgEnabled = true,
+        bgLeftTileEnabled = true,
+        bgPatternTable = BG_PATTERN_TABLE,
+        coords = Coords(xCoarse = xCoarse, xFine = xFine, yCoarse = Y_COARSE, yFine = Y_FINE),
+        scanline = Y_SCANLINE
+      )
+      renderer.renderBackground(state)
+      renderer.commitToBuffer(state)
+    }
   }
 
   // MMC3 relies on specific PPU memory access pattern during scanline
   @Nested
   inner class MemoryAccessPattern {
     @Test
-    fun `loads background patterns before sprite patterns`() {
-      val numBgLoads = NUM_TILE_COLUMNS * 4
-      val numSprLoads = MAX_SPRITES_PER_SCANLINE * 2
-
-      render()
-
-      val captor = argumentCaptor<Address>()
-      verify(memory, times(numBgLoads + numSprLoads))[captor.capture()]
-      assertTrue(captor.allValues.take(numBgLoads).all { !it.isBitSet(12) })
-      assertTrue(captor.allValues.takeLast(numSprLoads).all { it.isBitSet(12) })
-    }
-
-    @Test
     fun `performs dummy loads from pattern table #1 for invalid sprites`() {
       // Note - no valid sprites at all!
-      render(bgRenderingEnabled = false)
+      render()
 
       verify(memory, times(8))[0x1FF0]
       verify(memory, times(8))[0x1FF8]
@@ -686,9 +772,23 @@ class RendererTest {
 
     @Test
     fun `performs no sprite loads if sprite rendering disabled`() {
-      render(bgRenderingEnabled = false, sprRenderingEnabled = false)
+      render(sprEnabled = false)
 
       verifyZeroInteractions(memory)
+    }
+
+    private fun render(
+      sprEnabled: Boolean = true
+    ) {
+      val state = State(
+        sprEnabled = sprEnabled,
+        sprLeftTileEnabled = true,
+        sprPatternTable = SPR_PATTERN_TABLE,
+        scanline = Y_SCANLINE
+      )
+      renderer.evaluateSprites(state)
+      renderer.loadSprites(state)
+      renderer.renderSprites(state)
     }
   }
 
@@ -699,7 +799,16 @@ class RendererTest {
     initAttributeMemory(attrEntries)
     initBgPatternMemory(mapOf(0 to pattern))
 
-    render(greyscale = true)
+    val state = State(
+      bgEnabled = true,
+      bgLeftTileEnabled = true,
+      bgPatternTable = BG_PATTERN_TABLE,
+      coords = Coords(xCoarse = 0, xFine = 0, yCoarse = Y_COARSE, yFine = Y_FINE),
+      scanline = Y_SCANLINE,
+      greyscale = true
+    )
+    renderer.renderBackground(state)
+    renderer.commitToBuffer(state)
 
     assertEquals(
       (0 until SCREEN_WIDTH).map {
@@ -719,41 +828,6 @@ class RendererTest {
 
   private fun extractScanline() =
     videoBuffer.array().toList().subList(Y_SCANLINE * SCREEN_WIDTH, (Y_SCANLINE + 1) * SCREEN_WIDTH)
-
-  private fun render(
-    xCoarse: Int = 0,
-    xFine: Int = 0,
-    yCoarse: Int = Y_COARSE,
-    yFine: Int = Y_FINE,
-    bgRenderingEnabled: Boolean = true,
-    sprRenderingEnabled: Boolean = true,
-    bgLeftTileEnabled: Boolean = true,
-    sprLeftTileEnabled: Boolean = true,
-    largeSprites: Boolean = false,
-    greyscale: Boolean = false
-  ) = State(
-    bgEnabled = bgRenderingEnabled,
-    sprEnabled = sprRenderingEnabled,
-    bgLeftTileEnabled = bgLeftTileEnabled,
-    sprLeftTileEnabled = sprLeftTileEnabled,
-    largeSprites = largeSprites,
-    bgPatternTable = BG_PATTERN_TABLE,
-    sprPatternTable = SPR_PATTERN_TABLE,
-    greyscale = greyscale,
-    coords = Coords(
-      xCoarse = xCoarse,
-      xFine = xFine,
-      yCoarse = yCoarse,
-      yFine = yFine
-    ),
-    scanline = Y_SCANLINE
-  ).apply {
-    renderer.renderBackground(this)
-    renderer.evaluateSprites(this)
-    renderer.loadSprites(this)
-    renderer.renderSprites(this)
-    renderer.commitToBuffer(this)
-  }
 
   private fun initNametableMemory(
     nametableEntries: List<Int>,
@@ -804,7 +878,7 @@ class RendererTest {
 
   private fun initSpriteMemory(x: Int, y: Int, iPattern: Int, attrs: Int, iSprite: Int = 0) {
     val base = iSprite * SPRITE_SIZE_BYTES
-    whenever(oam[base + 0]) doReturn y - 1
+    whenever(oam[base + 0]) doReturn y
     whenever(oam[base + 1]) doReturn iPattern
     whenever(oam[base + 2]) doReturn attrs
     whenever(oam[base + 3]) doReturn x

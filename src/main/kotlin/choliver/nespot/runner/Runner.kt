@@ -4,10 +4,11 @@ import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.data
 import choliver.nespot.nes.Nes
+import choliver.nespot.persistence.BackupManager
 import choliver.nespot.runner.KeyAction.*
 import choliver.nespot.runner.Screen.Event.*
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep.RESET
-import choliver.nespot.snapshot.SnapshotManager
+import choliver.nespot.persistence.SnapshotManager
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
@@ -49,6 +50,7 @@ class Runner : CliktCommand(name = "nespot") {
       audioBuffer = audio.buffer,
       joypads = joypads
     )
+    private val backupManager = BackupManager(nes)
     private val snapshotManager = SnapshotManager(nes.diagnostics)
 
     fun run() {
@@ -64,7 +66,7 @@ class Runner : CliktCommand(name = "nespot") {
     }
 
     private fun runNormally() {
-      maybeRestoreFromBackup()
+      backupManager.maybeRestore()
       screen.show()
       audio.start()
 
@@ -77,10 +79,10 @@ class Runner : CliktCommand(name = "nespot") {
             consumeEvents()
           }
         }
+        backupManager.maybeSave()
       } finally {
         screen.hide()
         screen.exit()
-        maybeSaveToBackup()
       }
     }
 

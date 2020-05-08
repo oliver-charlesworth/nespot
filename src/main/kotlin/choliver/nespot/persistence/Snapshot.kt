@@ -1,4 +1,4 @@
-package choliver.nespot.snapshot
+package choliver.nespot.persistence
 
 import choliver.nespot.nes.Sequencer.State as SequencerState
 import choliver.nespot.ppu.model.State as PpuState

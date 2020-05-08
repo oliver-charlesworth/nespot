@@ -50,9 +50,9 @@ class Renderer(
     // TODO - validate this gating of evaluation happens (does it matter?)
     state.spriteOverflow = (state.bgEnabled || state.sprEnabled) && evaluateSprites(state)
 
-    loadSprites()
-
     prepareBackground(state)
+
+    loadSprites()
 
     state.sprite0Hit = state.sprEnabled && prepareSpritesAndDetectHit(state)
 

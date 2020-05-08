@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 class ApuTest {
   private val envelope = mock<Envelope>()
   private val sweep = mock<Sweep>()
-  private val timer = mock<Counter>()
+  private val timer = mock<Timer>()
   private val sq1 = SynthContext(synth = mock<SquareSynth>(), envelope = envelope, sweep = sweep, timer = timer)
   private val sq2 = SynthContext(synth = mock<SquareSynth>(), envelope = envelope, sweep = sweep, timer = timer)
   private val tri = SynthContext(synth = mock<TriangleSynth>(), envelope = envelope, sweep = sweep, timer = timer)

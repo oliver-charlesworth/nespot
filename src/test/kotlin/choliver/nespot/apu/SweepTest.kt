@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SweepTest {
-  private val timer = Counter().apply {
+  private val timer = Timer().apply {
     periodCycles = 64
   }
   private val sweep = Sweep(timer).apply {

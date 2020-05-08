@@ -9,7 +9,7 @@ class SynthContextTest {
   private val synth = mock<Synth>()
   private val sweep = mock<Sweep>()
   private val envelope = mock<Envelope>()
-  private val timer = mock<Counter>()
+  private val timer = mock<Timer>()
   private val ctx = SynthContext(
     synth = synth,
     sweep = sweep,

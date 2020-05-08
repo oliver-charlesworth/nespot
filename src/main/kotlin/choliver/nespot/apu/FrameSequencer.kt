@@ -27,24 +27,24 @@ class FrameSequencer(
   private val fourStepPeriod = frameSequencerFourStepPeriodCycles / 4
   private val fiveStepPeriod = frameSequencerFiveStepPeriodCycles / 5 // TODO - fix the inaccuracy here
 
-  private val counter = Counter(cyclesPerSample = cyclesPerSample).apply {
+  private val timer = Timer(cyclesPerSample = cyclesPerSample).apply {
     periodCycles = fourStepPeriod
   }
   private var iSeq = 0
   private var justReset = false
 
   var mode by observable(FOUR_STEP) {
-    counter.periodCycles = when (it) {
+    timer.periodCycles = when (it) {
       FOUR_STEP -> fourStepPeriod
       FIVE_STEP -> fiveStepPeriod
     }
-    counter.restart()
+    timer.restart()
     iSeq = 0
     justReset = true
   }
 
   fun take(): Ticks {
-    val ret = if (counter.take() == 1) {
+    val ret = if (timer.take() == 1) {
       when (mode) {
         FOUR_STEP -> {
           iSeq = (iSeq + 1) % 4

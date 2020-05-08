@@ -5,7 +5,7 @@ import choliver.nespot.apu.FrameSequencer.Ticks
 
 class SynthContext<S : Synth>(
   val synth: S,
-  val timer: Counter = Counter(),
+  val timer: Timer = Timer(),
   val envelope: Envelope = Envelope(),
   val sweep: Sweep = Sweep(timer),
   val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00)

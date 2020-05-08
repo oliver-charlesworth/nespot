@@ -1,7 +1,7 @@
 package choliver.nespot.apu
 
 // TODO - model negate differently for pulse1 and pulse2
-class Sweep(private val timer: Counter) {
+class Sweep(private val timer: Timer) {
   private var iDivider = 0
   private var reload = true
   var enabled = false

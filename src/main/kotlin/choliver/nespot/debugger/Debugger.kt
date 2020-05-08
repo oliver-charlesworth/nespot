@@ -333,7 +333,7 @@ class Debugger(
     }
 
     stores.clear()
-    nes.sequencer.step()
+    nes.step()
     if (redraw) {
       screen.redraw()
       redraw = false

@@ -1,5 +1,6 @@
 package choliver.nespot.apu
 
+import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.Data
 import choliver.nespot.Memory
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
@@ -20,6 +21,7 @@ class Apu(
   ),
   private val onAudioBufferReady: () -> Unit
 ) {
+  private var untilNextSample = CYCLES_PER_SAMPLE.a
   private var iSample = 0
   private val mixer = Mixer(sequencer, channels)
 
@@ -147,7 +149,16 @@ class Apu(
     envelope.param = regs[0] and 0x0F
   }
 
-  fun generateSample() {
+  fun advance(numCycles: Int) {
+    untilNextSample -= numCycles * CYCLES_PER_SAMPLE.b
+
+    while (untilNextSample <= 0) {
+      untilNextSample += CYCLES_PER_SAMPLE.a
+      generateSample()
+    }
+  }
+
+  private fun generateSample() {
     audioBuffer[iSample] = mixer.take()
     iSample++
     if (iSample == audioBuffer.size) {

@@ -61,22 +61,18 @@ class Nes(
     pollNmi = ppu::vbl
   )
 
-  private val sequencer = Sequencer(
-    cpu = cpu,
-    apu = apu,
-    ppu = ppu
-  )
-
   fun step() {
-    sequencer.step()
+    val cycles = cpu.executeStep()
+    apu.advance(cycles)
+    ppu.advance(cycles)
   }
 
   inner class Diagnostics internal constructor() {
-    val sequencer = this@Nes.sequencer.diagnostics
     val cpu = this@Nes.cpu.diagnostics
     val ppu = this@Nes.ppu.diagnostics
     val ram = this@Nes.cpuRam
     val vram = this@Nes.ppuRam
+    fun step() = this@Nes.step()
     fun peek(addr: Address) = cpuMapper[addr]
     fun peekV(addr: Address) = ppuMapper[addr]
   }

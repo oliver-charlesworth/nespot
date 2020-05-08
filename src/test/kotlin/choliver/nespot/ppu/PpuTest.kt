@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
+import kotlin.math.ceil
 
 class PpuTest {
   private val memory = mock<Memory>()
@@ -164,19 +165,19 @@ class PpuTest {
   inner class Vbl {
     @Test
     fun `invokes callback once per frame at beginning of VBL`() {
-      repeat(SCREEN_HEIGHT + 1) { ppu.executeScanline() }
+      executeScanlines(SCREEN_HEIGHT + 1)
       verifyZeroInteractions(onVideoBufferReady)
 
-      ppu.executeScanline()
+      executeScanlines(1)
       verify(onVideoBufferReady)()
 
-      repeat(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2) { ppu.executeScanline() }
+      executeScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2)
       verifyNoMoreInteractions(onVideoBufferReady)
     }
 
     @Test
     fun `interrupt not asserted if disabled`() {
-      repeat(SCREEN_HEIGHT + 2) { ppu.executeScanline() }
+      executeScanlines(SCREEN_HEIGHT + 2)
       assertFalse(ppu.vbl)
     }
 
@@ -184,31 +185,31 @@ class PpuTest {
     fun `interrupt asserted during VBL phase`() {
       ppu.writeReg(REG_PPUCTRL, 0x80)
 
-      repeat(SCREEN_HEIGHT + 1) { ppu.executeScanline() }
+      executeScanlines(SCREEN_HEIGHT + 1)
       assertFalse(ppu.vbl)
 
-      ppu.executeScanline()
+      executeScanlines(1)
       assertTrue(ppu.vbl)
 
-      repeat(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2) { ppu.executeScanline() }
+      executeScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2)
       assertFalse(ppu.vbl)
     }
 
     @Test
     fun `interrupt assertion can be modulated`() {
-      repeat(SCREEN_HEIGHT + 2) { ppu.executeScanline() }
+      executeScanlines(SCREEN_HEIGHT + 2)
       assertFalse(ppu.vbl)
 
       ppu.writeReg(REG_PPUCTRL, 0x80)
-      ppu.executeScanline()
+      executeScanlines(1)
       assertTrue(ppu.vbl)
 
       ppu.writeReg(REG_PPUCTRL, 0x00)
-      ppu.executeScanline()
+      executeScanlines(1)
       assertFalse(ppu.vbl)
 
       ppu.writeReg(REG_PPUCTRL, 0x80)
-      ppu.executeScanline()
+      executeScanlines(1)
       assertTrue(ppu.vbl)
     }
 
@@ -219,40 +220,40 @@ class PpuTest {
 
     @Test
     fun `status flag still not set after scanline SCREEN_HEIGHT`() {
-      for (i in 0..SCREEN_HEIGHT) { ppu.executeScanline() }
+      executeScanlines(SCREEN_HEIGHT + 1)
 
       assertEquals(_0, getVblStatusFromReg())
     }
 
     @Test
     fun `status flag set after scanline (SCREEN_HEIGHT + 1)`() {
-      for (i in 0..(SCREEN_HEIGHT + 1)) { ppu.executeScanline() }
+      executeScanlines(SCREEN_HEIGHT + 2)
 
       assertEquals(_1, getVblStatusFromReg())
     }
 
     @Test
-    fun `status flag still set on penultimate scanline`() {
-      for (i in 0..(SCANLINES_PER_FRAME - 2)) { ppu.executeScanline() }
+    fun `status flag still set before pre-render scanline`() {
+      executeScanlines(SCANLINES_PER_FRAME - 1)
 
       assertEquals(_1, getVblStatusFromReg())
     }
 
     @Test
-    fun `status flag cleared on final scanline`() {
-      for (i in 0..(SCANLINES_PER_FRAME - 1)) { ppu.executeScanline() }
+    fun `status flag cleared after pre-render scanline`() {
+      executeScanlines(SCANLINES_PER_FRAME)
 
       assertEquals(_0, getVblStatusFromReg())
     }
 
     @Test
     fun `status flag cleared by reading it, and not set again on next scanline`() {
-      for (i in 0..(SCREEN_HEIGHT + 1)) { ppu.executeScanline() }
+      executeScanlines(SCREEN_HEIGHT + 2)
 
       assertEquals(_1, getVblStatusFromReg())
       assertEquals(_0, getVblStatusFromReg())
 
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertEquals(_0, getVblStatusFromReg())
     }
@@ -269,7 +270,7 @@ class PpuTest {
     @Test
     fun `propagates sprEnabled`() {
       ppu.writeReg(REG_PPUMASK, 0b00010000)
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertEquals(true, captureContext().sprEnabled)
     }
@@ -277,7 +278,7 @@ class PpuTest {
     @Test
     fun `propagates bgEnabled`() {
       ppu.writeReg(REG_PPUMASK, 0b00001000)
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertEquals(true, captureContext().bgEnabled)
     }
@@ -285,7 +286,7 @@ class PpuTest {
     @Test
     fun `propagates sprLeftTileEnabled`() {
       ppu.writeReg(REG_PPUMASK, 0b00000100)
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertEquals(true, captureContext().sprLeftTileEnabled)
     }
@@ -293,7 +294,7 @@ class PpuTest {
     @Test
     fun `propagates bgLeftTileEnabled`() {
       ppu.writeReg(REG_PPUMASK, 0b00000010)
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertEquals(true, captureContext().bgLeftTileEnabled)
     }
@@ -301,7 +302,7 @@ class PpuTest {
     @Test
     fun `propagates largeSprites`() {
       ppu.writeReg(REG_PPUCTRL, 0b00100000)
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertEquals(true, captureContext().largeSprites)
     }
@@ -309,7 +310,7 @@ class PpuTest {
     @Test
     fun `propagates bgPatternTable`() {
       ppu.writeReg(REG_PPUCTRL, 0b00010000)
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertEquals(1, captureContext().bgPatternTable)
     }
@@ -317,7 +318,7 @@ class PpuTest {
     @Test
     fun `propagates sprPatternTable`() {
       ppu.writeReg(REG_PPUCTRL, 0b00001000)
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertEquals(1, captureContext().sprPatternTable)
     }
@@ -325,7 +326,7 @@ class PpuTest {
     @Test
     fun `propagates yNametable`() {
       ppu.writeReg(REG_PPUCTRL, 0b00000010)
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertEquals(1, captureContext().coords.yNametable)
     }
@@ -333,7 +334,7 @@ class PpuTest {
     @Test
     fun `propagates xNametable`() {
       ppu.writeReg(REG_PPUCTRL, 0b00000001)
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertEquals(1, captureContext().coords.xNametable)
     }
@@ -342,7 +343,7 @@ class PpuTest {
     fun `propagates xCoarse, xFine, yCoarse, yFine`() {
       ppu.writeReg(REG_PPUSCROLL, 0b10101_111)
       ppu.writeReg(REG_PPUSCROLL, 0b11111_101)
-      ppu.executeScanline()
+      executeScanlines(1)
 
       val ctx = captureContext()
       assertEquals(0b10101, ctx.coords.xCoarse)
@@ -355,8 +356,7 @@ class PpuTest {
     fun `increments y components every scanline`() {
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
       ppu.writeReg(REG_PPUSCROLL, 0b00000_111)
-      ppu.executeScanline()
-      ppu.executeScanline()
+      executeScanlines(2)
 
       val ctx = captureContext(2)
       assertEquals(0b00001, ctx[1].coords.yCoarse)
@@ -367,9 +367,9 @@ class PpuTest {
     fun `doesn't increment y components every scanline if rendering disabled`() {
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
       ppu.writeReg(REG_PPUSCROLL, 0b00000_111)
-      ppu.executeScanline()
+      executeScanlines(1)
       ppu.writeReg(REG_PPUMASK, 0b00000000)   // Rendering disabled
-      ppu.executeScanline()
+      executeScanlines(1)
 
       val ctx = captureContext(2)
       assertEquals(0b00000, ctx[1].coords.yCoarse)    // These haven't advanced
@@ -380,9 +380,9 @@ class PpuTest {
     fun `x components reloaded every scanline`() {
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
-      ppu.executeScanline()
+      executeScanlines(1)
       ppu.writeReg(REG_PPUSCROLL, 0b10101_111)  // New values
-      ppu.executeScanline()
+      executeScanlines(1)
 
       val ctx = captureContext(2)
       assertEquals(0b10101, ctx[1].coords.xCoarse)    // New values reloaded
@@ -393,10 +393,10 @@ class PpuTest {
     fun `y components not reloaded every scanline`() {
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
-      ppu.executeScanline()
+      executeScanlines(1)
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
       ppu.writeReg(REG_PPUSCROLL, 0b10101_111)  // New values
-      ppu.executeScanline()
+      executeScanlines(1)
 
       val ctx = captureContext(2)
       assertEquals(0b00000, ctx[1].coords.yCoarse)    // New values ignored, just regular increment
@@ -407,7 +407,7 @@ class PpuTest {
     fun `PPUADDR maps to coordinates in a weird way`() {
       ppu.writeReg(REG_PPUADDR, 0b00_10_11_11)
       ppu.writeReg(REG_PPUADDR, 0b111_10101)
-      ppu.executeScanline()
+      executeScanlines(1)
 
       val ctx = captureContext()
       assertEquals(1, ctx.coords.xNametable)
@@ -419,10 +419,10 @@ class PpuTest {
 
     @Test
     fun `PPUADDR changes propagate immediately way`() {
-      ppu.executeScanline()
+      executeScanlines(1)
       ppu.writeReg(REG_PPUADDR, 0b00_10_11_11)
       ppu.writeReg(REG_PPUADDR, 0b111_10101)
-      ppu.executeScanline()
+      executeScanlines(1)
 
       val ctx = captureContext(2)
       assertEquals(1, ctx[1].coords.xNametable)
@@ -449,7 +449,7 @@ class PpuTest {
     fun `not set if no hit or overflow`() {
       mockResult(sprite0Hit = false, spriteOverflow = false)
 
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertFalse(getHitStatus())
       assertFalse(getOverflowStatus())
@@ -459,7 +459,7 @@ class PpuTest {
     fun `set if hit`() {
       mockResult(sprite0Hit = true, spriteOverflow = false)
 
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertTrue(getHitStatus())
     }
@@ -468,7 +468,7 @@ class PpuTest {
     fun `set if overflow`() {
       mockResult(sprite0Hit = false, spriteOverflow = true)
 
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertTrue(getOverflowStatus())
     }
@@ -477,7 +477,7 @@ class PpuTest {
     fun `not cleared by reading`() {
       mockResult(sprite0Hit = true, spriteOverflow = true)
 
-      ppu.executeScanline()
+      executeScanlines(1)
 
       assertTrue(getHitStatus())
       assertTrue(getHitStatus())
@@ -489,7 +489,7 @@ class PpuTest {
     fun `cleared on final scanline`() {
       mockResult(sprite0Hit = true, spriteOverflow = true)
 
-      for (i in 0..(SCANLINES_PER_FRAME - 1)) { ppu.executeScanline() }
+      executeScanlines(SCANLINES_PER_FRAME)
 
       assertFalse(getHitStatus())
       assertFalse(getOverflowStatus())
@@ -507,6 +507,10 @@ class PpuTest {
 
     private fun getHitStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(6)
     private fun getOverflowStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(5)
+  }
+
+  private fun executeScanlines(numScanlines: Int) {
+    ppu.advance(ceil(CYCLES_PER_SCANLINE.toDouble() * numScanlines).toInt())
   }
 
   private fun setPpuAddress(addr: Address) {

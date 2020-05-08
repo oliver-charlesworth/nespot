@@ -1,11 +1,13 @@
 package choliver.nespot.apu
 
+import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.sixfiveohtwo.utils._0
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import kotlin.math.floor
 
 class ApuTest {
   private val envelope = mock<Envelope>()
@@ -19,7 +21,7 @@ class ApuTest {
   private val sequencer = mock<FrameSequencer>()
   private val onAudioBufferReady = mock<() -> Unit>()
   private val apu = Apu(
-    audioBuffer = FloatArray(16),
+    audioBuffer = FloatArray(BUFFER_SIZE),
     memory = mock(),
     sequencer = sequencer,
     channels = Channels(
@@ -253,11 +255,11 @@ class ApuTest {
     whenever(sequencer.take()) doReturn FrameSequencer.Ticks(_0, _0)
     whenever(sweep.mute) doReturn true
 
-    repeat(15) { apu.generateSample() }
+    apu.advance(floor(CYCLES_PER_SAMPLE.toDouble() * BUFFER_SIZE).toInt())
 
     verifyZeroInteractions(onAudioBufferReady)
 
-    apu.generateSample()
+    apu.advance(1)
 
     verify(onAudioBufferReady)()
   }
@@ -278,4 +280,8 @@ class ApuTest {
   }
 
   // TODO - generate samples
+
+  companion object {
+    private const val BUFFER_SIZE = 16
+  }
 }

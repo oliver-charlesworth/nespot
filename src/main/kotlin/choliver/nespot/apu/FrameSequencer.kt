@@ -24,8 +24,8 @@ class FrameSequencer(
     val half: Boolean
   )
 
-  private val fourStepPeriod = Rational(frameSequencerFourStepPeriodCycles, 4)
-  private val fiveStepPeriod = Rational(frameSequencerFiveStepPeriodCycles, 5)
+  private val fourStepPeriod = frameSequencerFourStepPeriodCycles / 4
+  private val fiveStepPeriod = frameSequencerFiveStepPeriodCycles / 5 // TODO - fix the inaccuracy here
 
   private val counter = Counter(cyclesPerSample = cyclesPerSample).apply {
     periodCycles = fourStepPeriod

@@ -1,7 +1,5 @@
 package choliver.nespot.apu
 
-import choliver.nespot.toRational
-
 // TODO - model negate differently for pulse1 and pulse2
 class Sweep(private val timer: Counter) {
   private var iDivider = 0
@@ -26,7 +24,7 @@ class Sweep(private val timer: Counter) {
       iDivider--
     }
     if ((iDivider == 0) && enabled && !mute) {
-      timer.periodCycles = targetPeriod().toRational()
+      timer.periodCycles = targetPeriod()
     }
   }
 
@@ -36,7 +34,7 @@ class Sweep(private val timer: Counter) {
     return period + (if (negate) -delta else delta)
   }
 
-  private fun currentPeriod() = timer.periodCycles.toInt()
+  private fun currentPeriod() = timer.periodCycles
 
   companion object {
     // Inclusive, and * 2 because normalised to CPU (rather than APU) cycles

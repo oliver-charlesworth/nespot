@@ -8,7 +8,7 @@ class Counter(
   private val cyclesPerSample: Rational = CYCLES_PER_SAMPLE
 ) {
   private var pos = 0.toRational()
-  var periodCycles = 1.toRational() // TODO - can this be Int ?
+  var periodCycles = 1
 
   fun take(): Int {
     pos -= cyclesPerSample
@@ -22,6 +22,6 @@ class Counter(
   }
 
   fun restart() {
-    pos = periodCycles
+    pos = periodCycles.toRational()
   }
 }

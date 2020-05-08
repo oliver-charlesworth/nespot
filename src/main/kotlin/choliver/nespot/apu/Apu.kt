@@ -5,7 +5,6 @@ import choliver.nespot.Memory
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
 import choliver.nespot.isBitSet
-import choliver.nespot.toRational
 
 // TODO - frame interrupt
 class Apu(
@@ -75,10 +74,10 @@ class Apu(
         sweep.restart()
       }
 
-      2 -> timer.periodCycles = extractPeriodCycles().toRational()
+      2 -> timer.periodCycles = extractPeriodCycles()
 
       3 -> {
-        timer.periodCycles = extractPeriodCycles().toRational()
+        timer.periodCycles = extractPeriodCycles()
         synth.length = extractLength()
         envelope.restart()
       }
@@ -87,7 +86,7 @@ class Apu(
 
   // See http://wiki.nesdev.com/w/index.php/APU_Triangle
   private fun SynthContext<TriangleSynth>.updateTriangle(idx: Int, data: Data) {
-    fun extractPeriodCycles() = (extractTimer() + 1).toRational()
+    fun extractPeriodCycles() = extractTimer() + 1
 
     regs[idx] = data
     when (idx) {
@@ -117,7 +116,7 @@ class Apu(
 
       2 -> {
         synth.mode = (data and 0x80) shr 7
-        timer.periodCycles = NOISE_PERIOD_TABLE[data and 0x0F].toRational()
+        timer.periodCycles = NOISE_PERIOD_TABLE[data and 0x0F]
       }
 
       3 -> {
@@ -134,7 +133,7 @@ class Apu(
       0 -> {
         synth.irqEnabled = data.isBitSet(7)
         synth.loop = data.isBitSet(6)
-        timer.periodCycles = DMC_RATE_TABLE[data and 0x0F].toRational()
+        timer.periodCycles = DMC_RATE_TABLE[data and 0x0F]
       }
       1 -> synth.level = data and 0x7F
       2 -> synth.address = 0xC000 + (data * 64)

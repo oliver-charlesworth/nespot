@@ -1,12 +1,11 @@
 package choliver.nespot.apu
 
-import choliver.nespot.toRational
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SweepTest {
   private val timer = Counter().apply {
-    periodCycles = 64.toRational()
+    periodCycles = 64
   }
   private val sweep = Sweep(timer).apply {
     enabled = true
@@ -48,17 +47,17 @@ class SweepTest {
 
   @Test
   fun `mutes if current period too low`() {
-    timer.periodCycles = 16.toRational()
+    timer.periodCycles = 16
     assertFalse(sweep.mute)
 
-    timer.periodCycles = 15.toRational()
+    timer.periodCycles = 15
     assertTrue(sweep.mute)
   }
 
   @Test
   fun `mutes if target period too high`() {
     sweep.negate = false
-    timer.periodCycles = 0x800.toRational()
+    timer.periodCycles = 0x800
 
     sweep.shift = 1
     assertFalse(sweep.mute)
@@ -71,16 +70,16 @@ class SweepTest {
   fun `doesn't mute if inhibited`() {
     sweep.inhibitMute = true
 
-    timer.periodCycles = 16.toRational()
+    timer.periodCycles = 16
     assertFalse(sweep.mute)
 
-    timer.periodCycles = 15.toRational()
+    timer.periodCycles = 15
     assertFalse(sweep.mute)
   }
 
   @Test
   fun `doesn't adjust period when muted`() {
-    timer.periodCycles = 15.toRational()
+    timer.periodCycles = 15
     sweep.negate = true
 
     assertEquals(
@@ -89,5 +88,5 @@ class SweepTest {
     )
   }
 
-  private fun take(num: Int) = List(num) { sweep.advance(); timer.periodCycles.toInt() }
+  private fun take(num: Int) = List(num) { sweep.advance(); timer.periodCycles }
 }

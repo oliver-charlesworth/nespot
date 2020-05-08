@@ -8,7 +8,7 @@ class CounterTest {
   @Test
   fun `integer multiple`() {
     val counter = Counter(cyclesPerSample = 4.toRational()).apply {
-      periodCycles = 16.toRational()
+      periodCycles = 16
     }
 
     assertEquals(
@@ -20,7 +20,7 @@ class CounterTest {
   @Test
   fun `rational multiple`() {
     val counter = Counter(cyclesPerSample = 4.toRational()).apply {
-      periodCycles = 10.toRational()
+      periodCycles = 10
     }
 
     assertEquals(
@@ -32,7 +32,7 @@ class CounterTest {
   @Test
   fun `unity multiple`() {
     val counter = Counter(cyclesPerSample = 4.toRational()).apply {
-      periodCycles = 4.toRational()
+      periodCycles = 4
     }
 
     assertEquals(
@@ -44,7 +44,7 @@ class CounterTest {
   @Test
   fun `sub-unity integer multiple`() {
     val counter = Counter(cyclesPerSample = 4.toRational()).apply {
-      periodCycles = 2.toRational()
+      periodCycles = 2
     }
 
     assertEquals(
@@ -56,7 +56,7 @@ class CounterTest {
   @Test
   fun `sub-unity rational multiple`() {
     val counter = Counter(cyclesPerSample = 10.toRational()).apply {
-      periodCycles = 4.toRational()
+      periodCycles = 4
     }
 
     assertEquals(
@@ -68,11 +68,11 @@ class CounterTest {
   @Test
   fun `doesn't immediately restart on new period`() {
     val counter = Counter(cyclesPerSample = 4.toRational()).apply {
-      periodCycles = 16.toRational()
+      periodCycles = 16
     }
 
     counter.take(1) // Make some progress
-    counter.periodCycles = 4.toRational()
+    counter.periodCycles = 4
 
     assertEquals(
       listOf(0, 0, 1, 1, 1, 1), // If the period immediately reset, then these would all be 1's

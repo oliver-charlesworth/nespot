@@ -2,7 +2,6 @@ package choliver.nespot.apu
 
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.sixfiveohtwo.utils._0
-import choliver.nespot.toRational
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
@@ -109,8 +108,8 @@ class ApuTest {
     private fun assertPeriod(regLo: Int, regHi: Int) {
       apu.writeReg(regLo, 0b11001010)
       apu.writeReg(regHi, 0b00000_101)
-      verify(timer).periodCycles = 0b000110010110.toRational()
-      verify(timer).periodCycles = 0b101110010110.toRational()
+      verify(timer).periodCycles = 0b000110010110
+      verify(timer).periodCycles = 0b101110010110
     }
 
     private fun assertLength(reg: Int, ctx: SynthContext<SquareSynth>) {
@@ -136,8 +135,8 @@ class ApuTest {
     fun period() {
       apu.writeReg(10, 0b11001010)
       apu.writeReg(11, 0b00000_101)
-      verify(tri.timer).periodCycles = 0b000011001011.toRational()
-      verify(tri.timer).periodCycles = 0b010111001011.toRational()
+      verify(tri.timer).periodCycles = 0b000011001011
+      verify(tri.timer).periodCycles = 0b010111001011
     }
 
     @Test
@@ -168,7 +167,7 @@ class ApuTest {
     @Test
     fun period() {
       apu.writeReg(14, 0b0_000_1001)
-      verify(noi.timer).periodCycles = 254.toRational() // See lookup table
+      verify(noi.timer).periodCycles = 254 // See lookup table
     }
 
     @Test
@@ -190,7 +189,7 @@ class ApuTest {
     @Test
     fun period() {
       apu.writeReg(16, 0b0_0_00_1001)
-      verify(dmc.timer).periodCycles = 160.toRational() // See lookup table
+      verify(dmc.timer).periodCycles = 160 // See lookup table
     }
 
     @Test

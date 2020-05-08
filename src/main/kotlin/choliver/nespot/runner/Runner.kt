@@ -47,7 +47,9 @@ class Runner : CliktCommand(name = "nespot") {
       rom = rom,
       videoBuffer = screen.buffer,
       audioBuffer = audio.buffer,
-      joypads = joypads
+      joypads = joypads,
+      onAudioBufferReady = { audio.play() },
+      onVideoBufferReady = { screen.redraw() }
     )
     private val backupManager = BackupManager(rom, nes.prgRam, BACKUP_DIR)
     private val snapshotManager = SnapshotManager(nes.diagnostics)
@@ -73,8 +75,6 @@ class Runner : CliktCommand(name = "nespot") {
         while (!closed) {
           measureNanoTime {
             nes.runToEndOfFrame()
-            screen.redraw()
-            audio.play()
             consumeEvents()
           }
         }

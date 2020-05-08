@@ -17,6 +17,8 @@ class Nes(
   videoBuffer: IntBuffer,
   audioBuffer: FloatArray,
   joypads: Joypads,
+  onAudioBufferReady: () -> Unit = {},
+  onVideoBufferReady: () -> Unit = {},
   private val onStore: (Address, Data) -> Unit = { _: Address, _: Data -> }
 ) {
   private val mapper = createMapper(rom)
@@ -57,7 +59,13 @@ class Nes(
     pollNmi = ppu::vbl
   )
 
-  private val sequencer = Sequencer(cpu, apu, ppu)
+  private val sequencer = Sequencer(
+    cpu = cpu,
+    apu = apu,
+    ppu = ppu,
+    onAudioBufferReady = onAudioBufferReady,
+    onVideoBufferReady = onVideoBufferReady
+  )
 
   fun runToEndOfFrame() {
     sequencer.runToEndOfFrame()

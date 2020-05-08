@@ -8,7 +8,9 @@ import choliver.nespot.sixfiveohtwo.Cpu
 class Sequencer(
   private val cpu: Cpu,
   private val apu: Apu,
-  private val ppu: Ppu
+  private val ppu: Ppu,
+  private val onAudioBufferReady: () -> Unit,
+  private val onVideoBufferReady: () -> Unit
 ) {
   @MutableForPerfReasons
   data class State(
@@ -57,6 +59,8 @@ class Sequencer(
   }
 
   private fun finishFrame() = with(state) {
+    onAudioBufferReady()  // TODO - this should be driven by APU
+    onVideoBufferReady()  // TODO - this should be driven by PPU
     if (apu.iSample != 0 || ppu.scanline != 0) {
       throw IllegalStateException("Unexpected APU/PPU rate mismatch")
     }

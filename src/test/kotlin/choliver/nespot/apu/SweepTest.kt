@@ -88,5 +88,5 @@ class SweepTest {
     )
   }
 
-  private fun take(num: Int) = List(num) { sweep.advance(); timer.periodCycles.toInt() }
+  private fun take(num: Int) = List(num) { sweep.advance(); timer.periodCycles }
 }

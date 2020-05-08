@@ -1,6 +1,9 @@
 package choliver.nespot.nes
 
-import choliver.nespot.*
+import choliver.nespot.CYCLES_PER_SAMPLE
+import choliver.nespot.CYCLES_PER_SCANLINE
+import choliver.nespot.MutableForPerfReasons
+import choliver.nespot.SCANLINES_PER_FRAME
 import choliver.nespot.apu.Apu
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu

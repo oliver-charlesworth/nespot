@@ -26,9 +26,13 @@ import choliver.nespot.runner.Screen
 import choliver.nespot.runner.Screen.Event.KeyDown
 import choliver.nespot.runner.Screen.Event.KeyUp
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep
+import com.fasterxml.jackson.databind.MapperFeature
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.File
 import java.io.InputStream
 import java.io.PrintStream
+import java.io.SerializablePermission
 import java.util.concurrent.LinkedBlockingQueue
 
 class Debugger(
@@ -172,6 +176,9 @@ class Debugger(
       // One more so that the interrupt actually occurs
       is UntilNmi -> untilPlusOne { nes.cpu.nextStep == NextStep.NMI }
 
+      // One more so that the interrupt actually occurs
+      is UntilIrq -> untilPlusOne { nes.cpu.nextStep == NextStep.IRQ }
+
       is Continue -> until { false }
 
       is Finish -> {
@@ -265,6 +272,13 @@ class Debugger(
       is Info.CpuRam -> displayDump((0 until CPU_RAM_SIZE).map { nes.peek(it) })
 
       is Info.PpuRam -> displayDump((0 until PPU_RAM_SIZE).map { nes.peekV(it + 0x2000) })
+
+      is Info.Ppu -> {
+        val mapper = jacksonObjectMapper()
+          .enable(SerializationFeature.INDENT_OUTPUT)
+          .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
+        stdout.println(mapper.writeValueAsString(nes.ppu.state))
+      }
 
       is Info.Print -> stdout.println(nes.peek(cmd.addr).format8())
 

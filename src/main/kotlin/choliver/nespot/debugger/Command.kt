@@ -18,6 +18,7 @@ sealed class Command {
     data class UntilOffset(val offset: Int) : Execute()
     data class UntilOpcode(val op: Opcode) : Execute()
     object UntilNmi : Execute()
+    object UntilIrq : Execute()
     object Continue : Execute()
     object Finish : Execute()
   }
@@ -48,6 +49,7 @@ sealed class Command {
     data class InspectInst(val pc: Address, val num: Int) : Info()
     object CpuRam : Info()
     object PpuRam : Info()
+    object Ppu : Info()
   }
 
   object ToggleVerbosity : Command()

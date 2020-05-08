@@ -8,6 +8,7 @@ import choliver.nespot.ppu.model.State
 import java.nio.IntBuffer
 import kotlin.math.min
 
+
 // TODO - eliminate all the magic numbers here
 // TODO - colour emphasis
 class Renderer(
@@ -40,13 +41,23 @@ class Renderer(
   // One extra to detect overflow
   private val sprites = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender() }.toList()
 
-  fun prepareSprites(state: State) {
-    // TODO - validate this gating of evaluation happens
+  fun renderScanline(state: State) {
+    // TODO - validate this gating of evaluation happens (does it matter?)
     state.spriteOverflow = (state.bgEnabled || state.sprEnabled) && evaluateSprites(state)
+
     loadSprites()
+
+    // TODO - Calculate colours (inc. hit detect)
+
+    prepareYeah(state)
+
+    state.sprite0Hit = state.sprEnabled && prepareSpritesAndDetectHit(state)
+
+    renderToBuffer(state)
   }
 
-  fun prepareYeah(state: State) {
+
+  private fun prepareYeah(state: State) {
     if (state.bgEnabled) {
       prepareBackground(state)
     } else {
@@ -56,16 +67,6 @@ class Renderer(
     if (!state.bgLeftTileEnabled) {
       blankLeftBackgroundTile()
     }
-  }
-
-  fun renderScanline(state: State) {
-    state.sprite0Hit = if (state.sprEnabled) {
-      prepareSpritesAndDetectHit(state)
-    } else {
-      false
-    }
-
-    renderToBuffer(state)
   }
 
   private fun prepareBackground(state: State) {
@@ -127,7 +128,7 @@ class Renderer(
 
       // Scan until we find a matching sprite
       while (!spr.valid && (iCandidate < NUM_SPRITES)) {
-        val y = oam[iCandidate * 4 + 0]
+        val y = oam[iCandidate * 4 + 0] + 1
         val iPattern = oam[iCandidate * 4 + 1]
         val attrs = oam[iCandidate * 4 + 2]
         val x = oam[iCandidate * 4 + 3]

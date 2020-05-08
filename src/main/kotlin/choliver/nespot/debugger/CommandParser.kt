@@ -114,6 +114,7 @@ class CommandParser(
           "d", "display" -> Info.Display
           "ram" -> Info.CpuRam
           "vram" -> Info.PpuRam
+          "ppu" -> Info.Ppu
           else -> null
         }
       }

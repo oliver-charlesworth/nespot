@@ -5,3 +5,4 @@ out/
 build/
 *.nes
 *.snapshot.json
+*.backup.dat

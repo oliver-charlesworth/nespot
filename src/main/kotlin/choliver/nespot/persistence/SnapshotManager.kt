@@ -1,4 +1,4 @@
-package choliver.nespot.snapshot
+package choliver.nespot.persistence
 
 import choliver.nespot.Memory
 import choliver.nespot.data

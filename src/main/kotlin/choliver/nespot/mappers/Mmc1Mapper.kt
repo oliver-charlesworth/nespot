@@ -8,7 +8,6 @@ import choliver.nespot.cartridge.mirrorVertical
 
 // https://wiki.nesdev.com/w/index.php/MMC1
 class Mmc1Mapper(private val rom: Rom) : Mapper {
-  private val prgRam = Ram(8192)
   private val chrRam = Ram(8192)
   private val usingChrRam = rom.chrData.isEmpty()
   private val numPrgBanks = (rom.prgData.size / 16384)
@@ -23,6 +22,8 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
   private var prgMode = 0
 
   override val irq = false
+
+  override val prgRam = Ram(PRG_RAM_SIZE)
 
   override val prg = object : Memory {
     override fun get(addr: Address) = when {
@@ -139,5 +140,7 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
     const val BASE_CHR1_ROM = 0x1000
     const val BASE_VRAM = 0x2000
     const val BASE_SR = 0x8000
+
+    const val PRG_RAM_SIZE = 0x2000
   }
 }

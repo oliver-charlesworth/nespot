@@ -6,7 +6,6 @@ import choliver.nespot.cartridge.*
 
 // See https://wiki.nesdev.com/w/index.php/MMC3
 class Mmc3Mapper(private val rom: Rom) : Mapper {
-  private val prgRam = Ram(PRG_RAM_SIZE)
   private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
   private var mirrorModeFlag = false
   private var chrModeFlag = false
@@ -21,6 +20,8 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
   private var _irq = false
 
   override val irq get() = _irq
+
+  override val prgRam = Ram(PRG_RAM_SIZE)
 
   override val prg = object : Memory {
     override operator fun get(addr: Address) = when {

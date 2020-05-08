@@ -3,16 +3,18 @@ package choliver.nespot.runner
 import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
+import choliver.nespot.persistence.BackupManager
+import choliver.nespot.persistence.SnapshotManager
 import choliver.nespot.runner.KeyAction.*
 import choliver.nespot.runner.Screen.Event.*
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep.RESET
-import choliver.nespot.snapshot.SnapshotManager
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
+import java.io.File
 import java.util.concurrent.LinkedBlockingQueue
 import kotlin.math.roundToInt
 import kotlin.system.measureNanoTime
@@ -47,6 +49,7 @@ class Runner : CliktCommand(name = "nespot") {
       audioBuffer = audio.buffer,
       joypads = joypads
     )
+    private val backupManager = BackupManager(rom, nes.prgRam, BACKUP_DIR)
     private val snapshotManager = SnapshotManager(nes.diagnostics)
 
     fun run() {
@@ -62,6 +65,7 @@ class Runner : CliktCommand(name = "nespot") {
     }
 
     private fun runNormally() {
+      backupManager.maybeRestore()
       screen.show()
       audio.start()
 
@@ -74,17 +78,11 @@ class Runner : CliktCommand(name = "nespot") {
             consumeEvents()
           }
         }
+        backupManager.maybeSave()
       } finally {
         screen.hide()
         screen.exit()
       }
-    }
-
-    private fun runPerfTest() {
-      val runtimeMs = measureTimeMillis {
-        repeat(numPerfFrames!!) { nes.runToEndOfFrame() }
-      }
-      println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")
     }
 
     private fun consumeEvents() {
@@ -114,6 +112,17 @@ class Runner : CliktCommand(name = "nespot") {
         nes.diagnostics.cpu.nextStep = RESET
       }
     }
+
+    private fun runPerfTest() {
+      val runtimeMs = measureTimeMillis {
+        repeat(numPerfFrames!!) { nes.runToEndOfFrame() }
+      }
+      println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")
+    }
+  }
+
+  companion object {
+    val BACKUP_DIR = File("backup")
   }
 }
 

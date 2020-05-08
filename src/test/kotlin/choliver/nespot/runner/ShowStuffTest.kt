@@ -1,7 +1,7 @@
 package choliver.nespot.runner
 
-import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.createMapper
 import choliver.nespot.ppu.*
 import com.nhaarman.mockitokotlin2.mock
 import org.junit.jupiter.api.Disabled
@@ -30,8 +30,8 @@ class ShowStuffTest {
   @Test
   @Disabled
   fun patterns() {
-    val cartridge = Cartridge(Rom.parse(File("roms/smb.nes").readBytes()))
-    val chr = cartridge.chr(mock())
+    val mapper = createMapper(Rom.parse(File("roms/smb.nes").readBytes()))
+    val chr = mapper.chr(mock())
 
     fun getPatternData(
       patternTable: Int,    // 0 to 1

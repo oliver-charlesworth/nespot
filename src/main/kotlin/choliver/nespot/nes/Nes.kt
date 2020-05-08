@@ -5,8 +5,8 @@ import choliver.nespot.Data
 import choliver.nespot.Memory
 import choliver.nespot.Ram
 import choliver.nespot.apu.Apu
-import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.createMapper
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.sixfiveohtwo.Cpu
 import choliver.nespot.sixfiveohtwo.utils._0
@@ -19,17 +19,17 @@ class Nes(
   joypads: Joypads,
   private val onStore: (Address, Data) -> Unit = { _: Address, _: Data -> }
 ) {
-  private val cartridge = Cartridge(rom)
+  private val mapper = createMapper(rom)
 
   private val apu = Apu(
     buffer = audioBuffer,
-    memory = cartridge.prg  // DMC can only read from PRG space
+    memory = mapper.prg  // DMC can only read from PRG space
   )
 
   private val cpuRam = Ram(CPU_RAM_SIZE)
   private val ppuRam = Ram(PPU_RAM_SIZE)
 
-  private val ppuMapper = cartridge.chr(ppuRam)
+  private val ppuMapper = mapper.chr(ppuRam)
 
   private val ppu = Ppu(
     memory = ppuMapper,
@@ -37,7 +37,7 @@ class Nes(
   )
 
   private val cpuMapper = CpuMapper(
-    prg = cartridge.prg,
+    prg = mapper.prg,
     ram = cpuRam,
     ppu = ppu,
     apu = apu,
@@ -53,7 +53,7 @@ class Nes(
       }
     },
     pollReset = { _0 },
-    pollIrq = { apu.irq || cartridge.irq },
+    pollIrq = { apu.irq || mapper.irq },
     pollNmi = ppu::vbl
   )
 
@@ -72,6 +72,8 @@ class Nes(
     fun peek(addr: Address) = cpuMapper[addr]
     fun peekV(addr: Address) = ppuMapper[addr]
   }
+
+  val prgRam = mapper.prgRam
 
   val diagnostics = Diagnostics()
 

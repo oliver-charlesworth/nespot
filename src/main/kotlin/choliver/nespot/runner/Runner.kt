@@ -122,7 +122,7 @@ class Runner : CliktCommand(name = "nespot") {
   }
 
   companion object {
-    val BACKUP_DIR = File("backup")
+    val BACKUP_DIR = File("backups")
   }
 }
 

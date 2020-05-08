@@ -241,7 +241,6 @@ class RendererTest {
       renderer.evaluateSprites(state)
       renderer.loadSprites(state)
       renderer.renderSprites(state)
-      renderer.commitToBuffer(state)
     }
   }
 
@@ -326,7 +325,6 @@ class RendererTest {
       renderer.evaluateSprites(state)
       renderer.loadSprites(state)
       renderer.renderSprites(state)
-      renderer.commitToBuffer(state)
     }
   }
 
@@ -459,8 +457,7 @@ class RendererTest {
 
     private fun assertPixelColour(expected: Int) {
       render()
-
-      assertEquals(colors[paletteEntries[expected]], videoBuffer.array()[Y_SCANLINE * SCREEN_WIDTH])
+      assertEquals(expected, renderer.diagnostics.state.paletteIndices[0])
     }
 
     private fun render() {
@@ -478,7 +475,6 @@ class RendererTest {
       renderer.evaluateSprites(state)
       renderer.loadSprites(state)
       renderer.renderSprites(state)
-      renderer.commitToBuffer(state)
     }
   }
 
@@ -597,7 +593,6 @@ class RendererTest {
       renderer.evaluateSprites(state)
       renderer.loadSprites(state)
       renderer.renderSprites(state)
-      renderer.commitToBuffer(state)
       return state
     }
   }
@@ -671,9 +666,6 @@ class RendererTest {
         scanline = Y_SCANLINE
       )
       renderer.evaluateSprites(state)
-      renderer.loadSprites(state)
-      renderer.renderSprites(state)
-      renderer.commitToBuffer(state)
       return state
     }
   }
@@ -751,7 +743,6 @@ class RendererTest {
         scanline = Y_SCANLINE
       )
       renderer.renderBackground(state)
-      renderer.commitToBuffer(state)
     }
   }
 

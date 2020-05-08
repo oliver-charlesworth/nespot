@@ -12,8 +12,7 @@ import choliver.nespot.data
 // https://wiki.nesdev.com/w/index.php/NROM
 class NromMapper(private val rom: Rom) : Mapper {
   override val irq = false
-
-  override var backup = byteArrayOf()
+  override val prgRam = null
 
   override val prg = object : Memory {
     // Just map everything to PRG-ROM

@@ -73,9 +73,7 @@ class Nes(
     fun peekV(addr: Address) = ppuMapper[addr]
   }
 
-  var backup
-    get() = cartridge.backup
-    set(value) { cartridge.backup = value }
+  val prgRam = cartridge.prgRam
 
   val diagnostics = Diagnostics()
 

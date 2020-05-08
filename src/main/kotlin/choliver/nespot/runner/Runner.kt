@@ -2,6 +2,7 @@ package choliver.nespot.runner
 
 import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.data
 import choliver.nespot.nes.Nes
 import choliver.nespot.runner.KeyAction.*
 import choliver.nespot.runner.Screen.Event.*
@@ -84,18 +85,21 @@ class Runner : CliktCommand(name = "nespot") {
     }
 
     private fun maybeRestoreFromBackup() {
-      with(File(backupFileName())) {
-        if (exists()) {
-          nes.backup = readBytes()
+      nes.prgRam?.let { ram ->
+        val file = File(backupFileName())
+        if (file.exists()) {
+          val bytes = file.readBytes()
+          if (bytes.size != ram.size) {
+            throw RuntimeException("Backup size mismatch")
+          }
+          bytes.forEachIndexed { i, byte -> ram[i] = byte.data() }
         }
       }
     }
 
     private fun maybeSaveToBackup() {
-      with(nes.backup) {
-        if (isNotEmpty()) {
-          File(backupFileName()).writeBytes(this)
-        }
+      nes.prgRam?.let { ram ->
+        File(backupFileName()).writeBytes(ByteArray(ram.size) { ram[it].toByte() })
       }
     }
 

@@ -41,20 +41,19 @@ class Renderer(
   private var paletteEntry = 0
   private var pattern: Data = 0x00
 
-
   private val pixels = Array(SCREEN_WIDTH) { Pixel() }
   // One extra to detect overflow
   private val sprites = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender() }.toList()
 
   fun renderScanline(state: State) {
-    // TODO - validate this gating of evaluation happens (does it matter?)
-    state.spriteOverflow = (state.bgEnabled || state.sprEnabled) && evaluateSprites(state)
+    state.spriteOverflow = evaluateSprites(state) && (state.bgEnabled || state.sprEnabled)
 
     prepareBackground(state)
 
-    loadSprites()
-
-    state.sprite0Hit = state.sprEnabled && prepareSpritesAndDetectHit(state)
+    if (state.sprEnabled) {
+      loadSprites()
+      state.sprite0Hit = prepareSpritesAndDetectHit(state)
+    }
 
     renderToBuffer(state)
   }
@@ -155,14 +154,14 @@ class Renderer(
   private fun loadSprites() {
     sprites
       .dropLast(1)
-      .forEach { spr ->
-        spr.pattern = if (spr.valid) {
-          loadPattern(spr.patternAddr)
-        } else {
-          loadPattern(DUMMY_SPRITE_PATTERN_ADDR)
-          0   // All-transparent
-        }
-      }
+      .forEach { spr -> spr.pattern = loadSpritePattern(spr) }
+  }
+
+  private fun loadSpritePattern(spr: SpriteToRender) = if (spr.valid) {
+    loadPattern(spr.patternAddr)
+  } else {
+    loadPattern(DUMMY_SPRITE_PATTERN_ADDR)
+    0   // All-transparent
   }
 
   // Lowest index is highest priority, so render last

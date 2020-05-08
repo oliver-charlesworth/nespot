@@ -2,6 +2,7 @@ package choliver.nespot.ppu
 
 import choliver.nespot.Address
 import choliver.nespot.Memory
+import choliver.nespot.apu.repeat
 import choliver.nespot.isBitSet
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Renderer.Companion.MAX_SPRITES_PER_SCANLINE
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.Test
 import java.nio.IntBuffer
 
 
-// TODO - test that we load tiles during left-tile clipping
 class RendererTest {
   private val colors = (0..63).toList()
   private val paletteEntries = (0..31).map { it + 5 }
@@ -94,19 +94,17 @@ class RendererTest {
 
     @Test
     fun `location-based patterns`() {
-      val patterns = mapOf(
+      initNametableMemory(listOf(11, 22, 33, 44).repeat(NUM_TILE_COLUMNS / 4))
+      initBgPatternMemory(mapOf(
         11 to List(TILE_SIZE) { 1 },
         22 to List(TILE_SIZE) { 2 },
         33 to List(TILE_SIZE) { 3 },
         44 to List(TILE_SIZE) { 0 }
-      )
-      val nametableEntries = (0 until NUM_TILE_COLUMNS / 4).flatMap { listOf(11, 22, 33, 44) }
-      initNametableMemory(nametableEntries)
-      initBgPatternMemory(patterns)
+      ))
 
       render()
 
-      assertBuffer { patterns[nametableEntries[it / TILE_SIZE]]!![it % TILE_SIZE] }
+      assertBuffer { (it / TILE_SIZE + 1) % 4 }
     }
 
     @Test
@@ -121,12 +119,18 @@ class RendererTest {
 
     @Test
     fun `not rendered if clipped`() {
-      val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
-      initBgPatternMemory(mapOf(0 to pattern))
+      // Use varying tiles to demonstrate that coordinates are incremented during clipping
+      initNametableMemory(listOf(11, 22, 33, 44).repeat(NUM_TILE_COLUMNS / 4))
+      initBgPatternMemory(mapOf(
+        11 to List(TILE_SIZE) { 1 },
+        22 to List(TILE_SIZE) { 2 },
+        33 to List(TILE_SIZE) { 3 },
+        44 to List(TILE_SIZE) { 0 }
+      ))
 
       render(bgLeftTileEnabled = false)
 
-      assertBuffer { if (it < TILE_SIZE) 0 else pattern[it % TILE_SIZE] }
+      assertBuffer { if (it < TILE_SIZE) 0 else (it / TILE_SIZE + 1) % 4 }
     }
   }
 
@@ -665,6 +669,13 @@ class RendererTest {
 
       verify(memory, times(8))[0x1FF0]
       verify(memory, times(8))[0x1FF8]
+    }
+
+    @Test
+    fun `performs no sprite loads if sprite rendering disabled`() {
+      render(bgRenderingEnabled = false, sprRenderingEnabled = false)
+
+      verifyZeroInteractions(memory)
     }
   }
 

@@ -9,7 +9,8 @@ class Ppu(
   videoBuffer: IntBuffer,
   private val oam: Memory = Ram(256),
   private val palette: Memory = Palette(),
-  private val renderer: Renderer = Renderer(memory, palette, oam, videoBuffer)
+  private val renderer: Renderer = Renderer(memory, palette, oam, videoBuffer),
+  private val onVideoBufferReady: () -> Unit
 ) {
   private var state = State()
 
@@ -38,7 +39,10 @@ class Ppu(
           renderer.renderScanline(state)
         }
 
-        (SCREEN_HEIGHT + 1) -> inVbl = true
+        (SCREEN_HEIGHT + 1) -> {
+          inVbl = true
+          onVideoBufferReady()
+        }
 
         // Pre-render line
         (SCANLINES_PER_FRAME - 1) -> {

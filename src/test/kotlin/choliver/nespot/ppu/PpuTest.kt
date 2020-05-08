@@ -22,10 +22,12 @@ import org.junit.jupiter.api.assertDoesNotThrow
 class PpuTest {
   private val memory = mock<Memory>()
   private val renderer = mock<Renderer>()
+  private val onVideoBufferReady = mock<() -> Unit>()
   private val ppu = Ppu(
     memory = memory,
     videoBuffer = mock(),
-    renderer = renderer
+    renderer = renderer,
+    onVideoBufferReady = onVideoBufferReady
   )
 
   @Test
@@ -160,6 +162,18 @@ class PpuTest {
 
   @Nested
   inner class Vbl {
+    @Test
+    fun `invokes callback once per frame at beginning of VBL`() {
+      repeat(SCREEN_HEIGHT + 1) { ppu.executeScanline() }
+      verifyZeroInteractions(onVideoBufferReady)
+
+      ppu.executeScanline()
+      verify(onVideoBufferReady)()
+
+      repeat(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2) { ppu.executeScanline() }
+      verifyNoMoreInteractions(onVideoBufferReady)
+    }
+
     @Test
     fun `interrupt not asserted if disabled`() {
       repeat(SCREEN_HEIGHT + 2) { ppu.executeScanline() }

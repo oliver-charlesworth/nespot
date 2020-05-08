@@ -35,7 +35,8 @@ class Nes(
 
   private val ppu = Ppu(
     memory = ppuMapper,
-    videoBuffer = videoBuffer
+    videoBuffer = videoBuffer,
+    onVideoBufferReady = onVideoBufferReady
   )
 
   private val cpuMapper = CpuMapper(
@@ -63,8 +64,7 @@ class Nes(
     cpu = cpu,
     apu = apu,
     ppu = ppu,
-    onAudioBufferReady = onAudioBufferReady,
-    onVideoBufferReady = onVideoBufferReady
+    onAudioBufferReady = onAudioBufferReady
   )
 
   fun runToEndOfFrame() {

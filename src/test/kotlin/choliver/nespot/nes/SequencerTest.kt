@@ -23,8 +23,7 @@ class SequencerTest {
     cpu = cpu,
     apu = apu,
     ppu = ppu,
-    onAudioBufferReady = onAudioBufferReady,
-    onVideoBufferReady = onVideoBufferReady
+    onAudioBufferReady = onAudioBufferReady
   )
 
   @Test
@@ -64,11 +63,9 @@ class SequencerTest {
 
     assertFalse(sequencer.step())  // Not quite enough
     verifyZeroInteractions(onAudioBufferReady)
-    verifyZeroInteractions(onVideoBufferReady)
 
     assertTrue(sequencer.step())   // Oh yes
     verify(onAudioBufferReady)()
-    verify(onVideoBufferReady)()
   }
 
   private fun Rational.roundUp() = ceil(toDouble()).toInt()

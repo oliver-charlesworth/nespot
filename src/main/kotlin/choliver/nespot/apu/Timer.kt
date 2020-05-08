@@ -4,7 +4,7 @@ import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.Rational
 import choliver.nespot.observable
 
-class Counter(
+class Timer(
   private val cyclesPerSample: Rational = CYCLES_PER_SAMPLE
 ) {
   private var pos = 0

@@ -1,6 +1,5 @@
 package choliver.nespot.runner
 
-import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
 import choliver.nespot.persistence.BackupManager
@@ -17,7 +16,6 @@ import com.github.ajalt.clikt.parameters.types.int
 import java.io.File
 import java.util.concurrent.LinkedBlockingQueue
 import kotlin.math.roundToInt
-import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
 class Runner : CliktCommand(name = "nespot") {
@@ -73,10 +71,8 @@ class Runner : CliktCommand(name = "nespot") {
 
       try {
         while (!closed) {
-          measureNanoTime {
-            nes.runToEndOfFrame()
-            consumeEvents()
-          }
+          nes.diagnostics.sequencer.step()  // TODO
+          consumeEvent()
         }
         backupManager.maybeSave()
       } finally {
@@ -85,22 +81,18 @@ class Runner : CliktCommand(name = "nespot") {
       }
     }
 
-    private fun consumeEvents() {
-      val myEvents = mutableListOf<Screen.Event>()
-      events.drainTo(myEvents)
-      myEvents.forEach { e ->
-        when (e) {
-          is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
-            is Joypad -> joypads.down(1, action.button)
-            is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
-            is Snapshot -> snapshotManager.snapshotToStdout()
-            is Restore -> restore()
-          }
-          is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
-            is Joypad -> joypads.up(1, action.button)
-          }
-          is Close -> closed = true
+    private fun consumeEvent() {
+      when (val e = events.poll()) {
+        is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
+          is Joypad -> joypads.down(1, action.button)
+          is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
+          is Snapshot -> snapshotManager.snapshotToStdout()
+          is Restore -> restore()
         }
+        is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
+          is Joypad -> joypads.up(1, action.button)
+        }
+        is Close -> closed = true
       }
     }
 

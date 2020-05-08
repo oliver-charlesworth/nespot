@@ -17,13 +17,16 @@ class Nes(
   videoBuffer: IntBuffer,
   audioBuffer: FloatArray,
   joypads: Joypads,
+  onAudioBufferReady: () -> Unit = {},
+  onVideoBufferReady: () -> Unit = {},
   private val onStore: (Address, Data) -> Unit = { _: Address, _: Data -> }
 ) {
   private val mapper = createMapper(rom)
 
   private val apu = Apu(
-    buffer = audioBuffer,
-    memory = mapper.prg  // DMC can only read from PRG space
+    audioBuffer = audioBuffer,
+    memory = mapper.prg,  // DMC can only read from PRG space
+    onAudioBufferReady = onAudioBufferReady
   )
 
   private val cpuRam = Ram(CPU_RAM_SIZE)
@@ -33,7 +36,8 @@ class Nes(
 
   private val ppu = Ppu(
     memory = ppuMapper,
-    videoBuffer = videoBuffer
+    videoBuffer = videoBuffer,
+    onVideoBufferReady = onVideoBufferReady
   )
 
   private val cpuMapper = CpuMapper(
@@ -57,10 +61,14 @@ class Nes(
     pollNmi = ppu::vbl
   )
 
-  private val sequencer = Sequencer(cpu, apu, ppu)
+  private val sequencer = Sequencer(
+    cpu = cpu,
+    apu = apu,
+    ppu = ppu
+  )
 
-  fun runToEndOfFrame() {
-    sequencer.runToEndOfFrame()
+  fun step() {
+    sequencer.step()
   }
 
   inner class Diagnostics internal constructor() {

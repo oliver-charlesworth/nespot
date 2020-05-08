@@ -2,7 +2,6 @@ package choliver.nespot.debugger
 
 import choliver.nespot.Address
 import choliver.nespot.Data
-import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
 import choliver.nespot.debugger.CallStackManager.FrameType.NMI
@@ -23,8 +22,7 @@ import choliver.nespot.runner.FakeJoypads
 import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
-import choliver.nespot.runner.Screen.Event.KeyDown
-import choliver.nespot.runner.Screen.Event.KeyUp
+import choliver.nespot.runner.Screen.Event.*
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.SerializationFeature
@@ -32,7 +30,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.File
 import java.io.InputStream
 import java.io.PrintStream
-import java.io.SerializablePermission
 import java.util.concurrent.LinkedBlockingQueue
 
 class Debugger(
@@ -48,14 +45,16 @@ class Debugger(
   private val events = LinkedBlockingQueue<Screen.Event>()
   private val joypads = FakeJoypads()
   private val screen = Screen(onEvent = { events += it })
+  private var redraw = false
 
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
 
   private val nes = Nes(
     rom = Rom.parse(rom),
     videoBuffer = screen.buffer,
-    audioBuffer = Audio(frameRateHz = FRAME_RATE_HZ).buffer,
+    audioBuffer = Audio().buffer,
     joypads = joypads,
+    onVideoBufferReady = { redraw = true },
     onStore = { addr, data -> stores += (addr to data) }
   ).diagnostics
   private val points = PointManager()
@@ -103,6 +102,7 @@ class Debugger(
       is ShowScreen -> showScreen()
       is Quit -> return false
       is Error -> stdout.println(cmd.msg)
+      is Nop -> Unit
     }
     return true
   }
@@ -118,6 +118,7 @@ class Debugger(
         is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> joypads.up(1, action.button)
         }
+        is Close -> Unit
       }
     }
   }
@@ -332,8 +333,10 @@ class Debugger(
     }
 
     stores.clear()
-    if (nes.sequencer.step()) {
+    nes.sequencer.step()
+    if (redraw) {
       screen.redraw()
+      redraw = false
     }
 
     maybeTraceStores()

@@ -5,21 +5,15 @@ import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import kotlin.math.roundToInt
 
-class Audio(frameRateHz: Int) {
+class Audio {
   private var iFrame = 0
   private var dc = 0f
-  private val bufferSize = (SAMPLE_RATE_HZ / frameRateHz)
+  private val bufferSize = (SAMPLE_RATE_HZ * BUFFER_LENGTH_MS) / 1000
   private val audioFormat = AudioFormat(SAMPLE_RATE_HZ.toFloat(), 16, 1, true, false)
   private val soundLine = AudioSystem.getSourceDataLine(audioFormat)
   // TODO - optimize this mess
   private val _buffer = ByteArray(bufferSize * 2)
   val buffer = FloatArray(bufferSize)
-
-  init {
-    if ((bufferSize * frameRateHz) != SAMPLE_RATE_HZ) {
-      throw IllegalArgumentException("Non-integer ratio between frame rate and sample rate")
-    }
-  }
 
   fun start() {
     soundLine.open(audioFormat, bufferSize * 4)
@@ -54,6 +48,7 @@ class Audio(frameRateHz: Int) {
   }
 
   companion object {
+    private const val BUFFER_LENGTH_MS = 10
     private const val LEVEL = 100f
     private const val DC_ALPHA = 0.995f
   }

@@ -9,14 +9,14 @@ class Ppu(
   videoBuffer: IntBuffer,
   private val oam: Memory = Ram(256),
   private val palette: Memory = Palette(),
-  private val renderer: Renderer = Renderer(memory, palette, oam, videoBuffer)
+  private val renderer: Renderer = Renderer(memory, palette, oam, videoBuffer),
+  private val onVideoBufferReady: () -> Unit
 ) {
   private var state = State()
 
   // TODO - model addr increment quirks during rendering (see wiki.nesdev.com/w/index.php/PPU_scrolling)
   // TODO - add a reset (to clean up counters and stuff)
 
-  val scanline get() = state.scanline
   val vbl get() = state.inVbl && state.vblEnabled
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
@@ -38,7 +38,10 @@ class Ppu(
           renderer.renderScanline(state)
         }
 
-        (SCREEN_HEIGHT + 1) -> inVbl = true
+        (SCREEN_HEIGHT + 1) -> {
+          inVbl = true
+          onVideoBufferReady()
+        }
 
         // Pre-render line
         (SCANLINES_PER_FRAME - 1) -> {

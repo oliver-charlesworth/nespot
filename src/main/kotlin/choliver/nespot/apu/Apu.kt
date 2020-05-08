@@ -1,12 +1,15 @@
 package choliver.nespot.apu
 
-import choliver.nespot.*
+import choliver.nespot.Data
+import choliver.nespot.Memory
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
+import choliver.nespot.isBitSet
+import choliver.nespot.toRational
 
 // TODO - frame interrupt
 class Apu(
-  private val buffer: FloatArray,
+  private val audioBuffer: FloatArray,
   memory: Memory,
   private val sequencer: FrameSequencer = FrameSequencer(),
   private val channels: Channels = Channels(
@@ -15,12 +18,12 @@ class Apu(
     tri = SynthContext(TriangleSynth()).apply { inhibitMute(); fixEnvelope(1) },
     noi = SynthContext(NoiseSynth()).apply { inhibitMute() },
     dmc = SynthContext(DmcSynth(memory = memory)).apply { inhibitMute(); fixEnvelope(1) }
-  )
+  ),
+  private val onAudioBufferReady: () -> Unit
 ) {
-  private var _iSample = 0
+  private var iSample = 0
   private val mixer = Mixer(sequencer, channels)
 
-  val iSample get() = _iSample
   val irq get() = channels.dmc.synth.irq
 
   fun readStatus() = 0 +
@@ -146,8 +149,12 @@ class Apu(
   }
 
   fun generateSample() {
-    buffer[_iSample] = mixer.take()
-    _iSample = (_iSample + 1) % SAMPLES_PER_FRAME
+    audioBuffer[iSample] = mixer.take()
+    iSample++
+    if (iSample == audioBuffer.size) {
+      iSample = 0
+      onAudioBufferReady()
+    }
   }
 
   companion object {

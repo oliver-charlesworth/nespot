@@ -1,11 +1,11 @@
 package choliver.nespot.runner
 
-import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
 import choliver.nespot.persistence.BackupManager
 import choliver.nespot.persistence.SnapshotManager
 import choliver.nespot.runner.KeyAction.*
+import choliver.nespot.runner.Screen.Event
 import choliver.nespot.runner.Screen.Event.*
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep.RESET
 import com.github.ajalt.clikt.core.CliktCommand
@@ -17,7 +17,6 @@ import com.github.ajalt.clikt.parameters.types.int
 import java.io.File
 import java.util.concurrent.LinkedBlockingQueue
 import kotlin.math.roundToInt
-import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
 class Runner : CliktCommand(name = "nespot") {
@@ -38,16 +37,20 @@ class Runner : CliktCommand(name = "nespot") {
   }
 
   private inner class Inner(rom: Rom) {
-    private val events = LinkedBlockingQueue<Screen.Event>()
+    private val events = LinkedBlockingQueue<Event>()
     private var closed = false
+    private var redraw = false
+    private var play = false
     private val joypads = FakeJoypads()
     private val screen = Screen(onEvent = { events += it })
-    private val audio = Audio(frameRateHz = FRAME_RATE_HZ)
+    private val audio = Audio()
     private val nes = Nes(
       rom = rom,
       videoBuffer = screen.buffer,
       audioBuffer = audio.buffer,
-      joypads = joypads
+      joypads = joypads,
+      onAudioBufferReady = { play = true },
+      onVideoBufferReady = { redraw = true }
     )
     private val backupManager = BackupManager(rom, nes.prgRam, BACKUP_DIR)
     private val snapshotManager = SnapshotManager(nes.diagnostics)
@@ -71,12 +74,10 @@ class Runner : CliktCommand(name = "nespot") {
 
       try {
         while (!closed) {
-          measureNanoTime {
-            nes.runToEndOfFrame()
-            screen.redraw()
-            audio.play()
-            consumeEvents()
-          }
+          nes.step()
+          maybeRedraw()
+          maybePlay()
+          consumeEvent()
         }
         backupManager.maybeSave()
       } finally {
@@ -85,22 +86,32 @@ class Runner : CliktCommand(name = "nespot") {
       }
     }
 
-    private fun consumeEvents() {
-      val myEvents = mutableListOf<Screen.Event>()
-      events.drainTo(myEvents)
-      myEvents.forEach { e ->
-        when (e) {
-          is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
-            is Joypad -> joypads.down(1, action.button)
-            is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
-            is Snapshot -> snapshotManager.snapshotToStdout()
-            is Restore -> restore()
-          }
-          is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
-            is Joypad -> joypads.up(1, action.button)
-          }
-          is Close -> closed = true
+    private fun maybeRedraw() {
+      if (redraw) {
+        redraw = false
+        screen.redraw()
+      }
+    }
+
+    private fun maybePlay() {
+      if (play) {
+        play = false
+        audio.play()
+      }
+    }
+
+    private fun consumeEvent() {
+      when (val e = events.poll()) {
+        is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
+          is Joypad -> joypads.down(1, action.button)
+          is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
+          is Snapshot -> snapshotManager.snapshotToStdout()
+          is Restore -> restore()
         }
+        is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
+          is Joypad -> joypads.up(1, action.button)
+        }
+        is Close -> closed = true
       }
     }
 
@@ -115,7 +126,10 @@ class Runner : CliktCommand(name = "nespot") {
 
     private fun runPerfTest() {
       val runtimeMs = measureTimeMillis {
-        repeat(numPerfFrames!!) { nes.runToEndOfFrame() }
+        repeat(numPerfFrames!!) {
+          while (!redraw) { nes.step() }
+          redraw = false
+        }
       }
       println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")
     }

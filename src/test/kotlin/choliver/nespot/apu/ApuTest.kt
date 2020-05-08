@@ -1,6 +1,7 @@
 package choliver.nespot.apu
 
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
+import choliver.nespot.sixfiveohtwo.utils._0
 import choliver.nespot.toRational
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
@@ -8,14 +9,18 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class ApuTest {
-  private val sq1 = spy(SynthContext(synth = mock<SquareSynth>(), envelope = mock(), sweep = mock(), timer = mock()))
-  private val sq2 = spy(SynthContext(synth = mock<SquareSynth>(), envelope = mock(), sweep = mock(), timer = mock()))
-  private val tri = spy(SynthContext(synth = mock<TriangleSynth>(), timer = mock()))
-  private val noi = spy(SynthContext(synth = mock<NoiseSynth>(), envelope = mock(), timer = mock()))
-  private val dmc = spy(SynthContext(synth = mock<DmcSynth>(), timer = mock()))
+  private val envelope = mock<Envelope>()
+  private val sweep = mock<Sweep>()
+  private val timer = mock<Counter>()
+  private val sq1 = SynthContext(synth = mock<SquareSynth>(), envelope = envelope, sweep = sweep, timer = timer)
+  private val sq2 = SynthContext(synth = mock<SquareSynth>(), envelope = envelope, sweep = sweep, timer = timer)
+  private val tri = SynthContext(synth = mock<TriangleSynth>(), envelope = envelope, sweep = sweep, timer = timer)
+  private val noi = SynthContext(synth = mock<NoiseSynth>(), envelope = envelope, sweep = sweep, timer = timer)
+  private val dmc = SynthContext(synth = mock<DmcSynth>(), envelope = envelope, sweep = sweep, timer = timer)
   private val sequencer = mock<FrameSequencer>()
+  private val onAudioBufferReady = mock<() -> Unit>()
   private val apu = Apu(
-    buffer = FloatArray(0),
+    audioBuffer = FloatArray(16),
     memory = mock(),
     sequencer = sequencer,
     channels = Channels(
@@ -24,32 +29,49 @@ class ApuTest {
       tri = tri,
       noi = noi,
       dmc = dmc
-    )
+    ),
+    onAudioBufferReady = onAudioBufferReady
   )
 
   @Nested
   inner class Square {
     @Test
-    fun misc() {
+    fun `misc - sq1`() {
       assertMisc(0, sq1)
+    }
+
+    @Test
+    fun `misc - sq2`() {
       assertMisc(4, sq2)
     }
 
     @Test
-    fun sweep() {
-      assertSweep(1, sq1)
-      assertSweep(5, sq2)
+    fun `sweep - sq1`() {
+      assertSweep(1)
     }
 
     @Test
-    fun period() {
-      assertPeriod(2, 3, sq1)
-      assertPeriod(6, 7, sq2)
+    fun `sweep - sq2`() {
+      assertSweep(5)
     }
 
     @Test
-    fun length() {
+    fun `period - sq1`() {
+      assertPeriod(2, 3)
+    }
+
+    @Test
+    fun `period - sq2`() {
+      assertPeriod(6, 7)
+    }
+
+    @Test
+    fun `length - sq1`() {
       assertLength(3, sq1)
+    }
+
+    @Test
+    fun `length - sq2`() {
       assertLength(7, sq2)
     }
 
@@ -59,42 +81,42 @@ class ApuTest {
 
       apu.writeReg(reg, 0b00_1_0_0000)
       verify(ctx.synth).haltLength = true
-      verify(ctx.envelope).loop = true
+      verify(envelope).loop = true
 
       apu.writeReg(reg, 0b00_0_1_0000)
-      verify(ctx.envelope).directMode = true
+      verify(envelope).directMode = true
 
       apu.writeReg(reg, 0b00_0_0_1011)
-      verify(ctx.envelope).param = 0b1011
+      verify(envelope).param = 0b1011
     }
 
-    private fun assertSweep(reg: Int, ctx: SynthContext<SquareSynth>) {
+    private fun assertSweep(reg: Int) {
       apu.writeReg(reg, 0b1_000_0_000)
-      verify(ctx.sweep).enabled = true
+      verify(sweep).enabled = true
 
       apu.writeReg(reg, 0b0_101_0_000)
-      verify(ctx.sweep).divider = 0b101
+      verify(sweep).divider = 0b101
 
       apu.writeReg(reg, 0b0_000_1_000)
-      verify(ctx.sweep).negate = true
+      verify(sweep).negate = true
 
       apu.writeReg(reg, 0b1_000_0_101)
-      verify(ctx.sweep).shift = 0b101
+      verify(sweep).shift = 0b101
 
-      verify(ctx.sweep, times(4)).restart()
+      verify(sweep, times(4)).restart()
     }
 
-    private fun assertPeriod(regLo: Int, regHi: Int, ctx: SynthContext<SquareSynth>) {
+    private fun assertPeriod(regLo: Int, regHi: Int) {
       apu.writeReg(regLo, 0b11001010)
       apu.writeReg(regHi, 0b00000_101)
-      verify(ctx.timer).periodCycles = 0b000110010110.toRational()
-      verify(ctx.timer).periodCycles = 0b101110010110.toRational()
+      verify(timer).periodCycles = 0b000110010110.toRational()
+      verify(timer).periodCycles = 0b101110010110.toRational()
     }
 
     private fun assertLength(reg: Int, ctx: SynthContext<SquareSynth>) {
       apu.writeReg(reg, 0b10101_000)
       verify(ctx.synth).length = 20 // See the length table
-      verify(ctx.envelope).restart()
+      verify(envelope).restart()
     }
   }
 
@@ -224,6 +246,21 @@ class ApuTest {
 
       assertEquals(0b000_11001, apu.readStatus())
     }
+  }
+
+  @Test
+  fun `invokes callback when buffer is full`() {
+    // Stuff to make things not throw
+    whenever(sequencer.take()) doReturn FrameSequencer.Ticks(_0, _0)
+    whenever(sweep.mute) doReturn true
+
+    repeat(15) { apu.generateSample() }
+
+    verifyZeroInteractions(onAudioBufferReady)
+
+    apu.generateSample()
+
+    verify(onAudioBufferReady)()
   }
 
   @Test

@@ -1,6 +1,6 @@
 # NESpot
 
-NESPot is a NES emulator written in Kotlin.  It's not yet cycle accurate and has low coverage of
+NESpot is a NES emulator written in Kotlin.  It's not yet cycle accurate and has low coverage of
 [mapper variants](https://wiki.nesdev.com/w/index.php/Mapper#iNES_1.0_mapper_grid), so not
 all games work yet.
 

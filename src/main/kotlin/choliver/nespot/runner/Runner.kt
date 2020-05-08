@@ -2,13 +2,12 @@ package choliver.nespot.runner
 
 import choliver.nespot.FRAME_RATE_HZ
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.data
 import choliver.nespot.nes.Nes
 import choliver.nespot.persistence.BackupManager
+import choliver.nespot.persistence.SnapshotManager
 import choliver.nespot.runner.KeyAction.*
 import choliver.nespot.runner.Screen.Event.*
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep.RESET
-import choliver.nespot.persistence.SnapshotManager
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
@@ -38,7 +37,7 @@ class Runner : CliktCommand(name = "nespot") {
     }
   }
 
-  private inner class Inner(private val rom: Rom) {
+  private inner class Inner(rom: Rom) {
     private val events = LinkedBlockingQueue<Screen.Event>()
     private var closed = false
     private val joypads = FakeJoypads()
@@ -50,7 +49,7 @@ class Runner : CliktCommand(name = "nespot") {
       audioBuffer = audio.buffer,
       joypads = joypads
     )
-    private val backupManager = BackupManager(nes)
+    private val backupManager = BackupManager(rom, nes.prgRam, BACKUP_DIR)
     private val snapshotManager = SnapshotManager(nes.diagnostics)
 
     fun run() {
@@ -86,27 +85,6 @@ class Runner : CliktCommand(name = "nespot") {
       }
     }
 
-    private fun maybeRestoreFromBackup() {
-      nes.prgRam?.let { ram ->
-        val file = File(backupFileName())
-        if (file.exists()) {
-          val bytes = file.readBytes()
-          if (bytes.size != ram.size) {
-            throw RuntimeException("Backup size mismatch")
-          }
-          bytes.forEachIndexed { i, byte -> ram[i] = byte.data() }
-        }
-      }
-    }
-
-    private fun maybeSaveToBackup() {
-      nes.prgRam?.let { ram ->
-        File(backupFileName()).writeBytes(ByteArray(ram.size) { ram[it].toByte() })
-      }
-    }
-
-    private fun backupFileName() = "backup/${rom.hash}.backup.dat"
-
     private fun consumeEvents() {
       val myEvents = mutableListOf<Screen.Event>()
       events.drainTo(myEvents)
@@ -141,6 +119,10 @@ class Runner : CliktCommand(name = "nespot") {
       }
       println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")
     }
+  }
+
+  companion object {
+    val BACKUP_DIR = File("backup")
   }
 }
 

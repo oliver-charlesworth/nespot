@@ -1,25 +1,30 @@
 package choliver.nespot.persistence
 
+import choliver.nespot.Ram
+import choliver.nespot.cartridge.Rom
 import choliver.nespot.data
-import choliver.nespot.nes.Nes
 import java.io.File
 
-class BackupManager(private val nes: Nes) {
-  private val file = File("backup/${XXX}.backup.dat")
+class BackupManager(
+  rom: Rom,
+  private val prgRam: Ram?,
+  backupDir: File
+) {
+  private val file = File(backupDir, "${rom.hash}.backup.dat")
 
   fun maybeRestore() {
-    if ((nes.prgRam != null) && file.exists()) {
+    if ((prgRam != null) && file.exists()) {
       val bytes = file.readBytes()
-      if (bytes.size != nes.prgRam.size) {
+      if (bytes.size != prgRam.size) {
         throw RuntimeException("Backup size mismatch")
       }
-      bytes.forEachIndexed { i, byte -> nes.prgRam[i] = byte.data() }
+      repeat(prgRam.size) { prgRam[it] = bytes[it].data() }
     }
   }
 
   fun maybeSave() {
-    if (nes.prgRam != null) {
-      file.writeBytes(ByteArray(nes.prgRam.size) { nes.prgRam[it].toByte() })
+    if (prgRam != null) {
+      file.writeBytes(ByteArray(prgRam.size) { prgRam[it].toByte() })
     }
   }
 }

@@ -100,6 +100,64 @@ class RendererTest {
     }
 
     @Test
+    fun `coarse horizontal offset`() {
+      val patterns = mapOf(
+        11 to List(TILE_SIZE) { 1 },
+        22 to List(TILE_SIZE) { 2 },
+        33 to List(TILE_SIZE) { 3 },
+        44 to List(TILE_SIZE) { 0 }
+      )
+
+      // Straddles both nametables
+      val nametableEntries = List(NUM_TILE_COLUMNS * 2) {
+        when (it) {
+          5 -> 11    // Leftmost
+          6 -> 22
+          35 -> 22
+          36 -> 33   // Rightmost
+          else -> 44
+        }
+      }
+
+      initNametableMemory(nametableEntries.subList(0, 32), nametable = 0)
+      initNametableMemory(nametableEntries.subList(32, 64), nametable = 1)
+      initBgPatternMemory(patterns)
+
+      render(xCoarse = 5)
+
+      assertBuffer { patterns[nametableEntries[(it / TILE_SIZE) + 5]]!![it % TILE_SIZE] }
+    }
+
+    @Test
+    fun `fine horizontal offset`() {
+      val patterns = mapOf(
+        11 to List(TILE_SIZE) { 1 },
+        22 to List(TILE_SIZE) { 2 },
+        33 to List(TILE_SIZE) { 3 },
+        44 to List(TILE_SIZE) { 0 }
+      )
+
+      // Needs one extra entry in the second nametable
+      val nametableEntries = List(NUM_TILE_COLUMNS * 2) {
+        when (it) {
+          0 -> 11    // Leftmost
+          1 -> 22
+          31 -> 22
+          32 -> 33   // Rightmost
+          else -> 44
+        }
+      }
+
+      initNametableMemory(nametableEntries.subList(0, 32), nametable = 0)
+      initNametableMemory(nametableEntries.subList(32, 64), nametable = 1)
+      initBgPatternMemory(patterns)
+
+      render(xFine = 5)
+
+      assertBuffer { patterns[nametableEntries[(it + 5) / TILE_SIZE]]!![(it + 5) % TILE_SIZE] }
+    }
+
+    @Test
     fun `not rendered if disabled`() {
       val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
       initBgPatternMemory(mapOf(0 to pattern))
@@ -128,13 +186,15 @@ class RendererTest {
     private fun render(
       bgEnabled: Boolean = true,
       bgLeftTileEnabled: Boolean = true,
+      xCoarse: Int = 0,
+      xFine: Int = 0,
       yCoarse: Int = Y_COARSE
     ) {
       val state = State(
         bgEnabled = bgEnabled,
         bgLeftTileEnabled = bgLeftTileEnabled,
         bgPatternTable = BG_PATTERN_TABLE,
-        coords = Coords(xCoarse = 0, xFine = 0, yCoarse = yCoarse, yFine = Y_FINE)
+        coords = Coords(xCoarse = xCoarse, xFine = xFine, yCoarse = yCoarse, yFine = Y_FINE)
       )
       renderer.renderBackground(state)
     }
@@ -781,82 +841,6 @@ class RendererTest {
   }
 
   // TODO - doesn't render invalid sprites
-
-  // Renderer knows nothing of vertical scroll, so we only test horizontal scroll
-  @Nested
-  inner class HorizontalScroll {
-    @Test
-    fun `coarse offset`() {
-      val patterns = mapOf(
-        11 to List(TILE_SIZE) { 1 },
-        22 to List(TILE_SIZE) { 2 },
-        33 to List(TILE_SIZE) { 3 },
-        44 to List(TILE_SIZE) { 0 }
-      )
-
-      // Straddles both nametables
-      val nametableEntries = List(NUM_TILE_COLUMNS * 2) {
-        when (it) {
-          5 -> 11    // Leftmost
-          6 -> 22
-          35 -> 22
-          36 -> 33   // Rightmost
-          else -> 44
-        }
-      }
-
-      initNametableMemory(nametableEntries.subList(0, 32), nametable = 0)
-      initNametableMemory(nametableEntries.subList(32, 64), nametable = 1)
-      initBgPatternMemory(patterns)
-
-      render(xCoarse = 5)
-
-      assertBuffer { patterns[nametableEntries[(it / TILE_SIZE) + 5]]!![it % TILE_SIZE] }
-    }
-
-    @Test
-    fun `fine offset`() {
-      val patterns = mapOf(
-        11 to List(TILE_SIZE) { 1 },
-        22 to List(TILE_SIZE) { 2 },
-        33 to List(TILE_SIZE) { 3 },
-        44 to List(TILE_SIZE) { 0 }
-      )
-
-      // Needs one extra entry in the second nametable
-      val nametableEntries = List(NUM_TILE_COLUMNS * 2) {
-        when (it) {
-          0 -> 11    // Leftmost
-          1 -> 22
-          31 -> 22
-          32 -> 33   // Rightmost
-          else -> 44
-        }
-      }
-
-      initNametableMemory(nametableEntries.subList(0, 32), nametable = 0)
-      initNametableMemory(nametableEntries.subList(32, 64), nametable = 1)
-      initBgPatternMemory(patterns)
-
-      render(xFine = 5)
-
-      assertBuffer { patterns[nametableEntries[(it + 5) / TILE_SIZE]]!![(it + 5) % TILE_SIZE] }
-    }
-
-    private fun render(
-      xCoarse: Int = 0,
-      xFine: Int = 0
-    ) {
-      val state = State(
-        bgEnabled = true,
-        bgLeftTileEnabled = true,
-        bgPatternTable = BG_PATTERN_TABLE,
-        coords = Coords(xCoarse = xCoarse, xFine = xFine, yCoarse = Y_COARSE, yFine = Y_FINE),
-        scanline = Y_SCANLINE
-      )
-      renderer.renderBackground(state)
-    }
-  }
 
   @Test
   fun `greyscale mode`() {

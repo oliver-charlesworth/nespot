@@ -20,7 +20,6 @@ class Renderer(
 ) {
   data class State(
     val paletteIndices: MutableList<Int> = MutableList(SCREEN_WIDTH) { 0 },
-    val opaqueSpr: MutableList<Boolean> = MutableList(SCREEN_WIDTH) { false },  // Is an opaque sprite placed here?
     // One extra to detect overflow
     val sprites: List<SpriteToRender> = List(MAX_SPRITES_PER_SCANLINE + 1) { SpriteToRender() }.toList()
   )
@@ -37,7 +36,8 @@ class Renderer(
     var valid: Boolean = false
   )
 
-  // Don't persist beyond intenal call, so need to be in State
+  // Don't persist beyond internal call, so need to be in State
+  private val opaqueSpr = MutableList(SCREEN_WIDTH) { false }  // Identifies opaque sprite pixels
   private var iPalette = 0
   private var pattern: Data = 0x00
 
@@ -46,6 +46,7 @@ class Renderer(
   fun loadAndRenderBackground(ppu: PpuState) {
     with(ppu.coords) {
       for (x in 0 until SCREEN_WIDTH) {
+        opaqueSpr[x] = false
         if (ppu.bgEnabled) {
           if ((x == 0) || (xFine == 0)) {
             loadNextBackgroundTile(ppu)
@@ -59,7 +60,6 @@ class Renderer(
         } else {
           state.paletteIndices[x] = 0
         }
-        state.opaqueSpr[x] = false
       }
     }
   }
@@ -154,11 +154,8 @@ class Renderer(
       val x = spr.x + xPixel
       val c = patternPixel(spr.pattern, maybeFlip(xPixel, spr.flipX))
 
-      val opaqueSpr = (c != 0)
-      val clipped = !ppu.sprLeftTileEnabled && (x < TILE_SIZE)
-
-      if (opaqueSpr && !state.opaqueSpr[x] && !clipped) {
-        state.opaqueSpr[x] = true
+      if ((c != 0) && !opaqueSpr[x] && (ppu.sprLeftTileEnabled || (x >= TILE_SIZE))) {
+        opaqueSpr[x] = true
 
         // There is no previous opaque sprite, so if pixel is opaque then it must be background
         val opaqueBg = (state.paletteIndices[x] != 0)

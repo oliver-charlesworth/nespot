@@ -5,9 +5,9 @@ import choliver.nespot.ppu.Ppu.Companion.BASE_PALETTE
 import choliver.nespot.ppu.Ppu.Companion.REG_OAMADDR
 import choliver.nespot.ppu.Ppu.Companion.REG_OAMDATA
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUADDR
-import choliver.nespot.ppu.Ppu.Companion.REG_PPUCTRL
+import choliver.nespot.ppu.Ppu.Companion.REG_PPUCTRL1
+import choliver.nespot.ppu.Ppu.Companion.REG_PPUCTRL2
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUDATA
-import choliver.nespot.ppu.Ppu.Companion.REG_PPUMASK
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSCROLL
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSTATUS
 import choliver.nespot.ppu.model.State
@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import kotlin.math.ceil
 
 class PpuTest {
@@ -85,7 +87,7 @@ class PpuTest {
 
     @Test
     fun `increments by 32 if PPUCTRL set appropriately`() {
-      ppu.writeReg(REG_PPUCTRL, 0x04)
+      ppu.writeReg(REG_PPUCTRL1, 0x04)
       setPpuAddress(0x1230)
 
       ppu.writeReg(REG_PPUDATA, 0x20)
@@ -164,52 +166,57 @@ class PpuTest {
   @Nested
   inner class Vbl {
     @Test
-    fun `invokes callback once per frame at beginning of VBL`() {
-      executeScanlines(SCREEN_HEIGHT + 1)
+    fun `invokes callback once per frame at beginning of post-post-render scanline`() {
+      advanceScanlines(SCREEN_HEIGHT + 1)
       verifyZeroInteractions(onVideoBufferReady)
 
-      executeScanlines(1)
+      advanceDots(3)
       verify(onVideoBufferReady)()
 
-      executeScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2)
+      advanceDots(DOTS_PER_SCANLINE - 3)
+      advanceScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2)
       verifyNoMoreInteractions(onVideoBufferReady)
     }
 
     @Test
-    fun `interrupt not asserted if disabled`() {
-      executeScanlines(SCREEN_HEIGHT + 2)
+    fun `interrupt asserted at beginning of post-post-render scanline til beginning of pre-render scanline`() {
+      ppu.writeReg(REG_PPUCTRL1, 0x80)
+
+      advanceScanlines(SCREEN_HEIGHT + 1)
+      assertFalse(ppu.vbl)
+
+      advanceDots(3)
+      assertTrue(ppu.vbl)
+
+      advanceDots(DOTS_PER_SCANLINE - 6)
+      advanceScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 3)
+      assertTrue(ppu.vbl)
+
+      advanceDots(3)
       assertFalse(ppu.vbl)
     }
 
     @Test
-    fun `interrupt asserted during VBL phase`() {
-      ppu.writeReg(REG_PPUCTRL, 0x80)
-
-      executeScanlines(SCREEN_HEIGHT + 1)
-      assertFalse(ppu.vbl)
-
-      executeScanlines(1)
-      assertTrue(ppu.vbl)
-
-      executeScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2)
+    fun `interrupt not asserted if disabled`() {
+      advanceScanlines(SCREEN_HEIGHT + 2)
       assertFalse(ppu.vbl)
     }
 
     @Test
     fun `interrupt assertion can be modulated`() {
-      executeScanlines(SCREEN_HEIGHT + 2)
+      advanceScanlines(SCREEN_HEIGHT + 2)
       assertFalse(ppu.vbl)
 
-      ppu.writeReg(REG_PPUCTRL, 0x80)
-      executeScanlines(1)
+      ppu.writeReg(REG_PPUCTRL1, 0x80)
+      advanceScanlines(1)
       assertTrue(ppu.vbl)
 
-      ppu.writeReg(REG_PPUCTRL, 0x00)
-      executeScanlines(1)
+      ppu.writeReg(REG_PPUCTRL1, 0x00)
+      advanceScanlines(1)
       assertFalse(ppu.vbl)
 
-      ppu.writeReg(REG_PPUCTRL, 0x80)
-      executeScanlines(1)
+      ppu.writeReg(REG_PPUCTRL1, 0x80)
+      advanceScanlines(1)
       assertTrue(ppu.vbl)
     }
 
@@ -220,40 +227,40 @@ class PpuTest {
 
     @Test
     fun `status flag still not set after scanline SCREEN_HEIGHT`() {
-      executeScanlines(SCREEN_HEIGHT + 1)
+      advanceScanlines(SCREEN_HEIGHT + 1)
 
       assertEquals(_0, getVblStatusFromReg())
     }
 
     @Test
     fun `status flag set after scanline (SCREEN_HEIGHT + 1)`() {
-      executeScanlines(SCREEN_HEIGHT + 2)
+      advanceScanlines(SCREEN_HEIGHT + 2)
 
       assertEquals(_1, getVblStatusFromReg())
     }
 
     @Test
     fun `status flag still set before pre-render scanline`() {
-      executeScanlines(SCANLINES_PER_FRAME - 1)
+      advanceScanlines(SCANLINES_PER_FRAME - 1)
 
       assertEquals(_1, getVblStatusFromReg())
     }
 
     @Test
     fun `status flag cleared after pre-render scanline`() {
-      executeScanlines(SCANLINES_PER_FRAME)
+      advanceScanlines(SCANLINES_PER_FRAME)
 
       assertEquals(_0, getVblStatusFromReg())
     }
 
     @Test
     fun `status flag cleared by reading it, and not set again on next scanline`() {
-      executeScanlines(SCREEN_HEIGHT + 2)
+      advanceScanlines(SCREEN_HEIGHT + 2)
 
       assertEquals(_1, getVblStatusFromReg())
       assertEquals(_0, getVblStatusFromReg())
 
-      executeScanlines(1)
+      advanceScanlines(1)
 
       assertEquals(_0, getVblStatusFromReg())
     }
@@ -264,125 +271,142 @@ class PpuTest {
   @Nested
   inner class RendererInput {
     init {
-      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
+      ppu.writeReg(REG_PPUCTRL2, 0b00001000)   // Rendering enabled
     }
 
-    @Test
-    fun `propagates sprEnabled`() {
-      ppu.writeReg(REG_PPUMASK, 0b00010000)
-      executeScanlines(1)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `propagates sprEnabled`(flag: Boolean) {
+      ppu.writeReg(REG_PPUCTRL2, (if (flag) 1 else 0) shl 4)
+      advancePastAction()
 
-      assertEquals(true, captureContext().sprEnabled)
+      assertEquals(flag, captureContext().sprEnabled)
     }
 
-    @Test
-    fun `propagates bgEnabled`() {
-      ppu.writeReg(REG_PPUMASK, 0b00001000)
-      executeScanlines(1)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `propagates bgEnabled`(flag: Boolean) {
+      ppu.writeReg(REG_PPUCTRL2, (if (flag) 1 else 0) shl 3)
+      advancePastAction()
 
-      assertEquals(true, captureContext().bgEnabled)
+      assertEquals(flag, captureContext().bgEnabled)
     }
 
-    @Test
-    fun `propagates sprLeftTileEnabled`() {
-      ppu.writeReg(REG_PPUMASK, 0b00000100)
-      executeScanlines(1)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `propagates sprLeftTileEnabled`(flag: Boolean) {
+      ppu.writeReg(REG_PPUCTRL2, (if (flag) 1 else 0) shl 2)
+      advancePastAction()
 
-      assertEquals(true, captureContext().sprLeftTileEnabled)
+      assertEquals(flag, captureContext().sprLeftTileEnabled)
     }
 
-    @Test
-    fun `propagates bgLeftTileEnabled`() {
-      ppu.writeReg(REG_PPUMASK, 0b00000010)
-      executeScanlines(1)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `propagates bgLeftTileEnabled`(flag: Boolean) {
+      ppu.writeReg(REG_PPUCTRL2, (if (flag) 1 else 0) shl 1)
+      advancePastAction()
 
-      assertEquals(true, captureContext().bgLeftTileEnabled)
+      assertEquals(flag, captureContext().bgLeftTileEnabled)
     }
 
-    @Test
-    fun `propagates largeSprites`() {
-      ppu.writeReg(REG_PPUCTRL, 0b00100000)
-      executeScanlines(1)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `propagates greyscale`(flag: Boolean) {
+      ppu.writeReg(REG_PPUCTRL2, (if (flag) 1 else 0) shl 0)
+      advancePastAction()
 
-      assertEquals(true, captureContext().largeSprites)
+      assertEquals(flag, captureContext().greyscale)
     }
 
-    @Test
-    fun `propagates bgPatternTable`() {
-      ppu.writeReg(REG_PPUCTRL, 0b00010000)
-      executeScanlines(1)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `propagates largeSprites`(flag: Boolean) {
+      ppu.writeReg(REG_PPUCTRL1, (if (flag) 1 else 0) shl 5)
+      advancePastAction()
 
-      assertEquals(1, captureContext().bgPatternTable)
+      assertEquals(flag, captureContext().largeSprites)
     }
 
-    @Test
-    fun `propagates sprPatternTable`() {
-      ppu.writeReg(REG_PPUCTRL, 0b00001000)
-      executeScanlines(1)
+    @ParameterizedTest
+    @ValueSource(ints = [0, 1])
+    fun `propagates bgPatternTable`(idx: Int) {
+      ppu.writeReg(REG_PPUCTRL1, idx shl 4)
+      advancePastAction()
 
-      assertEquals(1, captureContext().sprPatternTable)
+      assertEquals(idx, captureContext().bgPatternTable)
     }
 
-    @Test
-    fun `propagates yNametable`() {
-      ppu.writeReg(REG_PPUCTRL, 0b00000010)
-      executeScanlines(1)
+    @ParameterizedTest
+    @ValueSource(ints = [0, 1])
+    fun `propagates sprPatternTable`(idx: Int) {
+      ppu.writeReg(REG_PPUCTRL1, idx shl 3)
+      advancePastAction()
 
-      assertEquals(1, captureContext().coords.yNametable)
+      assertEquals(idx, captureContext().sprPatternTable)
     }
 
-    @Test
-    fun `propagates xNametable`() {
-      ppu.writeReg(REG_PPUCTRL, 0b00000001)
-      executeScanlines(1)
+    @ParameterizedTest
+    @ValueSource(ints = [0, 1, 2, 3])
+    fun `propagates nametable idx`(idx: Int) {
+      ppu.writeReg(REG_PPUCTRL1, idx)
+      advanceToNextFrameAndResetMock()
+      advancePastAction()
 
-      assertEquals(1, captureContext().coords.xNametable)
+      with(captureContext().coords) {
+        assertEquals((idx and 2) shr 1, yNametable)
+        assertEquals(idx and 1, xNametable)
+      }
     }
 
     @Test
     fun `propagates xCoarse, xFine, yCoarse, yFine`() {
       ppu.writeReg(REG_PPUSCROLL, 0b10101_111)
       ppu.writeReg(REG_PPUSCROLL, 0b11111_101)
-      executeScanlines(1)
+      advanceToNextFrameAndResetMock()
+      advancePastAction()
 
-      val ctx = captureContext()
-      assertEquals(0b10101, ctx.coords.xCoarse)
-      assertEquals(0b111, ctx.coords.xFine)
-      assertEquals(0b11111, ctx.coords.yCoarse)
-      assertEquals(0b101, ctx.coords.yFine)
+      with(captureContext().coords) {
+        assertEquals(0b10101, xCoarse)
+        assertEquals(0b111, xFine)
+        assertEquals(0b11111, yCoarse)
+        assertEquals(0b101 + 1, yFine)  // This gets incremented
+      }
     }
 
     @Test
     fun `increments y components every scanline`() {
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
       ppu.writeReg(REG_PPUSCROLL, 0b00000_111)
-      executeScanlines(2)
+      advanceToNextFrameAndResetMock()
+      advanceScanlines(2)
 
       val ctx = captureContext(2)
-      assertEquals(0b00001, ctx[1].coords.yCoarse)
-      assertEquals(0b000, ctx[1].coords.yFine)
+      assertEquals(0b00000 + 1, ctx[1].coords.yCoarse)
+      assertEquals((0b111 + 2) % 8, ctx[1].coords.yFine)
     }
 
     @Test
     fun `doesn't increment y components every scanline if rendering disabled`() {
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
       ppu.writeReg(REG_PPUSCROLL, 0b00000_111)
-      executeScanlines(1)
-      ppu.writeReg(REG_PPUMASK, 0b00000000)   // Rendering disabled
-      executeScanlines(1)
+      advanceToNextFrameAndResetMock()
+      advanceScanlines(1)
+      ppu.writeReg(REG_PPUCTRL2, 0b00000000)   // Rendering disabled
+      advanceScanlines(1)
 
       val ctx = captureContext(2)
-      assertEquals(0b00000, ctx[1].coords.yCoarse)    // These haven't advanced
-      assertEquals(0b111, ctx[1].coords.yFine)
+      assertEquals(0b00000 + 1, ctx[1].coords.yCoarse)    // These have only advanced by 1, not 2
+      assertEquals((0b111 + 1) % 8, ctx[1].coords.yFine)
     }
 
     @Test
     fun `x components reloaded every scanline`() {
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
-      executeScanlines(1)
+      advanceScanlines(1)
       ppu.writeReg(REG_PPUSCROLL, 0b10101_111)  // New values
-      executeScanlines(1)
+      advanceScanlines(1)
 
       val ctx = captureContext(2)
       assertEquals(0b10101, ctx[1].coords.xCoarse)    // New values reloaded
@@ -393,43 +417,28 @@ class PpuTest {
     fun `y components not reloaded every scanline`() {
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
-      executeScanlines(1)
+      advanceScanlines(1)
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)  // Initially zero
       ppu.writeReg(REG_PPUSCROLL, 0b10101_111)  // New values
-      executeScanlines(1)
+      advanceScanlines(1)
 
       val ctx = captureContext(2)
       assertEquals(0b00000, ctx[1].coords.yCoarse)    // New values ignored, just regular increment
-      assertEquals(0b001, ctx[1].coords.yFine)
+      assertEquals(0b010, ctx[1].coords.yFine)
     }
 
     @Test
     fun `PPUADDR maps to coordinates in a weird way`() {
       ppu.writeReg(REG_PPUADDR, 0b00_10_11_11)
       ppu.writeReg(REG_PPUADDR, 0b111_10101)
-      executeScanlines(1)
+      advanceScanlines(1)
 
       val ctx = captureContext()
       assertEquals(1, ctx.coords.xNametable)
       assertEquals(0b10101, ctx.coords.xCoarse)
       assertEquals(1, ctx.coords.yNametable)
       assertEquals(0b11111, ctx.coords.yCoarse)
-      assertEquals(0b010, ctx.coords.yFine)
-    }
-
-    @Test
-    fun `PPUADDR changes propagate immediately way`() {
-      executeScanlines(1)
-      ppu.writeReg(REG_PPUADDR, 0b00_10_11_11)
-      ppu.writeReg(REG_PPUADDR, 0b111_10101)
-      executeScanlines(1)
-
-      val ctx = captureContext(2)
-      assertEquals(1, ctx[1].coords.xNametable)
-      assertEquals(0b10101, ctx[1].coords.xCoarse)
-      assertEquals(1, ctx[1].coords.yNametable)
-      assertEquals(0b11111, ctx[1].coords.yCoarse)
-      assertEquals(0b011, ctx[1].coords.yFine)  // +1 because gets incremented for next scanline
+      assertEquals(0b010 + 1, ctx.coords.yFine)  // This gets incremented
     }
 
     // TODO - entire coords reloaded per frame
@@ -438,8 +447,18 @@ class PpuTest {
 
     private fun captureContext(num: Int): List<State> {
       val captor = argumentCaptor<State>()
-      verify(renderer, times(num)).renderScanline(captor.capture())
+      verify(renderer, times(num)).loadAndRenderBackground(captor.capture())
       return captor.allValues
+    }
+
+    private fun advancePastAction() {
+      advanceDots(256)
+    }
+
+    // y components aren't reloaded until EOF, so skip a whole frame
+    private fun advanceToNextFrameAndResetMock() {
+      advanceScanlines(SCANLINES_PER_FRAME)
+      reset(renderer)
     }
   }
 
@@ -448,8 +467,7 @@ class PpuTest {
     @Test
     fun `not set if no hit or overflow`() {
       mockResult(sprite0Hit = false, spriteOverflow = false)
-
-      executeScanlines(1)
+      advanceScanlines(1)
 
       assertFalse(getHitStatus())
       assertFalse(getOverflowStatus())
@@ -458,8 +476,7 @@ class PpuTest {
     @Test
     fun `set if hit`() {
       mockResult(sprite0Hit = true, spriteOverflow = false)
-
-      executeScanlines(1)
+      advanceScanlines(1)
 
       assertTrue(getHitStatus())
     }
@@ -467,8 +484,7 @@ class PpuTest {
     @Test
     fun `set if overflow`() {
       mockResult(sprite0Hit = false, spriteOverflow = true)
-
-      executeScanlines(1)
+      advanceScanlines(1)
 
       assertTrue(getOverflowStatus())
     }
@@ -476,8 +492,7 @@ class PpuTest {
     @Test
     fun `not cleared by reading`() {
       mockResult(sprite0Hit = true, spriteOverflow = true)
-
-      executeScanlines(1)
+      advanceScanlines(1)
 
       assertTrue(getHitStatus())
       assertTrue(getHitStatus())
@@ -486,21 +501,26 @@ class PpuTest {
     }
 
     @Test
-    fun `cleared on final scanline`() {
+    fun `cleared on first dot of pre-render scanline`() {
       mockResult(sprite0Hit = true, spriteOverflow = true)
+      advanceScanlines(SCANLINES_PER_FRAME - 1)
 
-      executeScanlines(SCANLINES_PER_FRAME)
+      assertTrue(getHitStatus())
+      assertTrue(getOverflowStatus())
+
+      advanceDots(3)
 
       assertFalse(getHitStatus())
       assertFalse(getOverflowStatus())
     }
 
     private fun mockResult(sprite0Hit: Boolean, spriteOverflow: Boolean) {
-      whenever(renderer.renderScanline(any())) doAnswer {
-        with(it.getArgument(0) as State) {
-          this.sprite0Hit = sprite0Hit
-          this.spriteOverflow = spriteOverflow
-        }
+      whenever(renderer.renderSprites(any())) doAnswer {
+        it.getArgument<State>(0).sprite0Hit = sprite0Hit
+        Unit
+      }
+      whenever(renderer.evaluateSprites(any())) doAnswer {
+        it.getArgument<State>(0).spriteOverflow = spriteOverflow
         Unit
       }
     }
@@ -509,8 +529,63 @@ class PpuTest {
     private fun getOverflowStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(5)
   }
 
-  private fun executeScanlines(numScanlines: Int) {
-    ppu.advance(ceil(CYCLES_PER_SCANLINE.toDouble() * numScanlines).toInt())
+  @Nested
+  inner class RendererTiming {
+    @ParameterizedTest
+    @ValueSource(ints=[0, 1, SCREEN_HEIGHT - 2, SCREEN_HEIGHT - 1])
+    fun `in-frame scanlines do everything`(scanline: Int) {
+      advanceScanlines(scanline)
+      reset(renderer)
+
+      advanceDots(252)
+      verifyZeroInteractions(renderer)
+
+      advanceDots(6)
+      inOrder(renderer) {
+        verify(renderer).loadAndRenderBackground(any())
+        verify(renderer).renderSprites(any())
+        verify(renderer).commitToBuffer(any())
+        verify(renderer).evaluateSprites(any())
+      }
+
+      advanceDots(63)
+      verify(renderer).loadSprites(any())
+    }
+
+    @Test
+    fun `vbl phase does nothing`() {
+      advanceScanlines(SCREEN_HEIGHT)
+      reset(renderer)
+
+      advanceScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 1)
+      verifyZeroInteractions(renderer)
+    }
+
+    @Test
+    fun `pre-render scanline does extraneous stuff`() {
+      advanceScanlines(SCANLINES_PER_FRAME - 1)
+      reset(onVideoBufferReady)
+      reset(renderer)
+
+      advanceDots(252)
+      verifyZeroInteractions(renderer)
+
+      advanceDots(6)
+      verify(renderer).loadAndRenderBackground(any())
+      verifyNoMoreInteractions(renderer)
+
+      advanceDots(63)
+      verify(renderer).loadSprites(any())
+      verifyZeroInteractions(onVideoBufferReady)
+    }
+  }
+
+  private fun advanceScanlines(numScanlines: Int) {
+    advanceDots(numScanlines * DOTS_PER_SCANLINE)
+  }
+
+  private fun advanceDots(numDots: Int) {
+    ppu.advance(ceil(numDots.toDouble() / DOTS_PER_CYCLE).toInt())
   }
 
   private fun setPpuAddress(addr: Address) {

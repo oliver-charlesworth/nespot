@@ -21,7 +21,7 @@ data class State(
   var blueEmphasized: Boolean = false,
   var coordsBacking: Coords = Coords(),
   var coords: Coords = Coords(),
-  var untilNextScanline: Int = 0,
+  var dot: Int = 0,
   var scanline: Int = 0,
   var addrInc: Int = 1,
   var oamAddr: Address8 = 0x00,    // TODO - apparently this is reset to 0 during rendering

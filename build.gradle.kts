@@ -34,5 +34,5 @@ tasks.test {
 }
 
 application {
-  mainClassName = "choliver.nespot.runner.RunnerKt"
+  mainClassName = "choliver.nespot.runner.CliKt"
 }

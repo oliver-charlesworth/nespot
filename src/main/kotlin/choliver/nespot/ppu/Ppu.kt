@@ -14,9 +14,6 @@ class Ppu(
 ) {
   private var state = State()
 
-  // TODO - model addr increment quirks during rendering (see wiki.nesdev.com/w/index.php/PPU_scrolling)
-  // TODO - add a reset (to clean up counters and stuff)
-
   val vbl get() = state.inVbl && state.vblEnabled
 
   fun advance(numCycles: Int) {

@@ -510,7 +510,8 @@ class PpuTest {
   }
 
   private fun executeScanlines(numScanlines: Int) {
-    ppu.advance(ceil(CYCLES_PER_SCANLINE.toDouble() * numScanlines).toInt())
+    val cycles = ceil(numScanlines * DOTS_PER_SCANLINE.toDouble() / DOTS_PER_CYCLE).toInt()
+    ppu.advance(cycles)
   }
 
   private fun setPpuAddress(addr: Address) {

@@ -166,34 +166,39 @@ class PpuTest {
   @Nested
   inner class Vbl {
     @Test
-    fun `invokes callback once per frame at beginning of VBL`() {
+    fun `invokes callback once per frame at beginning of post-post-render scanline`() {
       advanceScanlines(SCREEN_HEIGHT + 1)
       verifyZeroInteractions(onVideoBufferReady)
 
-      advanceScanlines(1)
+      advanceDots(3)
       verify(onVideoBufferReady)()
 
+      advanceDots(DOTS_PER_SCANLINE - 3)
       advanceScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2)
       verifyNoMoreInteractions(onVideoBufferReady)
     }
 
     @Test
-    fun `interrupt not asserted if disabled`() {
-      advanceScanlines(SCREEN_HEIGHT + 2)
-      assertFalse(ppu.vbl)
-    }
-
-    @Test
-    fun `interrupt asserted during VBL phase`() {
+    fun `interrupt asserted at beginning of post-post-render scanline til beginning of pre-render scanline`() {
       ppu.writeReg(REG_PPUCTRL, 0x80)
 
       advanceScanlines(SCREEN_HEIGHT + 1)
       assertFalse(ppu.vbl)
 
-      advanceScanlines(1)
+      advanceDots(3)
       assertTrue(ppu.vbl)
 
-      advanceScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2)
+      advanceDots(DOTS_PER_SCANLINE - 6)
+      advanceScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 3)
+      assertTrue(ppu.vbl)
+
+      advanceDots(3)
+      assertFalse(ppu.vbl)
+    }
+
+    @Test
+    fun `interrupt not asserted if disabled`() {
+      advanceScanlines(SCREEN_HEIGHT + 2)
       assertFalse(ppu.vbl)
     }
 
@@ -269,76 +274,88 @@ class PpuTest {
       ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
     }
 
-    @Test
-    fun `propagates sprEnabled`() {
-      ppu.writeReg(REG_PPUMASK, 0b00010000)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `propagates sprEnabled`(flag: Boolean) {
+      ppu.writeReg(REG_PPUMASK, (if (flag) 1 else 0) shl 4)
       advanceScanlines(1)
 
-      assertEquals(true, captureContext().sprEnabled)
+      assertEquals(flag, captureContext().sprEnabled)
     }
 
-    @Test
-    fun `propagates bgEnabled`() {
-      ppu.writeReg(REG_PPUMASK, 0b00001000)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `propagates bgEnabled`(flag: Boolean) {
+      ppu.writeReg(REG_PPUMASK, (if (flag) 1 else 0) shl 3)
       advanceScanlines(1)
 
-      assertEquals(true, captureContext().bgEnabled)
+      assertEquals(flag, captureContext().bgEnabled)
     }
 
-    @Test
-    fun `propagates sprLeftTileEnabled`() {
-      ppu.writeReg(REG_PPUMASK, 0b00000100)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `propagates sprLeftTileEnabled`(flag: Boolean) {
+      ppu.writeReg(REG_PPUMASK, (if (flag) 1 else 0) shl 2)
       advanceScanlines(1)
 
-      assertEquals(true, captureContext().sprLeftTileEnabled)
+      assertEquals(flag, captureContext().sprLeftTileEnabled)
     }
 
-    @Test
-    fun `propagates bgLeftTileEnabled`() {
-      ppu.writeReg(REG_PPUMASK, 0b00000010)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `propagates bgLeftTileEnabled`(flag: Boolean) {
+      ppu.writeReg(REG_PPUMASK, (if (flag) 1 else 0) shl 1)
       advanceScanlines(1)
 
-      assertEquals(true, captureContext().bgLeftTileEnabled)
+      assertEquals(flag, captureContext().bgLeftTileEnabled)
     }
 
-    @Test
-    fun `propagates largeSprites`() {
-      ppu.writeReg(REG_PPUCTRL, 0b00100000)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `propagates greyscale`(flag: Boolean) {
+      ppu.writeReg(REG_PPUMASK, (if (flag) 1 else 0) shl 0)
       advanceScanlines(1)
 
-      assertEquals(true, captureContext().largeSprites)
+      assertEquals(flag, captureContext().greyscale)
     }
 
-    @Test
-    fun `propagates bgPatternTable`() {
-      ppu.writeReg(REG_PPUCTRL, 0b00010000)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `propagates largeSprites`(flag: Boolean) {
+      ppu.writeReg(REG_PPUCTRL, (if (flag) 1 else 0) shl 5)
       advanceScanlines(1)
 
-      assertEquals(1, captureContext().bgPatternTable)
+      assertEquals(flag, captureContext().largeSprites)
     }
 
-    @Test
-    fun `propagates sprPatternTable`() {
-      ppu.writeReg(REG_PPUCTRL, 0b00001000)
+    @ParameterizedTest
+    @ValueSource(ints = [0, 1])
+    fun `propagates bgPatternTable`(idx: Int) {
+      ppu.writeReg(REG_PPUCTRL, idx shl 4)
       advanceScanlines(1)
 
-      assertEquals(1, captureContext().sprPatternTable)
+      assertEquals(idx, captureContext().bgPatternTable)
     }
 
-    @Test
-    fun `propagates yNametable`() {
-      ppu.writeReg(REG_PPUCTRL, 0b00000010)
+    @ParameterizedTest
+    @ValueSource(ints = [0, 1])
+    fun `propagates sprPatternTable`(idx: Int) {
+      ppu.writeReg(REG_PPUCTRL, idx shl 3)
       advanceScanlines(1)
 
-      assertEquals(1, captureContext().coords.yNametable)
+      assertEquals(idx, captureContext().sprPatternTable)
     }
 
-    @Test
-    fun `propagates xNametable`() {
-      ppu.writeReg(REG_PPUCTRL, 0b00000001)
+    @ParameterizedTest
+    @ValueSource(ints = [0, 1, 2, 3])
+    fun `propagates nametable idx`(idx: Int) {
+      ppu.writeReg(REG_PPUCTRL, idx)
       advanceScanlines(1)
 
-      assertEquals(1, captureContext().coords.xNametable)
+      with(captureContext().coords) {
+        assertEquals((idx and 2) shr 1, yNametable)
+        assertEquals(idx and 1, xNametable)
+      }
     }
 
     @Test
@@ -347,11 +364,12 @@ class PpuTest {
       ppu.writeReg(REG_PPUSCROLL, 0b11111_101)
       advanceScanlines(1)
 
-      val ctx = captureContext()
-      assertEquals(0b10101, ctx.coords.xCoarse)
-      assertEquals(0b111, ctx.coords.xFine)
-      assertEquals(0b11111, ctx.coords.yCoarse)
-      assertEquals(0b101, ctx.coords.yFine)
+      with(captureContext().coords) {
+        assertEquals(0b10101, xCoarse)
+        assertEquals(0b111, xFine)
+        assertEquals(0b11111, yCoarse)
+        assertEquals(0b101, yFine)
+      }
     }
 
     @Test
@@ -440,7 +458,7 @@ class PpuTest {
 
     private fun captureContext(num: Int): List<State> {
       val captor = argumentCaptor<State>()
-//      verify(renderer, times(num)).renderScanline(captor.capture())
+      verify(renderer, times(num)).loadAndRenderBackground(captor.capture())
       return captor.allValues
     }
   }
@@ -533,40 +551,14 @@ class PpuTest {
 
       advanceDots(63)
       verify(renderer).loadSprites(any())
-      verifyZeroInteractions(onVideoBufferReady)
-    }
-
-    @Test
-    fun `post-render scanline does nothing`() {
-      advanceScanlines(SCREEN_HEIGHT)
-      reset(renderer)
-
-      advanceScanlines(1)
-      verifyZeroInteractions(renderer)
-      verifyZeroInteractions(onVideoBufferReady)
-    }
-
-    @Test
-    fun `post-post-render scanline sets vbl`() {
-      advanceScanlines(SCREEN_HEIGHT + 1)
-      reset(renderer)
-
-      advanceDots(3)
-      verify(onVideoBufferReady)()
-
-      advanceDots(DOTS_PER_SCANLINE - 3)
-      verifyNoMoreInteractions(onVideoBufferReady)
-      verifyZeroInteractions(renderer)
     }
 
     @Test
     fun `vbl phase does nothing`() {
-      advanceScanlines(SCREEN_HEIGHT + 2)
-      reset(onVideoBufferReady)
+      advanceScanlines(SCREEN_HEIGHT)
       reset(renderer)
 
-      advanceScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 3)
-      verifyZeroInteractions(onVideoBufferReady)
+      advanceScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 1)
       verifyZeroInteractions(renderer)
     }
 

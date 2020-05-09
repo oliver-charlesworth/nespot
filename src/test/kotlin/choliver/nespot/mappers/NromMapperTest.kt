@@ -16,9 +16,22 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class NromMapperTest {
+  @Nested
+  inner class PrgRam {
+    private val mapper = mapper()
+
+    @Test
+    fun `load and store`() {
+      mapper.prg[0x6000] = 0x30 // Lowest mapped address
+      mapper.prg[0x7FFF] = 0x40 // Highest mapped address
+
+      assertEquals(0x30, mapper.prg[0x6000])
+      assertEquals(0x40, mapper.prg[0x7FFF])
+    }
+  }
 
   @Nested
-  inner class Prg {
+  inner class PrgRom {
     @Test
     fun `maps 0x8000 to 0xFFFF for size-32768`() {
       val mapper = mapper(prgData = ByteArray(32768).apply {
@@ -49,7 +62,23 @@ class NromMapperTest {
   }
 
   @Nested
-  inner class Chr {
+  inner class ChrRam {
+    private val mapper = mapper()
+
+    @Test
+    fun `load and store`() {
+      val chr = mapper.chr(mock())
+
+      chr[0x0000] = 0x30 // Lowest mapped address
+      chr[0x1FFF] = 0x40 // Highest mapped address
+
+      assertEquals(0x30, chr[0x0000])
+      assertEquals(0x40, chr[0x1FFF])
+    }
+  }
+
+  @Nested
+  inner class ChrRom {
     @Test
     fun `maps 0x0000 to 0x1FFF`() {
       val mapper = mapper(chrData = ByteArray(8192).apply {
@@ -61,7 +90,10 @@ class NromMapperTest {
       assertEquals(0x30, chr[0x0000])
       assertEquals(0x40, chr[0x1FFF])
     }
+  }
 
+  @Nested
+  inner class Vram {
     @Test
     fun `vertically maps 0x2000 to 0x3EFF to VRAM`() {
       val cases = mapOf(
@@ -142,8 +174,8 @@ class NromMapperTest {
   }
 
   private fun mapper(
-    prgData: ByteArray = ByteArray(32768),
-    chrData: ByteArray = ByteArray(8192),
+    prgData: ByteArray = ByteArray(0),
+    chrData: ByteArray = ByteArray(0),
     mirroring: Mirroring = VERTICAL
   ) = NromMapper(Rom(
     mirroring = mirroring,

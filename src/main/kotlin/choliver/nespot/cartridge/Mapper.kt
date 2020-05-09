@@ -5,7 +5,7 @@ import choliver.nespot.Ram
 
 interface Mapper {
   val irq: Boolean
-  val prgRam: Ram?
+  val persistentRam: Ram?
   val prg: Memory
   fun chr(vram: Memory): Memory
 }

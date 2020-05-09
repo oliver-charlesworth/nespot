@@ -450,7 +450,6 @@ class PpuTest {
     @Test
     fun `not set if no hit or overflow`() {
       mockResult(sprite0Hit = false, spriteOverflow = false)
-
       advanceScanlines(1)
 
       assertFalse(getHitStatus())
@@ -460,7 +459,6 @@ class PpuTest {
     @Test
     fun `set if hit`() {
       mockResult(sprite0Hit = true, spriteOverflow = false)
-
       advanceScanlines(1)
 
       assertTrue(getHitStatus())
@@ -469,7 +467,6 @@ class PpuTest {
     @Test
     fun `set if overflow`() {
       mockResult(sprite0Hit = false, spriteOverflow = true)
-
       advanceScanlines(1)
 
       assertTrue(getOverflowStatus())
@@ -478,7 +475,6 @@ class PpuTest {
     @Test
     fun `not cleared by reading`() {
       mockResult(sprite0Hit = true, spriteOverflow = true)
-
       advanceScanlines(1)
 
       assertTrue(getHitStatus())
@@ -488,23 +484,28 @@ class PpuTest {
     }
 
     @Test
-    fun `cleared on final scanline`() {
+    fun `cleared on first dot of pre-render scanline`() {
       mockResult(sprite0Hit = true, spriteOverflow = true)
+      advanceScanlines(SCANLINES_PER_FRAME - 1)
 
-      advanceScanlines(SCANLINES_PER_FRAME)
+      assertTrue(getHitStatus())
+      assertTrue(getOverflowStatus())
+
+      advanceDots(3)
 
       assertFalse(getHitStatus())
       assertFalse(getOverflowStatus())
     }
 
     private fun mockResult(sprite0Hit: Boolean, spriteOverflow: Boolean) {
-//      whenever(renderer.renderScanline(any())) doAnswer {
-//        with(it.getArgument(0) as State) {
-//          this.sprite0Hit = sprite0Hit
-//          this.spriteOverflow = spriteOverflow
-//        }
-//        Unit
-//      }
+      whenever(renderer.renderSprites(any())) doAnswer {
+        it.getArgument<State>(0).sprite0Hit = sprite0Hit
+        Unit
+      }
+      whenever(renderer.evaluateSprites(any())) doAnswer {
+        it.getArgument<State>(0).spriteOverflow = spriteOverflow
+        Unit
+      }
     }
 
     private fun getHitStatus() = ppu.readReg(REG_PPUSTATUS).isBitSet(6)
@@ -512,7 +513,7 @@ class PpuTest {
   }
 
   @Nested
-  inner class FrameTiming {
+  inner class RendererTiming {
     @ParameterizedTest
     @ValueSource(ints=[0, 1, SCREEN_HEIGHT - 2, SCREEN_HEIGHT - 1])
     fun `in-frame scanlines do everything`(scanline: Int) {

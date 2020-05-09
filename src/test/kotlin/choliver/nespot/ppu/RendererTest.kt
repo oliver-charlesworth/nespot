@@ -191,7 +191,7 @@ class RendererTest {
         bgPatternTable = BG_PATTERN_TABLE,
         coords = Coords(xCoarse = xCoarse, xFine = xFine, yCoarse = yCoarse, yFine = Y_FINE)
       )
-      renderer.renderBackground(state)
+      renderer.loadAndRenderBackground(state)
     }
   }
 

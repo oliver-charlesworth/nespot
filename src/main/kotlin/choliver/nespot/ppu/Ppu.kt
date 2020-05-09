@@ -38,7 +38,7 @@ class Ppu(
     when (state.scanline) {
       in (0 until SCREEN_HEIGHT) -> when (state.dot) {
         255 -> {
-          renderer.renderBackground(state)
+          renderer.loadAndRenderBackground(state)
           renderer.renderSprites(state)
           renderer.commitToBuffer(state)
         }
@@ -51,20 +51,19 @@ class Ppu(
         1 -> setVblFlag()
       }
 
-      // Pre-render line
       (SCANLINES_PER_FRAME - 1) -> when (state.dot) {
         1 -> clearFlags()
-        255 -> renderer.renderBackground(state)
+        255 -> renderer.loadAndRenderBackground(state) // This happens even on this line
         257 -> updateCoordsForScanline()
-        304 -> updateCoordsForFrame()
-        320 -> renderer.loadSprites(state)
+        280 -> updateCoordsForFrame()
+        320 -> renderer.loadSprites(state)  // This happens even though we haven't evaluated sprites
       }
     }
   }
 
   private fun setVblFlag() {
     state.inVbl = true
-    onVideoBufferReady()    // Could go earlier, but this is fine
+    onVideoBufferReady()
   }
 
   private fun clearFlags() {
@@ -185,7 +184,6 @@ class Ppu(
               xCoarse = (data and 0b00011111)
               yCoarse = ((data and 0b11100000) shr 5) or (yCoarse and 0b11000)
             }
-            // TODO - should probably happen *after* the incrementY() above
             coords = coordsBacking.copy()   // Propagate immediately
           }
           w = !w

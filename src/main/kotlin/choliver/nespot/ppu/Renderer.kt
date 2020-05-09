@@ -43,7 +43,7 @@ class Renderer(
 
   private var state = State()
 
-  fun renderBackground(ppu: PpuState) {
+  fun loadAndRenderBackground(ppu: PpuState) {
     with(ppu.coords) {
       for (x in 0 until SCREEN_WIDTH) {
         if (ppu.bgEnabled) {

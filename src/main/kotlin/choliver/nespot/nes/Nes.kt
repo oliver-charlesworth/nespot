@@ -14,10 +14,9 @@ import java.nio.IntBuffer
 
 class Nes(
   rom: Rom,
-  videoBuffer: IntBuffer,
   joypads: Joypads,
   onAudioBufferReady: (FloatArray) -> Unit = {},
-  onVideoBufferReady: () -> Unit = {},
+  onVideoBufferReady: (IntBuffer) -> Unit = {},
   private val onStore: (Address, Data) -> Unit = { _: Address, _: Data -> }
 ) {
   private val mapper = createMapper(rom)
@@ -34,7 +33,6 @@ class Nes(
 
   private val ppu = Ppu(
     memory = ppuMapper,
-    videoBuffer = videoBuffer,
     onVideoBufferReady = onVideoBufferReady
   )
 

@@ -45,15 +45,13 @@ class Debugger(
   private val events = LinkedBlockingQueue<RunnerEvent>()
   private val joypads = FakeJoypads()
   private val screen = Screen(onEvent = { events += it })
-  private var redraw = false
 
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
 
   private val nes = Nes(
     rom = Rom.parse(rom),
-    videoBuffer = screen.buffer,
     joypads = joypads,
-    onVideoBufferReady = { redraw = true },
+    onVideoBufferReady = { screen.redraw(it) },
     onStore = { addr, data -> stores += (addr to data) }
   ).diagnostics
   private val points = PointManager()
@@ -333,10 +331,6 @@ class Debugger(
 
     stores.clear()
     nes.step()
-    if (redraw) {
-      screen.redraw()
-      redraw = false
-    }
 
     maybeTraceStores()
 

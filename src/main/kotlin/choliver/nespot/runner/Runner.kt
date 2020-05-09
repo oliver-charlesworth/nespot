@@ -38,16 +38,14 @@ class Runner : CliktCommand(name = "nespot") {
   private inner class Inner(rom: Rom) {
     private val events = LinkedBlockingQueue<Event>()
     private var closed = false
-    private var redraw = false
     private val joypads = FakeJoypads()
     private val screen = Screen(onEvent = { events += it })
-    private val audio = Audio()
+    private val audio = AudioPlayer()
     private val nes = Nes(
       rom = rom,
-      videoBuffer = screen.buffer,
       joypads = joypads,
       onAudioBufferReady = { events += Audio(it) },
-      onVideoBufferReady = { redraw = true }
+      onVideoBufferReady = { events += Video(it) }
     )
     private val backupManager = BackupManager(rom, nes.prgRam, BACKUP_DIR)
     private val snapshotManager = SnapshotManager(nes.diagnostics)
@@ -72,7 +70,6 @@ class Runner : CliktCommand(name = "nespot") {
       try {
         while (!closed) {
           nes.step()
-          maybeRedraw()
           consumeEvent()
         }
         backupManager.maybeSave()
@@ -82,16 +79,10 @@ class Runner : CliktCommand(name = "nespot") {
       }
     }
 
-    private fun maybeRedraw() {
-      if (redraw) {
-        redraw = false
-        screen.redraw()
-      }
-    }
-
     private fun consumeEvent() {
       when (val e = events.poll()) {
-        is Event.Audio -> audio.play(e.buffer)
+        is Audio -> audio.play(e.buffer)
+        is Video -> screen.redraw(e.buffer)
         is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> joypads.down(1, action.button)
           is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
@@ -117,8 +108,9 @@ class Runner : CliktCommand(name = "nespot") {
     private fun runPerfTest() {
       val runtimeMs = measureTimeMillis {
         repeat(numPerfFrames!!) {
-          while (!redraw) { nes.step() }
-          redraw = false
+          // TODO
+//          while (!redraw) { nes.step() }
+//          redraw = false
         }
       }
       println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")

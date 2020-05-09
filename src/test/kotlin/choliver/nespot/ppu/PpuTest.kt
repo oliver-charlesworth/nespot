@@ -20,15 +20,15 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.nio.IntBuffer
 import kotlin.math.ceil
 
 class PpuTest {
   private val memory = mock<Memory>()
   private val renderer = mock<Renderer>()
-  private val onVideoBufferReady = mock<() -> Unit>()
+  private val onVideoBufferReady = mock<(IntBuffer) -> Unit>()
   private val ppu = Ppu(
     memory = memory,
-    videoBuffer = mock(),
     renderer = renderer,
     onVideoBufferReady = onVideoBufferReady
   )
@@ -171,7 +171,7 @@ class PpuTest {
       verifyZeroInteractions(onVideoBufferReady)
 
       advanceDots(3)
-      verify(onVideoBufferReady)()
+      verify(onVideoBufferReady)(any())
 
       advanceDots(DOTS_PER_SCANLINE - 3)
       advanceScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2)
@@ -544,7 +544,7 @@ class PpuTest {
       inOrder(renderer) {
         verify(renderer).loadAndRenderBackground(any())
         verify(renderer).renderSprites(any())
-        verify(renderer).commitToBuffer(any())
+        verify(renderer).commitToBuffer(any(), any())
         verify(renderer).evaluateSprites(any())
       }
 

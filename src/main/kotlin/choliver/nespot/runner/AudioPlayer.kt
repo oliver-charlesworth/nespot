@@ -5,7 +5,7 @@ import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import kotlin.math.roundToInt
 
-class Audio {
+class AudioPlayer {
   private var first = true
   private var dc = 0f
   private val audioFormat = AudioFormat(SAMPLE_RATE_HZ.toFloat(), 16, 1, true, false)

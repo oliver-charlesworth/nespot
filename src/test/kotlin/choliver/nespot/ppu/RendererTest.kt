@@ -3,6 +3,8 @@ package choliver.nespot.ppu
 import choliver.nespot.Address
 import choliver.nespot.Memory
 import choliver.nespot.apu.repeat
+import choliver.nespot.hi
+import choliver.nespot.lo
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.model.Coords
 import choliver.nespot.ppu.model.State
@@ -37,7 +39,7 @@ class RendererTest {
   )
 
   @Nested
-  inner class Background {
+  inner class BackgroundRender {
     @Test
     fun `patterns for palette #0`() {
       val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
@@ -466,74 +468,56 @@ class RendererTest {
   }
 
   @Nested
-  inner class Sprite {
-    private val xOffset = 5
-    private val pattern = listOf(1, 2, 3, 3, 2, 1, 1, 2)  // No zero values
+  inner class SpriteRender {
+    private val pat = listOf(1, 2, 3, 3, 2, 1, 1, 2)
 
     @Test
-    fun `top row`() {
-      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 0)
+    fun `opaque sprite`() {
+      with(sprites[0]) {
+        pattern = encodePattern(pat)
+        x = 5
+        palette = 4
+      }
 
       render()
 
-      assertBuffer { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
+      assertBuffer { calcPalIdx(it, 5, 0, pat) }
     }
 
     @Test
-    fun `bottom row`() {
-      initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
-      initSpriteMemory(x = xOffset, y = Y_SCANLINE - 7, iPattern = 1, attrs = 0)
+    fun `horizontally flipped`() {
+      with(sprites[0]) {
+        this.pattern = encodePattern(pat)
+        x = 5
+        palette = 4
+        flipX = true
+      }
 
       render()
 
-      assertBuffer { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
+      assertBuffer { calcPalIdx(it, 5, 0, pat.reversed()) }
     }
 
     @Test
-    fun `horizontally-flipped`() {
-      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 0x40)
+    fun `partially off the right-hand edge`() {
+      with(sprites[0]) {
+        this.pattern = encodePattern(pat)
+        x = 252
+        palette = 4
+      }
 
       render()
 
-      assertBuffer { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern.reversed()) }
+      assertBuffer { calcPalIdx(it, 252, 0, pat) }
     }
 
     @Test
-    fun `vertically-flipped`() {
-      initSprPatternMemory(mapOf(1 to pattern), yRow = 7)
-      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 0x80)
-
-      render()
-
-      assertBuffer { calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
-    }
-
-    @Test
-    fun `with different palette`() {
-      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 2)
-
-      render()
-
-      assertBuffer { calcPalIdx(x = it, xOffset = xOffset, iPalette = 2, pattern = pattern) }
-    }
-
-    @Test
-    fun `partially off the right-hand-edge`() {
-      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = 252, y = Y_SCANLINE, iPattern = 1, attrs = 0)
-
-      render()
-
-      assertBuffer { calcPalIdx(x = it, xOffset = 252, iPalette = 0, pattern = pattern) }
-    }
-
-    @Test
-    fun `not rendered if disabled`() {
-      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 0)
+    fun `not rendered if rendering disabled`() {
+      with(sprites[0]) {
+        pattern = encodePattern(pat)
+        x = 5
+        palette = 4
+      }
 
       render(sprEnabled = false)
 
@@ -542,17 +526,21 @@ class RendererTest {
 
     @Test
     fun `not rendered if clipped`() {
-      initSprPatternMemory(mapOf(1 to pattern), yRow = 0)
-      initSpriteMemory(x = xOffset, y = Y_SCANLINE, iPattern = 1, attrs = 0)
+      with(sprites[0]) {
+        pattern = encodePattern(pat)
+        x = 5
+        palette = 4
+      }
 
       render(sprLeftTileEnabled = false)
 
-      assertBuffer { if (it < TILE_SIZE) 0 else calcPalIdx(x = it, xOffset = xOffset, iPalette = 0, pattern = pattern) }
+      assertBuffer { calcPalIdx(it, 5, 0, listOf(0, 0, 0) + pat.drop(3)) }
     }
 
     private fun calcPalIdx(x: Int, xOffset: Int, iPalette: Int, pattern: List<Int>) =
       if (x in xOffset until TILE_SIZE + xOffset) {
-        pattern[x - xOffset] + ((NUM_PALETTES + iPalette) * NUM_ENTRIES_PER_PALETTE)
+        val p = pattern[x - xOffset]
+        if (p > 0) (p + ((NUM_PALETTES + iPalette) * NUM_ENTRIES_PER_PALETTE)) else 0
       } else 0
 
     private fun render(
@@ -561,18 +549,14 @@ class RendererTest {
     ) {
       val state = State(
         sprEnabled = sprEnabled,
-        sprLeftTileEnabled = sprLeftTileEnabled,
-        sprPatternTable = SPR_PATTERN_TABLE,
-        scanline = Y_SCANLINE
+        sprLeftTileEnabled = sprLeftTileEnabled
       )
-      renderer.evaluateSprites(state)
-      renderer.loadSprites(state)
       renderer.renderSprites(state)
     }
   }
 
   @Nested
-  inner class Priority {
+  inner class SpriteRenderPriority {
     private val paletteSpr = 1  // Non-zero palette
     private val paletteSpr2 = 3 // Non-zero palette
     private val paletteBg = 2   // Non-zero palette different to that of sprites
@@ -722,7 +706,7 @@ class RendererTest {
   }
 
   @Nested
-  inner class Collisions {
+  inner class SpriteRenderCollisions {
     @Test
     fun `triggers hit if opaque sprite #0 overlaps opaque background`() {
       initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
@@ -915,15 +899,18 @@ class RendererTest {
 
   private fun initPatternMemory(patterns: Map<Int, List<Int>>, yFine: Int, baseAddr: Address) {
     patterns.forEach { (idx, v) ->
-      var lo = 0
-      var hi = 0
-      v.forEach {
-        lo = (lo shl 1) or (it and 1)
-        hi = (hi shl 1) or ((it / 2) and 1)
-      }
-      whenever(memory[baseAddr + (idx * PATTERN_SIZE_BYTES) + yFine]) doReturn lo
-      whenever(memory[baseAddr + (idx * PATTERN_SIZE_BYTES) + yFine + TILE_SIZE]) doReturn hi
+      val p = encodePattern(v)
+      whenever(memory[baseAddr + (idx * PATTERN_SIZE_BYTES) + yFine]) doReturn p.lo()
+      whenever(memory[baseAddr + (idx * PATTERN_SIZE_BYTES) + yFine + TILE_SIZE]) doReturn p.hi()
     }
+  }
+
+  private fun encodePattern(pattern: List<Int>): Int {
+    var p = 0
+    pattern.forEachIndexed { i, b ->
+      p = p or ((b and 1) shl (7 - i)) or ((b and 2) shl (14 - i))
+    }
+    return p
   }
 
   private fun initSpriteMemory(x: Int, y: Int, iPattern: Int, attrs: Int, iSprite: Int = 0) {

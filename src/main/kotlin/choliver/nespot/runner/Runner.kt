@@ -4,9 +4,8 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
 import choliver.nespot.persistence.BackupManager
 import choliver.nespot.persistence.SnapshotManager
+import choliver.nespot.runner.Event.*
 import choliver.nespot.runner.KeyAction.*
-import choliver.nespot.runner.Screen.Event
-import choliver.nespot.runner.Screen.Event.*
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep.RESET
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -39,18 +38,14 @@ class Runner : CliktCommand(name = "nespot") {
   private inner class Inner(rom: Rom) {
     private val events = LinkedBlockingQueue<Event>()
     private var closed = false
-    private var redraw = false
-    private var play = false
     private val joypads = FakeJoypads()
     private val screen = Screen(onEvent = { events += it })
-    private val audio = Audio()
+    private val audio = AudioPlayer()
     private val nes = Nes(
       rom = rom,
-      videoBuffer = screen.buffer,
-      audioBuffer = audio.buffer,
       joypads = joypads,
-      onAudioBufferReady = { play = true },
-      onVideoBufferReady = { redraw = true }
+      onAudioBufferReady = { events += Audio(it) },
+      onVideoBufferReady = { events += Video(it) }
     )
     private val backupManager = BackupManager(rom, nes.prgRam, BACKUP_DIR)
     private val snapshotManager = SnapshotManager(nes.diagnostics)
@@ -75,8 +70,6 @@ class Runner : CliktCommand(name = "nespot") {
       try {
         while (!closed) {
           nes.step()
-          maybeRedraw()
-          maybePlay()
           consumeEvent()
         }
         backupManager.maybeSave()
@@ -86,22 +79,10 @@ class Runner : CliktCommand(name = "nespot") {
       }
     }
 
-    private fun maybeRedraw() {
-      if (redraw) {
-        redraw = false
-        screen.redraw()
-      }
-    }
-
-    private fun maybePlay() {
-      if (play) {
-        play = false
-        audio.play()
-      }
-    }
-
     private fun consumeEvent() {
       when (val e = events.poll()) {
+        is Audio -> audio.play(e.buffer)
+        is Video -> screen.redraw(e.buffer)
         is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> joypads.down(1, action.button)
           is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
@@ -127,8 +108,9 @@ class Runner : CliktCommand(name = "nespot") {
     private fun runPerfTest() {
       val runtimeMs = measureTimeMillis {
         repeat(numPerfFrames!!) {
-          while (!redraw) { nes.step() }
-          redraw = false
+          // TODO
+//          while (!redraw) { nes.step() }
+//          redraw = false
         }
       }
       println("Ran ${numPerfFrames!!} frames in ${runtimeMs} ms (${(numPerfFrames!! * 1000.0 / runtimeMs).roundToInt()} fps)")

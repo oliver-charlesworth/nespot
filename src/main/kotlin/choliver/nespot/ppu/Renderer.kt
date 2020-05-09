@@ -15,7 +15,6 @@ class Renderer(
   private val memory: Memory,
   private val palette: Memory,
   private val oam: Memory,
-  private val videoBuffer: IntBuffer,
   private val colors: List<Int> = COLORS
 ) {
   data class State(
@@ -171,11 +170,11 @@ class Renderer(
     }
   }
 
-  fun commitToBuffer(ppu: PpuState) {
-    videoBuffer.position(ppu.scanline * SCREEN_WIDTH)
+  fun commitToBuffer(ppu: PpuState, buffer: IntBuffer) {
+    buffer.position(ppu.scanline * SCREEN_WIDTH)
     val mask = if (ppu.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
     state.paletteIndices.forEach {
-      videoBuffer.put(colors[palette[it] and mask])
+      buffer.put(colors[palette[it] and mask])
     }
   }
 

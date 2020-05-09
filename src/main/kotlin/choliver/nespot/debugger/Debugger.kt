@@ -17,12 +17,11 @@ import choliver.nespot.debugger.PointManager.Point.Watchpoint
 import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nespot.nes.Nes.Companion.PPU_RAM_SIZE
-import choliver.nespot.runner.Audio
+import choliver.nespot.runner.Event.*
 import choliver.nespot.runner.FakeJoypads
 import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
-import choliver.nespot.runner.Screen.Event.*
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.SerializationFeature
@@ -31,6 +30,7 @@ import java.io.File
 import java.io.InputStream
 import java.io.PrintStream
 import java.util.concurrent.LinkedBlockingQueue
+import choliver.nespot.runner.Event as RunnerEvent
 
 class Debugger(
   rom: ByteArray,
@@ -42,19 +42,16 @@ class Debugger(
     val numInstructions: Int
   )
 
-  private val events = LinkedBlockingQueue<Screen.Event>()
+  private val events = LinkedBlockingQueue<RunnerEvent>()
   private val joypads = FakeJoypads()
   private val screen = Screen(onEvent = { events += it })
-  private var redraw = false
 
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
 
   private val nes = Nes(
     rom = Rom.parse(rom),
-    videoBuffer = screen.buffer,
-    audioBuffer = Audio().buffer,
     joypads = joypads,
-    onVideoBufferReady = { redraw = true },
+    onVideoBufferReady = { screen.redraw(it) },
     onStore = { addr, data -> stores += (addr to data) }
   ).diagnostics
   private val points = PointManager()
@@ -108,7 +105,7 @@ class Debugger(
   }
 
   private fun consumeEvents() {
-    val myEvents = mutableListOf<Screen.Event>()
+    val myEvents = mutableListOf<RunnerEvent>()
     events.drainTo(myEvents)
     myEvents.forEach { e ->
       when (e) {
@@ -334,10 +331,6 @@ class Debugger(
 
     stores.clear()
     nes.step()
-    if (redraw) {
-      screen.redraw()
-      redraw = false
-    }
 
     maybeTraceStores()
 

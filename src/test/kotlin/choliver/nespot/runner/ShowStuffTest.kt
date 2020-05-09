@@ -7,23 +7,25 @@ import com.nhaarman.mockitokotlin2.mock
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.nio.IntBuffer
 import java.util.concurrent.CountDownLatch
 
 class ShowStuffTest {
   private val latch = CountDownLatch(1)
   private val app = Screen { latch.countDown() }
+  private val buffer = IntBuffer.allocate(SCREEN_HEIGHT * SCREEN_WIDTH)
 
   @Test
   @Disabled
   fun palette() {
     for (y in 0 until SCREEN_HEIGHT) {
       for (x in 0 until SCREEN_WIDTH) {
-        app.buffer.put(COLORS[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16])
+        buffer.put(COLORS[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16])
       }
     }
 
     app.show()
-    app.redraw()
+    app.redraw(buffer)
     latch.await()
   }
 
@@ -67,12 +69,12 @@ class ShowStuffTest {
           }
         }
 
-        scanline.forEach { app.buffer.put(it) }
+        scanline.forEach { buffer.put(it) }
       }
     }
 
     app.show()
-    app.redraw()
+    app.redraw(buffer)
     latch.await()
   }
 }

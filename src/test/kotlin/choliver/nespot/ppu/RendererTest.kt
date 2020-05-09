@@ -22,12 +22,10 @@ class RendererTest {
   private val memory = mock<Memory>()
   private val palette = mock<Memory>()
   private val oam = mock<Memory>()
-  private val videoBuffer = IntBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT)
   private val renderer = Renderer(
     memory = memory,
     palette = palette,
     oam = oam,
-    videoBuffer = videoBuffer,
     colors = colors
   )
 
@@ -771,6 +769,7 @@ class RendererTest {
   @Nested
   inner class CommitToBuffer {
     private val paletteEntries = (0..31).map { it * 2 + 1 }
+    private val videoBuffer = IntBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT)
 
     init {
       paletteEntries.forEachIndexed { idx, data ->
@@ -811,7 +810,7 @@ class RendererTest {
         scanline = Y_SCANLINE,
         greyscale = greyscale
       )
-      renderer.commitToBuffer(state)
+      renderer.commitToBuffer(state, videoBuffer)
     }
   }
 

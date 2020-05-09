@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import kotlin.math.floor
 
+
 class ApuTest {
   private val envelope = mock<Envelope>()
   private val sweep = mock<Sweep>()
@@ -19,9 +20,8 @@ class ApuTest {
   private val noi = SynthContext(synth = mock<NoiseSynth>(), envelope = envelope, sweep = sweep, timer = timer)
   private val dmc = SynthContext(synth = mock<DmcSynth>(), envelope = envelope, sweep = sweep, timer = timer)
   private val sequencer = mock<FrameSequencer>()
-  private val onAudioBufferReady = mock<() -> Unit>()
+  private val onAudioBufferReady = mock<(FloatArray) -> Unit>()
   private val apu = Apu(
-    audioBuffer = FloatArray(BUFFER_SIZE),
     memory = mock(),
     sequencer = sequencer,
     channels = Channels(
@@ -31,7 +31,8 @@ class ApuTest {
       noi = noi,
       dmc = dmc
     ),
-    onAudioBufferReady = onAudioBufferReady
+    onAudioBufferReady = onAudioBufferReady,
+    bufferSize = BUFFER_SIZE
   )
 
   @Nested
@@ -261,7 +262,7 @@ class ApuTest {
 
     apu.advance(1)
 
-    verify(onAudioBufferReady)()
+    verify(onAudioBufferReady)(any())
   }
 
   @Test

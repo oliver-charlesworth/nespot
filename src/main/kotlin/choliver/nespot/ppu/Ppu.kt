@@ -6,12 +6,16 @@ import java.nio.IntBuffer
 
 class Ppu(
   private val memory: Memory,
-  videoBuffer: IntBuffer,
   private val oam: Memory = Ram(256),
   private val palette: Memory = Palette(),
-  private val renderer: Renderer = Renderer(memory, palette, oam, videoBuffer),
-  private val onVideoBufferReady: () -> Unit
+  private val renderer: Renderer = Renderer(memory, palette, oam),
+  private val onVideoBufferReady: (IntBuffer) -> Unit
 ) {
+  // TODO - should these just be IntArrays?  What's the difference?
+  private val bufferA = IntBuffer.allocate(SCREEN_HEIGHT * SCREEN_WIDTH)
+  private val bufferB = IntBuffer.allocate(SCREEN_HEIGHT * SCREEN_WIDTH)
+  private var buffer = bufferA
+
   private var state = State()
 
   val vbl get() = state.inVbl && state.vblEnabled
@@ -56,7 +60,7 @@ class Ppu(
         255 -> {
           renderer.loadAndRenderBackground(this)
           renderer.renderSprites(this)
-          renderer.commitToBuffer(this)
+          renderer.commitToBuffer(this, buffer)
         }
         256 -> renderer.evaluateSprites(this)
         257 -> updateCoordsForScanline()
@@ -79,7 +83,8 @@ class Ppu(
 
   private fun State.setVblFlag() {
     inVbl = true
-    onVideoBufferReady()
+    onVideoBufferReady(buffer)
+    buffer = if (buffer === bufferA) bufferB else bufferA
   }
 
   private fun State.clearFlags() {

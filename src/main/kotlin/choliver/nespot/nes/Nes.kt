@@ -14,17 +14,14 @@ import java.nio.IntBuffer
 
 class Nes(
   rom: Rom,
-  videoBuffer: IntBuffer,
-  audioBuffer: FloatArray,
   joypads: Joypads,
-  onAudioBufferReady: () -> Unit = {},
-  onVideoBufferReady: () -> Unit = {},
+  onAudioBufferReady: (FloatArray) -> Unit = {},
+  onVideoBufferReady: (IntBuffer) -> Unit = {},
   private val onStore: (Address, Data) -> Unit = { _: Address, _: Data -> }
 ) {
   private val mapper = createMapper(rom)
 
   private val apu = Apu(
-    audioBuffer = audioBuffer,
     memory = mapper.prg,  // DMC can only read from PRG space
     onAudioBufferReady = onAudioBufferReady
   )
@@ -36,7 +33,6 @@ class Nes(
 
   private val ppu = Ppu(
     memory = ppuMapper,
-    videoBuffer = videoBuffer,
     onVideoBufferReady = onVideoBufferReady
   )
 

@@ -1,8 +1,15 @@
+# OSX
 .DS_Store
+
+# IntelliJ
 out/
-.gradle/
 .idea/
+
+# Gradle
+.gradle/
 build/
-*.nes
-*.snapshot.json
-*.backup.dat
+
+# NESpot
+backups/
+roms/
+snapshots/

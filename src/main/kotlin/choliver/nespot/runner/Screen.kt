@@ -37,16 +37,20 @@ class Screen(
   private var started = false
   private lateinit var stage: Stage
   private lateinit var imageView: ImageView
-  private val _buffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
-  val buffer: IntBuffer = _buffer.asIntBuffer()
+  private val internalBuffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
+  private val externalBuffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
+  val buffer: IntBuffer = externalBuffer.asIntBuffer()
   private val pixelBuffer = PixelBuffer(
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
-    _buffer,
+    internalBuffer,
     PixelFormat.getByteBgraPreInstance() // Mac native format
   )
 
   fun redraw() {
+    internalBuffer.put(externalBuffer)
+    internalBuffer.position(0)
+    externalBuffer.position(0)
     onFxThread { pixelBuffer.updateBuffer { null } }
   }
 

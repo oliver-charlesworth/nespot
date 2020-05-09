@@ -1,11 +1,8 @@
 package choliver.nespot.apu
 
-import choliver.nespot.CYCLES_PER_SAMPLE
-import choliver.nespot.Data
-import choliver.nespot.Memory
+import choliver.nespot.*
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
-import choliver.nespot.isBitSet
 
 // TODO - frame interrupt
 class Apu(
@@ -19,7 +16,7 @@ class Apu(
     dmc = SynthContext(DmcSynth(memory = memory)).apply { inhibitMute(); fixEnvelope(1) }
   ),
   private val onAudioBufferReady: (FloatArray) -> Unit,
-  private val bufferSize: Int = 441  // TODO
+  private val bufferSize: Int = BUFFER_SIZE
 ) {
   private val bufferA = FloatArray(bufferSize)
   private val bufferB = FloatArray(bufferSize)
@@ -173,6 +170,8 @@ class Apu(
   }
 
   companion object {
+    private const val BUFFER_SIZE = SAMPLE_RATE_HZ / 100    // 10 ms
+
     // See https://wiki.nesdev.com/w/index.php/2A03
     private val REG_SQ1_RANGE = 0x00..0x03
     private val REG_SQ2_RANGE = 0x04..0x07

@@ -12,7 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue
 
 
 class InteractiveRunner(
-  private val rom: Rom,
+  rom: Rom,
   private val snapshotFile: File?,
   private val fullScreen: Boolean
 ) {

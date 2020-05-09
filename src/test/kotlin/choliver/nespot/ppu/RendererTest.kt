@@ -707,124 +707,86 @@ class RendererTest {
 
   @Nested
   inner class SpriteRenderCollisions {
+    init {
+      paletteIndices[0] = 1
+      with(sprites[0]) {
+        pattern = encodePattern(listOf(1, 0, 0, 0, 0, 0, 0, 0))
+        palette = 4
+        sprite0 = true
+      }
+    }
+
     @Test
-    fun `triggers hit if opaque sprite #0 overlaps opaque background`() {
-      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
-      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
+    fun `detected if opaque sprite #0 overlaps opaque background`() {
+      assertTrue(render().sprite0Hit)
+    }
+
+    @Test
+    fun `not detected if opaque sprite #0 overlaps transparent background`() {
+      paletteIndices[0] = 0
+
+      assertFalse(render().sprite0Hit)
+    }
+
+    @Test
+    fun `not detected if transparent sprite #0 overlaps opaque background`() {
+      sprites[0].pattern = 0
+
+      assertFalse(render().sprite0Hit)
+    }
+
+    @Test
+    fun `not detected for overlap from sprites other than #0`() {
+      sprites[0].sprite0 = false
+
+      assertFalse(render().sprite0Hit)
+    }
+
+    @Test
+    fun `detected for overlap at x == 254`() {
+      paletteIndices[254] = 1
+      sprites[0].x = 254
 
       assertTrue(render().sprite0Hit)
     }
 
     @Test
-    fun `doesn't trigger hit if opaque sprite #0 overlaps transparent background`() {
-      initBgPatternMemory(mapOf(0 to listOf(0, 0, 0, 0, 0, 0, 0, 0)))
-      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
+    fun `not detected for overlap at x == 255`() {
+      paletteIndices[255] = 1
+      sprites[0].x = 255
 
       assertFalse(render().sprite0Hit)
     }
 
     @Test
-    fun `doesn't trigger hit if transparent sprite #0 overlaps opaque background`() {
-      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
-      initSprPatternMemory(mapOf(1 to listOf(0, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
-
-      assertFalse(render().sprite0Hit)
-    }
-
-    @Test
-    fun `triggers single hit even when multiple sprite #0 overlaps`() {
-      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
-      initSprPatternMemory(mapOf(1 to listOf(1, 0, 1, 0, 1, 0, 1, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
+    fun `detected if sprite behind`() {
+      sprites[0].behind = true
 
       assertTrue(render().sprite0Hit)
     }
 
     @Test
-    fun `doesn't trigger from overlap from sprites other than #0`() {
-      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
-      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = 1)
-
-      assertFalse(render().sprite0Hit)
-    }
-
-    @Test
-    fun `doesn't trigger from overlap at x == 255`() {
-      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
-      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 255, y = Y_SCANLINE, iPattern = 1, attrs = 0)
-
-      assertFalse(render().sprite0Hit)
-    }
-
-    @Test
-    fun `triggers hit from behind`() {
-      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
-      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0x20) // Behind
-
-      assertTrue(render().sprite0Hit)
-    }
-
-    @Test
-    fun `doesn't trigger hit if rendering disabled`() {
-      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
-      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
-
+    fun `not detected if rendering disabled`() {
       assertFalse(render(sprEnabled = false).sprite0Hit)
-      assertFalse(render(bgEnabled = false).sprite0Hit)
     }
 
     @Test
-    fun `doesn't trigger hit if clipped`() {
-      initBgPatternMemory(mapOf(0 to listOf(1, 1, 1, 1, 1, 1, 1, 1)))
-      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0)
-
+    fun `not detected if clipped`() {
       assertFalse(render(sprLeftTileEnabled = false).sprite0Hit)
-      assertFalse(render(bgLeftTileEnabled = false).sprite0Hit)
-    }
-
-    @Test
-    fun `doesn't trigger hit if opaque sprite overlaps opaque sprite`() {
-      initBgPatternMemory(mapOf(0 to listOf(0, 0, 0, 0, 0, 0, 0, 0)))
-      initSprPatternMemory(mapOf(1 to listOf(1, 0, 0, 0, 0, 0, 0, 0)), yRow = 0)
-      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = 0)
-      initSpriteMemory(x = 5, y = Y_SCANLINE, iPattern = 1, attrs = 0, iSprite = 1)
-
-      assertFalse(render().sprite0Hit)
     }
 
     private fun render(
-      bgEnabled: Boolean = true,
       sprEnabled: Boolean = true,
-      bgLeftTileEnabled: Boolean = true,
       sprLeftTileEnabled: Boolean = true
     ): State {
       val state = State(
-        bgEnabled = bgEnabled,
-        bgLeftTileEnabled = bgLeftTileEnabled,
-        bgPatternTable = BG_PATTERN_TABLE,
         sprEnabled = sprEnabled,
-        sprLeftTileEnabled = sprLeftTileEnabled,
-        sprPatternTable = SPR_PATTERN_TABLE,
-        coords = Coords(xCoarse = 0, xFine = 0, yCoarse = Y_COARSE, yFine = Y_FINE),
-        scanline = Y_SCANLINE
+        sprLeftTileEnabled = sprLeftTileEnabled
       )
-      renderer.renderBackground(state)
-      renderer.evaluateSprites(state)
-      renderer.loadSprites(state)
       renderer.renderSprites(state)
       return state
     }
   }
-
-  // TODO - doesn't render invalid sprites
 
   @Test
   fun `greyscale mode`() {

@@ -17,17 +17,10 @@ import org.junit.jupiter.params.provider.ValueSource
 import java.nio.IntBuffer
 
 
-// TODO - separate test for commit-to-buffer
 class RendererTest {
   private val colors = (0..63).toList()
-  private val paletteEntries = (0..31).map { it + 5 }
-
   private val memory = mock<Memory>()
-  private val palette = mock<Memory> {
-    paletteEntries.forEachIndexed { idx, data ->
-      on { get(idx) } doReturn data
-    }
-  }
+  private val palette = mock<Memory>()
   private val oam = mock<Memory>()
   private val videoBuffer = IntBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT)
   private val renderer = Renderer(
@@ -667,19 +660,15 @@ class RendererTest {
     }
 
     private fun initSprite(iSprite: Int = 0, behind: Boolean, opaque: Boolean, palette: Int) {
-      initSpriteMemory(
-        x = 0,
-        y = Y_SCANLINE,
-        iPattern = iSprite,
-        attrs = (if (behind) 0x20 else 0x00) or palette,
-        iSprite = iSprite
-      )
-      initSprPatternMemory(mapOf(iSprite to List(TILE_SIZE) { if (opaque) 1 else 0 }), yRow = 0)
+      with(sprites[iSprite]) {
+        pattern = encodePattern(listOf(if (opaque) 1 else 0, 0, 0, 0, 0, 0, 0, 0))
+        this.palette = palette + 4
+        this.behind = behind
+      }
     }
 
     private fun initBackground(opaque: Boolean) {
-      initAttributeMemory(List(NUM_METATILE_COLUMNS) { paletteBg })
-      initBgPatternMemory(mapOf(0 to List(TILE_SIZE) { if (opaque) 1 else 0 }))
+      paletteIndices[0] = if (opaque) bgEntry else 0
     }
 
     private fun assertPixelColour(expected: Int) {
@@ -689,18 +678,9 @@ class RendererTest {
 
     private fun render() {
       val state = State(
-        bgEnabled = true,
-        bgLeftTileEnabled = true,
-        bgPatternTable = BG_PATTERN_TABLE,
         sprEnabled = true,
-        sprLeftTileEnabled = true,
-        sprPatternTable = SPR_PATTERN_TABLE,
-        coords = Coords(xCoarse = 0, xFine = 0, yCoarse = Y_COARSE, yFine = Y_FINE),
-        scanline = Y_SCANLINE
+        sprLeftTileEnabled = true
       )
-      renderer.renderBackground(state)
-      renderer.evaluateSprites(state)
-      renderer.loadSprites(state)
       renderer.renderSprites(state)
     }
   }
@@ -788,31 +768,51 @@ class RendererTest {
     }
   }
 
-  @Test
-  fun `greyscale mode`() {
-    val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
-    val attrEntries = List(NUM_METATILE_COLUMNS) { 3 }
-    initAttributeMemory(attrEntries)
-    initBgPatternMemory(mapOf(0 to pattern))
+  @Nested
+  inner class CommitToBuffer {
+    private val paletteEntries = (0..31).map { it * 2 + 1 }
 
-    val state = State(
-      bgEnabled = true,
-      bgLeftTileEnabled = true,
-      bgPatternTable = BG_PATTERN_TABLE,
-      coords = Coords(xCoarse = 0, xFine = 0, yCoarse = Y_COARSE, yFine = Y_FINE),
-      scanline = Y_SCANLINE,
-      greyscale = true
-    )
-    renderer.renderBackground(state)
-    renderer.commitToBuffer(state)
+    init {
+      paletteEntries.forEachIndexed { idx, data ->
+        whenever(palette[idx]) doReturn data
+      }
+    }
 
-    assertEquals(
-      (0 until SCREEN_WIDTH).map {
-        val p = pattern[it % TILE_SIZE]
-        colors[paletteEntries[if (p == 0) 0 else (p + NUM_ENTRIES_PER_PALETTE * 3)] and 0x30]
-      },
-      paletteIndices
-    )
+    @Test
+    fun `maps colours`() {
+      repeat(32) {
+        paletteIndices[it] = it
+      }
+
+      commit()
+
+      repeat(32) {
+        assertEquals(colors[paletteEntries[it]], videoBuffer[Y_SCANLINE * SCREEN_WIDTH + it])
+      }
+    }
+
+    @Test
+    fun `maps greyscale colours`() {
+      repeat(32) {
+        paletteIndices[it] = it
+      }
+
+      commit(true)
+
+      repeat(32) {
+        assertEquals(colors[paletteEntries[it] and 0x30], videoBuffer[Y_SCANLINE * SCREEN_WIDTH + it])
+      }
+    }
+
+    private fun commit(
+      greyscale: Boolean = false
+    ) {
+      val state = State(
+        scanline = Y_SCANLINE,
+        greyscale = greyscale
+      )
+      renderer.commitToBuffer(state)
+    }
   }
 
   private fun assertBuffer(expected: (Int) -> Int) {
@@ -853,10 +853,6 @@ class RendererTest {
 
   private fun initBgPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int = Y_FINE) {
     initPatternMemory(patterns, yRow, BG_PATTERN_TABLE * 0x1000)
-  }
-
-  private fun initSprPatternMemory(patterns: Map<Int, List<Int>>, yRow: Int) {
-    initPatternMemory(patterns, yRow, SPR_PATTERN_TABLE * 0x1000)
   }
 
   private fun initPatternMemory(patterns: Map<Int, List<Int>>, yFine: Int, baseAddr: Address) {

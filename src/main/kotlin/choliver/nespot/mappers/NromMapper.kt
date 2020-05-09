@@ -8,22 +8,22 @@ import choliver.nespot.cartridge.Rom
 
 // https://wiki.nesdev.com/w/index.php/NROM
 class NromMapper(private val rom: Rom) : Mapper {
-  private val chrRam = Ram(8192)
+  private val prgRam = Ram(PRG_RAM_SIZE)
+  private val chrRam = Ram(CHR_RAM_SIZE)
   private val usingChrRam = rom.chrData.isEmpty()
   override val irq = false
-  override val prgRam = null
-  private val volatilePrgRam = Ram(8192)
+  override val persistentRam: Ram? = null   // Don't persist PRG-RAM
 
   override val prg = object : Memory {
     override fun get(addr: Address) = when {
       (addr >= BASE_PRG_ROM) -> rom.prgData[addr and (rom.prgData.size - 1)].data()
-      (addr >= BASE_PRG_RAM) -> volatilePrgRam[addr and (Mmc3Mapper.PRG_RAM_SIZE - 1)]
+      (addr >= BASE_PRG_RAM) -> prgRam[addr and (PRG_RAM_SIZE - 1)]
       else -> 0x00
     }
 
     override fun set(addr: Address, data: Data) {
       when {
-        (addr >= BASE_PRG_RAM) -> volatilePrgRam[addr and (PRG_RAM_SIZE - 1)] = data
+        (addr >= BASE_PRG_RAM) -> prgRam[addr and (PRG_RAM_SIZE - 1)] = data
       }
     }
   }
@@ -51,6 +51,7 @@ class NromMapper(private val rom: Rom) : Mapper {
     const val BASE_PRG_ROM = 0x8000
     const val BASE_CHR_ROM = 0x0000
 
-    const val PRG_RAM_SIZE = 0x2000
+    const val PRG_RAM_SIZE = 8192
+    const val CHR_RAM_SIZE = 8192
   }
 }

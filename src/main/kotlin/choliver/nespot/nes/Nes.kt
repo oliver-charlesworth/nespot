@@ -73,7 +73,7 @@ class Nes(
     fun peekV(addr: Address) = ppuMapper[addr]
   }
 
-  val prgRam = mapper.prgRam
+  val prgRam = mapper.persistentRam
 
   val diagnostics = Diagnostics()
 

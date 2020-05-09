@@ -7,24 +7,24 @@ import java.io.File
 
 class BackupManager(
   rom: Rom,
-  private val prgRam: Ram?,
+  private val persistentRam: Ram?,
   backupDir: File
 ) {
   private val file = File(backupDir, "${rom.hash}.backup.dat")
 
   fun maybeRestore() {
-    if ((prgRam != null) && file.exists()) {
+    if ((persistentRam != null) && file.exists()) {
       val bytes = file.readBytes()
-      if (bytes.size != prgRam.size) {
+      if (bytes.size != persistentRam.size) {
         throw RuntimeException("Backup size mismatch")
       }
-      repeat(prgRam.size) { prgRam[it] = bytes[it].data() }
+      repeat(persistentRam.size) { persistentRam[it] = bytes[it].data() }
     }
   }
 
   fun maybeSave() {
-    if (prgRam != null) {
-      file.writeBytes(ByteArray(prgRam.size) { prgRam[it].toByte() })
+    if (persistentRam != null) {
+      file.writeBytes(ByteArray(persistentRam.size) { persistentRam[it].toByte() })
     }
   }
 }

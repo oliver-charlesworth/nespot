@@ -27,7 +27,7 @@ class InteractiveRunner(
     onAudioBufferReady = { events += Audio(it) },
     onVideoBufferReady = { events += Video(it) }
   )
-  private val backupManager = BackupManager(rom, nes.prgRam, BACKUP_DIR)
+  private val backupManager = BackupManager(rom, nes.persistentRam, BACKUP_DIR)
   private val snapshotManager = SnapshotManager(nes.diagnostics)
 
   fun run() {

@@ -9,7 +9,6 @@ import choliver.nespot.isBitSet
 
 // TODO - frame interrupt
 class Apu(
-  private val audioBuffer: FloatArray,
   memory: Memory,
   private val sequencer: FrameSequencer = FrameSequencer(),
   private val channels: Channels = Channels(
@@ -19,8 +18,13 @@ class Apu(
     noi = SynthContext(NoiseSynth()).apply { inhibitMute() },
     dmc = SynthContext(DmcSynth(memory = memory)).apply { inhibitMute(); fixEnvelope(1) }
   ),
-  private val onAudioBufferReady: () -> Unit
+  private val onAudioBufferReady: (FloatArray) -> Unit,
+  private val bufferSize: Int = 441  // TODO
 ) {
+  private val bufferA = FloatArray(bufferSize)
+  private val bufferB = FloatArray(bufferSize)
+  private var buffer = bufferA
+
   private var untilNextSample = CYCLES_PER_SAMPLE.a
   private var iSample = 0
   private val mixer = Mixer(sequencer, channels)
@@ -159,11 +163,12 @@ class Apu(
   }
 
   private fun generateSample() {
-    audioBuffer[iSample] = mixer.take()
+    buffer[iSample] = mixer.take()
     iSample++
-    if (iSample == audioBuffer.size) {
+    if (iSample == bufferSize) {
       iSample = 0
-      onAudioBufferReady()
+      onAudioBufferReady(buffer)
+      buffer = if (buffer === bufferA) bufferB else bufferA
     }
   }
 

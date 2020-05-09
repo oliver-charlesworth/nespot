@@ -17,7 +17,6 @@ import choliver.nespot.debugger.PointManager.Point.Watchpoint
 import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nespot.nes.Nes.Companion.PPU_RAM_SIZE
-import choliver.nespot.runner.Audio
 import choliver.nespot.runner.FakeJoypads
 import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
@@ -52,7 +51,6 @@ class Debugger(
   private val nes = Nes(
     rom = Rom.parse(rom),
     videoBuffer = screen.buffer,
-    audioBuffer = Audio().buffer,
     joypads = joypads,
     onVideoBufferReady = { redraw = true },
     onStore = { addr, data -> stores += (addr to data) }

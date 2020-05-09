@@ -40,16 +40,15 @@ class Runner : CliktCommand(name = "nespot") {
     private val events = LinkedBlockingQueue<Event>()
     private var closed = false
     private var redraw = false
-    private var play = false
+    private var audioBuffer: FloatArray? = null
     private val joypads = FakeJoypads()
     private val screen = Screen(onEvent = { events += it })
     private val audio = Audio()
     private val nes = Nes(
       rom = rom,
       videoBuffer = screen.buffer,
-      audioBuffer = audio.buffer,
       joypads = joypads,
-      onAudioBufferReady = { play = true },
+      onAudioBufferReady = { audioBuffer = it },
       onVideoBufferReady = { redraw = true }
     )
     private val backupManager = BackupManager(rom, nes.prgRam, BACKUP_DIR)
@@ -94,9 +93,9 @@ class Runner : CliktCommand(name = "nespot") {
     }
 
     private fun maybePlay() {
-      if (play) {
-        play = false
-        audio.play()
+      audioBuffer?.let {
+        audio.play(it)
+        audioBuffer = null
       }
     }
 

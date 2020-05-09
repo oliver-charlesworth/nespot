@@ -4,9 +4,8 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
 import choliver.nespot.persistence.BackupManager
 import choliver.nespot.persistence.SnapshotManager
+import choliver.nespot.runner.Event.*
 import choliver.nespot.runner.KeyAction.*
-import choliver.nespot.runner.Screen.Event
-import choliver.nespot.runner.Screen.Event.*
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep.RESET
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -40,7 +39,6 @@ class Runner : CliktCommand(name = "nespot") {
     private val events = LinkedBlockingQueue<Event>()
     private var closed = false
     private var redraw = false
-    private var audioBuffer: FloatArray? = null
     private val joypads = FakeJoypads()
     private val screen = Screen(onEvent = { events += it })
     private val audio = Audio()
@@ -48,7 +46,7 @@ class Runner : CliktCommand(name = "nespot") {
       rom = rom,
       videoBuffer = screen.buffer,
       joypads = joypads,
-      onAudioBufferReady = { audioBuffer = it },
+      onAudioBufferReady = { events += Audio(it) },
       onVideoBufferReady = { redraw = true }
     )
     private val backupManager = BackupManager(rom, nes.prgRam, BACKUP_DIR)
@@ -75,7 +73,6 @@ class Runner : CliktCommand(name = "nespot") {
         while (!closed) {
           nes.step()
           maybeRedraw()
-          maybePlay()
           consumeEvent()
         }
         backupManager.maybeSave()
@@ -92,15 +89,9 @@ class Runner : CliktCommand(name = "nespot") {
       }
     }
 
-    private fun maybePlay() {
-      audioBuffer?.let {
-        audio.play(it)
-        audioBuffer = null
-      }
-    }
-
     private fun consumeEvent() {
       when (val e = events.poll()) {
+        is Event.Audio -> audio.play(e.buffer)
         is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> joypads.down(1, action.button)
           is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen

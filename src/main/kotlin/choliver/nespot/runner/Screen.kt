@@ -4,7 +4,7 @@ import choliver.nespot.observable
 import choliver.nespot.ppu.SCREEN_HEIGHT
 import choliver.nespot.ppu.SCREEN_WIDTH
 import choliver.nespot.ppu.TILE_SIZE
-import choliver.nespot.runner.Screen.Event.*
+import choliver.nespot.runner.Event.*
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D
 import javafx.scene.Group
@@ -13,7 +13,6 @@ import javafx.scene.image.ImageView
 import javafx.scene.image.PixelBuffer
 import javafx.scene.image.PixelFormat
 import javafx.scene.image.WritableImage
-import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCombination
 import javafx.scene.input.KeyEvent
 import javafx.scene.paint.Color
@@ -27,12 +26,6 @@ class Screen(
   private val title: String = "NESpot",
   private val onEvent: (e: Event) -> Unit = {}
 ) {
-  sealed class Event {
-    data class KeyDown(val code: KeyCode) : Event()
-    data class KeyUp(val code: KeyCode) : Event()
-    object Close : Event()
-  }
-
   var fullScreen by observable(false) { onFxThread { configureStageAndImage() } }
   private var started = false
   private lateinit var stage: Stage

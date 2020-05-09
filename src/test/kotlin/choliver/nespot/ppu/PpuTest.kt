@@ -5,9 +5,9 @@ import choliver.nespot.ppu.Ppu.Companion.BASE_PALETTE
 import choliver.nespot.ppu.Ppu.Companion.REG_OAMADDR
 import choliver.nespot.ppu.Ppu.Companion.REG_OAMDATA
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUADDR
-import choliver.nespot.ppu.Ppu.Companion.REG_PPUCTRL
+import choliver.nespot.ppu.Ppu.Companion.REG_PPUCTRL1
+import choliver.nespot.ppu.Ppu.Companion.REG_PPUCTRL2
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUDATA
-import choliver.nespot.ppu.Ppu.Companion.REG_PPUMASK
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSCROLL
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSTATUS
 import choliver.nespot.ppu.model.State
@@ -87,7 +87,7 @@ class PpuTest {
 
     @Test
     fun `increments by 32 if PPUCTRL set appropriately`() {
-      ppu.writeReg(REG_PPUCTRL, 0x04)
+      ppu.writeReg(REG_PPUCTRL1, 0x04)
       setPpuAddress(0x1230)
 
       ppu.writeReg(REG_PPUDATA, 0x20)
@@ -180,7 +180,7 @@ class PpuTest {
 
     @Test
     fun `interrupt asserted at beginning of post-post-render scanline til beginning of pre-render scanline`() {
-      ppu.writeReg(REG_PPUCTRL, 0x80)
+      ppu.writeReg(REG_PPUCTRL1, 0x80)
 
       advanceScanlines(SCREEN_HEIGHT + 1)
       assertFalse(ppu.vbl)
@@ -207,15 +207,15 @@ class PpuTest {
       advanceScanlines(SCREEN_HEIGHT + 2)
       assertFalse(ppu.vbl)
 
-      ppu.writeReg(REG_PPUCTRL, 0x80)
+      ppu.writeReg(REG_PPUCTRL1, 0x80)
       advanceScanlines(1)
       assertTrue(ppu.vbl)
 
-      ppu.writeReg(REG_PPUCTRL, 0x00)
+      ppu.writeReg(REG_PPUCTRL1, 0x00)
       advanceScanlines(1)
       assertFalse(ppu.vbl)
 
-      ppu.writeReg(REG_PPUCTRL, 0x80)
+      ppu.writeReg(REG_PPUCTRL1, 0x80)
       advanceScanlines(1)
       assertTrue(ppu.vbl)
     }
@@ -271,14 +271,14 @@ class PpuTest {
   @Nested
   inner class RendererInput {
     init {
-      ppu.writeReg(REG_PPUMASK, 0b00001000)   // Rendering enabled
+      ppu.writeReg(REG_PPUCTRL2, 0b00001000)   // Rendering enabled
     }
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
     fun `propagates sprEnabled`(flag: Boolean) {
-      ppu.writeReg(REG_PPUMASK, (if (flag) 1 else 0) shl 4)
-      advanceScanlines(1)
+      ppu.writeReg(REG_PPUCTRL2, (if (flag) 1 else 0) shl 4)
+      advancePastAction()
 
       assertEquals(flag, captureContext().sprEnabled)
     }
@@ -286,8 +286,8 @@ class PpuTest {
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
     fun `propagates bgEnabled`(flag: Boolean) {
-      ppu.writeReg(REG_PPUMASK, (if (flag) 1 else 0) shl 3)
-      advanceScanlines(1)
+      ppu.writeReg(REG_PPUCTRL2, (if (flag) 1 else 0) shl 3)
+      advancePastAction()
 
       assertEquals(flag, captureContext().bgEnabled)
     }
@@ -295,8 +295,8 @@ class PpuTest {
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
     fun `propagates sprLeftTileEnabled`(flag: Boolean) {
-      ppu.writeReg(REG_PPUMASK, (if (flag) 1 else 0) shl 2)
-      advanceScanlines(1)
+      ppu.writeReg(REG_PPUCTRL2, (if (flag) 1 else 0) shl 2)
+      advancePastAction()
 
       assertEquals(flag, captureContext().sprLeftTileEnabled)
     }
@@ -304,8 +304,8 @@ class PpuTest {
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
     fun `propagates bgLeftTileEnabled`(flag: Boolean) {
-      ppu.writeReg(REG_PPUMASK, (if (flag) 1 else 0) shl 1)
-      advanceScanlines(1)
+      ppu.writeReg(REG_PPUCTRL2, (if (flag) 1 else 0) shl 1)
+      advancePastAction()
 
       assertEquals(flag, captureContext().bgLeftTileEnabled)
     }
@@ -313,8 +313,8 @@ class PpuTest {
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
     fun `propagates greyscale`(flag: Boolean) {
-      ppu.writeReg(REG_PPUMASK, (if (flag) 1 else 0) shl 0)
-      advanceScanlines(1)
+      ppu.writeReg(REG_PPUCTRL2, (if (flag) 1 else 0) shl 0)
+      advancePastAction()
 
       assertEquals(flag, captureContext().greyscale)
     }
@@ -322,8 +322,8 @@ class PpuTest {
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
     fun `propagates largeSprites`(flag: Boolean) {
-      ppu.writeReg(REG_PPUCTRL, (if (flag) 1 else 0) shl 5)
-      advanceScanlines(1)
+      ppu.writeReg(REG_PPUCTRL1, (if (flag) 1 else 0) shl 5)
+      advancePastAction()
 
       assertEquals(flag, captureContext().largeSprites)
     }
@@ -331,8 +331,8 @@ class PpuTest {
     @ParameterizedTest
     @ValueSource(ints = [0, 1])
     fun `propagates bgPatternTable`(idx: Int) {
-      ppu.writeReg(REG_PPUCTRL, idx shl 4)
-      advanceScanlines(1)
+      ppu.writeReg(REG_PPUCTRL1, idx shl 4)
+      advancePastAction()
 
       assertEquals(idx, captureContext().bgPatternTable)
     }
@@ -340,8 +340,8 @@ class PpuTest {
     @ParameterizedTest
     @ValueSource(ints = [0, 1])
     fun `propagates sprPatternTable`(idx: Int) {
-      ppu.writeReg(REG_PPUCTRL, idx shl 3)
-      advanceScanlines(1)
+      ppu.writeReg(REG_PPUCTRL1, idx shl 3)
+      advancePastAction()
 
       assertEquals(idx, captureContext().sprPatternTable)
     }
@@ -349,8 +349,9 @@ class PpuTest {
     @ParameterizedTest
     @ValueSource(ints = [0, 1, 2, 3])
     fun `propagates nametable idx`(idx: Int) {
-      ppu.writeReg(REG_PPUCTRL, idx)
-      advanceScanlines(1)
+      ppu.writeReg(REG_PPUCTRL1, idx)
+      advanceToNextFrameAndResetMock()
+      advancePastAction()
 
       with(captureContext().coords) {
         assertEquals((idx and 2) shr 1, yNametable)
@@ -362,13 +363,14 @@ class PpuTest {
     fun `propagates xCoarse, xFine, yCoarse, yFine`() {
       ppu.writeReg(REG_PPUSCROLL, 0b10101_111)
       ppu.writeReg(REG_PPUSCROLL, 0b11111_101)
-      advanceScanlines(1)
+      advanceToNextFrameAndResetMock()
+      advancePastAction()
 
       with(captureContext().coords) {
         assertEquals(0b10101, xCoarse)
         assertEquals(0b111, xFine)
         assertEquals(0b11111, yCoarse)
-        assertEquals(0b101, yFine)
+        assertEquals(0b101 + 1, yFine)  // This gets incremented
       }
     }
 
@@ -376,24 +378,26 @@ class PpuTest {
     fun `increments y components every scanline`() {
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
       ppu.writeReg(REG_PPUSCROLL, 0b00000_111)
+      advanceToNextFrameAndResetMock()
       advanceScanlines(2)
 
       val ctx = captureContext(2)
-      assertEquals(0b00001, ctx[1].coords.yCoarse)
-      assertEquals(0b000, ctx[1].coords.yFine)
+      assertEquals(0b00000 + 1, ctx[1].coords.yCoarse)
+      assertEquals((0b111 + 2) % 8, ctx[1].coords.yFine)
     }
 
     @Test
     fun `doesn't increment y components every scanline if rendering disabled`() {
       ppu.writeReg(REG_PPUSCROLL, 0b00000_000)
       ppu.writeReg(REG_PPUSCROLL, 0b00000_111)
+      advanceToNextFrameAndResetMock()
       advanceScanlines(1)
-      ppu.writeReg(REG_PPUMASK, 0b00000000)   // Rendering disabled
+      ppu.writeReg(REG_PPUCTRL2, 0b00000000)   // Rendering disabled
       advanceScanlines(1)
 
       val ctx = captureContext(2)
-      assertEquals(0b00000, ctx[1].coords.yCoarse)    // These haven't advanced
-      assertEquals(0b111, ctx[1].coords.yFine)
+      assertEquals(0b00000 + 1, ctx[1].coords.yCoarse)    // These have only advanced by 1, not 2
+      assertEquals((0b111 + 1) % 8, ctx[1].coords.yFine)
     }
 
     @Test
@@ -420,7 +424,7 @@ class PpuTest {
 
       val ctx = captureContext(2)
       assertEquals(0b00000, ctx[1].coords.yCoarse)    // New values ignored, just regular increment
-      assertEquals(0b001, ctx[1].coords.yFine)
+      assertEquals(0b010, ctx[1].coords.yFine)
     }
 
     @Test
@@ -434,22 +438,7 @@ class PpuTest {
       assertEquals(0b10101, ctx.coords.xCoarse)
       assertEquals(1, ctx.coords.yNametable)
       assertEquals(0b11111, ctx.coords.yCoarse)
-      assertEquals(0b010, ctx.coords.yFine)
-    }
-
-    @Test
-    fun `PPUADDR changes propagate immediately way`() {
-      advanceScanlines(1)
-      ppu.writeReg(REG_PPUADDR, 0b00_10_11_11)
-      ppu.writeReg(REG_PPUADDR, 0b111_10101)
-      advanceScanlines(1)
-
-      val ctx = captureContext(2)
-      assertEquals(1, ctx[1].coords.xNametable)
-      assertEquals(0b10101, ctx[1].coords.xCoarse)
-      assertEquals(1, ctx[1].coords.yNametable)
-      assertEquals(0b11111, ctx[1].coords.yCoarse)
-      assertEquals(0b011, ctx[1].coords.yFine)  // +1 because gets incremented for next scanline
+      assertEquals(0b010 + 1, ctx.coords.yFine)  // This gets incremented
     }
 
     // TODO - entire coords reloaded per frame
@@ -460,6 +449,16 @@ class PpuTest {
       val captor = argumentCaptor<State>()
       verify(renderer, times(num)).loadAndRenderBackground(captor.capture())
       return captor.allValues
+    }
+
+    private fun advancePastAction() {
+      advanceDots(256)
+    }
+
+    // y components aren't reloaded until EOF, so skip a whole frame
+    private fun advanceToNextFrameAndResetMock() {
+      advanceScanlines(SCANLINES_PER_FRAME)
+      reset(renderer)
     }
   }
 

@@ -355,6 +355,57 @@ class RendererTest {
   }
 
   @Nested
+  inner class SpriteLoad {
+    @Test
+    fun `loads pattern for valid sprite`() {
+      whenever(memory[4096+0]) doReturn 0xCC
+      whenever(memory[4096+8]) doReturn 0xAA
+
+      sprites[0].patternAddr = 4096
+      sprites[0].valid = true
+
+      load()
+
+      assertEquals(0xAACC, sprites[0].pattern)
+    }
+
+    // MMC3 relies on specific PPU memory access pattern during scanline
+    @Test
+    fun `performs dummy load from nametable #1 and sets transparent pattern for invalid sprite`() {
+      (1..7).forEach { sprites[it].valid = true } // Prevent interference
+      sprites[0].patternAddr = 4096
+      sprites[0].valid = false
+
+      load()
+
+      assertEquals(0x0000, sprites[0].pattern)  // Transparent pattern
+      verify(memory)[0x1FF0]
+      verify(memory)[0x1FF8]
+    }
+
+    @Test
+    fun `performs 8 loads if sprite rendering enabled`() {
+      load()
+
+      verify(memory, times(8 * 2))[any()]   // x2 because upper and lower slice per pattern
+    }
+
+    @Test
+    fun `performs no loads if sprite rendering disabled`() {
+      load(sprEnabled = false)
+
+      verifyZeroInteractions(memory)
+    }
+
+    private fun load(sprEnabled: Boolean = true) {
+      val state = State(
+        sprEnabled = sprEnabled
+      )
+      renderer.loadSprites(state)
+    }
+  }
+
+  @Nested
   inner class Sprite {
     private val xOffset = 5
     private val pattern = listOf(1, 2, 3, 3, 2, 1, 1, 2)  // No zero values
@@ -804,40 +855,6 @@ class RendererTest {
         scanline = Y_SCANLINE
       )
       renderer.renderBackground(state)
-    }
-  }
-
-  // MMC3 relies on specific PPU memory access pattern during scanline
-  @Nested
-  inner class MemoryAccessPattern {
-    @Test
-    fun `performs dummy loads from pattern table #1 for invalid sprites`() {
-      // Note - no valid sprites at all!
-      render()
-
-      verify(memory, times(8))[0x1FF0]
-      verify(memory, times(8))[0x1FF8]
-    }
-
-    @Test
-    fun `performs no sprite loads if sprite rendering disabled`() {
-      render(sprEnabled = false)
-
-      verifyZeroInteractions(memory)
-    }
-
-    private fun render(
-      sprEnabled: Boolean = true
-    ) {
-      val state = State(
-        sprEnabled = sprEnabled,
-        sprLeftTileEnabled = true,
-        sprPatternTable = SPR_PATTERN_TABLE,
-        scanline = Y_SCANLINE
-      )
-      renderer.evaluateSprites(state)
-      renderer.loadSprites(state)
-      renderer.renderSprites(state)
     }
   }
 

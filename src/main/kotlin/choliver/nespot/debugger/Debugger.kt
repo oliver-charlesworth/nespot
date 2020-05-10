@@ -22,9 +22,6 @@ import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep
-import choliver.nespot.sixfiveohtwo.model.Instruction
-import choliver.nespot.sixfiveohtwo.model.Opcode.NOP
-import choliver.nespot.sixfiveohtwo.model.Operand.Implied
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper

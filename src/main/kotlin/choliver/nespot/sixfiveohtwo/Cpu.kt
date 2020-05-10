@@ -2,10 +2,10 @@ package choliver.nespot.sixfiveohtwo
 
 import choliver.nespot.*
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep.*
+import choliver.nespot.sixfiveohtwo.model.AddressMode
+import choliver.nespot.sixfiveohtwo.model.AddressMode.*
 import choliver.nespot.sixfiveohtwo.model.Opcode
 import choliver.nespot.sixfiveohtwo.model.Opcode.*
-import choliver.nespot.sixfiveohtwo.model.Operand
-import choliver.nespot.sixfiveohtwo.model.Operand.*
 import choliver.nespot.sixfiveohtwo.model.State
 import choliver.nespot.sixfiveohtwo.model.toFlags
 import choliver.nespot.sixfiveohtwo.utils._0
@@ -21,7 +21,7 @@ class Cpu(
 
   // Instance-level variables to keep the code clean
   private var extraCycles: Int = 0
-  private var operand: Operand = Implied
+  private var addressMode: AddressMode = IMPLIED
   private var addr: Address = 0x0000
 
   private val decoder = InstructionDecoder(memory)
@@ -55,10 +55,10 @@ class Cpu(
   private fun executeInstruction(): Int {
     val decoded = decodeAt(state.regs.pc)
     state.regs.pc = decoded.nextPc
-    operand = decoded.instruction.operand
+    addressMode = decoded.addressMode
     addr = decoded.addr
     extraCycles = 0
-    execute(decoded.instruction.opcode)
+    execute(decoded.opcode)
     return decoded.numCycles + extraCycles
   }
 
@@ -276,15 +276,15 @@ class Cpu(
     )
   }
 
-  private fun resolve() = when (operand) {
-    is Accumulator -> state.regs.a
-    is Immediate -> (operand as Immediate).literal
+  private fun resolve() = when (addressMode) {
+    ACCUMULATOR -> state.regs.a
+    IMMEDIATE -> addr // The immediate masquerades as the address
     else -> memory[addr]
   }
 
   private fun storeResult(data: Data) {
     val d = data.data()
-    if (operand is Accumulator) {
+    if (addressMode == ACCUMULATOR) {
       state.regs.a = d
     } else {
       memory[addr] = d
@@ -313,7 +313,7 @@ class Cpu(
     var nextStep
       get() = nextStepType()
       set(value) { nextStepOverride = value }
-    fun decodeAt(pc: Address) = this@Cpu.decodeAt(pc)
+    fun decodeAt(pc: Address) = decoder.decodeInstruction(pc)
   }
 
   val diagnostics = Diagnostics()

@@ -11,6 +11,7 @@ import choliver.nespot.sixfiveohtwo.Cpu.Companion.VECTOR_NMI
 import choliver.nespot.sixfiveohtwo.Cpu.Companion.VECTOR_RESET
 import choliver.nespot.sixfiveohtwo.model.Opcode.*
 import choliver.nespot.sixfiveohtwo.model.Opcode.JSR
+import choliver.nespot.sixfiveohtwo.model.Operand.Absolute
 import java.util.*
 
 class CallStackManager(
@@ -73,7 +74,7 @@ class CallStackManager(
         }
       )
 
-      JSR -> pushFrame(FrameType.JSR, decoded.addr)
+      JSR -> pushFrame(FrameType.JSR, (decoded.instruction.operand as Absolute).addr)
 
       RTS -> popAndHandle(
         onUserData = { unsupported("RTS for manually constructed frame") },

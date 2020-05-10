@@ -1,6 +1,11 @@
 package choliver.nespot.sixfiveohtwo
 
+import choliver.nespot.Address
+import choliver.nespot.Data
 import choliver.nespot.Memory
+import choliver.nespot.sixfiveohtwo.InstructionDecoder.Decoded
+import choliver.nespot.sixfiveohtwo.model.Instruction
+import choliver.nespot.sixfiveohtwo.model.Opcode.*
 import choliver.nespot.sixfiveohtwo.model.Operand.*
 import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.X
 import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.Y
@@ -11,25 +16,23 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class AddressCalculatorTest {
+class InstructionDecoderTest {
   private val memory = mock<Memory>()
-  private val calc = AddressCalculator(memory)
+  private val decoder = InstructionDecoder(memory)
 
   @Nested
   inner class Relative {
     @Test
     fun positiveOffset() {
-      assertEquals(
-        0x1320,
-        calc.calculate(Relative(0x30), pc = 0x12F0)
+      assertEquals(0x1322,
+        decode(Instruction(BEQ, Relative(0x30)), baseAddr = 0x12F0).addr
       )
     }
 
     @Test
     fun negativeOffset() {
-      assertEquals(
-        0x12C0,
-        calc.calculate(Relative(0xD0), pc = 0x12F0)
+      assertEquals(0x12C2,
+        decode(Instruction(BEQ, Relative(0xD0)), baseAddr = 0x12F0).addr
       )
     }
   }
@@ -38,7 +41,7 @@ class AddressCalculatorTest {
   fun absolute() {
     assertEquals(
       0x1230,
-      calc.calculate(Absolute(0x1230))
+      decode(Instruction(LDX, Absolute(0x1230))).addr
     )
   }
 
@@ -46,7 +49,7 @@ class AddressCalculatorTest {
   fun zeroPage() {
     assertEquals(
       0x0030,
-      calc.calculate(ZeroPage(0x30))
+      decode(Instruction(LDX, ZeroPage(0x30))).addr
     )
   }
 
@@ -57,7 +60,7 @@ class AddressCalculatorTest {
 
     assertEquals(
       0x1230,
-      calc.calculate(Indirect(0x40FF))
+      decode(Instruction(JMP, Indirect(0x40FF))).addr
     )
   }
 
@@ -67,7 +70,7 @@ class AddressCalculatorTest {
     fun basicX() {
       assertEquals(
         0x1230,
-        calc.calculate(AbsoluteIndexed(0x1220, X), x = 0x10)
+        decode(Instruction(LDA, AbsoluteIndexed(0x1220, X)), x = 0x10).addr
       )
     }
 
@@ -75,7 +78,7 @@ class AddressCalculatorTest {
     fun basicY() {
       assertEquals(
         0x1230,
-        calc.calculate(AbsoluteIndexed(0x1220, Y), y = 0x10)
+        decode(Instruction(LDA, AbsoluteIndexed(0x1220, Y)), y = 0x10).addr
       )
     }
   }
@@ -86,7 +89,7 @@ class AddressCalculatorTest {
     fun basicX() {
       assertEquals(
         0x0030,
-        calc.calculate(ZeroPageIndexed(0x20, X), x = 0x10)
+        decode(Instruction(LDY, ZeroPageIndexed(0x20, X)), x = 0x10).addr
       )
     }
 
@@ -94,7 +97,7 @@ class AddressCalculatorTest {
     fun basicY() {
       assertEquals(
         0x0030,
-        calc.calculate(ZeroPageIndexed(0x20, Y), y = 0x10)
+        decode(Instruction(LDX, ZeroPageIndexed(0x20, Y)), y = 0x10).addr
       )
     }
 
@@ -102,7 +105,7 @@ class AddressCalculatorTest {
     fun zeroPageWraparound() {
       assertEquals(
         0x0030,
-        calc.calculate(ZeroPageIndexed(0xF0, X), x = 0x40)
+        decode(Instruction(LDY, ZeroPageIndexed(0xF0, X)), x = 0x40).addr
       )
     }
   }
@@ -116,7 +119,7 @@ class AddressCalculatorTest {
 
       assertEquals(
         0x1230,
-        calc.calculate(IndexedIndirect(0x20), x = 0x10)
+        decode(Instruction(LDA, IndexedIndirect(0x20)), x = 0x10).addr
       )
     }
 
@@ -127,7 +130,7 @@ class AddressCalculatorTest {
 
       assertEquals(
         0x1230,
-        calc.calculate(IndexedIndirect(0xF0), x = 0x40)
+        decode(Instruction(LDA, IndexedIndirect(0xF0)), x = 0x40).addr
       )
     }
 
@@ -138,10 +141,9 @@ class AddressCalculatorTest {
 
       assertEquals(
         0x1230,
-        calc.calculate(IndexedIndirect(0xFF), x = 0x00)
+        decode(Instruction(LDA, IndexedIndirect(0xFF)), x = 0x00).addr
       )
     }
-
   }
 
   @Nested
@@ -153,7 +155,7 @@ class AddressCalculatorTest {
 
       assertEquals(
         0x1240,
-        calc.calculate(IndirectIndexed(0x30), y = 0x10)
+        decode(Instruction(LDA, IndirectIndexed(0x30)), y = 0x10).addr
       )
     }
 
@@ -164,10 +166,20 @@ class AddressCalculatorTest {
 
       assertEquals(
         0x1240,
-        calc.calculate(IndirectIndexed(0xFF), y = 0x10)
+        decode(Instruction(LDA, IndirectIndexed(0xFF)), y = 0x10).addr
       )
     }
   }
 
+  private fun decode(
+    instruction: Instruction,
+    x: Data = 0x00,
+    y: Data = 0x00,
+    baseAddr: Address = BASE_USER
+  ): Decoded {
+    val mmap = listOf(instruction).memoryMap(baseAddr)
+    mmap.forEach { (addr, data) -> whenever(memory[addr]) doReturn data }
+    return decoder.decode(baseAddr, x, y)
+  }
 }
 

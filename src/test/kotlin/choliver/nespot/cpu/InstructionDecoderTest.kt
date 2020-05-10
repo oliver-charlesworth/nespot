@@ -179,7 +179,9 @@ class InstructionDecoderTest {
   ): Decoded {
     val mmap = listOf(instruction).memoryMap(baseAddr)
     mmap.forEach { (addr, data) -> whenever(memory[addr]) doReturn data }
-    return decoder.decode(baseAddr, x, y)
+    val decoded = Decoded()
+    decoder.decode(decoded, baseAddr, x, y)
+    return decoded
   }
 }
 

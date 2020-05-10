@@ -6,17 +6,19 @@ import choliver.nespot.cpu.model.AddressMode.*
 import choliver.nespot.cpu.model.Instruction
 import choliver.nespot.cpu.model.Opcode
 import choliver.nespot.cpu.model.Opcode.BRK
+import choliver.nespot.cpu.model.Opcode.NOP
 import choliver.nespot.cpu.model.Operand.*
 import choliver.nespot.cpu.model.Operand.IndexSource.X
 import choliver.nespot.cpu.model.Operand.IndexSource.Y
 
 class InstructionDecoder(private val memory: Memory) {
+  @MutableForPerfReasons
   data class Decoded(
-    val opcode: Opcode,
-    val addressMode: AddressMode,
-    val addr: Address,
-    val nextPc: Address,
-    val numCycles: Int
+    var opcode: Opcode = NOP,
+    var addressMode: AddressMode = IMPLIED,
+    var addr: Address = 0x0000,
+    var nextPc: Address = 0x0000,
+    var numCycles: Int = 0
   )
 
   data class DecodedInstruction(
@@ -25,7 +27,7 @@ class InstructionDecoder(private val memory: Memory) {
     val numCycles: Int
   )
 
-  fun decode(pc: Address, x: Data, y: Data): Decoded {
+  fun decode(decoded: Decoded, pc: Address, x: Data, y: Data) {
     val opcode = memory[pc]
     val found = ENCODINGS[opcode] ?: error("Unexpected opcode 0x%02x at 0x%04x".format(opcode, pc))
 
@@ -87,18 +89,17 @@ class InstructionDecoder(private val memory: Memory) {
       }
     }
 
-    return Decoded(
-      opcode = found.op,
-      addressMode = found.addressMode,
-      addr = addr.addr(),
-      nextPc = pc + pcInc + (if (found.op == BRK) 1 else 0),  // Special case
-      numCycles = found.numCycles
-    )
+    decoded.opcode = found.op
+    decoded.addressMode = found.addressMode
+    decoded.addr = addr.addr()
+    decoded.nextPc = pc + pcInc + (if (found.op == BRK) 1 else 0)  // Special case
+    decoded.numCycles = found.numCycles
   }
 
   /** Basically a debug mode. */
   fun decodeInstruction(pc: Address): DecodedInstruction {
-    val decoded = decode(pc, 0, 0)
+    val decoded = Decoded()
+    decode(decoded, pc, 0, 0)
 
     fun operand8() = memory[pc + 1]
     fun operand16() = addr(lo = memory[pc + 1], hi = memory[pc + 2])

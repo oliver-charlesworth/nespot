@@ -8,7 +8,8 @@ import choliver.nespot.apu.Apu
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.createMapper
 import choliver.nespot.cpu.Cpu
-import choliver.nespot.cpu.utils._0
+import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_IRQ
+import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_NMI
 import choliver.nespot.ppu.Ppu
 import java.nio.IntBuffer
 
@@ -17,7 +18,7 @@ class Nes(
   joypads: Joypads,
   onAudioBufferReady: (FloatArray) -> Unit = {},
   onVideoBufferReady: (IntBuffer) -> Unit = {},
-  private val onStore: (Address, Data) -> Unit = { _: Address, _: Data -> }
+  private val onStore: ((Address, Data) -> Unit)? = null
 ) {
   private val mapper = createMapper(rom)
 
@@ -45,22 +46,28 @@ class Nes(
   )
 
   private val cpu = Cpu(
-    object : Memory {
-      override fun get(addr: Address) = cpuMapper[addr]
-      override fun set(addr: Address, data: Data) {
-        cpuMapper[addr] = data
-        onStore(addr, data)
-      }
-    },
-    pollReset = { _0 },
-    pollIrq = { apu.irq || mapper.irq },
-    pollNmi = ppu::vbl
+    maybeIntercept(cpuMapper),
+    pollInterrupts = ::pollInterrupts
   )
 
   fun step() {
     val cycles = cpu.executeStep()
     apu.advance(cycles)
     ppu.advance(cycles)
+  }
+
+  private fun pollInterrupts() = (if (apu.irq || mapper.irq) INTERRUPT_IRQ else 0) or (if (ppu.vbl) INTERRUPT_NMI else 0)
+
+  private fun maybeIntercept(memory: Memory) = if (onStore != null) {
+    object : Memory {
+      override fun get(addr: Address) = memory[addr]
+      override fun set(addr: Address, data: Data) {
+        memory[addr] = data
+        onStore!!(addr, data)
+      }
+    }
+  } else {
+    memory
   }
 
   inner class Diagnostics internal constructor() {

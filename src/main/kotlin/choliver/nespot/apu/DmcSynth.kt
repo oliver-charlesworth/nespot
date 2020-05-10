@@ -3,7 +3,6 @@ package choliver.nespot.apu
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
-import choliver.nespot.observable
 import java.lang.Integer.max
 import java.lang.Integer.min
 
@@ -16,19 +15,25 @@ class DmcSynth(private val memory: Memory) : Synth {
   private var sample: Data = 0
   private var _irq = false
 
-  var irqEnabled by observable(false) { if (!it) _irq = false }
+  var irqEnabled = false
+    set(value) {
+      field = value
+      if (!value) _irq = false
+    }
   var loop = false
   var level: Data = 0
   var address: Address = 0x0000
   var length = 0
 
-  override var enabled by observable(false) {
-    when {
-      (it && (numBytesRemaining == 0)) -> restart()
-      !it -> clear()
+  override var enabled = false
+    set(value) {
+      field = value
+      when {
+        (value && (numBytesRemaining == 0)) -> restart()
+        !value -> clear()
+      }
+      _irq = false
     }
-    _irq = false
-  }
   override val hasRemainingOutput get() = numBytesRemaining > 0
   override val output get() = level
 

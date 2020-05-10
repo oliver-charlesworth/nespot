@@ -2,7 +2,6 @@ package choliver.nespot.apu
 
 import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.Rational
-import choliver.nespot.observable
 import kotlin.math.max
 
 class Timer(
@@ -10,7 +9,11 @@ class Timer(
 ) {
   private var pos = 0
   private var jump = cyclesPerSample.b
-  var periodCycles by observable(1) { jump = it * cyclesPerSample.b }
+  var periodCycles = 1
+    set(value) {
+      field = value
+      jump = value * cyclesPerSample.b
+    }
 
   fun take(): Int {
     pos -= cyclesPerSample.a

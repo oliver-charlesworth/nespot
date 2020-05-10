@@ -30,15 +30,16 @@ class Renderer(
     var patternAddr: Address = 0x0000,
     var patternLo: Data = 0x00,
     var patternHi: Data = 0x00,
-    var palette: Int = 0,
+    var paletteBase: Int = 0,
     var flipX: Boolean = false,
     var behind: Boolean = false,
     var valid: Boolean = false
   )
 
-  // Don't persist beyond internal call, so need to be in State
-  private val opaqueSpr = MutableList(SCREEN_WIDTH) { false }  // Identifies opaque sprite pixels
-  private var iPalette = 0
+  // Identifies location of opaque sprite pixels (bitmap *much* faster than array/list of booleans)
+  private val anyOpaqueSpr = MutableList(SCREEN_WIDTH / Int.SIZE_BITS) { 0 }
+  private val colorLookup = IntArray(32) { 0 }
+  private var paletteBase = 0
   private var patternLo: Data = 0x00
   private var patternHi: Data = 0x00
 
@@ -46,36 +47,59 @@ class Renderer(
 
   fun loadAndRenderBackground(ppu: PpuState) {
     if (ppu.bgEnabled) {
-      ppu.loadNextBackgroundTile()
-      ppu.loadAndRenderLeftTile()
-      ppu.loadAndRenderOtherTiles()
+      ppu.loadAndRenderEnabledTiles()
     } else {
       renderDisabledTiles()
     }
   }
 
-  private fun PpuState.loadAndRenderLeftTile() {
-    for (x in 0 until TILE_SIZE) {
-      state.paletteIndices[x] = if (bgLeftTileEnabled) {
-        paletteIndex(patternPixel(patternLo, patternHi, coords.xFine), iPalette)
+  private fun PpuState.loadAndRenderEnabledTiles() {
+    var x = 0
+    val indices = state.paletteIndices
+
+    loadNextBackgroundTile()
+
+    // Potentially clipped left-hand tile
+    while (x < TILE_SIZE) {
+      if (bgLeftTileEnabled) {
+        indices[x++] = paletteBase + patternPixel(patternLo, patternHi, coords.xFine)
       } else {
-        0
+        indices[x++] = 0
       }
       coords.incrementX()
       if (coords.xFine == 0) {
         loadNextBackgroundTile()
       }
-
     }
-  }
 
-  private fun PpuState.loadAndRenderOtherTiles() {
-    for (x in TILE_SIZE until SCREEN_WIDTH) {
-      state.paletteIndices[x] = paletteIndex(patternPixel(patternLo, patternHi, coords.xFine), iPalette)
+    // Align with memory loads
+    while (coords.xFine != 0) {
+      state.paletteIndices[x++] = paletteBase + patternPixel(patternLo, patternHi, coords.xFine)
       coords.incrementX()
-      if (coords.xFine == 0) {
-        loadNextBackgroundTile()
-      }
+    }
+    loadNextBackgroundTile()
+
+    // Do as many fully-aligned tiles as possible (reverse through each tile because of pattern packing order)
+    repeat(NUM_TILE_COLUMNS - 2) {
+      patternHi = patternHi shl 1
+      indices[x + 7] = paletteBase or ((patternLo shr 0) and 1) or ((patternHi shr 0) and 2)
+      indices[x + 6] = paletteBase or ((patternLo shr 1) and 1) or ((patternHi shr 1) and 2)
+      indices[x + 5] = paletteBase or ((patternLo shr 2) and 1) or ((patternHi shr 2) and 2)
+      indices[x + 4] = paletteBase or ((patternLo shr 3) and 1) or ((patternHi shr 3) and 2)
+      indices[x + 3] = paletteBase or ((patternLo shr 4) and 1) or ((patternHi shr 4) and 2)
+      indices[x + 2] = paletteBase or ((patternLo shr 5) and 1) or ((patternHi shr 5) and 2)
+      indices[x + 1] = paletteBase or ((patternLo shr 6) and 1) or ((patternHi shr 6) and 2)
+      indices[x + 0] = paletteBase or ((patternLo shr 7) and 1) or ((patternHi shr 7) and 2)
+      coords.incrementXByTile()
+      loadNextBackgroundTile()
+      x += 8
+    }
+
+    // Epilogue
+    while (x < SCREEN_WIDTH) {
+      indices[x] = paletteBase + patternPixel(patternLo, patternHi, coords.xFine)
+      coords.incrementX()
+      x++
     }
   }
 
@@ -103,7 +127,7 @@ class Renderer(
       (if (coords.yCoarse.isBitSet(1)) 4 else 0) +
       (if (coords.xCoarse.isBitSet(1)) 2 else 0)
 
-    iPalette = (memory[addrAttr] shr shift) and 0x03
+    paletteBase = ((memory[addrAttr] shr shift) and 0x03) * NUM_ENTRIES_PER_PALETTE
     patternLo = loadPatternLo(patternAddr)
     patternHi = loadPatternHi(patternAddr)
   }
@@ -117,20 +141,19 @@ class Renderer(
       // Scan until we find a matching sprite
       while (!spr.valid && (iCandidate < NUM_SPRITES)) {
         val y = oam[iCandidate * 4 + 0]
-        val iPattern = oam[iCandidate * 4 + 1]
-        val attrs = oam[iCandidate * 4 + 2]
-        val x = oam[iCandidate * 4 + 3]
-
         val iRow = ppu.scanline - y
-        val flipY = attrs.isBitSet(7)
 
-        with(spr) {
-          this.x = x
-          sprite0 = (iCandidate == 0)
-          palette = (attrs and 0x03) + 4
-          flipX = attrs.isBitSet(6)
-          behind = attrs.isBitSet(5)
-          patternAddr = patternAddr(
+        spr.valid = iRow in 0 until if (ppu.largeSprites) (TILE_SIZE * 2) else TILE_SIZE
+        if (spr.valid) {
+          val iPattern = oam[iCandidate * 4 + 1]
+          val attrs = oam[iCandidate * 4 + 2]
+          val flipY = attrs.isBitSet(7)
+          spr.x = oam[iCandidate * 4 + 3]
+          spr.sprite0 = (iCandidate == 0)
+          spr.paletteBase = ((attrs and 0x03) + 4) * NUM_ENTRIES_PER_PALETTE
+          spr.flipX = attrs.isBitSet(6)
+          spr.behind = attrs.isBitSet(5)
+          spr.patternAddr = patternAddr(
             iTable = when (ppu.largeSprites) {
               true -> iPattern and 0x01
               false -> ppu.sprPatternTable
@@ -141,7 +164,6 @@ class Renderer(
             },
             iRow = maybeFlip(iRow % TILE_SIZE, flipY)
           )
-          valid = iRow in 0 until if (ppu.largeSprites) (TILE_SIZE * 2) else TILE_SIZE
         }
 
         iCandidate++
@@ -171,8 +193,8 @@ class Renderer(
 
   // Lowest index is highest priority, so render last
   fun renderSprites(ppu: PpuState) {
-    for (x in 0 until SCREEN_WIDTH) {
-      opaqueSpr[x] = false
+    for (x in 0 until anyOpaqueSpr.size) {
+      anyOpaqueSpr[x] = 0
     }
 
     if (ppu.sprEnabled) {
@@ -183,19 +205,24 @@ class Renderer(
   }
 
   private fun renderSprite(spr: SpriteToRender, ppu: PpuState) {
+    val indices = state.paletteIndices
     val mask = if (spr.flipX) 0b111 else 0b000
     for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - spr.x)) {
       val x = spr.x + xPixel
       val c = patternPixel(spr.patternLo, spr.patternHi, xPixel xor mask)
 
-      if ((c != 0) && !opaqueSpr[x] && (ppu.sprLeftTileEnabled || (x >= TILE_SIZE))) {
-        opaqueSpr[x] = true
+      if (
+        (c != 0) &&
+        !anyOpaqueSpr[x / Int.SIZE_BITS].isBitSet(x % Int.SIZE_BITS) &&
+        (ppu.sprLeftTileEnabled || (x >= TILE_SIZE))
+      ) {
+        anyOpaqueSpr[x / Int.SIZE_BITS] += 1 shl (x % Int.SIZE_BITS)
 
-        // There is no previous opaque sprite, so if pixel is opaque then it must be background
-        val opaqueBg = (state.paletteIndices[x] != 0)
+        // There is no higher-priority opaque sprite, so if pixel is opaque then it must be background
+        val opaqueBg = (indices[x] % NUM_ENTRIES_PER_PALETTE) != 0
 
         if (!(spr.behind && opaqueBg)) {
-          state.paletteIndices[x] = paletteIndex(c, spr.palette)
+          indices[x] = spr.paletteBase + c
         }
 
         if (spr.sprite0 && opaqueBg && (x < (SCREEN_WIDTH - 1))) {
@@ -207,10 +234,13 @@ class Renderer(
 
   fun commitToBuffer(ppu: PpuState, buffer: IntBuffer) {
     val mask = if (ppu.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
-    val lookup = IntArray(32) { colors[palette[it] and mask] }  // Optimisation
+    for (i in 0 until 32) {
+      // Background colour is universal
+      colorLookup[i] = colors[palette[if (i % NUM_ENTRIES_PER_PALETTE == 0) 0 else i] and mask]
+    }
 
     buffer.position(ppu.scanline * SCREEN_WIDTH)
-    state.paletteIndices.forEach { buffer.put(lookup[it]) }
+    state.paletteIndices.forEach { buffer.put(colorLookup[it]) }
   }
 
   private fun maybeFlip(v: Int, flip: Boolean) = if (flip) (7 - v) else v
@@ -223,9 +253,6 @@ class Renderer(
   private fun loadPatternHi(addr: Address) = memory[BASE_PATTERNS + addr + TILE_SIZE]
 
   private fun patternAddr(iTable: Int, iTile: Int, iRow: Int) = (iTable * 4096) + (iTile * 16) + iRow
-
-  // Background colour is universal
-  private fun paletteIndex(entry: Int, palette: Int) = if (entry == 0) 0 else (palette * 4 + entry)
 
   inner class Diagnostics internal constructor() {
     var state

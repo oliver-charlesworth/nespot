@@ -6,20 +6,20 @@ import choliver.nespot.Memory
 import choliver.nespot.cartridge.Rom.Mirroring
 import choliver.nespot.cartridge.Rom.Mirroring.*
 
-class MirroringMemory(
-  mirroring: Mirroring,
+internal class MirroringMemory(
+  private val mirroring: Mirroring,
   private val ram: Memory
 ) : Memory {
-  private val mapToVram: (Address) -> Address = when (mirroring) {
-    HORIZONTAL -> ::mirrorHorizontal
-    VERTICAL -> ::mirrorVertical
-    IGNORED -> throw UnsupportedOperationException()
-  }
-
   override fun get(addr: Address) = ram[mapToVram(addr)]
 
   override fun set(addr: Address, data: Data) {
     ram[mapToVram(addr)] = data
+  }
+
+  private fun mapToVram(addr: Address) = when (mirroring) {
+    HORIZONTAL -> mirrorHorizontal(addr)
+    VERTICAL -> mirrorVertical(addr)
+    IGNORED -> throw UnsupportedOperationException()
   }
 }
 

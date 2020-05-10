@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   application
@@ -24,6 +25,11 @@ dependencies {
 javafx {
   version = "14"
   modules = listOf("javafx.graphics")
+}
+
+// We don't need checkParameterIsNotNull (etc.) as we don't interact with Java code
+tasks.withType<KotlinCompile>().configureEach {
+  kotlinOptions.freeCompilerArgs += listOf("-Xno-param-assertions", "-Xno-call-assertions", "-Xno-receiver-assertions")
 }
 
 tasks.test {

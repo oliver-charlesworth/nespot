@@ -53,26 +53,14 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
   }
 
   override fun chr(vram: Memory) = object : Memory {
-    private val myLoad: (Address) -> Data = if (usingChrRam) {
-      { addr -> chrRam[addr] }
-    } else {
-      { addr -> rom.chrData[addr].data() }
-    }
-
-    private val myStore: (Address, Data) -> Unit = if (usingChrRam) {
-      { addr, data -> chrRam[addr] = data }
-    } else {
-      { _, _ -> }
-    }
-
     override fun get(addr: Address) = when {
       addr >= BASE_VRAM -> vram[mapToVram(addr)]  // This maps everything >= 0x4000 too
-      addr < BASE_CHR1_ROM -> myLoad(mapToBank(addr, when (chrMode) {
+      addr < BASE_CHR1_ROM -> load(mapToBank(addr, when (chrMode) {
         0 -> (chr0Bank and 0x1E)
         1 -> chr0Bank
         else -> throw IllegalArgumentException()  // Should never happen
       }))
-      else -> myLoad(mapToBank(addr, when (chrMode) {
+      else -> load(mapToBank(addr, when (chrMode) {
         0 -> (chr0Bank or 0x01)
         1 -> chr1Bank
         else -> throw IllegalArgumentException()  // Should never happen
@@ -82,16 +70,24 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
     override fun set(addr: Address, data: Data) {
       when {
         addr >= BASE_VRAM -> vram[mapToVram(addr)] = data  // This maps everything >= 0x4000 too
-        addr < BASE_CHR1_ROM -> myStore(mapToBank(addr, when (chrMode) {
+        addr < BASE_CHR1_ROM -> store(mapToBank(addr, when (chrMode) {
           0 -> (chr0Bank and 0x1E)
           1 -> chr0Bank
           else -> throw IllegalArgumentException()  // Should never happen
         }), data)
-        else -> myStore(mapToBank(addr, when (chrMode) {
+        else -> store(mapToBank(addr, when (chrMode) {
           0 -> (chr0Bank or 0x01)
           1 -> chr1Bank
           else -> throw IllegalArgumentException()  // Should never happen
         }), data)
+      }
+    }
+
+    private fun load(addr: Address) = if (usingChrRam) chrRam[addr] else rom.chrData[addr].data()
+
+    private fun store(addr: Address, data: Data) {
+      if (usingChrRam) {
+        chrRam[addr] = data
       }
     }
 

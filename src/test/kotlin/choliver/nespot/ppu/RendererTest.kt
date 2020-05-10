@@ -42,15 +42,15 @@ class RendererTest {
     }
 
     @Test
-    fun `patterns for higher palettes use universal background color`() {
+    fun `patterns for higher palette`() {
       val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
-      val attrEntries = List(NUM_METATILE_COLUMNS) { 1 }  // Arbitrary non-zero palette #
+      val attrEntries = List(NUM_METATILE_COLUMNS) { 3 }  // Arbitrary non-zero palette #
       initAttributeMemory(attrEntries)
       initBgPatternMemory(mapOf(0 to pattern))
 
       render()
 
-      assertBuffer { pattern[it % TILE_SIZE].let { if (it == 0) 0 else (it + NUM_ENTRIES_PER_PALETTE) } }
+      assertBuffer { pattern[it % TILE_SIZE] + (3 * NUM_ENTRIES_PER_PALETTE) }
     }
 
     @Test
@@ -292,7 +292,7 @@ class RendererTest {
 
       evaluate()
 
-      assertEquals(palette + 4, sprites[0].palette) // Sprite palette, so offset by 4
+      assertEquals((palette + 4) * NUM_ENTRIES_PER_PALETTE, sprites[0].paletteBase) // Sprite palette, so offset by 4
     }
 
     @ParameterizedTest
@@ -470,7 +470,7 @@ class RendererTest {
         patternLo = encodePatternLo(pat)
         patternHi = encodePatternHi(pat)
         x = 5
-        palette = 4
+        paletteBase = 4 * NUM_ENTRIES_PER_PALETTE
       }
 
       render()
@@ -484,7 +484,7 @@ class RendererTest {
         patternLo = encodePatternLo(pat)
         patternHi = encodePatternHi(pat)
         x = 5
-        palette = 4
+        paletteBase = 4 * NUM_ENTRIES_PER_PALETTE
         flipX = true
       }
 
@@ -499,7 +499,7 @@ class RendererTest {
         patternLo = encodePatternLo(pat)
         patternHi = encodePatternHi(pat)
         x = 252
-        palette = 4
+        paletteBase = 4 * NUM_ENTRIES_PER_PALETTE
       }
 
       render()
@@ -513,7 +513,7 @@ class RendererTest {
         patternLo = encodePatternLo(pat)
         patternHi = encodePatternHi(pat)
         x = 5
-        palette = 4
+        paletteBase = 4 * NUM_ENTRIES_PER_PALETTE
       }
 
       render(sprEnabled = false)
@@ -527,7 +527,7 @@ class RendererTest {
         patternLo = encodePatternLo(pat)
         patternHi = encodePatternHi(pat)
         x = 5
-        palette = 4
+        paletteBase = 4 * NUM_ENTRIES_PER_PALETTE
       }
 
       render(sprLeftTileEnabled = false)
@@ -559,25 +559,25 @@ class RendererTest {
     private val paletteSpr2 = 3 // Non-zero palette
     private val paletteBg = 2   // Non-zero palette different to that of sprites
 
-    private val ubg = 0
-    private val bgEntry = 1 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
+    private val bgOpqaueEntry = 1 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
+    private val bgTransparentEntry = 0 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
     private val sprEntry = 1 + ((NUM_PALETTES + paletteSpr) * NUM_ENTRIES_PER_PALETTE)
     private val sprEntry2 = 1 + ((NUM_PALETTES + paletteSpr2) * NUM_ENTRIES_PER_PALETTE)
 
     @Test
-    fun `transparent bg, transparent spr, in front - ubg`() {
+    fun `transparent bg, transparent spr, in front - transparent`() {
       initBackground(false)
       initSprite(behind = false, opaque = false, palette = paletteSpr)
 
-      assertPixelColour(expected = ubg)
+      assertPixelColour(expected = bgTransparentEntry)
     }
 
     @Test
-    fun `transparent bg, transparent spr, behind - ubg`() {
+    fun `transparent bg, transparent spr, behind - transparent`() {
       initBackground(false)
       initSprite(behind = true, opaque = false, palette = paletteSpr)
 
-      assertPixelColour(expected = ubg)
+      assertPixelColour(expected = bgTransparentEntry)
     }
 
     @Test
@@ -601,7 +601,7 @@ class RendererTest {
       initBackground(true)
       initSprite(behind = false, opaque = false, palette = paletteSpr)
 
-      assertPixelColour(expected = bgEntry)
+      assertPixelColour(expected = bgOpqaueEntry)
     }
 
     @Test
@@ -609,7 +609,7 @@ class RendererTest {
       initBackground(true)
       initSprite(behind = true, opaque = false, palette = paletteSpr)
 
-      assertPixelColour(expected = bgEntry)
+      assertPixelColour(expected = bgOpqaueEntry)
     }
 
     @Test
@@ -625,7 +625,7 @@ class RendererTest {
       initBackground(true)
       initSprite(behind = true, opaque = true, palette = paletteSpr)
 
-      assertPixelColour(expected = bgEntry)
+      assertPixelColour(expected = bgOpqaueEntry)
     }
 
     @Test
@@ -652,7 +652,7 @@ class RendererTest {
       initSprite(behind = true, opaque = true, palette = paletteSpr, iSprite = 0)
       initSprite(behind = false, opaque = true, palette = paletteSpr2, iSprite = 1)
 
-      assertPixelColour(expected = bgEntry) // Behind sprite wins, so we see the background!
+      assertPixelColour(expected = bgOpqaueEntry) // Behind sprite wins, so we see the background!
     }
 
     @Test
@@ -669,13 +669,13 @@ class RendererTest {
       with(sprites[iSprite]) {
         patternLo = encodePatternLo(pattern)
         patternHi = encodePatternHi(pattern)
-        this.palette = palette + 4
+        this.paletteBase = (palette + 4) * NUM_ENTRIES_PER_PALETTE
         this.behind = behind
       }
     }
 
     private fun initBackground(opaque: Boolean) {
-      paletteIndices[0] = if (opaque) bgEntry else 0
+      paletteIndices[0] = if (opaque) bgOpqaueEntry else bgTransparentEntry
     }
 
     private fun assertPixelColour(expected: Int) {
@@ -700,7 +700,7 @@ class RendererTest {
       with(sprites[0]) {
         patternLo = encodePatternLo(pattern)
         patternHi = encodePatternHi(pattern)
-        palette = 4
+        paletteBase = 4
         sprite0 = true
       }
     }
@@ -790,7 +790,7 @@ class RendererTest {
     }
 
     @Test
-    fun `maps colours`() {
+    fun `maps colours accounting for UBG`() {
       repeat(32) {
         paletteIndices[it] = it
       }
@@ -798,7 +798,10 @@ class RendererTest {
       commit()
 
       repeat(32) {
-        assertEquals(colors[paletteEntries[it]], videoBuffer[Y_SCANLINE * SCREEN_WIDTH + it])
+        assertEquals(
+          colors[paletteEntries[if (it % 4 == 0) 0 else it]], // UBG logic
+          videoBuffer[Y_SCANLINE * SCREEN_WIDTH + it]
+        )
       }
     }
 
@@ -811,7 +814,10 @@ class RendererTest {
       commit(true)
 
       repeat(32) {
-        assertEquals(colors[paletteEntries[it] and 0x30], videoBuffer[Y_SCANLINE * SCREEN_WIDTH + it])
+        assertEquals(
+          colors[paletteEntries[if (it % 4 == 0) 0 else it] and 0x30],  // UBG logic + greyscale
+          videoBuffer[Y_SCANLINE * SCREEN_WIDTH + it]
+        )
       }
     }
 

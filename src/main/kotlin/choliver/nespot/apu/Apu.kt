@@ -11,18 +11,29 @@ class Apu(
   private val channels: Channels = Channels(
     sq1 = SynthContext(SquareSynth()),
     sq2 = SynthContext(SquareSynth()),
-    tri = SynthContext(TriangleSynth()).apply { inhibitMute(); fixEnvelope(1) },
-    noi = SynthContext(NoiseSynth()).apply { inhibitMute() },
-    dmc = SynthContext(DmcSynth(memory = memory)).apply { inhibitMute(); fixEnvelope(1) }
+    tri = SynthContext(TriangleSynth()).apply {
+      inhibitMute()
+      fixEnvelope(1)
+    },
+    noi = SynthContext(NoiseSynth()).apply {
+      inhibitMute()
+      timer.periodCycles = NOISE_PERIOD_TABLE[0]
+    },
+    dmc = SynthContext(DmcSynth(memory = memory)).apply {
+      inhibitMute()
+      fixEnvelope(1)
+      timer.periodCycles = DMC_RATE_TABLE[0]
+    }
   ),
   private val onAudioBufferReady: (FloatArray) -> Unit,
-  private val bufferSize: Int = BUFFER_SIZE
+  private val bufferSize: Int = BUFFER_SIZE,
+  private val cyclesPerSample: Rational = CYCLES_PER_SAMPLE
 ) {
   private val bufferA = FloatArray(bufferSize)
   private val bufferB = FloatArray(bufferSize)
   private var buffer = bufferA
 
-  private var untilNextSample = CYCLES_PER_SAMPLE.a
+  private var untilNextSample = cyclesPerSample.a
   private var iSample = 0
   private val mixer = Mixer(sequencer, channels)
 
@@ -151,10 +162,10 @@ class Apu(
   }
 
   fun advance(numCycles: Int) {
-    untilNextSample -= numCycles * CYCLES_PER_SAMPLE.b
+    untilNextSample -= numCycles * cyclesPerSample.b
 
     while (untilNextSample <= 0) {
-      untilNextSample += CYCLES_PER_SAMPLE.a
+      untilNextSample += cyclesPerSample.a
       generateSample()
     }
   }

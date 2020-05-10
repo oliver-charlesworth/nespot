@@ -47,9 +47,12 @@ class Ppu(
   }
 
   private fun State.incrementFramePos() {
-    dot = (dot + 1) % DOTS_PER_SCANLINE
-    if (dot == 0) {
-      scanline = (scanline + 1) % SCANLINES_PER_FRAME
+    when (dot) {
+      (DOTS_PER_SCANLINE - 1) -> {
+        dot = 0
+        scanline = (scanline + 1) % SCANLINES_PER_FRAME
+      }
+      else -> dot++
     }
   }
 

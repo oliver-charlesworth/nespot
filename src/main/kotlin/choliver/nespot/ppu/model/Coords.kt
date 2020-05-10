@@ -19,15 +19,20 @@ data class Coords(
     when (xFine) {
       (TILE_SIZE - 1) -> {
         xFine = 0
-        when (xCoarse) {
-          (NUM_TILE_COLUMNS - 1) -> {
-            xCoarse = 0
-            nametable = nametable xor 1   // Wraparound
-          }
-          else -> xCoarse++
-        }
+        incrementXByTile()
       }
       else -> xFine++
+    }
+    return this
+  }
+
+  fun incrementXByTile(): Coords {
+    when (xCoarse) {
+      (NUM_TILE_COLUMNS - 1) -> {
+        xCoarse = 0
+        nametable = nametable xor 1   // Wraparound
+      }
+      else -> xCoarse++
     }
     return this
   }

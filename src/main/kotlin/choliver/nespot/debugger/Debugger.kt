@@ -17,7 +17,6 @@ import choliver.nespot.debugger.PointManager.Point.Watchpoint
 import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nespot.nes.Nes.Companion.PPU_RAM_SIZE
-import choliver.nespot.runner.Event.*
 import choliver.nespot.runner.FakeJoypads
 import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
@@ -109,13 +108,16 @@ class Debugger(
     events.drainTo(myEvents)
     myEvents.forEach { e ->
       when (e) {
-        is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
+        is RunnerEvent.KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> joypads.down(1, action.button)
         }
-        is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
+        is RunnerEvent.KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> joypads.up(1, action.button)
         }
-        is Close -> Unit
+        is RunnerEvent.Close -> Unit
+        is RunnerEvent.Audio -> Unit
+        is RunnerEvent.Video -> Unit
+        is RunnerEvent.Error -> Unit
       }
     }
   }

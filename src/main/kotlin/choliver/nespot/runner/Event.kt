@@ -9,4 +9,5 @@ sealed class Event {
   data class KeyDown(val code: KeyCode) : Event()
   data class KeyUp(val code: KeyCode) : Event()
   object Close : Event()
+  data class Error(val cause: Exception) : Event()
 }

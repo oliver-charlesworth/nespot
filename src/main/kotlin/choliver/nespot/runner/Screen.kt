@@ -146,7 +146,16 @@ class Screen(
   }
 
   private fun onFxThread(block: () -> Unit) {
-    if (started) { Platform.runLater(block) }
+    if (started) {
+      Platform.runLater {
+        try {
+          block()
+        } catch (e: Exception) {
+          onEvent(Error(e))
+          throw e
+        }
+      }
+    }
   }
 
   companion object {

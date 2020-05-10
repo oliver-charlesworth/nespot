@@ -22,6 +22,11 @@ import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
 import choliver.nespot.sixfiveohtwo.Cpu.NextStep
+import choliver.nespot.sixfiveohtwo.model.Instruction
+import choliver.nespot.sixfiveohtwo.model.Opcode
+import choliver.nespot.sixfiveohtwo.model.Opcode.*
+import choliver.nespot.sixfiveohtwo.model.Operand
+import choliver.nespot.sixfiveohtwo.model.Operand.*
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -286,7 +291,7 @@ class Debugger(
         var pc = cmd.pc
         repeat(cmd.num) {
           val decoded = nes.cpu.decodeAt(pc)
-          stdout.println("0x%04x: ${decoded.instruction}".format(pc))
+          stdout.println("0x%04x: ${Instruction(NOP, Implied)}".format(pc))   // TODO
           pc = decoded.nextPc
         }
       }
@@ -384,7 +389,7 @@ class Debugger(
   private fun nextPc(offset: Int = 1) =
     (0 until offset).fold(nes.cpu.state.regs.pc) { pc, _ -> nes.cpu.decodeAt(pc).nextPc }
 
-  private fun instAt(pc: Address) = nes.cpu.decodeAt(pc).instruction
+  private fun instAt(pc: Address) = Instruction(NOP, Implied) // TODO - nes.cpu.decodeAt(pc).instruction
 
   private fun displayDisplays() {
     displays.forEach { (k, v) ->

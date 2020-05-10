@@ -43,7 +43,7 @@ class CallStackManager(
   fun preInstruction() {
     val decoded = nes.cpu.decodeAt(nes.cpu.state.regs.pc)
 
-    when (decoded.instruction.opcode) {
+    when (decoded.opcode) {
       TXS -> if (valid) {
         unsupported("overwriting stack pointer")
       } else {

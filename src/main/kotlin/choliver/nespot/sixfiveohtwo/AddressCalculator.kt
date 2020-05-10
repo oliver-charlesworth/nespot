@@ -14,6 +14,7 @@ class AddressCalculator(
     x: Data = 0,
     y: Data = 0
   ): Address = when (operand) {
+    is Immediate -> operand.literal // TODO - kind of a cheat
     is Relative -> pc + operand.offset.sext()
     is Absolute -> operand.addr
     is AbsoluteIndexed -> operand.addr + (if (operand.source == X) x else y)

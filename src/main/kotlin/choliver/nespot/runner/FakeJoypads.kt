@@ -7,8 +7,8 @@ import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Joypads.Button
 
 class FakeJoypads : Joypads {
-  private val status = mutableMapOf(1 to 0.data(), 2 to 0.data())
-  private val copied = mutableMapOf(1 to 0.data(), 2 to 0.data())
+  private val status = mutableListOf(0.data(), 0.data())
+  private val copied = mutableListOf(0.data(), 0.data())
   private var transparent = false
 
   override fun write(data: Data) {
@@ -20,9 +20,9 @@ class FakeJoypads : Joypads {
 
   override fun read2() = read(2)
 
-  private fun read(which: Int) = (copied[which]!! and 1)
+  private fun read(which: Int) = (copied[which - 1] and 1)
     .also {
-      copied[which] = copied[which]!! shr 1
+      copied[which - 1] = copied[which - 1] shr 1
       maybeCopy()
     }
 
@@ -37,8 +37,8 @@ class FakeJoypads : Joypads {
   private fun update(which: Int, button: Button, state: Boolean) {
     val shift = button.idx
     val mask = (1 shl shift)
-    val s = status[which] ?: throw IllegalArgumentException()  // Should never happen
-    status[which] = if (state) (s or mask) else (s and mask.inv())
+    val s = status[which - 1]
+    status[which - 1] = if (state) (s or mask) else (s and mask.inv())
     maybeCopy()
   }
 

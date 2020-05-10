@@ -44,6 +44,8 @@ class InteractiveRunner(
         consumeEvent()
       }
       maybeBackup()
+    } catch (ex: Exception) {
+      ex.printStackTrace(System.err)
     } finally {
       screen.hide()
       screen.exit()
@@ -64,7 +66,10 @@ class InteractiveRunner(
         is Joypad -> joypads.up(1, action.button)
       }
       is Close -> closed = true
-      is Error -> closed = true
+      is Error -> {
+        e.cause.printStackTrace(System.err)
+        closed = true
+      }
     }
   }
 

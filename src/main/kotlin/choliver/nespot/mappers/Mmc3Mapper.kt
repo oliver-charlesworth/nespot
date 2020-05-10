@@ -8,6 +8,7 @@ import choliver.nespot.cartridge.*
 class Mmc3Mapper(private val rom: Rom) : Mapper {
   private val prgRam = Ram(PRG_RAM_SIZE)
   private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
+  private val numChrBanks = (rom.chrData.size / CHR_BANK_SIZE)
   private var mirrorModeFlag = false
   private var chrModeFlag = false
   private var prgModeFlag = false
@@ -91,7 +92,12 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
     val even = (addr % 2) == 0
     when ((addr and 0x6000) shr 13) {
       0 -> when (even) {
-        false -> regs[regSelect] = data
+        false -> {
+          when (regSelect) {
+            0, 1, 2, 3, 4, 5 -> regs[regSelect] = data % numChrBanks
+            6, 7 -> regs[regSelect] = data % numPrgBanks
+          }
+        }
         true -> {
           chrModeFlag = data.isBitSet(7)
           prgModeFlag = data.isBitSet(6)

@@ -1,6 +1,9 @@
 package choliver.nespot.cpu
 
 import choliver.nespot.*
+import choliver.nespot.cpu.Cpu.Companion.FLAG_IRQ
+import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_NMI
+import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_RESET
 import choliver.nespot.cpu.model.*
 import choliver.nespot.cpu.model.AddressMode.*
 import choliver.nespot.cpu.model.Operand.*
@@ -139,9 +142,12 @@ fun assertCpuEffects(
 
   val cpu = Cpu(
     memory,
-    pollReset = { pollReset(iStep) },
-    pollNmi = { pollNmi(iStep) },
-    pollIrq = { pollIrq(iStep) }
+    pollInterrupts = {
+      0 +
+        (if (pollReset(iStep)) INTERRUPT_RESET else 0) or
+        (if (pollNmi(iStep)) INTERRUPT_NMI else 0) or
+        (if (pollIrq(iStep)) FLAG_IRQ else 0)
+    }
   )
 
   cpu.diagnostics.state.regs = initRegs.with(pc = BASE_USER)

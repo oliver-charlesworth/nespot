@@ -14,9 +14,7 @@ import choliver.nespot.cpu.utils._1
 
 class Cpu(
   private val memory: Memory,
-  private val pollReset: () -> Boolean,   // Level-triggered
-  private val pollIrq: () -> Boolean,     // Level-triggered
-  private val pollNmi: () -> Boolean      // Edge-triggered
+  private val pollInterrupts: () -> Int
 ) {
   private var state = State()
 
@@ -24,10 +22,11 @@ class Cpu(
   private var extraCycles: Int = 0
   private val decoded = Decoded()
   private val decoder = InstructionDecoder(memory)
+  private var flags = 0
 
   fun executeStep(): Int {
     val next = nextStepType()
-    state.prevNmi = pollNmi()
+    state.prevNmi = (flags and INTERRUPT_NMI != 0)
     diagnostics.nextStepOverride = null   // Clear the override
     return when (next) {
       RESET -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
@@ -38,11 +37,14 @@ class Cpu(
   }
 
   // Note the priority order
-  private fun nextStepType() = diagnostics.nextStepOverride ?: when {
-    pollReset() -> RESET
-    pollNmi() && !state.prevNmi -> NMI
-    pollIrq() && !state.regs.p.i -> IRQ
-    else -> INSTRUCTION
+  private fun nextStepType(): NextStep {
+    flags = pollInterrupts()
+    return diagnostics.nextStepOverride ?: when {
+      (flags and INTERRUPT_RESET != 0) -> RESET
+      (flags and INTERRUPT_NMI != 0) && !state.prevNmi -> NMI
+      (flags and FLAG_IRQ != 0) && !state.regs.p.i -> IRQ
+      else -> INSTRUCTION
+    }
   }
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {
@@ -312,6 +314,10 @@ class Cpu(
   val diagnostics = Diagnostics()
 
   companion object {
+    const val INTERRUPT_RESET = 0x01
+    const val INTERRUPT_NMI = 0x02
+    const val FLAG_IRQ = 0x04
+
     const val VECTOR_NMI: Address = 0xFFFA
     const val VECTOR_RESET: Address = 0xFFFC
     const val VECTOR_IRQ: Address = 0xFFFE

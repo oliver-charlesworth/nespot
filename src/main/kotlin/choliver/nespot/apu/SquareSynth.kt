@@ -21,8 +21,8 @@ class SquareSynth : Synth {
   override val hasRemainingOutput get() = lc.remaining > 0
   override val output get() = if (hasRemainingOutput) SEQUENCES[dutyCycle][iSeq] else 0
 
-  override fun onTimer() {
-    iSeq = (iSeq + 1) % SEQUENCE_LENGTH
+  override fun onTimer(num: Int) {
+    iSeq = (iSeq + num) % SEQUENCE_LENGTH
   }
 
   override fun onHalfFrame() {

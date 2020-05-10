@@ -25,9 +25,9 @@ class TriangleSynth : Synth {
   override val output get() = SEQUENCE[iSeq]
 
   // Counters gate sequence generation, rather than muting the channel
-  override fun onTimer() {
+  override fun onTimer(num: Int) {
     if ((linRemaining > 0) && (lc.remaining > 0)) {
-      iSeq = (iSeq + 1) % SEQUENCE_LENGTH
+      iSeq = (iSeq + num) % SEQUENCE_LENGTH
     }
   }
 

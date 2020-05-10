@@ -19,9 +19,7 @@ class SynthContext<S : Synth>(
       sweep.advance()
       synth.onHalfFrame()
     }
-    repeat(timer.take()) {
-      synth.onTimer()
-    }
+    synth.onTimer(timer.take())
     return if (sweep.mute) 0 else (synth.output * envelope.level)
   }
 }

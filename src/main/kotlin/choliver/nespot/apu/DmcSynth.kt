@@ -34,9 +34,11 @@ class DmcSynth(private val memory: Memory) : Synth {
 
   val irq get() = _irq
 
-  override fun onTimer() {
-    maybeLoadSample()
-    maybePlaySample()
+  override fun onTimer(num: Int) {
+    for (i in 0 until num) {
+      maybeLoadSample()
+      maybePlaySample()
+    }
   }
 
   private fun maybeLoadSample() {

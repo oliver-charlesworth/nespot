@@ -5,7 +5,7 @@ interface Synth {
   val output: Int
   val hasRemainingOutput: Boolean
 
-  fun onTimer() {}
+  fun onTimer(num: Int) {}
   fun onQuarterFrame() {}
   fun onHalfFrame() {}
 }

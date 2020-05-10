@@ -3,6 +3,7 @@ package choliver.nespot.apu
 import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.Rational
 import choliver.nespot.observable
+import kotlin.math.max
 
 class Timer(
   private val cyclesPerSample: Rational = CYCLES_PER_SAMPLE
@@ -13,13 +14,9 @@ class Timer(
 
   fun take(): Int {
     pos -= cyclesPerSample.a
-    // TODO - replace this crap with some kind of division
-    var ret = 0
-    while (pos <= 0) {
-      pos += jump
-      ret++
-    }
-    return ret
+    val ticks = max(0, (jump - pos) / jump)
+    pos += ticks * jump
+    return ticks
   }
 
   fun restart() {

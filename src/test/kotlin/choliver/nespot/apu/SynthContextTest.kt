@@ -41,7 +41,7 @@ class SynthContextTest {
 
     ctx.take(Ticks(quarter = false, half = false))
 
-    verify(synth, times(3)).onTimer()
+    verify(synth, times(3)).onTimer(1)
   }
 
   @Test

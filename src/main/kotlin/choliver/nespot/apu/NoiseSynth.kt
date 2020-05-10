@@ -19,9 +19,11 @@ class NoiseSynth : Synth {
   var haltLength = false
   var mode = 0
 
-  override fun onTimer() {
-    val fb = (sr and 0x01) xor ((if (mode == 0) (sr shr 1) else (sr shr 6)) and 0x01)
-    sr = (sr shr 1) or (fb shl 14)
+  override fun onTimer(num: Int) {
+    for (i in 0 until num) {
+      val fb = (sr and 0x01) xor ((if (mode == 0) (sr shr 1) else (sr shr 6)) and 0x01)
+      sr = (sr shr 1) or (fb shl 14)
+    }
   }
 
   override fun onHalfFrame() {

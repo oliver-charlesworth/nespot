@@ -30,7 +30,7 @@ class Renderer(
     var patternAddr: Address = 0x0000,
     var patternLo: Data = 0x00,
     var patternHi: Data = 0x00,
-    var palette: Int = 0,
+    var paletteBase: Int = 0,
     var flipX: Boolean = false,
     var behind: Boolean = false,
     var valid: Boolean = false
@@ -39,7 +39,7 @@ class Renderer(
   // Identifies location of opaque sprite pixels (bitmap *much* faster than array/list of booleans)
   private val anyOpaqueSpr = MutableList(SCREEN_WIDTH / Int.SIZE_BITS) { 0 }
   private val colorLookup = IntArray(32) { 0 }
-  private var iPalette = 0
+  private var paletteBase = 0
   private var patternLo: Data = 0x00
   private var patternHi: Data = 0x00
 
@@ -58,7 +58,7 @@ class Renderer(
   private fun PpuState.loadAndRenderLeftTile() {
     for (x in 0 until TILE_SIZE) {
       state.paletteIndices[x] = if (bgLeftTileEnabled) {
-        (iPalette * 4) + patternPixel(patternLo, patternHi, coords.xFine)
+        paletteBase + patternPixel(patternLo, patternHi, coords.xFine)
       } else {
         0
       }
@@ -72,7 +72,7 @@ class Renderer(
 
   private fun PpuState.loadAndRenderOtherTiles() {
     for (x in TILE_SIZE until SCREEN_WIDTH) {
-      state.paletteIndices[x] = (iPalette * 4) + patternPixel(patternLo, patternHi, coords.xFine)
+      state.paletteIndices[x] = paletteBase + patternPixel(patternLo, patternHi, coords.xFine)
       coords.incrementX()
       if (coords.xFine == 0) {
         loadNextBackgroundTile()
@@ -104,7 +104,7 @@ class Renderer(
       (if (coords.yCoarse.isBitSet(1)) 4 else 0) +
       (if (coords.xCoarse.isBitSet(1)) 2 else 0)
 
-    iPalette = (memory[addrAttr] shr shift) and 0x03
+    paletteBase = ((memory[addrAttr] shr shift) and 0x03) * NUM_ENTRIES_PER_PALETTE
     patternLo = loadPatternLo(patternAddr)
     patternHi = loadPatternHi(patternAddr)
   }
@@ -128,7 +128,7 @@ class Renderer(
         with(spr) {
           this.x = x
           sprite0 = (iCandidate == 0)
-          palette = (attrs and 0x03) + 4
+          paletteBase = ((attrs and 0x03) + 4) * NUM_ENTRIES_PER_PALETTE
           flipX = attrs.isBitSet(6)
           behind = attrs.isBitSet(5)
           patternAddr = patternAddr(
@@ -197,10 +197,10 @@ class Renderer(
         anyOpaqueSpr[x / Int.SIZE_BITS] += 1 shl (x % Int.SIZE_BITS)
 
         // There is no higher-priority opaque sprite, so if pixel is opaque then it must be background
-        val opaqueBg = (state.paletteIndices[x] % 4) != 0
+        val opaqueBg = (state.paletteIndices[x] % NUM_ENTRIES_PER_PALETTE) != 0
 
         if (!(spr.behind && opaqueBg)) {
-          state.paletteIndices[x] = (spr.palette * 4) + c
+          state.paletteIndices[x] = spr.paletteBase + c
         }
 
         if (spr.sprite0 && opaqueBg && (x < (SCREEN_WIDTH - 1))) {
@@ -214,7 +214,7 @@ class Renderer(
     val mask = if (ppu.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
     for (i in 0 until 32) {
       // Background colour is universal
-      colorLookup[i] = colors[palette[if (i % 4 == 0) 0 else i] and mask]
+      colorLookup[i] = colors[palette[if (i % NUM_ENTRIES_PER_PALETTE == 0) 0 else i] and mask]
     }
 
     buffer.position(ppu.scanline * SCREEN_WIDTH)

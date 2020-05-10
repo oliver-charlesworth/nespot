@@ -292,7 +292,7 @@ class RendererTest {
 
       evaluate()
 
-      assertEquals(palette + 4, sprites[0].palette) // Sprite palette, so offset by 4
+      assertEquals((palette + 4) * NUM_ENTRIES_PER_PALETTE, sprites[0].paletteBase) // Sprite palette, so offset by 4
     }
 
     @ParameterizedTest
@@ -470,7 +470,7 @@ class RendererTest {
         patternLo = encodePatternLo(pat)
         patternHi = encodePatternHi(pat)
         x = 5
-        palette = 4
+        paletteBase = 4 * NUM_ENTRIES_PER_PALETTE
       }
 
       render()
@@ -484,7 +484,7 @@ class RendererTest {
         patternLo = encodePatternLo(pat)
         patternHi = encodePatternHi(pat)
         x = 5
-        palette = 4
+        paletteBase = 4 * NUM_ENTRIES_PER_PALETTE
         flipX = true
       }
 
@@ -499,7 +499,7 @@ class RendererTest {
         patternLo = encodePatternLo(pat)
         patternHi = encodePatternHi(pat)
         x = 252
-        palette = 4
+        paletteBase = 4 * NUM_ENTRIES_PER_PALETTE
       }
 
       render()
@@ -513,7 +513,7 @@ class RendererTest {
         patternLo = encodePatternLo(pat)
         patternHi = encodePatternHi(pat)
         x = 5
-        palette = 4
+        paletteBase = 4 * NUM_ENTRIES_PER_PALETTE
       }
 
       render(sprEnabled = false)
@@ -527,7 +527,7 @@ class RendererTest {
         patternLo = encodePatternLo(pat)
         patternHi = encodePatternHi(pat)
         x = 5
-        palette = 4
+        paletteBase = 4 * NUM_ENTRIES_PER_PALETTE
       }
 
       render(sprLeftTileEnabled = false)
@@ -669,7 +669,7 @@ class RendererTest {
       with(sprites[iSprite]) {
         patternLo = encodePatternLo(pattern)
         patternHi = encodePatternHi(pattern)
-        this.palette = palette + 4
+        this.paletteBase = (palette + 4) * NUM_ENTRIES_PER_PALETTE
         this.behind = behind
       }
     }
@@ -700,7 +700,7 @@ class RendererTest {
       with(sprites[0]) {
         patternLo = encodePatternLo(pattern)
         patternHi = encodePatternHi(pattern)
-        palette = 4
+        paletteBase = 4
         sprite0 = true
       }
     }

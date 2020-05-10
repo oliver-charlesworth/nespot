@@ -3,14 +3,24 @@ package choliver.nespot.sixfiveohtwo
 import choliver.nespot.*
 import choliver.nespot.sixfiveohtwo.model.AddressMode
 import choliver.nespot.sixfiveohtwo.model.AddressMode.*
+import choliver.nespot.sixfiveohtwo.model.Instruction
 import choliver.nespot.sixfiveohtwo.model.Opcode
 import choliver.nespot.sixfiveohtwo.model.Opcode.BRK
+import choliver.nespot.sixfiveohtwo.model.Operand.*
+import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.X
+import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.Y
 
 class InstructionDecoder(private val memory: Memory) {
   data class Decoded(
     val opcode: Opcode,
     val addressMode: AddressMode,
     val addr: Address,
+    val nextPc: Address,
+    val numCycles: Int
+  )
+
+  data class DecodedInstruction(
+    val instruction: Instruction,
     val nextPc: Address,
     val numCycles: Int
   )
@@ -83,6 +93,36 @@ class InstructionDecoder(private val memory: Memory) {
       addr = addr.addr(),
       nextPc = pc + pcInc + (if (found.op == BRK) 1 else 0),  // Special case
       numCycles = found.numCycles
+    )
+  }
+
+  /** Basically a debug mode. */
+  fun decodeInstruction(pc: Address): DecodedInstruction {
+    val decoded = decode(pc, 0, 0)
+
+    fun operand8() = memory[pc + 1]
+    fun operand16() = addr(lo = memory[pc + 1], hi = memory[pc + 2])
+
+    val operand = when (decoded.addressMode) {
+      ACCUMULATOR -> Accumulator
+      IMMEDIATE -> Immediate(operand8())
+      IMPLIED -> Implied
+      INDIRECT -> Indirect(operand16())
+      RELATIVE -> Relative(operand8())
+      ABSOLUTE -> Absolute(operand16())
+      ABSOLUTE_X -> AbsoluteIndexed(operand16(), X)
+      ABSOLUTE_Y -> AbsoluteIndexed(operand16(), Y)
+      ZERO_PAGE -> ZeroPage(operand8())
+      ZERO_PAGE_X -> ZeroPageIndexed(operand8(), X)
+      ZERO_PAGE_Y -> ZeroPageIndexed(operand8(), Y)
+      INDEXED_INDIRECT -> IndexedIndirect(operand8())
+      INDIRECT_INDEXED -> IndirectIndexed(operand8())
+    }
+
+    return DecodedInstruction(
+      instruction = Instruction(decoded.opcode, operand),
+      nextPc = decoded.nextPc,
+      numCycles = decoded.numCycles
     )
   }
 

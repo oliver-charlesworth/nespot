@@ -313,7 +313,7 @@ class Cpu(
     var nextStep
       get() = nextStepType()
       set(value) { nextStepOverride = value }
-    fun decodeAt(pc: Address) = this@Cpu.decodeAt(pc)
+    fun decodeAt(pc: Address) = decoder.decodeInstruction(pc)
   }
 
   val diagnostics = Diagnostics()

@@ -37,7 +37,7 @@ class Renderer(
   )
 
   // Don't persist beyond internal call, so need to be in State
-  private val opaqueSpr = MutableList(SCREEN_WIDTH) { false }  // Identifies opaque sprite pixels
+  private val anyOpaqueSpr = MutableList(SCREEN_WIDTH) { false }  // Identifies opaque sprite pixels
   private val colorLookup = IntArray(32) { 0 }
   private var iPalette = 0
   private var patternLo: Data = 0x00
@@ -173,7 +173,7 @@ class Renderer(
   // Lowest index is highest priority, so render last
   fun renderSprites(ppu: PpuState) {
     for (x in 0 until SCREEN_WIDTH) {
-      opaqueSpr[x] = false
+      anyOpaqueSpr[x] = false
     }
 
     if (ppu.sprEnabled) {
@@ -189,11 +189,11 @@ class Renderer(
       val x = spr.x + xPixel
       val c = patternPixel(spr.patternLo, spr.patternHi, xPixel xor mask)
 
-      if ((c != 0) && !opaqueSpr[x] && (ppu.sprLeftTileEnabled || (x >= TILE_SIZE))) {
-        opaqueSpr[x] = true
+      if ((c != 0) && !anyOpaqueSpr[x] && (ppu.sprLeftTileEnabled || (x >= TILE_SIZE))) {
+        anyOpaqueSpr[x] = true
 
-        // There is no previous opaque sprite, so if pixel is opaque then it must be background
-        val opaqueBg = (state.paletteIndices[x] != 0)
+        // There is no higher-priority opaque sprite, so if pixel is opaque then it must be background
+        val opaqueBg = (state.paletteIndices[x] % 4) != 0
 
         if (!(spr.behind && opaqueBg)) {
           state.paletteIndices[x] = (spr.palette * 4) + c

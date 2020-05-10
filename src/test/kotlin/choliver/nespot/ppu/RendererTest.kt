@@ -559,25 +559,25 @@ class RendererTest {
     private val paletteSpr2 = 3 // Non-zero palette
     private val paletteBg = 2   // Non-zero palette different to that of sprites
 
-    private val ubg = 0
-    private val bgEntry = 1 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
+    private val bgOpqaueEntry = 1 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
+    private val bgTransparentEntry = 0 + (paletteBg * NUM_ENTRIES_PER_PALETTE)
     private val sprEntry = 1 + ((NUM_PALETTES + paletteSpr) * NUM_ENTRIES_PER_PALETTE)
     private val sprEntry2 = 1 + ((NUM_PALETTES + paletteSpr2) * NUM_ENTRIES_PER_PALETTE)
 
     @Test
-    fun `transparent bg, transparent spr, in front - ubg`() {
+    fun `transparent bg, transparent spr, in front - transparent`() {
       initBackground(false)
       initSprite(behind = false, opaque = false, palette = paletteSpr)
 
-      assertPixelColour(expected = ubg)
+      assertPixelColour(expected = bgTransparentEntry)
     }
 
     @Test
-    fun `transparent bg, transparent spr, behind - ubg`() {
+    fun `transparent bg, transparent spr, behind - transparent`() {
       initBackground(false)
       initSprite(behind = true, opaque = false, palette = paletteSpr)
 
-      assertPixelColour(expected = ubg)
+      assertPixelColour(expected = bgTransparentEntry)
     }
 
     @Test
@@ -601,7 +601,7 @@ class RendererTest {
       initBackground(true)
       initSprite(behind = false, opaque = false, palette = paletteSpr)
 
-      assertPixelColour(expected = bgEntry)
+      assertPixelColour(expected = bgOpqaueEntry)
     }
 
     @Test
@@ -609,7 +609,7 @@ class RendererTest {
       initBackground(true)
       initSprite(behind = true, opaque = false, palette = paletteSpr)
 
-      assertPixelColour(expected = bgEntry)
+      assertPixelColour(expected = bgOpqaueEntry)
     }
 
     @Test
@@ -625,7 +625,7 @@ class RendererTest {
       initBackground(true)
       initSprite(behind = true, opaque = true, palette = paletteSpr)
 
-      assertPixelColour(expected = bgEntry)
+      assertPixelColour(expected = bgOpqaueEntry)
     }
 
     @Test
@@ -652,7 +652,7 @@ class RendererTest {
       initSprite(behind = true, opaque = true, palette = paletteSpr, iSprite = 0)
       initSprite(behind = false, opaque = true, palette = paletteSpr2, iSprite = 1)
 
-      assertPixelColour(expected = bgEntry) // Behind sprite wins, so we see the background!
+      assertPixelColour(expected = bgOpqaueEntry) // Behind sprite wins, so we see the background!
     }
 
     @Test
@@ -675,7 +675,7 @@ class RendererTest {
     }
 
     private fun initBackground(opaque: Boolean) {
-      paletteIndices[0] = if (opaque) bgEntry else 0
+      paletteIndices[0] = if (opaque) bgOpqaueEntry else bgTransparentEntry
     }
 
     private fun assertPixelColour(expected: Int) {

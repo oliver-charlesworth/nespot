@@ -2,7 +2,7 @@ package choliver.nespot.apu
 
 import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
-import choliver.nespot.sixfiveohtwo.utils._0
+import choliver.nespot.cpu.utils._0
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested

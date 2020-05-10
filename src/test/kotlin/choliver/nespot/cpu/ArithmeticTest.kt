@@ -1,17 +1,17 @@
-package choliver.nespot.sixfiveohtwo
+package choliver.nespot.cpu
 
 import choliver.nespot.Data
+import choliver.nespot.cpu.model.AddressMode.ACCUMULATOR
+import choliver.nespot.cpu.model.Instruction
+import choliver.nespot.cpu.model.Opcode
+import choliver.nespot.cpu.model.Opcode.*
+import choliver.nespot.cpu.model.Operand.Immediate
+import choliver.nespot.cpu.model.Operand.ZeroPage
+import choliver.nespot.cpu.model.Regs
+import choliver.nespot.cpu.utils._0
+import choliver.nespot.cpu.utils._1
 import choliver.nespot.hi
 import choliver.nespot.lo
-import choliver.nespot.sixfiveohtwo.model.AddressMode.ACCUMULATOR
-import choliver.nespot.sixfiveohtwo.model.Instruction
-import choliver.nespot.sixfiveohtwo.model.Opcode
-import choliver.nespot.sixfiveohtwo.model.Opcode.*
-import choliver.nespot.sixfiveohtwo.model.Operand.Immediate
-import choliver.nespot.sixfiveohtwo.model.Operand.ZeroPage
-import choliver.nespot.sixfiveohtwo.model.Regs
-import choliver.nespot.sixfiveohtwo.utils._0
-import choliver.nespot.sixfiveohtwo.utils._1
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 

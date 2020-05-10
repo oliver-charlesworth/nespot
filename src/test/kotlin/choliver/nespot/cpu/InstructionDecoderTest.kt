@@ -1,14 +1,14 @@
-package choliver.nespot.sixfiveohtwo
+package choliver.nespot.cpu
 
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
-import choliver.nespot.sixfiveohtwo.InstructionDecoder.Decoded
-import choliver.nespot.sixfiveohtwo.model.Instruction
-import choliver.nespot.sixfiveohtwo.model.Opcode.*
-import choliver.nespot.sixfiveohtwo.model.Operand.*
-import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.X
-import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.Y
+import choliver.nespot.cpu.InstructionDecoder.Decoded
+import choliver.nespot.cpu.model.Instruction
+import choliver.nespot.cpu.model.Opcode.*
+import choliver.nespot.cpu.model.Operand.*
+import choliver.nespot.cpu.model.Operand.IndexSource.X
+import choliver.nespot.cpu.model.Operand.IndexSource.Y
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever

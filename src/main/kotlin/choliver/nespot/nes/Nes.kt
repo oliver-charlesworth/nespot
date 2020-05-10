@@ -7,9 +7,9 @@ import choliver.nespot.Ram
 import choliver.nespot.apu.Apu
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.createMapper
+import choliver.nespot.cpu.Cpu
+import choliver.nespot.cpu.utils._0
 import choliver.nespot.ppu.Ppu
-import choliver.nespot.sixfiveohtwo.Cpu
-import choliver.nespot.sixfiveohtwo.utils._0
 import java.nio.IntBuffer
 
 class Nes(

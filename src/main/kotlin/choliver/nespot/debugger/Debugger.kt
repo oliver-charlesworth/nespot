@@ -3,6 +3,7 @@ package choliver.nespot.debugger
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.cpu.Cpu.NextStep
 import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
 import choliver.nespot.debugger.CallStackManager.FrameType.NMI
 import choliver.nespot.debugger.Command.*
@@ -21,7 +22,6 @@ import choliver.nespot.runner.FakeJoypads
 import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
-import choliver.nespot.sixfiveohtwo.Cpu.NextStep
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper

@@ -1,14 +1,14 @@
-package choliver.nespot.sixfiveohtwo
+package choliver.nespot.cpu
 
 import choliver.nespot.*
-import choliver.nespot.sixfiveohtwo.model.AddressMode
-import choliver.nespot.sixfiveohtwo.model.AddressMode.*
-import choliver.nespot.sixfiveohtwo.model.Instruction
-import choliver.nespot.sixfiveohtwo.model.Opcode
-import choliver.nespot.sixfiveohtwo.model.Opcode.BRK
-import choliver.nespot.sixfiveohtwo.model.Operand.*
-import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.X
-import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.Y
+import choliver.nespot.cpu.model.AddressMode
+import choliver.nespot.cpu.model.AddressMode.*
+import choliver.nespot.cpu.model.Instruction
+import choliver.nespot.cpu.model.Opcode
+import choliver.nespot.cpu.model.Opcode.BRK
+import choliver.nespot.cpu.model.Operand.*
+import choliver.nespot.cpu.model.Operand.IndexSource.X
+import choliver.nespot.cpu.model.Operand.IndexSource.Y
 
 class InstructionDecoder(private val memory: Memory) {
   data class Decoded(

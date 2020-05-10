@@ -1,8 +1,8 @@
 package choliver.nespot.debugger
 
 import choliver.nespot.Address
+import choliver.nespot.cpu.model.Opcode
 import choliver.nespot.nes.Joypads
-import choliver.nespot.sixfiveohtwo.model.Opcode
 
 sealed class Command {
   object Script : Command()

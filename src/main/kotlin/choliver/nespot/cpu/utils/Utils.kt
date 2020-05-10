@@ -1,4 +1,4 @@
-package choliver.nespot.sixfiveohtwo.utils
+package choliver.nespot.cpu.utils
 
 @Suppress("ObjectPropertyName")
 const val _0 = false

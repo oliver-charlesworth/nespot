@@ -1,6 +1,6 @@
-package choliver.nespot.sixfiveohtwo.model
+package choliver.nespot.cpu.model
 
-import choliver.nespot.sixfiveohtwo.model.Operand.*
+import choliver.nespot.cpu.model.Operand.*
 
 data class Instruction(
   val opcode: Opcode,

@@ -1,8 +1,8 @@
 package choliver.nespot.runner
 
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.cpu.Cpu.NextStep.RESET
 import choliver.nespot.nes.Nes
-import choliver.nespot.sixfiveohtwo.Cpu.NextStep.RESET
 import kotlin.math.roundToInt
 import kotlin.system.measureTimeMillis
 

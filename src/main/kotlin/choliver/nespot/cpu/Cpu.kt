@@ -1,15 +1,15 @@
-package choliver.nespot.sixfiveohtwo
+package choliver.nespot.cpu
 
 import choliver.nespot.*
-import choliver.nespot.sixfiveohtwo.Cpu.NextStep.*
-import choliver.nespot.sixfiveohtwo.model.AddressMode
-import choliver.nespot.sixfiveohtwo.model.AddressMode.*
-import choliver.nespot.sixfiveohtwo.model.Opcode
-import choliver.nespot.sixfiveohtwo.model.Opcode.*
-import choliver.nespot.sixfiveohtwo.model.State
-import choliver.nespot.sixfiveohtwo.model.toFlags
-import choliver.nespot.sixfiveohtwo.utils._0
-import choliver.nespot.sixfiveohtwo.utils._1
+import choliver.nespot.cpu.Cpu.NextStep.*
+import choliver.nespot.cpu.model.AddressMode
+import choliver.nespot.cpu.model.AddressMode.*
+import choliver.nespot.cpu.model.Opcode
+import choliver.nespot.cpu.model.Opcode.*
+import choliver.nespot.cpu.model.State
+import choliver.nespot.cpu.model.toFlags
+import choliver.nespot.cpu.utils._0
+import choliver.nespot.cpu.utils._1
 
 class Cpu(
   private val memory: Memory,

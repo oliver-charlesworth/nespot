@@ -43,7 +43,7 @@ class InteractiveRunner(
         nes.step()
         consumeEvent()
       }
-      backupManager.maybeSave()
+      maybeBackup()
     } finally {
       screen.hide()
       screen.exit()
@@ -73,6 +73,13 @@ class InteractiveRunner(
     } else {
       // TODO - reset
       nes.diagnostics.cpu.nextStep = RESET
+    }
+  }
+
+  private fun maybeBackup() {
+    // We don't want state from snapshot to overwrite main backup
+    if (snapshotFile == null) {
+      backupManager.maybeSave()
     }
   }
 

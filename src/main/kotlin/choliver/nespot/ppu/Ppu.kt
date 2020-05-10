@@ -67,30 +67,33 @@ class Ppu(
     }
   }
 
-  private val actionRender: () -> Unit = {
+  private val actionRender: () -> Object = {
     renderer.loadAndRenderBackground(state)
     renderer.renderSprites(state)
     renderer.commitToBuffer(state, buffer)
 
     nextDot += (256 - 255)
     nextAction = actionEvaluate
+    dummy
   }
 
-  private val actionEvaluate: () -> Unit = {
+  private val actionEvaluate: () -> Object = {
     renderer.evaluateSprites(state)
 
     nextDot += (257 - 256)
     nextAction = actionUpdateCoordsDuringRender
+    dummy
   }
 
-  private val actionUpdateCoordsDuringRender: () -> Unit = {
+  private val actionUpdateCoordsDuringRender: () -> Object = {
     state.updateCoordsForScanline()
 
     nextDot += (320 - 257)
     nextAction = actionLoadSpritesDuringRender
+    dummy
   }
 
-  private val actionLoadSpritesDuringRender: () -> Unit = {
+  private val actionLoadSpritesDuringRender: () -> Object = {
     renderer.loadSprites(state)
 
     if (state.scanline < SCREEN_HEIGHT - 1) {
@@ -100,56 +103,64 @@ class Ppu(
       nextDot = ((SCREEN_HEIGHT + 1) * DOTS_PER_SCANLINE) + 1
       nextAction = actionSetVbl
     }
+    dummy
   }
 
-  private val actionSetVbl: () -> Unit = {
+  private val actionSetVbl: () -> Object = {
     state.inVbl = true
     onVideoBufferReady(buffer)
     buffer = if (buffer === bufferA) bufferB else bufferA
 
     nextDot = ((SCANLINES_PER_FRAME - 1) * DOTS_PER_SCANLINE) + 1
     nextAction = actionClearFlags
+    dummy
   }
 
-  private val actionClearFlags: () -> Unit = {
+  private val actionClearFlags: () -> Object = {
     state.inVbl = false
     state.sprite0Hit = false
     state.spriteOverflow = false
 
     nextDot += (255 - 1)
     nextAction = actionPreRender
+    dummy
   }
 
-  private val actionPreRender: () -> Unit = {
+  private val actionPreRender: () -> Object = {
     renderer.loadAndRenderBackground(state) // This happens even on this line
 
     nextDot += (257 - 255)
     nextAction = actionUpdateCoordsDuringPreRender
+    dummy
   }
 
-  private val actionUpdateCoordsDuringPreRender: () -> Unit = {
+  private val actionUpdateCoordsDuringPreRender: () -> Object = {
     state.updateCoordsForScanline()
 
     nextDot += (280 - 257)
     nextAction = actionUpdateCoordsForNextFrame
+    dummy
   }
 
-  private val actionUpdateCoordsForNextFrame: () -> Unit = {
+  private val actionUpdateCoordsForNextFrame: () -> Object = {
     state.coords = state.coordsBacking.copy()
 
     nextDot += (320 - 280)
     nextAction = actionLoadSpritesDuringPreRender
+    dummy
   }
 
-  private val actionLoadSpritesDuringPreRender: () -> Unit = {
+  private val actionLoadSpritesDuringPreRender: () -> Object = {
     renderer.loadSprites(state)  // This happens even though we haven't evaluated sprites
 
     nextDot = 255
     nextAction = actionRender
+    dummy
   }
 
+  private val dummy = Object()
   private var nextDot = 255
-  private var nextAction: () -> Unit = actionRender
+  private var nextAction: () -> Object = actionRender
 
   private fun State.updateCoordsForScanline() {
     if (bgEnabled || sprEnabled) {

@@ -289,7 +289,7 @@ class Debugger(
         var pc = cmd.pc
         repeat(cmd.num) {
           val decoded = nes.cpu.decodeAt(pc)
-          stdout.println("0x%04x: ${Instruction(NOP, Implied)}".format(pc))   // TODO
+          stdout.println("0x%04x: ${decoded.instruction}".format(pc))
           pc = decoded.nextPc
         }
       }

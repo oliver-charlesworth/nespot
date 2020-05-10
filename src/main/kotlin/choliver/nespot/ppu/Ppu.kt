@@ -97,7 +97,7 @@ class Ppu(
     if (bgEnabled || sprEnabled) {
       coords.xFine = coordsBacking.xFine
       coords.xCoarse = coordsBacking.xCoarse
-      coords.xNametable = coordsBacking.xNametable
+      coords.nametable = (coords.nametable and 0b10) or (coordsBacking.nametable and 0b01)
       coords.incrementY()
     }
   }
@@ -142,8 +142,7 @@ class Ppu(
       addr = addr(lo = addr.lo(), hi = data and 0b00111111)
       with(coordsBacking) {
         yCoarse = ((data and 0b00000011) shl 3) or (yCoarse and 0b00111)
-        xNametable = (data and 0b00000100) shr 2
-        yNametable = (data and 0b00001000) shr 3
+        nametable = (data and 0b00001100) shr 2
         yFine = (data and 0b00110000) shr 4  // Lose the top bit
       }
     } else {
@@ -196,10 +195,7 @@ class Ppu(
     largeSprites = data.isBitSet(5)
     // TODO - is master/slave important?
     vblEnabled = data.isBitSet(7)
-    with(coordsBacking) {
-      xNametable = data and 0x01
-      yNametable = (data and 0x02) shr 1
-    }
+    coordsBacking.nametable = data and 0b11
   }
 
   private fun State.writeCtrl2(data: Data) {

@@ -7,10 +7,9 @@ import choliver.nespot.ppu.TILE_SIZE
 
 @MutableForPerfReasons
 data class Coords(
-  var xNametable: Int = 0,    // 0 or 1
+  var nametable: Int = 0,     // 0 to 3 inc.
   var xCoarse: Int = 0,       // 0 to 31 inc.
   var xFine: Int = 0,         // 0 to 7 inc.
-  var yNametable: Int = 0,    // 0 or 1
   var yCoarse: Int = 0,       // 0 to 31 inc.
   var yFine: Int = 0          // 0 to 7 inc.
 ) {
@@ -23,7 +22,7 @@ data class Coords(
         when (xCoarse) {
           (NUM_TILE_COLUMNS - 1) -> {
             xCoarse = 0
-            xNametable = 1 - xNametable   // Wraparound
+            nametable = nametable xor 1   // Wraparound
           }
           else -> xCoarse++
         }
@@ -40,7 +39,7 @@ data class Coords(
         when (yCoarse) {
           (NUM_TILE_ROWS - 1) -> {
             yCoarse = 0
-            yNametable = 1 - yNametable   // Wraparound
+            nametable = nametable xor 2   // Wraparound
           }
           (NUM_TILE_COLUMNS - 1) -> yCoarse = 0   // Weird special case
           else -> yCoarse++

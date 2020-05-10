@@ -353,10 +353,7 @@ class PpuTest {
       advanceToNextFrameAndResetMock()
       advancePastAction()
 
-      with(captureContext().coords) {
-        assertEquals((idx and 2) shr 1, yNametable)
-        assertEquals(idx and 1, xNametable)
-      }
+      assertEquals(idx, captureContext().coords.nametable)
     }
 
     @Test
@@ -434,9 +431,8 @@ class PpuTest {
       advanceScanlines(1)
 
       val ctx = captureContext()
-      assertEquals(1, ctx.coords.xNametable)
+      assertEquals(0b11, ctx.coords.nametable)
       assertEquals(0b10101, ctx.coords.xCoarse)
-      assertEquals(1, ctx.coords.yNametable)
       assertEquals(0b11111, ctx.coords.yCoarse)
       assertEquals(0b010 + 1, ctx.coords.yFine)  // This gets incremented
     }

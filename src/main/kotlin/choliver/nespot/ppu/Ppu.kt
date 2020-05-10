@@ -18,6 +18,8 @@ class Ppu(
 
   private var state = State()
 
+  private var renderPhase = 0
+
   val vbl get() = state.inVbl && state.vblEnabled
 
   fun readReg(reg: Int) = when (reg) {
@@ -59,15 +61,36 @@ class Ppu(
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   private fun State.handleDot() {
     when (scanline) {
-      in (0 until SCREEN_HEIGHT) -> when (state.dot) {
-        255 -> {
-          renderer.loadAndRenderBackground(this)
-          renderer.renderSprites(this)
-          renderer.commitToBuffer(this, buffer)
+      in (0 until SCREEN_HEIGHT) -> {
+        when (renderPhase) {
+          0 -> {
+            if (dot == 255) {
+              renderer.loadAndRenderBackground(this)
+              renderer.renderSprites(this)
+              renderer.commitToBuffer(this, buffer)
+
+              renderPhase = 1
+            }
+          }
+          1 -> {
+            if (dot == 256) {
+              renderer.evaluateSprites(this)
+              renderPhase = 2
+            }
+          }
+          2 -> {
+            if (dot == 257) {
+              updateCoordsForScanline()
+              renderPhase = 3
+            }
+          }
+          else -> {
+            if (dot == 320) {
+              renderer.loadSprites(this)
+              renderPhase = 0
+            }
+          }
         }
-        256 -> renderer.evaluateSprites(this)
-        257 -> updateCoordsForScanline()
-        320 -> renderer.loadSprites(this)
       }
 
       (SCREEN_HEIGHT + 1) -> when (dot) {

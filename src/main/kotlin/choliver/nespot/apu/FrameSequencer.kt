@@ -6,7 +6,6 @@ import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
 import choliver.nespot.cpu.utils._0
 import choliver.nespot.cpu.utils._1
-import choliver.nespot.observable
 
 // TODO - interrupts
 class FrameSequencer(
@@ -33,15 +32,17 @@ class FrameSequencer(
   private var iSeq = 0
   private var justReset = false
 
-  var mode by observable(FOUR_STEP) {
-    timer.periodCycles = when (it) {
-      FOUR_STEP -> fourStepPeriod
-      FIVE_STEP -> fiveStepPeriod
+  var mode = FOUR_STEP
+    set(value) {
+      field = value
+      timer.periodCycles = when (value) {
+        FOUR_STEP -> fourStepPeriod
+        FIVE_STEP -> fiveStepPeriod
+      }
+      timer.restart()
+      iSeq = 0
+      justReset = true
     }
-    timer.restart()
-    iSeq = 0
-    justReset = true
-  }
 
   fun take(): Ticks {
     val ret = if (timer.take() == 1) {

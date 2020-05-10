@@ -1,6 +1,5 @@
 package choliver.nespot.runner
 
-import choliver.nespot.observable
 import choliver.nespot.ppu.SCREEN_HEIGHT
 import choliver.nespot.ppu.SCREEN_WIDTH
 import choliver.nespot.ppu.TILE_SIZE
@@ -26,7 +25,11 @@ class Screen(
   private val title: String = "NESpot",
   private val onEvent: (e: Event) -> Unit = {}
 ) {
-  var fullScreen by observable(false) { onFxThread { configureStageAndImage() } }
+  var fullScreen = false
+    set(value) {
+      field = value
+      onFxThread { configureStageAndImage() }
+    }
   private var started = false
   private lateinit var stage: Stage
   private lateinit var imageView: ImageView

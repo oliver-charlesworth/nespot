@@ -64,6 +64,7 @@ class InteractiveRunner(
         is Joypad -> joypads.up(1, action.button)
       }
       is Close -> closed = true
+      is Error -> closed = true
     }
   }
 

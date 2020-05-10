@@ -47,10 +47,14 @@ class Ppu(
   }
 
   private fun State.incrementFramePos() {
+    uberDot++
     when (dot) {
       (DOTS_PER_SCANLINE - 1) -> {
         dot = 0
         scanline = (scanline + 1) % SCANLINES_PER_FRAME
+        if (scanline == 0) {
+          uberDot = 0
+        }
       }
       else -> dot++
     }
@@ -58,108 +62,94 @@ class Ppu(
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   private fun State.handleDot() {
-    when (scanline) {
-      in (0 until SCREEN_HEIGHT) -> {
-        if (state.dot == nextDot) {
-          nextAction()
-        }
-      }
-
-      (SCREEN_HEIGHT + 1) -> when (dot) {
-        1 -> setVblFlag()
-      }
-
-      (SCANLINES_PER_FRAME - 1) -> when (dot) {
-        1 -> clearFlags()
-        255 -> renderer.loadAndRenderBackground(this) // This happens even on this line
-        257 -> updateCoordsForScanline()
-        280 -> updateCoordsForFrame()
-        320 -> renderer.loadSprites(this)  // This happens even though we haven't evaluated sprites
-      }
+    if (uberDot == nextDot) {
+      nextAction()
     }
   }
 
-  private val actionA: () -> Unit = {
+  private val actionRender: () -> Unit = {
     renderer.loadAndRenderBackground(state)
     renderer.renderSprites(state)
     renderer.commitToBuffer(state, buffer)
 
-    nextDot = 256
-    nextAction = actionB
+    nextDot += (256 - 255)
+    nextAction = actionEvaluate
   }
 
-  private val actionB: () -> Unit = {
+  private val actionEvaluate: () -> Unit = {
     renderer.evaluateSprites(state)
 
-    nextDot = 257
-    nextAction = actionC
+    nextDot += (257 - 256)
+    nextAction = actionUpdateCoordsDuringRender
   }
 
-  private val actionC: () -> Unit = {
+  private val actionUpdateCoordsDuringRender: () -> Unit = {
     state.updateCoordsForScanline()
 
-    nextDot = 320
-    nextAction = actionD
+    nextDot += (320 - 257)
+    nextAction = actionLoadSpritesDuringRender
   }
 
-  private val actionD: () -> Unit = {
+  private val actionLoadSpritesDuringRender: () -> Unit = {
     renderer.loadSprites(state)
 
+    if (state.scanline < SCREEN_HEIGHT - 1) {
+      nextDot += (DOTS_PER_SCANLINE - 320 + 255)
+      nextAction = actionRender
+    } else {
+      nextDot = ((SCREEN_HEIGHT + 1) * DOTS_PER_SCANLINE) + 1
+      nextAction = actionSetVbl
+    }
+  }
+
+  private val actionSetVbl: () -> Unit = {
+    state.inVbl = true
+    onVideoBufferReady(buffer)
+    buffer = if (buffer === bufferA) bufferB else bufferA
+
+    nextDot = ((SCANLINES_PER_FRAME - 1) * DOTS_PER_SCANLINE) + 1
+    nextAction = actionClearFlags
+  }
+
+  private val actionClearFlags: () -> Unit = {
+    state.inVbl = false
+    state.sprite0Hit = false
+    state.spriteOverflow = false
+
+    nextDot += (255 - 1)
+    nextAction = actionPreRender
+  }
+
+  private val actionPreRender: () -> Unit = {
+    renderer.loadAndRenderBackground(state) // This happens even on this line
+
+    nextDot += (257 - 255)
+    nextAction = actionUpdateCoordsDuringPreRender
+  }
+
+  private val actionUpdateCoordsDuringPreRender: () -> Unit = {
+    state.updateCoordsForScanline()
+
+    nextDot += (280 - 257)
+    nextAction = actionUpdateCoordsForNextFrame
+  }
+
+  private val actionUpdateCoordsForNextFrame: () -> Unit = {
+    state.coords = state.coordsBacking.copy()
+
+    nextDot += (320 - 280)
+    nextAction = actionLoadSpritesDuringPreRender
+  }
+
+  private val actionLoadSpritesDuringPreRender: () -> Unit = {
+    renderer.loadSprites(state)  // This happens even though we haven't evaluated sprites
+
     nextDot = 255
-    nextAction = actionA
+    nextAction = actionRender
   }
 
   private var nextDot = 255
-  private var nextAction: () -> Unit = actionA
-
-
-
-//  private fun State.renderAndCommit() {
-//    renderer.loadAndRenderBackground(this)
-//    renderer.renderSprites(this)
-//    renderer.commitToBuffer(this, buffer)
-//
-//    nextDot = 256
-//    nextAction = { evaluateSprites() }
-//  }
-//
-//  private fun State.evaluateSprites() {
-//    renderer.evaluateSprites(this)
-//
-//    nextDot = 257
-//    nextAction = { updateCoordsForScanlineA() }
-//  }
-//
-//  private fun State.updateCoordsForScanlineA() {
-//    if (bgEnabled || sprEnabled) {
-//      coords.xFine = coordsBacking.xFine
-//      coords.xCoarse = coordsBacking.xCoarse
-//      coords.nametable = (coords.nametable and 0b10) or (coordsBacking.nametable and 0b01)
-//      coords.incrementY()
-//    }
-//
-//    nextDot = 320
-//    nextAction = { loadSprites() }
-//  }
-//
-//  private fun State.loadSprites() {
-//    renderer.loadSprites(this)
-//
-//    nextDot = 255
-//    nextAction = { renderAndCommit() }
-//  }
-
-  private fun State.setVblFlag() {
-    inVbl = true
-    onVideoBufferReady(buffer)
-    buffer = if (buffer === bufferA) bufferB else bufferA
-  }
-
-  private fun State.clearFlags() {
-    inVbl = false
-    sprite0Hit = false
-    spriteOverflow = false
-  }
+  private var nextAction: () -> Unit = actionRender
 
   private fun State.updateCoordsForScanline() {
     if (bgEnabled || sprEnabled) {
@@ -168,10 +158,6 @@ class Ppu(
       coords.nametable = (coords.nametable and 0b10) or (coordsBacking.nametable and 0b01)
       coords.incrementY()
     }
-  }
-
-  private fun State.updateCoordsForFrame() {
-    coords = coordsBacking.copy()
   }
 
   private fun State.readStatus(): Int {

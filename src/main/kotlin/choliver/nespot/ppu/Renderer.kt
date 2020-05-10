@@ -38,6 +38,7 @@ class Renderer(
 
   // Don't persist beyond internal call, so need to be in State
   private val opaqueSpr = MutableList(SCREEN_WIDTH) { false }  // Identifies opaque sprite pixels
+  private val colorLookup = IntArray(32) { 0 }
   private var iPalette = 0
   private var patternLo: Data = 0x00
   private var patternHi: Data = 0x00
@@ -207,10 +208,13 @@ class Renderer(
 
   fun commitToBuffer(ppu: PpuState, buffer: IntBuffer) {
     val mask = if (ppu.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
-    val lookup = IntArray(32) { colors[palette[it] and mask] }  // Optimisation
+    for (i in 0 until 32) {
+      val idx = if (i % 4 == 0) 0 else i
+      colorLookup[i] = colors[palette[i]] and mask
+    }
 
     buffer.position(ppu.scanline * SCREEN_WIDTH)
-    state.paletteIndices.forEach { buffer.put(lookup[it]) }
+    state.paletteIndices.forEach { buffer.put(colorLookup[it]) }
   }
 
   private fun maybeFlip(v: Int, flip: Boolean) = if (flip) (7 - v) else v

@@ -32,7 +32,7 @@ class NromMapper(private val rom: Rom) : Mapper {
     val mirroredRam = MirroringMemory(rom.mirroring, vram)
 
     override fun get(addr: Address) = when {
-      addr >= BASE_VRAM -> mirroredRam[addr]    // This maps everything >= 0x4000 too
+      (addr >= BASE_VRAM) -> mirroredRam[addr]    // This maps everything >= 0x4000 too
       usingChrRam -> chrRam[addr]
       else -> rom.chrData[addr].data()
     }

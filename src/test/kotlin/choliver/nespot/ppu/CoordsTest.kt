@@ -16,12 +16,12 @@ class CoordsTest {
       Coords(xCoarse = 0, xFine = 7).incrementX()
     )
     assertEquals(
-      Coords(xNametable = 1, xCoarse = 0, xFine = 0),
-      Coords(xNametable = 0, xCoarse = 31, xFine = 7).incrementX()
+      Coords(nametable = 1, xCoarse = 0, xFine = 0),
+      Coords(nametable = 0, xCoarse = 31, xFine = 7).incrementX()
     )
     assertEquals(
-      Coords(xNametable = 0, xCoarse = 0, xFine = 0),
-      Coords(xNametable = 1, xCoarse = 31, xFine = 7).incrementX()
+      Coords(nametable = 0, xCoarse = 0, xFine = 0),
+      Coords(nametable = 1, xCoarse = 31, xFine = 7).incrementX()
     )
   }
 
@@ -36,12 +36,12 @@ class CoordsTest {
       Coords(yCoarse = 0, yFine = 7).incrementY()
     )
     assertEquals(
-      Coords(yNametable = 1, yCoarse = 0, yFine = 0),
-      Coords(yNametable = 0, yCoarse = 29, yFine = 7).incrementY()
+      Coords(nametable = 2, yCoarse = 0, yFine = 0),
+      Coords(nametable = 0, yCoarse = 29, yFine = 7).incrementY()
     )
     assertEquals(
-      Coords(yNametable = 0, yCoarse = 0, yFine = 0),
-      Coords(yNametable = 1, yCoarse = 29, yFine = 7).incrementY()
+      Coords(nametable = 0, yCoarse = 0, yFine = 0),
+      Coords(nametable = 2, yCoarse = 29, yFine = 7).incrementY()
     )
     // Some weird special cases
     assertEquals(

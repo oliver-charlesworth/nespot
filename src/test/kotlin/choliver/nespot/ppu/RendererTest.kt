@@ -1,10 +1,10 @@
 package choliver.nespot.ppu
 
 import choliver.nespot.Address
+import choliver.nespot.Data
 import choliver.nespot.Memory
 import choliver.nespot.apu.repeat
-import choliver.nespot.hi
-import choliver.nespot.lo
+import choliver.nespot.isBitSet
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.model.Coords
 import choliver.nespot.ppu.model.State
@@ -419,7 +419,8 @@ class RendererTest {
 
       load()
 
-      assertEquals(0xAACC, sprites[0].pattern)
+      assertEquals(0xCC, sprites[0].patternLo)
+      assertEquals(0xAA, sprites[0].patternHi)
     }
 
     // MMC3 relies on specific PPU memory access pattern during scanline
@@ -431,7 +432,8 @@ class RendererTest {
 
       load()
 
-      assertEquals(0x0000, sprites[0].pattern)  // Transparent pattern
+      assertEquals(0x00, sprites[0].patternLo)  // Transparent pattern
+      assertEquals(0x00, sprites[0].patternHi)  // Transparent pattern
       verify(memory)[0x1FF0]
       verify(memory)[0x1FF8]
     }
@@ -465,7 +467,8 @@ class RendererTest {
     @Test
     fun `opaque sprite`() {
       with(sprites[0]) {
-        pattern = encodePattern(pat)
+        patternLo = encodePatternLo(pat)
+        patternHi = encodePatternHi(pat)
         x = 5
         palette = 4
       }
@@ -478,7 +481,8 @@ class RendererTest {
     @Test
     fun `horizontally flipped`() {
       with(sprites[0]) {
-        this.pattern = encodePattern(pat)
+        patternLo = encodePatternLo(pat)
+        patternHi = encodePatternHi(pat)
         x = 5
         palette = 4
         flipX = true
@@ -492,7 +496,8 @@ class RendererTest {
     @Test
     fun `partially off the right-hand edge`() {
       with(sprites[0]) {
-        this.pattern = encodePattern(pat)
+        patternLo = encodePatternLo(pat)
+        patternHi = encodePatternHi(pat)
         x = 252
         palette = 4
       }
@@ -505,7 +510,8 @@ class RendererTest {
     @Test
     fun `not rendered if rendering disabled`() {
       with(sprites[0]) {
-        pattern = encodePattern(pat)
+        patternLo = encodePatternLo(pat)
+        patternHi = encodePatternHi(pat)
         x = 5
         palette = 4
       }
@@ -518,7 +524,8 @@ class RendererTest {
     @Test
     fun `not rendered if clipped`() {
       with(sprites[0]) {
-        pattern = encodePattern(pat)
+        patternLo = encodePatternLo(pat)
+        patternHi = encodePatternHi(pat)
         x = 5
         palette = 4
       }
@@ -658,8 +665,10 @@ class RendererTest {
     }
 
     private fun initSprite(iSprite: Int = 0, behind: Boolean, opaque: Boolean, palette: Int) {
+      val pattern = listOf(if (opaque) 1 else 0, 0, 0, 0, 0, 0, 0, 0)
       with(sprites[iSprite]) {
-        pattern = encodePattern(listOf(if (opaque) 1 else 0, 0, 0, 0, 0, 0, 0, 0))
+        patternLo = encodePatternLo(pattern)
+        patternHi = encodePatternHi(pattern)
         this.palette = palette + 4
         this.behind = behind
       }
@@ -686,9 +695,11 @@ class RendererTest {
   @Nested
   inner class SpriteRenderCollisions {
     init {
+      val pattern = listOf(1, 0, 0, 0, 0, 0, 0, 0)
       paletteIndices[0] = 1
       with(sprites[0]) {
-        pattern = encodePattern(listOf(1, 0, 0, 0, 0, 0, 0, 0))
+        patternLo = encodePatternLo(pattern)
+        patternHi = encodePatternHi(pattern)
         palette = 4
         sprite0 = true
       }
@@ -708,7 +719,8 @@ class RendererTest {
 
     @Test
     fun `not detected if transparent sprite #0 overlaps opaque background`() {
-      sprites[0].pattern = 0
+      sprites[0].patternLo = 0
+      sprites[0].patternHi = 0
 
       assertFalse(render().sprite0Hit)
     }
@@ -856,16 +868,20 @@ class RendererTest {
 
   private fun initPatternMemory(patterns: Map<Int, List<Int>>, yFine: Int, baseAddr: Address) {
     patterns.forEach { (idx, v) ->
-      val p = encodePattern(v)
-      whenever(memory[baseAddr + (idx * PATTERN_SIZE_BYTES) + yFine]) doReturn p.lo()
-      whenever(memory[baseAddr + (idx * PATTERN_SIZE_BYTES) + yFine + TILE_SIZE]) doReturn p.hi()
+      whenever(memory[baseAddr + (idx * PATTERN_SIZE_BYTES) + yFine]) doReturn encodePatternLo(v)
+      whenever(memory[baseAddr + (idx * PATTERN_SIZE_BYTES) + yFine + TILE_SIZE]) doReturn encodePatternHi(v)
     }
   }
 
-  private fun encodePattern(pattern: List<Int>): Int {
+  private fun encodePatternLo(pattern: List<Int>) = encodePattern(pattern, 0)
+
+  private fun encodePatternHi(pattern: List<Int>) = encodePattern(pattern, 1)
+
+  private fun encodePattern(pattern: List<Int>, slice: Int): Data {
     var p = 0
     pattern.forEachIndexed { i, b ->
-      p = p or ((b and 1) shl (7 - i)) or ((b and 2) shl (14 - i))
+      val bit = if (b.isBitSet(slice)) 1 else 0
+      p = p or (bit shl (7 - i))
     }
     return p
   }

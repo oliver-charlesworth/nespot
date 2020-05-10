@@ -17,7 +17,7 @@ class Nes(
   joypads: Joypads,
   onAudioBufferReady: (FloatArray) -> Unit = {},
   onVideoBufferReady: (IntBuffer) -> Unit = {},
-  private val onStore: (Address, Data) -> Unit = { _: Address, _: Data -> }
+  private val onStore: ((Address, Data) -> Unit)? = null
 ) {
   private val mapper = createMapper(rom)
 
@@ -45,13 +45,7 @@ class Nes(
   )
 
   private val cpu = Cpu(
-    object : Memory {
-      override fun get(addr: Address) = cpuMapper[addr]
-      override fun set(addr: Address, data: Data) {
-        cpuMapper[addr] = data
-        onStore(addr, data)
-      }
-    },
+    maybeIntercept(cpuMapper),
     pollReset = { _0 },
     pollIrq = { apu.irq || mapper.irq },
     pollNmi = ppu::vbl
@@ -61,6 +55,18 @@ class Nes(
     val cycles = cpu.executeStep()
     apu.advance(cycles)
     ppu.advance(cycles)
+  }
+
+  private fun maybeIntercept(memory: Memory) = if (onStore != null) {
+    object : Memory {
+      override fun get(addr: Address) = memory[addr]
+      override fun set(addr: Address, data: Data) {
+        memory[addr] = data
+        onStore!!(addr, data)
+      }
+    }
+  } else {
+    memory
   }
 
   inner class Diagnostics internal constructor() {

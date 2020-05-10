@@ -141,20 +141,19 @@ class Renderer(
       // Scan until we find a matching sprite
       while (!spr.valid && (iCandidate < NUM_SPRITES)) {
         val y = oam[iCandidate * 4 + 0]
-        val iPattern = oam[iCandidate * 4 + 1]
-        val attrs = oam[iCandidate * 4 + 2]
-        val x = oam[iCandidate * 4 + 3]
-
         val iRow = ppu.scanline - y
-        val flipY = attrs.isBitSet(7)
 
-        with(spr) {
-          this.x = x
-          sprite0 = (iCandidate == 0)
-          paletteBase = ((attrs and 0x03) + 4) * NUM_ENTRIES_PER_PALETTE
-          flipX = attrs.isBitSet(6)
-          behind = attrs.isBitSet(5)
-          patternAddr = patternAddr(
+        spr.valid = iRow in 0 until if (ppu.largeSprites) (TILE_SIZE * 2) else TILE_SIZE
+        if (spr.valid) {
+          val iPattern = oam[iCandidate * 4 + 1]
+          val attrs = oam[iCandidate * 4 + 2]
+          val flipY = attrs.isBitSet(7)
+          spr.x = oam[iCandidate * 4 + 3]
+          spr.sprite0 = (iCandidate == 0)
+          spr.paletteBase = ((attrs and 0x03) + 4) * NUM_ENTRIES_PER_PALETTE
+          spr.flipX = attrs.isBitSet(6)
+          spr.behind = attrs.isBitSet(5)
+          spr.patternAddr = patternAddr(
             iTable = when (ppu.largeSprites) {
               true -> iPattern and 0x01
               false -> ppu.sprPatternTable
@@ -165,7 +164,6 @@ class Renderer(
             },
             iRow = maybeFlip(iRow % TILE_SIZE, flipY)
           )
-          valid = iRow in 0 until if (ppu.largeSprites) (TILE_SIZE * 2) else TILE_SIZE
         }
 
         iCandidate++

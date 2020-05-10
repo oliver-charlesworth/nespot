@@ -2,9 +2,9 @@ package choliver.nespot.cpu
 
 import choliver.nespot.*
 import choliver.nespot.cpu.Cpu.NextStep.*
-import choliver.nespot.cpu.model.AddressMode
-import choliver.nespot.cpu.model.AddressMode.*
-import choliver.nespot.cpu.model.Opcode
+import choliver.nespot.cpu.InstructionDecoder.Decoded
+import choliver.nespot.cpu.model.AddressMode.ACCUMULATOR
+import choliver.nespot.cpu.model.AddressMode.IMMEDIATE
 import choliver.nespot.cpu.model.Opcode.*
 import choliver.nespot.cpu.model.State
 import choliver.nespot.cpu.model.toFlags
@@ -21,9 +21,7 @@ class Cpu(
 
   // Instance-level variables to keep the code clean
   private var extraCycles: Int = 0
-  private var addressMode: AddressMode = IMPLIED
-  private var addr: Address = 0x0000
-
+  private val decoded = Decoded()
   private val decoder = InstructionDecoder(memory)
 
   fun executeStep(): Int {
@@ -53,20 +51,16 @@ class Cpu(
   }
 
   private fun executeInstruction(): Int {
-    val decoded = decodeAt(state.regs.pc)
+    decoder.decode(decoded, pc = state.regs.pc, x = state.regs.x, y = state.regs.y)
     state.regs.pc = decoded.nextPc
-    addressMode = decoded.addressMode
-    addr = decoded.addr
     extraCycles = 0
-    execute(decoded.opcode)
+    execute()
     return decoded.numCycles + extraCycles
   }
 
-  private fun decodeAt(pc: Address) = decoder.decode(pc = pc, x = state.regs.x, y = state.regs.y)
-
-  private fun execute(op: Opcode) {
+  private fun execute() {
     state.regs.apply {
-      when (op) {
+      when (decoded.opcode) {
         ADC -> add(resolve())
         SBC -> add(resolve() xor 0xFF)
 
@@ -148,9 +142,9 @@ class Cpu(
           updateZN(y)
         }
 
-        STA -> memory[addr] = a
-        STX -> memory[addr] = x
-        STY -> memory[addr] = y
+        STA -> memory[decoded.addr] = a
+        STX -> memory[decoded.addr] = x
+        STY -> memory[decoded.addr] = y
 
         PHP -> push(p.data() or 0x10)  // Most online references state that PHP also sets B on stack
         PHA -> push(a)
@@ -160,13 +154,13 @@ class Cpu(
           updateZN(a)
         }
 
-        JMP -> pc = addr
+        JMP -> pc = decoded.addr
 
         JSR -> {
           // One before next instruction (note we already advanced PC)
           push((pc - 1).hi())
           push((pc - 1).lo())
-          pc = addr
+          pc = decoded.addr
         }
 
         RTS -> pc = (addr(lo = pop(), hi = pop()) + 1).addr()
@@ -225,10 +219,10 @@ class Cpu(
   private fun branch(cond: Boolean) {
     if (cond) {
       extraCycles++
-      if (((state.regs.pc xor addr) and 0xFF00) != 0) {
+      if (((state.regs.pc xor decoded.addr) and 0xFF00) != 0) {
         extraCycles++   // Page change
       }
-      state.regs.pc = addr
+      state.regs.pc = decoded.addr
     }
   }
 
@@ -276,18 +270,18 @@ class Cpu(
     )
   }
 
-  private fun resolve() = when (addressMode) {
+  private fun resolve() = when (decoded.addressMode) {
     ACCUMULATOR -> state.regs.a
-    IMMEDIATE -> addr // The immediate masquerades as the address
-    else -> memory[addr]
+    IMMEDIATE -> decoded.addr // The immediate masquerades as the address
+    else -> memory[decoded.addr]
   }
 
   private fun storeResult(data: Data) {
     val d = data.data()
-    if (addressMode == ACCUMULATOR) {
+    if (decoded.addressMode == ACCUMULATOR) {
       state.regs.a = d
     } else {
-      memory[addr] = d
+      memory[decoded.addr] = d
     }
     updateZN(d)
   }

@@ -28,19 +28,35 @@ class NromMapper(private val rom: Rom) : Mapper {
     }
   }
 
-  override fun chr(vram: Memory) = object : Memory {
+  override fun chr(vram: Memory): Memory {
     val mirroredRam = MirroringMemory(rom.mirroring, vram)
 
-    override fun get(addr: Address) = when {
-      (addr >= BASE_VRAM) -> mirroredRam[addr]    // This maps everything >= 0x4000 too
-      usingChrRam -> chrRam[addr]
-      else -> rom.chrData[addr].data()
-    }
+    return if (usingChrRam) {
+      object : Memory {
+        override fun get(addr: Address) = when {
+          (addr >= BASE_VRAM) -> mirroredRam[addr]    // This maps everything >= 0x4000 too
+          else -> rom.chrData[addr].data()
+        }
 
-    override fun set(addr: Address, data: Data) {
-      when {
-        (addr >= BASE_VRAM) -> mirroredRam[addr] = data   // This maps everything >= 0x4000 too
-        usingChrRam -> chrRam[addr] = data
+        override fun set(addr: Address, data: Data) {
+          when {
+            (addr >= BASE_VRAM) -> mirroredRam[addr] = data   // This maps everything >= 0x4000 too
+          }
+        }
+      }
+    } else {
+      object : Memory {
+        override fun get(addr: Address) = when {
+          (addr >= BASE_VRAM) -> mirroredRam[addr]    // This maps everything >= 0x4000 too
+          else -> chrRam[addr]
+        }
+
+        override fun set(addr: Address, data: Data) {
+          when {
+            (addr >= BASE_VRAM) -> mirroredRam[addr] = data   // This maps everything >= 0x4000 too
+            else -> chrRam[addr] = data
+          }
+        }
       }
     }
   }

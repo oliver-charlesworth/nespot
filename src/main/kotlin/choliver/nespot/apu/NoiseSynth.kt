@@ -1,5 +1,7 @@
 package choliver.nespot.apu
 
+import choliver.nespot.isBitSet
+
 // http://wiki.nesdev.com/w/index.php/APU_Noise
 class NoiseSynth : Synth {
   private val lc = LengthCounter()
@@ -20,9 +22,11 @@ class NoiseSynth : Synth {
   var mode = 0
 
   override fun onTimer(num: Int) {
-    for (i in 0 until num) {
-      val fb = (sr and 0x01) xor ((if (mode == 0) (sr shr 1) else (sr shr 6)) and 0x01)
-      sr = (sr shr 1) or (fb shl 14)
+    // No point running this faster than 1 tick per sample, so run at most once
+    if (num > 0) {
+      val tap = if (mode == 0) 1 else 6
+      val fb = (sr xor (sr shr tap)).isBitSet(0)
+      sr = (sr shr 1) or (if (fb) (1 shl 14) else 0)
     }
   }
 

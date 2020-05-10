@@ -21,12 +21,13 @@ class CpuMapper(
   private val joypads: Joypads
 ) : Memory {
   override fun get(addr: Address) = when {
+    addr >= 0x4020 -> prg[addr]
     addr < 0x2000 -> ram[addr % 2048]
     addr < 0x4000 -> ppu.readReg(addr % 8)
     addr == ADDR_JOYPAD1 -> joypads.read1()
     addr == ADDR_JOYPAD2 -> joypads.read2()
     addr == ADDR_APU_STATUS -> apu.readStatus()
-    else -> prg[addr]
+    else -> throw RuntimeException()   // Should never happen
   }
 
   override fun set(addr: Address, data: Data) = when {

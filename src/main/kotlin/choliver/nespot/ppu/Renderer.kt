@@ -79,18 +79,43 @@ class Renderer(
     }
     loadNextBackgroundTile()
 
-    // Do as many fully-aligned tiles as possible
+    // Do as many fully-aligned tiles as possible (reverse through each tile because of pattern order)
     repeat(NUM_TILE_COLUMNS - 2) {
-      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 0)
-      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 1)
-      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 2)
-      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 3)
-      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 4)
-      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 5)
-      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 6)
-      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 7)
+      indices[x + 7] = paletteBase or (patternLo and 1) or ((patternHi and 1) shl 1)
+      patternLo = patternLo shr 1
+      patternHi = patternHi shr 1
+
+      indices[x + 6] = paletteBase or (patternLo and 1) or ((patternHi and 1) shl 1)
+      patternLo = patternLo shr 1
+      patternHi = patternHi shr 1
+
+      indices[x + 5] = paletteBase or (patternLo and 1) or ((patternHi and 1) shl 1)
+      patternLo = patternLo shr 1
+      patternHi = patternHi shr 1
+
+      indices[x + 4] = paletteBase or (patternLo and 1) or ((patternHi and 1) shl 1)
+      patternLo = patternLo shr 1
+      patternHi = patternHi shr 1
+
+      indices[x + 3] = paletteBase or (patternLo and 1) or ((patternHi and 1) shl 1)
+      patternLo = patternLo shr 1
+      patternHi = patternHi shr 1
+
+      indices[x + 2] = paletteBase or (patternLo and 1) or ((patternHi and 1) shl 1)
+      patternLo = patternLo shr 1
+      patternHi = patternHi shr 1
+
+      indices[x + 1] = paletteBase or (patternLo and 1) or ((patternHi and 1) shl 1)
+      patternLo = patternLo shr 1
+      patternHi = patternHi shr 1
+
+      indices[x + 0] = paletteBase or (patternLo and 1) or ((patternHi and 1) shl 1)
+      patternLo = patternLo shr 1
+      patternHi = patternHi shr 1
+
       coords.incrementXByTile()
       loadNextBackgroundTile()
+      x += 8
     }
 
     // Epilogue

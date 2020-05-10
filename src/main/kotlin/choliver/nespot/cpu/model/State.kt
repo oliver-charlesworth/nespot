@@ -1,4 +1,4 @@
-package choliver.nespot.sixfiveohtwo.model
+package choliver.nespot.cpu.model
 
 import choliver.nespot.MutableForPerfReasons
 

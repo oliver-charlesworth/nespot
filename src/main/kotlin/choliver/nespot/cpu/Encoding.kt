@@ -1,13 +1,13 @@
-package choliver.nespot.sixfiveohtwo
+package choliver.nespot.cpu
 
 import choliver.nespot.Data
-import choliver.nespot.sixfiveohtwo.model.AddressMode
-import choliver.nespot.sixfiveohtwo.model.AddressMode.*
-import choliver.nespot.sixfiveohtwo.model.Opcode
-import choliver.nespot.sixfiveohtwo.model.Opcode.*
-import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource
-import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.X
-import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.Y
+import choliver.nespot.cpu.model.AddressMode
+import choliver.nespot.cpu.model.AddressMode.*
+import choliver.nespot.cpu.model.Opcode
+import choliver.nespot.cpu.model.Opcode.*
+import choliver.nespot.cpu.model.Operand.IndexSource
+import choliver.nespot.cpu.model.Operand.IndexSource.X
+import choliver.nespot.cpu.model.Operand.IndexSource.Y
 
 data class EncodingInfo(
   val encoding: Data,

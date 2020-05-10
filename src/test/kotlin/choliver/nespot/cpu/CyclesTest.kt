@@ -1,13 +1,13 @@
-package choliver.nespot.sixfiveohtwo
+package choliver.nespot.cpu
 
-import choliver.nespot.sixfiveohtwo.model.Flags
-import choliver.nespot.sixfiveohtwo.model.Instruction
-import choliver.nespot.sixfiveohtwo.model.Opcode.*
-import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.X
-import choliver.nespot.sixfiveohtwo.model.Operand.Relative
-import choliver.nespot.sixfiveohtwo.model.Operand.ZeroPageIndexed
-import choliver.nespot.sixfiveohtwo.model.Regs
-import choliver.nespot.sixfiveohtwo.utils._1
+import choliver.nespot.cpu.model.Flags
+import choliver.nespot.cpu.model.Instruction
+import choliver.nespot.cpu.model.Opcode.*
+import choliver.nespot.cpu.model.Operand.IndexSource.X
+import choliver.nespot.cpu.model.Operand.Relative
+import choliver.nespot.cpu.model.Operand.ZeroPageIndexed
+import choliver.nespot.cpu.model.Regs
+import choliver.nespot.cpu.utils._1
 import org.junit.jupiter.api.Test
 
 class CyclesTest {

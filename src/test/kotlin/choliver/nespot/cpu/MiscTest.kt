@@ -1,6 +1,6 @@
-package choliver.nespot.sixfiveohtwo
+package choliver.nespot.cpu
 
-import choliver.nespot.sixfiveohtwo.model.Opcode.NOP
+import choliver.nespot.cpu.model.Opcode.NOP
 import org.junit.jupiter.api.Test
 
 class MiscTest {

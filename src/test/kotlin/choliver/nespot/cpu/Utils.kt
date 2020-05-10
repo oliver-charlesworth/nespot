@@ -1,12 +1,12 @@
-package choliver.nespot.sixfiveohtwo
+package choliver.nespot.cpu
 
 import choliver.nespot.*
-import choliver.nespot.sixfiveohtwo.model.*
-import choliver.nespot.sixfiveohtwo.model.AddressMode.*
-import choliver.nespot.sixfiveohtwo.model.Operand.*
-import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.X
-import choliver.nespot.sixfiveohtwo.model.Operand.IndexSource.Y
-import choliver.nespot.sixfiveohtwo.utils._0
+import choliver.nespot.cpu.model.*
+import choliver.nespot.cpu.model.AddressMode.*
+import choliver.nespot.cpu.model.Operand.*
+import choliver.nespot.cpu.model.Operand.IndexSource.X
+import choliver.nespot.cpu.model.Operand.IndexSource.Y
+import choliver.nespot.cpu.utils._0
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
 

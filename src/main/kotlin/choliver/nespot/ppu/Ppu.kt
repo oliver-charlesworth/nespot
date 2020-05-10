@@ -39,31 +39,12 @@ class Ppu(
     }
   }
 
+  // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
   fun advance(numCycles: Int) {
     repeat(numCycles * DOTS_PER_CYCLE) {
-      state.handleDot()
-      state.incrementFramePos()
-    }
-  }
-
-  private fun State.incrementFramePos() {
-    uberDot++
-    when (dot) {
-      (DOTS_PER_SCANLINE - 1) -> {
-        dot = 0
-        scanline = (scanline + 1) % SCANLINES_PER_FRAME
-        if (scanline == 0) {
-          uberDot = 0
-        }
+      if (state.dot++ == nextDot) {
+        nextAction()
       }
-      else -> dot++
-    }
-  }
-
-  // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
-  private fun State.handleDot() {
-    if (uberDot == nextDot) {
-      nextAction()
     }
   }
 
@@ -72,7 +53,7 @@ class Ppu(
     renderer.renderSprites(state)
     renderer.commitToBuffer(state, buffer)
 
-    nextDot += (256 - 255)
+    nextDot = 256
     nextAction = actionEvaluate
     dummy
   }
@@ -80,7 +61,7 @@ class Ppu(
   private val actionEvaluate: () -> Object = {
     renderer.evaluateSprites(state)
 
-    nextDot += (257 - 256)
+    nextDot = 257
     nextAction = actionUpdateCoordsDuringRender
     dummy
   }
@@ -88,7 +69,7 @@ class Ppu(
   private val actionUpdateCoordsDuringRender: () -> Object = {
     state.updateCoordsForScanline()
 
-    nextDot += (320 - 257)
+    nextDot = 320
     nextAction = actionLoadSpritesDuringRender
     dummy
   }
@@ -96,13 +77,8 @@ class Ppu(
   private val actionLoadSpritesDuringRender: () -> Object = {
     renderer.loadSprites(state)
 
-    if (state.scanline < SCREEN_HEIGHT - 1) {
-      nextDot += (DOTS_PER_SCANLINE - 320 + 255)
-      nextAction = actionRender
-    } else {
-      nextDot = ((SCREEN_HEIGHT + 1) * DOTS_PER_SCANLINE) + 1
-      nextAction = actionSetVbl
-    }
+    nextDot = 340
+    nextAction = actionEndOfLine
     dummy
   }
 
@@ -111,8 +87,8 @@ class Ppu(
     onVideoBufferReady(buffer)
     buffer = if (buffer === bufferA) bufferB else bufferA
 
-    nextDot = ((SCANLINES_PER_FRAME - 1) * DOTS_PER_SCANLINE) + 1
-    nextAction = actionClearFlags
+    nextDot = 340
+    nextAction = actionEndOfLine
     dummy
   }
 
@@ -121,7 +97,7 @@ class Ppu(
     state.sprite0Hit = false
     state.spriteOverflow = false
 
-    nextDot += (255 - 1)
+    nextDot = 255
     nextAction = actionPreRender
     dummy
   }
@@ -129,7 +105,7 @@ class Ppu(
   private val actionPreRender: () -> Object = {
     renderer.loadAndRenderBackground(state) // This happens even on this line
 
-    nextDot += (257 - 255)
+    nextDot = 257
     nextAction = actionUpdateCoordsDuringPreRender
     dummy
   }
@@ -137,7 +113,7 @@ class Ppu(
   private val actionUpdateCoordsDuringPreRender: () -> Object = {
     state.updateCoordsForScanline()
 
-    nextDot += (280 - 257)
+    nextDot = 280
     nextAction = actionUpdateCoordsForNextFrame
     dummy
   }
@@ -145,7 +121,7 @@ class Ppu(
   private val actionUpdateCoordsForNextFrame: () -> Object = {
     state.coords = state.coordsBacking.copy()
 
-    nextDot += (320 - 280)
+    nextDot = 320
     nextAction = actionLoadSpritesDuringPreRender
     dummy
   }
@@ -153,8 +129,33 @@ class Ppu(
   private val actionLoadSpritesDuringPreRender: () -> Object = {
     renderer.loadSprites(state)  // This happens even though we haven't evaluated sprites
 
-    nextDot = 255
-    nextAction = actionRender
+    nextDot = 340
+    nextAction = actionEndOfLine
+    dummy
+  }
+
+  private val actionEndOfLine: () -> Object = {
+    state.dot = 0
+    state.scanline = (state.scanline + 1) % SCANLINES_PER_FRAME
+
+    when {
+      (state.scanline < SCREEN_HEIGHT) -> {
+        nextDot = 255
+        nextAction = actionRender
+      }
+      (state.scanline == SCREEN_HEIGHT + 1) -> {
+        nextDot = 1
+        nextAction = actionSetVbl
+      }
+      (state.scanline == SCANLINES_PER_FRAME - 1) -> {
+        nextDot = 1
+        nextAction = actionClearFlags
+      }
+      (state.scanline == 0) -> {
+        nextDot = 255
+        nextAction = actionRender
+      }
+    }
     dummy
   }
 

@@ -8,7 +8,7 @@ import choliver.nespot.apu.Apu
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.createMapper
 import choliver.nespot.cpu.Cpu
-import choliver.nespot.cpu.Cpu.Companion.FLAG_IRQ
+import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_IRQ
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_NMI
 import choliver.nespot.ppu.Ppu
 import java.nio.IntBuffer
@@ -56,7 +56,7 @@ class Nes(
     ppu.advance(cycles)
   }
 
-  private fun pollInterrupts() = (if (apu.irq || mapper.irq) FLAG_IRQ else 0) or (if (ppu.vbl) INTERRUPT_NMI else 0)
+  private fun pollInterrupts() = (if (apu.irq || mapper.irq) INTERRUPT_IRQ else 0) or (if (ppu.vbl) INTERRUPT_NMI else 0)
 
   private fun maybeIntercept(memory: Memory) = if (onStore != null) {
     object : Memory {

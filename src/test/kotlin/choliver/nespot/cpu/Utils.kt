@@ -1,7 +1,7 @@
 package choliver.nespot.cpu
 
 import choliver.nespot.*
-import choliver.nespot.cpu.Cpu.Companion.FLAG_IRQ
+import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_IRQ
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_NMI
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_RESET
 import choliver.nespot.cpu.model.*
@@ -146,7 +146,7 @@ fun assertCpuEffects(
       0 +
         (if (pollReset(iStep)) INTERRUPT_RESET else 0) or
         (if (pollNmi(iStep)) INTERRUPT_NMI else 0) or
-        (if (pollIrq(iStep)) FLAG_IRQ else 0)
+        (if (pollIrq(iStep)) INTERRUPT_IRQ else 0)
     }
   )
 

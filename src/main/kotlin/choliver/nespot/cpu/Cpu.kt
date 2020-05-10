@@ -42,7 +42,7 @@ class Cpu(
     return diagnostics.nextStepOverride ?: when {
       (flags and INTERRUPT_RESET != 0) -> RESET
       (flags and INTERRUPT_NMI != 0) && !state.prevNmi -> NMI
-      (flags and FLAG_IRQ != 0) && !state.regs.p.i -> IRQ
+      (flags and INTERRUPT_IRQ != 0) && !state.regs.p.i -> IRQ
       else -> INSTRUCTION
     }
   }
@@ -316,7 +316,7 @@ class Cpu(
   companion object {
     const val INTERRUPT_RESET = 0x01
     const val INTERRUPT_NMI = 0x02
-    const val FLAG_IRQ = 0x04
+    const val INTERRUPT_IRQ = 0x04
 
     const val VECTOR_NMI: Address = 0xFFFA
     const val VECTOR_RESET: Address = 0xFFFC

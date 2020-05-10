@@ -47,36 +47,57 @@ class Renderer(
 
   fun loadAndRenderBackground(ppu: PpuState) {
     if (ppu.bgEnabled) {
-      ppu.loadNextBackgroundTile()
-      ppu.loadAndRenderLeftTile()
-      ppu.loadAndRenderOtherTiles()
+      ppu.loadAndRenderEnabledTiles()
     } else {
       renderDisabledTiles()
     }
   }
 
-  private fun PpuState.loadAndRenderLeftTile() {
-    for (x in 0 until TILE_SIZE) {
-      state.paletteIndices[x] = if (bgLeftTileEnabled) {
-        paletteBase + patternPixel(patternLo, patternHi, coords.xFine)
+  private fun PpuState.loadAndRenderEnabledTiles() {
+    var x = 0
+    val indices = state.paletteIndices
+
+    loadNextBackgroundTile()
+
+    // Potentially clipped left-hand tile
+    while (x < TILE_SIZE) {
+      if (bgLeftTileEnabled) {
+        indices[x++] = paletteBase + patternPixel(patternLo, patternHi, coords.xFine)
       } else {
-        0
+        indices[x++] = 0
       }
       coords.incrementX()
       if (coords.xFine == 0) {
         loadNextBackgroundTile()
       }
-
     }
-  }
 
-  private fun PpuState.loadAndRenderOtherTiles() {
-    for (x in TILE_SIZE until SCREEN_WIDTH) {
-      state.paletteIndices[x] = paletteBase + patternPixel(patternLo, patternHi, coords.xFine)
+    // Align with memory loads
+    while (coords.xFine != 0) {
+      state.paletteIndices[x++] = paletteBase + patternPixel(patternLo, patternHi, coords.xFine)
       coords.incrementX()
-      if (coords.xFine == 0) {
-        loadNextBackgroundTile()
-      }
+    }
+    loadNextBackgroundTile()
+
+    // Do as many fully-aligned tiles as possible
+    repeat(NUM_TILE_COLUMNS - 2) {
+      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 0)
+      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 1)
+      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 2)
+      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 3)
+      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 4)
+      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 5)
+      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 6)
+      indices[x++] = paletteBase + patternPixel(patternLo, patternHi, 7)
+      coords.incrementXByTile()
+      loadNextBackgroundTile()
+    }
+
+    // Epilogue
+    while (x < SCREEN_WIDTH) {
+      indices[x] = paletteBase + patternPixel(patternLo, patternHi, coords.xFine)
+      coords.incrementX()
+      x++
     }
   }
 
@@ -184,6 +205,7 @@ class Renderer(
   }
 
   private fun renderSprite(spr: SpriteToRender, ppu: PpuState) {
+    val indices = state.paletteIndices
     val mask = if (spr.flipX) 0b111 else 0b000
     for (xPixel in 0 until min(TILE_SIZE, SCREEN_WIDTH - spr.x)) {
       val x = spr.x + xPixel
@@ -197,10 +219,10 @@ class Renderer(
         anyOpaqueSpr[x / Int.SIZE_BITS] += 1 shl (x % Int.SIZE_BITS)
 
         // There is no higher-priority opaque sprite, so if pixel is opaque then it must be background
-        val opaqueBg = (state.paletteIndices[x] % NUM_ENTRIES_PER_PALETTE) != 0
+        val opaqueBg = (indices[x] % NUM_ENTRIES_PER_PALETTE) != 0
 
         if (!(spr.behind && opaqueBg)) {
-          state.paletteIndices[x] = spr.paletteBase + c
+          indices[x] = spr.paletteBase + c
         }
 
         if (spr.sprite0 && opaqueBg && (x < (SCREEN_WIDTH - 1))) {

@@ -63,6 +63,15 @@ class Mmc3MapperTest {
       assertBankMapping(romBank = 7, prgBank = 3)   // Fixed to last
     }
 
+    @Test
+    fun `bank mapping wraps`() {
+      mapper.setModeAndReg(prgMode = 0, reg = 6, data = 3 + 8 + 8)
+      mapper.setModeAndReg(prgMode = 0, reg = 7, data = 5 + 8)
+
+      assertBankMapping(romBank = 3, prgBank = 0)
+      assertBankMapping(romBank = 5, prgBank = 1)
+    }
+
     // Test top and bottom of bank
     private fun assertBankMapping(romBank: Int, prgBank: Int) {
       val romBase = romBank * PRG_BANK_SIZE
@@ -117,6 +126,25 @@ class Mmc3MapperTest {
       assertBankMapping(romBank = 4, chrBank = 4)
       assertBankMapping(romBank = 5, chrBank = 5)
       assertBankMapping(romBank = 0, chrBank = 6)
+      assertBankMapping(romBank = 1, chrBank = 7)
+    }
+
+    @Test
+    fun `bank mapping wraps`() {
+      mapper.setModeAndReg(chrMode = 0, reg = 0, data = 5 + 8) // Note we ignore LSB of selected bank
+      mapper.setModeAndReg(chrMode = 0, reg = 1, data = 0 + 8) // Note we ignore LSB of selected bank
+      mapper.setModeAndReg(chrMode = 0, reg = 2, data = 3 + 8)
+      mapper.setModeAndReg(chrMode = 0, reg = 3, data = 6 + 8)
+      mapper.setModeAndReg(chrMode = 0, reg = 4, data = 2 + 8)
+      mapper.setModeAndReg(chrMode = 0, reg = 5, data = 1 + 8)
+
+      assertBankMapping(romBank = 4, chrBank = 0)
+      assertBankMapping(romBank = 5, chrBank = 1)
+      assertBankMapping(romBank = 0, chrBank = 2)
+      assertBankMapping(romBank = 1, chrBank = 3)
+      assertBankMapping(romBank = 3, chrBank = 4)
+      assertBankMapping(romBank = 6, chrBank = 5)
+      assertBankMapping(romBank = 2, chrBank = 6)
       assertBankMapping(romBank = 1, chrBank = 7)
     }
 

@@ -18,9 +18,6 @@ class Ppu(
 
   private var state = State()
 
-  private var nextDot = 255
-  private var nextAction: () -> Unit = { state.renderAndCommit() }
-
   val vbl get() = state.inVbl && state.vblEnabled
 
   fun readReg(reg: Int) = when (reg) {
@@ -82,40 +79,75 @@ class Ppu(
     }
   }
 
-  private fun State.renderAndCommit() {
-    renderer.loadAndRenderBackground(this)
-    renderer.renderSprites(this)
-    renderer.commitToBuffer(this, buffer)
+  private val actionA: () -> Unit = {
+    renderer.loadAndRenderBackground(state)
+    renderer.renderSprites(state)
+    renderer.commitToBuffer(state, buffer)
 
     nextDot = 256
-    nextAction = { evaluateSprites() }
+    nextAction = actionB
   }
 
-  private fun State.evaluateSprites() {
-    renderer.evaluateSprites(this)
+  private val actionB: () -> Unit = {
+    renderer.evaluateSprites(state)
 
     nextDot = 257
-    nextAction = { updateCoordsForScanlineA() }
+    nextAction = actionC
   }
 
-  private fun State.updateCoordsForScanlineA() {
-    if (bgEnabled || sprEnabled) {
-      coords.xFine = coordsBacking.xFine
-      coords.xCoarse = coordsBacking.xCoarse
-      coords.nametable = (coords.nametable and 0b10) or (coordsBacking.nametable and 0b01)
-      coords.incrementY()
-    }
+  private val actionC: () -> Unit = {
+    state.updateCoordsForScanline()
 
     nextDot = 320
-    nextAction = { loadSprites() }
+    nextAction = actionD
   }
 
-  private fun State.loadSprites() {
-    renderer.loadSprites(this)
+  private val actionD: () -> Unit = {
+    renderer.loadSprites(state)
 
     nextDot = 255
-    nextAction = { renderAndCommit() }
+    nextAction = actionA
   }
+
+  private var nextDot = 255
+  private var nextAction: () -> Unit = actionA
+
+
+
+//  private fun State.renderAndCommit() {
+//    renderer.loadAndRenderBackground(this)
+//    renderer.renderSprites(this)
+//    renderer.commitToBuffer(this, buffer)
+//
+//    nextDot = 256
+//    nextAction = { evaluateSprites() }
+//  }
+//
+//  private fun State.evaluateSprites() {
+//    renderer.evaluateSprites(this)
+//
+//    nextDot = 257
+//    nextAction = { updateCoordsForScanlineA() }
+//  }
+//
+//  private fun State.updateCoordsForScanlineA() {
+//    if (bgEnabled || sprEnabled) {
+//      coords.xFine = coordsBacking.xFine
+//      coords.xCoarse = coordsBacking.xCoarse
+//      coords.nametable = (coords.nametable and 0b10) or (coordsBacking.nametable and 0b01)
+//      coords.incrementY()
+//    }
+//
+//    nextDot = 320
+//    nextAction = { loadSprites() }
+//  }
+//
+//  private fun State.loadSprites() {
+//    renderer.loadSprites(this)
+//
+//    nextDot = 255
+//    nextAction = { renderAndCommit() }
+//  }
 
   private fun State.setVblFlag() {
     inVbl = true

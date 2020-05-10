@@ -58,7 +58,7 @@ class Renderer(
   private fun PpuState.loadAndRenderLeftTile() {
     for (x in 0 until TILE_SIZE) {
       state.paletteIndices[x] = if (bgLeftTileEnabled) {
-        paletteIndex(patternPixel(patternLo, patternHi, coords.xFine), iPalette)
+        (iPalette * 4) + patternPixel(patternLo, patternHi, coords.xFine)
       } else {
         0
       }
@@ -72,7 +72,7 @@ class Renderer(
 
   private fun PpuState.loadAndRenderOtherTiles() {
     for (x in TILE_SIZE until SCREEN_WIDTH) {
-      state.paletteIndices[x] = paletteIndex(patternPixel(patternLo, patternHi, coords.xFine), iPalette)
+      state.paletteIndices[x] = (iPalette * 4) + patternPixel(patternLo, patternHi, coords.xFine)
       coords.incrementX()
       if (coords.xFine == 0) {
         loadNextBackgroundTile()
@@ -196,7 +196,7 @@ class Renderer(
         val opaqueBg = (state.paletteIndices[x] != 0)
 
         if (!(spr.behind && opaqueBg)) {
-          state.paletteIndices[x] = paletteIndex(c, spr.palette)
+          state.paletteIndices[x] = (spr.palette * 4) + c
         }
 
         if (spr.sprite0 && opaqueBg && (x < (SCREEN_WIDTH - 1))) {
@@ -209,8 +209,8 @@ class Renderer(
   fun commitToBuffer(ppu: PpuState, buffer: IntBuffer) {
     val mask = if (ppu.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
     for (i in 0 until 32) {
-      val idx = if (i % 4 == 0) 0 else i
-      colorLookup[i] = colors[palette[i]] and mask
+      // Background colour is universal
+      colorLookup[i] = colors[palette[if (i % 4 == 0) 0 else i] and mask]
     }
 
     buffer.position(ppu.scanline * SCREEN_WIDTH)
@@ -227,9 +227,6 @@ class Renderer(
   private fun loadPatternHi(addr: Address) = memory[BASE_PATTERNS + addr + TILE_SIZE]
 
   private fun patternAddr(iTable: Int, iTile: Int, iRow: Int) = (iTable * 4096) + (iTile * 16) + iRow
-
-  // Background colour is universal
-  private fun paletteIndex(entry: Int, palette: Int) = if (entry == 0) 0 else (palette * 4 + entry)
 
   inner class Diagnostics internal constructor() {
     var state

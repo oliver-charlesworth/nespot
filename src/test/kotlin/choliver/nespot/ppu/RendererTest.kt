@@ -42,15 +42,15 @@ class RendererTest {
     }
 
     @Test
-    fun `patterns for higher palettes use universal background color`() {
+    fun `patterns for higher palette`() {
       val pattern = listOf(0, 1, 2, 3, 2, 3, 0, 1)
-      val attrEntries = List(NUM_METATILE_COLUMNS) { 1 }  // Arbitrary non-zero palette #
+      val attrEntries = List(NUM_METATILE_COLUMNS) { 3 }  // Arbitrary non-zero palette #
       initAttributeMemory(attrEntries)
       initBgPatternMemory(mapOf(0 to pattern))
 
       render()
 
-      assertBuffer { pattern[it % TILE_SIZE].let { if (it == 0) 0 else (it + NUM_ENTRIES_PER_PALETTE) } }
+      assertBuffer { pattern[it % TILE_SIZE] + (3 * NUM_ENTRIES_PER_PALETTE) }
     }
 
     @Test
@@ -790,7 +790,7 @@ class RendererTest {
     }
 
     @Test
-    fun `maps colours`() {
+    fun `maps colours accounting for UBG`() {
       repeat(32) {
         paletteIndices[it] = it
       }
@@ -798,7 +798,10 @@ class RendererTest {
       commit()
 
       repeat(32) {
-        assertEquals(colors[paletteEntries[it]], videoBuffer[Y_SCANLINE * SCREEN_WIDTH + it])
+        assertEquals(
+          colors[paletteEntries[if (it % 4 == 0) 0 else it]], // UBG logic
+          videoBuffer[Y_SCANLINE * SCREEN_WIDTH + it]
+        )
       }
     }
 
@@ -811,7 +814,10 @@ class RendererTest {
       commit(true)
 
       repeat(32) {
-        assertEquals(colors[paletteEntries[it] and 0x30], videoBuffer[Y_SCANLINE * SCREEN_WIDTH + it])
+        assertEquals(
+          colors[paletteEntries[if (it % 4 == 0) 0 else it] and 0x30],  // UBG logic + greyscale
+          videoBuffer[Y_SCANLINE * SCREEN_WIDTH + it]
+        )
       }
     }
 

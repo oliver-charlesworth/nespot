@@ -4,6 +4,7 @@ import choliver.nespot.*
 import choliver.nespot.ppu.model.State
 import java.nio.IntBuffer
 
+@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
 class Ppu(
   private val memory: Memory,
   private val oam: Memory = Ram(256),
@@ -40,6 +41,10 @@ class Ppu(
   }
 
   // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
+  // This is implemented as a state machine to minimise use of conditionals.
+  // Each state is represented as a lambda, responsible for specifying the next state (nextAction) and
+  // dot time (nextDot).
+  // The lambdas have return type of Object to avoid Kotlin generating bridge methods
   fun advance(numCycles: Int) {
     repeat(numCycles * DOTS_PER_CYCLE) {
       if (state.dot++ == nextDot) {
@@ -160,6 +165,7 @@ class Ppu(
   }
 
   private val dummy = Object()
+  // TODO - these need to be included in State (and serialised) somehow
   private var nextDot = 255
   private var nextAction: () -> Object = actionRender
 

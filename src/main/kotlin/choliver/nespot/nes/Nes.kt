@@ -59,11 +59,12 @@ class Nes(
   private fun pollInterrupts() = (if (apu.irq || mapper.irq) INTERRUPT_IRQ else 0) or (if (ppu.vbl) INTERRUPT_NMI else 0)
 
   private fun maybeIntercept(memory: Memory) = if (onStore != null) {
+    val onStore = onStore
     object : Memory {
       override fun get(addr: Address) = memory[addr]
       override fun set(addr: Address, data: Data) {
         memory[addr] = data
-        onStore!!(addr, data)
+        onStore(addr, data)
       }
     }
   } else {

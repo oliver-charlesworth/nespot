@@ -4,6 +4,7 @@ import choliver.nespot.*
 import choliver.nespot.ppu.model.State
 import java.nio.IntBuffer
 
+@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
 class Ppu(
   private val memory: Memory,
   private val oam: Memory = Ram(256),
@@ -39,62 +40,134 @@ class Ppu(
     }
   }
 
+  // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
+  // This is implemented as a state machine to minimise use of conditionals.
+  // Each state is represented as a lambda, responsible for specifying the next state (nextAction) and
+  // dot time (nextDot).
+  // The lambdas have return type of Object to avoid Kotlin generating bridge methods
   fun advance(numCycles: Int) {
     repeat(numCycles * DOTS_PER_CYCLE) {
-      state.handleDot()
-      state.incrementFramePos()
-    }
-  }
-
-  private fun State.incrementFramePos() {
-    when (dot) {
-      (DOTS_PER_SCANLINE - 1) -> {
-        dot = 0
-        scanline = (scanline + 1) % SCANLINES_PER_FRAME
-      }
-      else -> dot++
-    }
-  }
-
-  // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
-  private fun State.handleDot() {
-    when (scanline) {
-      in (0 until SCREEN_HEIGHT) -> when (state.dot) {
-        255 -> {
-          renderer.loadAndRenderBackground(this)
-          renderer.renderSprites(this)
-          renderer.commitToBuffer(this, buffer)
-        }
-        256 -> renderer.evaluateSprites(this)
-        257 -> updateCoordsForScanline()
-        320 -> renderer.loadSprites(this)
-      }
-
-      (SCREEN_HEIGHT + 1) -> when (dot) {
-        1 -> setVblFlag()
-      }
-
-      (SCANLINES_PER_FRAME - 1) -> when (dot) {
-        1 -> clearFlags()
-        255 -> renderer.loadAndRenderBackground(this) // This happens even on this line
-        257 -> updateCoordsForScanline()
-        280 -> updateCoordsForFrame()
-        320 -> renderer.loadSprites(this)  // This happens even though we haven't evaluated sprites
+      if (state.dot++ == nextDot) {
+        nextAction()
       }
     }
   }
 
-  private fun State.setVblFlag() {
-    inVbl = true
+  private val actionRender: () -> Object = {
+    renderer.loadAndRenderBackground(state)
+    renderer.renderSprites(state)
+    renderer.commitToBuffer(state, buffer)
+
+    nextDot = 256
+    nextAction = actionEvaluate
+    dummy
+  }
+
+  private val actionEvaluate: () -> Object = {
+    renderer.evaluateSprites(state)
+
+    nextDot = 257
+    nextAction = actionUpdateCoordsDuringRender
+    dummy
+  }
+
+  private val actionUpdateCoordsDuringRender: () -> Object = {
+    state.updateCoordsForScanline()
+
+    nextDot = 320
+    nextAction = actionLoadSpritesDuringRender
+    dummy
+  }
+
+  private val actionLoadSpritesDuringRender: () -> Object = {
+    renderer.loadSprites(state)
+
+    nextDot = 340
+    nextAction = actionEndOfLine
+    dummy
+  }
+
+  private val actionSetVbl: () -> Object = {
+    state.inVbl = true
     onVideoBufferReady(buffer)
     buffer = if (buffer === bufferA) bufferB else bufferA
+
+    nextDot = 340
+    nextAction = actionEndOfLine
+    dummy
   }
 
-  private fun State.clearFlags() {
-    inVbl = false
-    sprite0Hit = false
-    spriteOverflow = false
+  private val actionClearFlags: () -> Object = {
+    state.inVbl = false
+    state.sprite0Hit = false
+    state.spriteOverflow = false
+
+    nextDot = 255
+    nextAction = actionPreRender
+    dummy
   }
+
+  private val actionPreRender: () -> Object = {
+    renderer.loadAndRenderBackground(state) // This happens even on this line
+
+    nextDot = 257
+    nextAction = actionUpdateCoordsDuringPreRender
+    dummy
+  }
+
+  private val actionUpdateCoordsDuringPreRender: () -> Object = {
+    state.updateCoordsForScanline()
+
+    nextDot = 280
+    nextAction = actionUpdateCoordsForNextFrame
+    dummy
+  }
+
+  private val actionUpdateCoordsForNextFrame: () -> Object = {
+    state.coords = state.coordsBacking.copy()
+
+    nextDot = 320
+    nextAction = actionLoadSpritesDuringPreRender
+    dummy
+  }
+
+  private val actionLoadSpritesDuringPreRender: () -> Object = {
+    renderer.loadSprites(state)  // This happens even though we haven't evaluated sprites
+
+    nextDot = 340
+    nextAction = actionEndOfLine
+    dummy
+  }
+
+  private val actionEndOfLine: () -> Object = {
+    state.dot = 0
+    state.scanline = (state.scanline + 1) % SCANLINES_PER_FRAME
+
+    when {
+      (state.scanline < SCREEN_HEIGHT) -> {
+        nextDot = 255
+        nextAction = actionRender
+      }
+      (state.scanline == SCREEN_HEIGHT + 1) -> {
+        nextDot = 1
+        nextAction = actionSetVbl
+      }
+      (state.scanline == SCANLINES_PER_FRAME - 1) -> {
+        nextDot = 1
+        nextAction = actionClearFlags
+      }
+      (state.scanline == 0) -> {
+        nextDot = 255
+        nextAction = actionRender
+      }
+    }
+    dummy
+  }
+
+  private val dummy = Object()
+  // TODO - these need to be included in State (and serialised) somehow
+  private var nextDot = 255
+  private var nextAction: () -> Object = actionRender
 
   private fun State.updateCoordsForScanline() {
     if (bgEnabled || sprEnabled) {
@@ -103,10 +176,6 @@ class Ppu(
       coords.nametable = (coords.nametable and 0b10) or (coordsBacking.nametable and 0b01)
       coords.incrementY()
     }
-  }
-
-  private fun State.updateCoordsForFrame() {
-    coords = coordsBacking.copy()
   }
 
   private fun State.readStatus(): Int {

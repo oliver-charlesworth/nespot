@@ -10,7 +10,6 @@ import javafx.geometry.Rectangle2D
 import javafx.scene.Cursor
 import javafx.scene.Group
 import javafx.scene.Scene
-import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.image.PixelFormat
 import javafx.scene.image.WritableImage
@@ -106,8 +105,8 @@ class Screen(
   }
 
   private fun initImageView() {
-
-    imageView = ImageView().apply {
+    img = WritableImage(SCREEN_WIDTH, SCREEN_HEIGHT)
+    imageView = ImageView(img).apply {
       // Crop top and bottom tile, per http://wiki.nesdev.com/w/index.php/Overscan
       viewport = Rectangle2D(
         0.0,

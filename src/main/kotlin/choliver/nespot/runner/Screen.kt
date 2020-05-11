@@ -10,6 +10,7 @@ import javafx.geometry.Rectangle2D
 import javafx.scene.Cursor
 import javafx.scene.Group
 import javafx.scene.Scene
+import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.image.PixelFormat
 import javafx.scene.image.WritableImage
@@ -34,7 +35,7 @@ class Screen(
     }
   private var started = false
   private lateinit var stage: Stage
-  private lateinit var img: WritableImage
+//  private lateinit var img: WritableImage
   private lateinit var imageView: ImageView
   private val byteBuffer = ByteBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
   private val intBuffer: IntBuffer = byteBuffer.asIntBuffer()
@@ -52,16 +53,14 @@ class Screen(
     intBuffer.put(buffer)
     onFxThread {
       if (yes) {
-        println(img.pixelWriter.pixelFormat.type)
-
-        val t = measureTimeMillis {
-          img.pixelWriter.setPixels(
-            0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
-            PixelFormat.getByteBgraPreInstance(),
-            byteBuffer.array(),
-            0, SCREEN_WIDTH * 4
-          )
-        }
+        val img = WritableImage(SCREEN_WIDTH, SCREEN_HEIGHT)
+        img.pixelWriter.setPixels(
+          0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
+          PixelFormat.getByteBgraPreInstance(),
+          byteBuffer.array(),
+          0, SCREEN_WIDTH * 4
+        )
+        imageView.image = img
 //        println("Time to redraw: ${t} ms")
       }
       yes = !yes
@@ -96,7 +95,7 @@ class Screen(
         private var prev: Long = 0
         override fun handle(now: Long) {
           val now = System.currentTimeMillis()
-//          println("AnimationTimer::handle (${now - prev} ms)")
+          println("AnimationTimer::handle (${now - prev} ms)")
           prev = now
 
         }
@@ -107,8 +106,8 @@ class Screen(
   }
 
   private fun initImageView() {
-    img = WritableImage(SCREEN_WIDTH, SCREEN_HEIGHT)
-    imageView = ImageView(img).apply {
+
+    imageView = ImageView().apply {
       // Crop top and bottom tile, per http://wiki.nesdev.com/w/index.php/Overscan
       viewport = Rectangle2D(
         0.0,

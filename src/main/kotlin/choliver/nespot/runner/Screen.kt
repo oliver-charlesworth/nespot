@@ -52,7 +52,7 @@ class Screen(
     buffer.position(0)
     intBuffer.put(buffer)
     onFxThread {
-      if ((yes++ % 10) == 0) {
+      if ((yes++ % 2) == 0) {
         val img = WritableImage(SCREEN_WIDTH, SCREEN_HEIGHT)
         img.pixelWriter.setPixels(
           0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,

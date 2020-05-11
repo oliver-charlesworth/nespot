@@ -48,14 +48,14 @@ class Screen(
     intBuffer.position(0)
     buffer.position(0)
     intBuffer.put(buffer)
-    onFxThread {  img.pixelWriter.setPixels(
+//    onFxThread {  img.pixelWriter.setPixels(
 //        0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
 //        PixelFormat.getByteBgraPreInstance(),
 //        byteBuffer.array(),
 //        0, SCREEN_WIDTH * 4
 //
 //      )
-    }
+//    }
   }
 
   fun show() {

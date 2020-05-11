@@ -44,7 +44,7 @@ class Screen(
 
   fun redraw(buffer: IntBuffer) {
     val now = System.currentTimeMillis()
-    println("Screen::redraw (${now - prev} ms)")
+//    println("Screen::redraw (${now - prev} ms)")
     prev = now
 
     intBuffer.position(0)
@@ -52,6 +52,8 @@ class Screen(
     intBuffer.put(buffer)
     onFxThread {
       if (yes) {
+        println(img.pixelWriter.pixelFormat.type)
+
         val t = measureTimeMillis {
           img.pixelWriter.setPixels(
             0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
@@ -60,7 +62,7 @@ class Screen(
             0, SCREEN_WIDTH * 4
           )
         }
-        println("Time to redraw: ${t} ms")
+//        println("Time to redraw: ${t} ms")
       }
       yes = !yes
     }
@@ -94,7 +96,7 @@ class Screen(
         private var prev: Long = 0
         override fun handle(now: Long) {
           val now = System.currentTimeMillis()
-          println("AnimationTimer::handle (${now - prev} ms)")
+//          println("AnimationTimer::handle (${now - prev} ms)")
           prev = now
 
         }

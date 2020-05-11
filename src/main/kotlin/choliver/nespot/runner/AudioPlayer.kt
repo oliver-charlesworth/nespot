@@ -21,7 +21,7 @@ class AudioPlayer {
 
   fun play(buffer: FloatArray) {
     val now = System.currentTimeMillis()
-    println("AudioPlayer::play (${now - prev} ms)")
+//    println("AudioPlayer::play (${now - prev} ms)")
     prev = now
 
     if (buffer.size > WORK_BUFFER_SIZE) {

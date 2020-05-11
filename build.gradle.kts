@@ -26,7 +26,7 @@ dependencies {
 }
 
 javafx {
-  version = "14"
+  version = "11"
   modules = listOf("javafx.graphics")
 }
 

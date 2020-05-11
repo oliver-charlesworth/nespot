@@ -10,7 +10,6 @@ import javafx.scene.Cursor
 import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.image.ImageView
-import javafx.scene.image.PixelBuffer
 import javafx.scene.image.PixelFormat
 import javafx.scene.image.WritableImage
 import javafx.scene.input.KeyCombination
@@ -33,21 +32,23 @@ class Screen(
     }
   private var started = false
   private lateinit var stage: Stage
+  private lateinit var img: WritableImage
   private lateinit var imageView: ImageView
-  private val byteBuffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
+  private val byteBuffer = ByteBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
   private val intBuffer: IntBuffer = byteBuffer.asIntBuffer()
-  private val pixelBuffer = PixelBuffer(
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    byteBuffer,
-    PixelFormat.getByteBgraPreInstance() // Mac native format
-  )
 
   fun redraw(buffer: IntBuffer) {
     intBuffer.position(0)
     buffer.position(0)
     intBuffer.put(buffer)
-    onFxThread { pixelBuffer.updateBuffer { null } }
+    onFxThread {
+      img.pixelWriter.setPixels(
+        0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
+        PixelFormat.getByteBgraPreInstance(),
+        byteBuffer.array(),
+        0, SCREEN_WIDTH * 4
+      )
+    }
   }
 
   fun show() {
@@ -79,7 +80,8 @@ class Screen(
   }
 
   private fun initImageView() {
-    imageView = ImageView(WritableImage(pixelBuffer)).apply {
+    img = WritableImage(SCREEN_WIDTH, SCREEN_HEIGHT)
+    imageView = ImageView(img).apply {
       // Crop top and bottom tile, per http://wiki.nesdev.com/w/index.php/Overscan
       viewport = Rectangle2D(
         0.0,

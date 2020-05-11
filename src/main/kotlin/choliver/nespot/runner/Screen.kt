@@ -4,6 +4,7 @@ import choliver.nespot.ppu.SCREEN_HEIGHT
 import choliver.nespot.ppu.SCREEN_WIDTH
 import choliver.nespot.ppu.TILE_SIZE
 import choliver.nespot.runner.Event.*
+import javafx.animation.AnimationTimer
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D
 import javafx.scene.Cursor
@@ -81,6 +82,16 @@ class Screen(
       initImageView()
       initStage()
       configureStageAndImage()
+      object : AnimationTimer() {
+        private var prev: Long = 0
+        override fun handle(now: Long) {
+          val now = System.currentTimeMillis()
+          println("AnimationTimer::handle (${now - prev} ms)")
+          prev = now
+
+        }
+
+      }.start()
     }
     started = true
   }

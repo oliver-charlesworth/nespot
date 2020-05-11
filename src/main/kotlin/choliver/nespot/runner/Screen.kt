@@ -35,13 +35,13 @@ class Screen(
     }
   private var started = false
   private lateinit var stage: Stage
-//  private lateinit var img: WritableImage
+  private lateinit var img: WritableImage
   private lateinit var imageView: ImageView
   private val byteBuffer = ByteBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
   private val intBuffer: IntBuffer = byteBuffer.asIntBuffer()
 
   private var prev: Long = 0
-  private var yes = 0
+  private var yes = true
 
   fun redraw(buffer: IntBuffer) {
     val now = System.currentTimeMillis()
@@ -52,18 +52,18 @@ class Screen(
     buffer.position(0)
     intBuffer.put(buffer)
     onFxThread {
-      if ((yes++ % 2) == 0) {
-        val img = WritableImage(SCREEN_WIDTH, SCREEN_HEIGHT)
-        img.pixelWriter.setPixels(
-          0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
-          PixelFormat.getByteBgraPreInstance(),
-          byteBuffer.array(),
-          0, SCREEN_WIDTH * 4
-        )
-        imageView.image = img
+      if (yes) {
+        val t = measureTimeMillis {
+          img.pixelWriter.setPixels(
+            0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
+            PixelFormat.getByteBgraPreInstance(),
+            byteBuffer.array(),
+            0, SCREEN_WIDTH * 4
+          )
+        }
 //        println("Time to redraw: ${t} ms")
       }
-//      yes = !yes
+      yes = !yes
     }
   }
 

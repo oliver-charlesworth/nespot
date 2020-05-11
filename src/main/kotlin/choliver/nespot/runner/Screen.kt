@@ -39,6 +39,7 @@ class Screen(
   private val intBuffer: IntBuffer = byteBuffer.asIntBuffer()
 
   private var prev: Long = 0
+  private var yes = true
 
   fun redraw(buffer: IntBuffer) {
     val now = System.currentTimeMillis()
@@ -48,14 +49,17 @@ class Screen(
     intBuffer.position(0)
     buffer.position(0)
     intBuffer.put(buffer)
-//    onFxThread {  img.pixelWriter.setPixels(
-//        0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
-//        PixelFormat.getByteBgraPreInstance(),
-//        byteBuffer.array(),
-//        0, SCREEN_WIDTH * 4
-//
-//      )
-//    }
+    onFxThread {
+      if (yes) {
+        img.pixelWriter.setPixels(
+          0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
+          PixelFormat.getByteBgraPreInstance(),
+          byteBuffer.array(),
+          0, SCREEN_WIDTH * 4
+        )
+      }
+      yes = !yes
+    }
   }
 
   fun show() {

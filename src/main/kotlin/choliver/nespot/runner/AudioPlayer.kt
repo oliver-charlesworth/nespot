@@ -12,12 +12,18 @@ class AudioPlayer {
   private val soundLine = AudioSystem.getSourceDataLine(audioFormat)
   private val work = ByteArray(WORK_BUFFER_SIZE * 2)
 
+  private var prev: Long = 0
+
   fun start() {
     soundLine.open(audioFormat, LINE_BUFFER_SIZE * 2)
     soundLine.start()
   }
 
   fun play(buffer: FloatArray) {
+    val now = System.currentTimeMillis()
+    println("AudioPlayer::play (${now - prev} ms)")
+    prev = now
+
     if (buffer.size > WORK_BUFFER_SIZE) {
       throw IllegalArgumentException("Max buffer is ${WORK_BUFFER_SIZE} samples")
     }

@@ -37,7 +37,13 @@ class Screen(
   private val byteBuffer = ByteBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
   private val intBuffer: IntBuffer = byteBuffer.asIntBuffer()
 
+  private var prev: Long = 0
+
   fun redraw(buffer: IntBuffer) {
+    val now = System.currentTimeMillis()
+    println("Screen::redraw (${now - prev} ms)")
+    prev = now
+
     intBuffer.position(0)
     buffer.position(0)
     intBuffer.put(buffer)

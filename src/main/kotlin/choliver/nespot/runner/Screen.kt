@@ -20,6 +20,7 @@ import javafx.stage.Screen
 import javafx.stage.Stage
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
+import kotlin.system.measureTimeMillis
 
 
 class Screen(
@@ -51,12 +52,15 @@ class Screen(
     intBuffer.put(buffer)
     onFxThread {
       if (yes) {
-        img.pixelWriter.setPixels(
-          0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
-          PixelFormat.getByteBgraPreInstance(),
-          byteBuffer.array(),
-          0, SCREEN_WIDTH * 4
-        )
+        val t = measureTimeMillis {
+          img.pixelWriter.setPixels(
+            0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
+            PixelFormat.getByteBgraPreInstance(),
+            byteBuffer.array(),
+            0, SCREEN_WIDTH * 4
+          )
+        }
+        println("Time to redraw: ${t} ms")
       }
       yes = !yes
     }

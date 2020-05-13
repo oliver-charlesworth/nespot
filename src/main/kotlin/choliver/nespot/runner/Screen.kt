@@ -2,17 +2,17 @@ package choliver.nespot.runner
 
 import choliver.nespot.ppu.SCREEN_HEIGHT
 import choliver.nespot.ppu.SCREEN_WIDTH
+import choliver.nespot.runner.Event.*
 import java.awt.Dimension
-import java.awt.Frame
 import java.awt.Graphics
-import java.awt.event.KeyEvent
-import java.awt.event.KeyListener
+import java.awt.event.*
 import java.awt.image.BufferedImage
 import java.awt.image.DataBufferInt
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 import javax.swing.JFrame
 import javax.swing.JPanel
+import javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE
 
 
 class Screen(
@@ -21,7 +21,7 @@ class Screen(
 ) {
   var fullScreen = false
   private var started = false
-  private lateinit var frame: Frame
+  private lateinit var frame: JFrame
   private lateinit var graphics: Graphics
   private val byteBuffer = ByteBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
   private val intBuffer: IntBuffer = IntBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT)
@@ -74,14 +74,21 @@ class Screen(
       }
     })
 
+    frame.defaultCloseOperation = DO_NOTHING_ON_CLOSE
     frame.isResizable = false
     frame.isVisible = true
     frame.title = title
 
-    frame.addKeyListener(object : KeyListener {
-      override fun keyTyped(e: KeyEvent) = Unit
-      override fun keyPressed(e: KeyEvent) = onEvent(Event.KeyDown(e.keyCode))
-      override fun keyReleased(e: KeyEvent) = onEvent(Event.KeyUp(e.keyCode))
+    frame.addWindowListener(object : WindowAdapter() {
+      override fun windowClosing(e: WindowEvent) {
+        hide()
+        onEvent(Close)
+      }
+    })
+
+    frame.addKeyListener(object : KeyAdapter() {
+      override fun keyPressed(e: KeyEvent) = onEvent(KeyDown(e.keyCode))
+      override fun keyReleased(e: KeyEvent) = onEvent(KeyUp(e.keyCode))
     })
 
     frame.createBufferStrategy(2)

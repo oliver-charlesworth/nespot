@@ -5,10 +5,12 @@ import choliver.nespot.ppu.SCREEN_WIDTH
 import choliver.nespot.runner.Event.*
 import java.awt.Dimension
 import java.awt.Graphics
-import java.awt.event.*
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
 import java.awt.image.BufferedImage
 import java.awt.image.DataBufferInt
-import java.nio.ByteBuffer
 import java.nio.IntBuffer
 import javax.swing.JFrame
 import javax.swing.JPanel
@@ -22,16 +24,16 @@ class Screen(
   var fullScreen = false
   private var started = false
   private lateinit var frame: JFrame
-  private lateinit var graphics: Graphics
-  private val byteBuffer = ByteBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
-  private val intBuffer: IntBuffer = IntBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT)
+  private val image = BufferedImage(
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    BufferedImage.TYPE_INT_ARGB_PRE
+  )
+  private val imageData = (image.raster.dataBuffer as DataBufferInt).data
 
   fun redraw(buffer: IntBuffer) {
     if (started) {
-      intBuffer.position(0)
-      buffer.position(0)
-      intBuffer.put(buffer)
-
+      System.arraycopy(buffer.array(), 0, imageData, 0, SCREEN_WIDTH * SCREEN_HEIGHT)
       frame.repaint()
     }
   }
@@ -61,15 +63,6 @@ class Screen(
 
     frame.add(object : JPanel() {
       override fun paintComponent(g: Graphics) {
-        val image = BufferedImage(
-          SCREEN_WIDTH,
-          SCREEN_HEIGHT,
-          BufferedImage.TYPE_INT_ARGB_PRE
-        )
-
-        val array = (image.raster.dataBuffer as DataBufferInt).data
-        System.arraycopy(intBuffer.array(), 0, array, 0, SCREEN_WIDTH * SCREEN_HEIGHT)
-
         g.drawImage(image, 0, 0, null)
       }
     })
@@ -92,7 +85,6 @@ class Screen(
     })
 
     frame.createBufferStrategy(2)
-    graphics = frame.bufferStrategy.drawGraphics
     started = true
   }
 

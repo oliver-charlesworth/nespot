@@ -8,4 +8,4 @@ val COLORS = object {}.javaClass.getResource("/nespalette.pal")
   .map { it.data() }
   .toList()
   .chunked(3)
-  .map { 255 + 256 * (it[0] + 256 * (it[1] + 256 * it[2])) }
+  .map { it[2] + 256 * (it[1] + 256 * (it[0] + 256 * 255)) }

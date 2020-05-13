@@ -74,19 +74,14 @@ class Screen(
       }
     })
 
+    frame.isResizable = false
     frame.isVisible = true
     frame.title = title
 
     frame.addKeyListener(object : KeyListener {
-      override fun keyTyped(e: KeyEvent) {}
-
-      override fun keyPressed(e: KeyEvent) {
-        onEvent(Event.KeyDown(e.keyCode))
-      }
-
-      override fun keyReleased(e: KeyEvent) {
-        onEvent(Event.KeyUp(e.keyCode))
-      }
+      override fun keyTyped(e: KeyEvent) = Unit
+      override fun keyPressed(e: KeyEvent) = onEvent(Event.KeyDown(e.keyCode))
+      override fun keyReleased(e: KeyEvent) = onEvent(Event.KeyUp(e.keyCode))
     })
 
     frame.createBufferStrategy(2)

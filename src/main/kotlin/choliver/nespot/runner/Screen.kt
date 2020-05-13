@@ -5,6 +5,8 @@ import choliver.nespot.ppu.SCREEN_WIDTH
 import java.awt.Dimension
 import java.awt.Frame
 import java.awt.Graphics
+import java.awt.event.KeyEvent
+import java.awt.event.KeyListener
 import java.awt.image.BufferedImage
 import java.awt.image.DataBufferInt
 import java.nio.ByteBuffer
@@ -73,15 +75,23 @@ class Screen(
     })
 
     frame.isVisible = true
+    frame.title = title
+
+    frame.addKeyListener(object : KeyListener {
+      override fun keyTyped(e: KeyEvent) {}
+
+      override fun keyPressed(e: KeyEvent) {
+        onEvent(Event.KeyDown(e.keyCode))
+      }
+
+      override fun keyReleased(e: KeyEvent) {
+        onEvent(Event.KeyUp(e.keyCode))
+      }
+    })
+
     frame.createBufferStrategy(2)
     graphics = frame.bufferStrategy.drawGraphics
     started = true
-  }
-
-  private fun onFxThread(block: () -> Unit) {
-    if (started) {
-      // TODO
-    }
   }
 
   companion object {

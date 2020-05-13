@@ -1,8 +1,7 @@
 package choliver.nespot.runner
 
 import choliver.nespot.nes.Joypads.Button
-import javafx.scene.input.KeyCode
-import javafx.scene.input.KeyCode.*
+import java.awt.event.KeyEvent.*
 
 sealed class KeyAction {
   object ToggleFullScreen : KeyAction()
@@ -11,18 +10,18 @@ sealed class KeyAction {
   data class Joypad(val button: Button) : KeyAction()
 
   companion object {
-    fun fromKeyCode(code: KeyCode) = when (code) {
-      F -> ToggleFullScreen
-      S -> Snapshot
-      R -> Restore
-      Z -> Joypad(Button.A)
-      X -> Joypad(Button.B)
-      CLOSE_BRACKET -> Joypad(Button.START)
-      OPEN_BRACKET -> Joypad(Button.SELECT)
-      LEFT -> Joypad(Button.LEFT)
-      RIGHT -> Joypad(Button.RIGHT)
-      UP -> Joypad(Button.UP)
-      DOWN -> Joypad(Button.DOWN)
+    fun fromKeyCode(code: Int) = when (code) {
+      VK_F -> ToggleFullScreen
+      VK_S -> Snapshot
+      VK_R -> Restore
+      VK_Z -> Joypad(Button.A)
+      VK_X -> Joypad(Button.B)
+      VK_CLOSE_BRACKET -> Joypad(Button.START)
+      VK_OPEN_BRACKET -> Joypad(Button.SELECT)
+      VK_LEFT -> Joypad(Button.LEFT)
+      VK_RIGHT -> Joypad(Button.RIGHT)
+      VK_UP -> Joypad(Button.UP)
+      VK_DOWN -> Joypad(Button.DOWN)
       else -> null
     }
   }

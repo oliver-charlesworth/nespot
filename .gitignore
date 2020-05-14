@@ -13,3 +13,6 @@ build/
 backups/
 roms/
 snapshots/
+
+# Runtime
+*.log

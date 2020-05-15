@@ -36,7 +36,7 @@ class ControllerManager(
   }
 
   fun start() {
-    Timer().scheduleAtFixedRate(task, 5, 5)
+    Timer().scheduleAtFixedRate(task, 2, 2)
   }
 
   fun exit() {

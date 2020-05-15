@@ -25,8 +25,8 @@ class ControllerManager(
 
   init {
     val dir = createTempDir()
-    val lib = File(dir, "libjinput-osx.dylib")
-    lib.outputStream().use {
+    dir.deleteOnExit()
+    File(dir, "libjinput-osx.dylib").outputStream().use {
       this.javaClass.getResourceAsStream("/libjinput-osx.jnilib").copyTo(it)
     }
 

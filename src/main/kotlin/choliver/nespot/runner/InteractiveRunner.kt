@@ -51,6 +51,7 @@ class InteractiveRunner(
     } finally {
       screen.hide()
       screen.exit()
+      controllers.exit()
     }
   }
 

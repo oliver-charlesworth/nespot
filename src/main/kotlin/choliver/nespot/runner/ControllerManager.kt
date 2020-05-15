@@ -19,6 +19,10 @@ class ControllerManager(
   private val onEvent: (e: choliver.nespot.runner.Event) -> Unit = {}
 ) {
   private val controllers: Array<Controller>
+  private val x = AxisManager(LEFT, RIGHT)
+  private val y = AxisManager(UP, DOWN)
+
+  private val task = timerTask { onTimer() }
 
   init {
     val dir = createTempDir()
@@ -31,26 +35,28 @@ class ControllerManager(
   }
 
   fun start() {
-    Timer().scheduleAtFixedRate(timerTask {
-      val event = Event()
-      val x = AxisManager(LEFT, RIGHT)
-      val y = AxisManager(UP, DOWN)
-      while (true) {
-        controllers.forEach { controller ->
-          controller.poll()
-          while (controller.eventQueue.getNextEvent(event)) {
-            when (event.component.identifier) {
-              Axis.X -> x.onEvent(event.value)
-              Axis.Y -> y.onEvent(event.value)
-              Component.Identifier.Button._1 -> onButtonEvent(event.value, A)
-              Component.Identifier.Button._2 -> onButtonEvent(event.value, B)
-              Component.Identifier.Button._8 -> onButtonEvent(event.value, SELECT)
-              Component.Identifier.Button._9 -> onButtonEvent(event.value, START)
-            }
-          }
+    Timer().scheduleAtFixedRate(task, 5, 5)
+  }
+
+  fun exit() {
+    task.cancel()
+  }
+
+  private fun onTimer() {
+    val event = Event()
+    controllers.forEach { controller ->
+      controller.poll()
+      while (controller.eventQueue.getNextEvent(event)) {
+        when (event.component.identifier) {
+          Axis.X -> x.onEvent(event.value)
+          Axis.Y -> y.onEvent(event.value)
+          Component.Identifier.Button._1 -> onButtonEvent(event.value, A)
+          Component.Identifier.Button._2 -> onButtonEvent(event.value, B)
+          Component.Identifier.Button._8 -> onButtonEvent(event.value, SELECT)
+          Component.Identifier.Button._9 -> onButtonEvent(event.value, START)
         }
       }
-    }, 5, 5)
+    }
   }
 
   private fun onButtonEvent(value: Float, button: Button) {

@@ -14,7 +14,6 @@ import java.util.*
 import kotlin.concurrent.timerTask
 
 
-// TODO - prevent gross logging
 class ControllerManager(
   private val onEvent: (e: choliver.nespot.runner.Event) -> Unit = {}
 ) {
@@ -30,6 +29,8 @@ class ControllerManager(
     lib.outputStream().use {
       this.javaClass.getResourceAsStream("/libjinput-osx.jnilib").copyTo(it)
     }
+
+    System.setProperty("jinput.loglevel", "OFF")
     System.setProperty("net.java.games.input.librarypath", dir.absolutePath)
     controllers = ControllerEnvironment.getDefaultEnvironment().controllers
   }
@@ -66,10 +67,7 @@ class ControllerManager(
     }
   }
 
-  private inner class AxisManager(
-    private val buttonLow: Button,
-    private val buttonHigh: Button
-  ) {
+  private inner class AxisManager(private val buttonLow: Button, private val buttonHigh: Button) {
     private var prev = 0.0f
 
     fun onEvent(value: Float) {
@@ -84,18 +82,4 @@ class ControllerManager(
       prev = value
     }
   }
-
-  companion object {
-    @JvmStatic
-    fun main(args: Array<String>) {
-      val gash = ControllerManager(onEvent = { e ->
-        when (e) {
-          is ControllerButtonDown -> println("[${e.button}] -> down")
-          is ControllerButtonUp -> println("[${e.button}] -> up")
-        }
-      })
-      gash.start()
-    }
-  }
-
 }

@@ -6,6 +6,7 @@ import choliver.nespot.ppu.TILE_SIZE
 import choliver.nespot.runner.Event.*
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D
+import javafx.scene.Cursor
 import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.image.ImageView
@@ -131,6 +132,7 @@ class Screen(
       }
     }
 
+    stage.scene.cursor = Cursor.NONE
     stage.isFullScreen = true
   }
 
@@ -143,6 +145,7 @@ class Screen(
     }
     with(stage) {
       sizeToScene()
+      scene.cursor = Cursor.DEFAULT
       isResizable = false
       isFullScreen = false
     }

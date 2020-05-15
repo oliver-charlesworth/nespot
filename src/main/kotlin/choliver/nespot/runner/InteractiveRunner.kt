@@ -27,6 +27,7 @@ class InteractiveRunner(
     onAudioBufferReady = { events += Audio(it) },
     onVideoBufferReady = { events += Video(it) }
   )
+  private val controllers = ControllerManager(onEvent = { events += it })
   private val backupManager = BackupManager(rom, nes.persistentRam, BACKUP_DIR)
   private val snapshotManager = SnapshotManager(nes.diagnostics)
 
@@ -37,6 +38,7 @@ class InteractiveRunner(
     screen.fullScreen = fullScreen
     screen.show()
     audio.start()
+    controllers.start()
 
     try {
       while (!closed) {
@@ -49,6 +51,7 @@ class InteractiveRunner(
     } finally {
       screen.hide()
       screen.exit()
+      controllers.exit()
     }
   }
 
@@ -56,6 +59,8 @@ class InteractiveRunner(
     when (val e = events.poll()) {
       is Audio -> audio.play(e.buffer)
       is Video -> screen.redraw(e.buffer)
+      is ControllerButtonDown -> joypads.down(1, e.button)
+      is ControllerButtonUp -> joypads.up(1, e.button)
       is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
         is Joypad -> joypads.down(1, action.button)
         is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen

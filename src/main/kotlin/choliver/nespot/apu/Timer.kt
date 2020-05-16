@@ -8,25 +8,32 @@ class Timer(
   private val cyclesPerSample: Rational = CYCLES_PER_SAMPLE
 ) {
   private var pos = 0
-  private var jump = cyclesPerSample.b
-  var periodCycles = 1
+  private var dec = cyclesPerSample.a
+  private var inc = cyclesPerSample.b
+  var periodCycles = MIN_PERIOD
     set(value) {
       field = value
-      jump = max(value, MIN_PERIOD) * cyclesPerSample.b
+      if (periodCycles >= MIN_PERIOD) {
+        inc = value * cyclesPerSample.b
+        dec = cyclesPerSample.a
+      } else {
+        inc = 1
+        dec = 0
+      }
     }
 
   fun take(): Int {
-    pos -= cyclesPerSample.a
-    val ticks = max(0, (jump - pos) / jump)
-    pos += ticks * jump
+    pos -= dec
+    val ticks = max(0, (inc - pos) / inc)
+    pos += ticks * inc
     return ticks
   }
 
   fun restart() {
-    pos = jump
+    pos = inc
   }
 
   companion object {
-    const val MIN_PERIOD = 8    // Prevents performance issues (as well as divide-by-zero)
+    const val MIN_PERIOD = 3    // Prevents audio aliasing, divide-by-zero, and mitigates perf issues
   }
 }

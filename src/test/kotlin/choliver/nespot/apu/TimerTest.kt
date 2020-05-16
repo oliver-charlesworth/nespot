@@ -1,5 +1,6 @@
 package choliver.nespot.apu
 
+import choliver.nespot.apu.Timer.Companion.MIN_PERIOD
 import choliver.nespot.toRational
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -82,14 +83,13 @@ class TimerTest {
   }
 
   @Test
-  fun `enforces minimum period`() {
+  fun `disabled if below minimum period`() {
     val timer = Timer(cyclesPerSample = 16.toRational()).apply {
-      periodCycles = 7
+      periodCycles = MIN_PERIOD - 1
     }
 
-    // Same as pattern for periodCycles = 8
     assertEquals(
-      listOf(2).repeat(20).adjustForStartup(),
+      listOf(0).repeat(20).adjustForStartup(),
       timer.take(20)
     )
   }

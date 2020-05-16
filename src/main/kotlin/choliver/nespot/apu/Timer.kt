@@ -12,7 +12,7 @@ class Timer(
   var periodCycles = 1
     set(value) {
       field = value
-      jump = value * cyclesPerSample.b
+      jump = max(value, MIN_PERIOD) * cyclesPerSample.b
     }
 
   fun take(): Int {
@@ -24,5 +24,9 @@ class Timer(
 
   fun restart() {
     pos = jump
+  }
+
+  companion object {
+    const val MIN_PERIOD = 8    // Prevents performance issues (as well as divide-by-zero)
   }
 }

@@ -3,12 +3,13 @@ package choliver.nespot.apu
 import choliver.nespot.toRational
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 
 class TimerTest {
   @Test
   fun `integer multiple`() {
-    val timer = Timer(cyclesPerSample = 4.toRational()).apply {
-      periodCycles = 16
+    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+      periodCycles = 64
     }
 
     assertEquals(
@@ -19,8 +20,8 @@ class TimerTest {
 
   @Test
   fun `rational multiple`() {
-    val timer = Timer(cyclesPerSample = 4.toRational()).apply {
-      periodCycles = 10
+    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+      periodCycles = 40
     }
 
     assertEquals(
@@ -31,8 +32,8 @@ class TimerTest {
 
   @Test
   fun `unity multiple`() {
-    val timer = Timer(cyclesPerSample = 4.toRational()).apply {
-      periodCycles = 4
+    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+      periodCycles = 16
     }
 
     assertEquals(
@@ -43,8 +44,8 @@ class TimerTest {
 
   @Test
   fun `sub-unity integer multiple`() {
-    val timer = Timer(cyclesPerSample = 4.toRational()).apply {
-      periodCycles = 2
+    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+      periodCycles = 8
     }
 
     assertEquals(
@@ -55,8 +56,8 @@ class TimerTest {
 
   @Test
   fun `sub-unity rational multiple`() {
-    val timer = Timer(cyclesPerSample = 10.toRational()).apply {
-      periodCycles = 4
+    val timer = Timer(cyclesPerSample = 20.toRational()).apply {
+      periodCycles = 8
     }
 
     assertEquals(
@@ -67,17 +68,41 @@ class TimerTest {
 
   @Test
   fun `doesn't immediately restart on new period`() {
-    val timer = Timer(cyclesPerSample = 4.toRational()).apply {
-      periodCycles = 16
+    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+      periodCycles = 64
     }
 
     timer.take(1) // Make some progress
-    timer.periodCycles = 4
+    timer.periodCycles = 16
 
     assertEquals(
       listOf(0, 0, 1, 1, 1, 1), // If the period immediately reset, then these would all be 1's
       timer.take(6)
     )
+  }
+
+  @Test
+  fun `enforces minimum period`() {
+    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+      periodCycles = 7
+    }
+
+    // Same as pattern for periodCycles = 8
+    assertEquals(
+      listOf(2).repeat(20).adjustForStartup(),
+      timer.take(20)
+    )
+  }
+
+  @Test
+  fun `doesn't divide by zero`() {
+    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+      periodCycles = 0
+    }
+
+    assertDoesNotThrow {
+      timer.take(20)
+    }
   }
 
   private fun Timer.take(num: Int) = List(num) { take() }

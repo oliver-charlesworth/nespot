@@ -69,5 +69,6 @@ class NromMapper(private val rom: Rom) : Mapper {
 
     const val PRG_RAM_SIZE = 8192
     const val CHR_RAM_SIZE = 8192
+    const val PRG_BANK_SIZE = 16384
   }
 }

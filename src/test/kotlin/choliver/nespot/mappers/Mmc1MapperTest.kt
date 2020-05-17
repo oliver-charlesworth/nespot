@@ -113,7 +113,8 @@ class Mmc1MapperTest {
     private val mapper = Mmc1Mapper(Rom(), getStepCount = { 0 })
     private val chr = mapper.chr(mock())
     private val checker = BankMappingChecker(
-      bankSize = PRG_BANK_SIZE,
+      bankSize = CHR_BANK_SIZE,
+      srcBase = BASE_CHR_ROM,
       outBase = BASE_CHR_ROM,
       setSrc = chr::set,
       getOut = chr::get

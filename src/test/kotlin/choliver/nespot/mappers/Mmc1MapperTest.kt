@@ -19,7 +19,7 @@ import org.junit.jupiter.params.provider.ValueSource
 class Mmc1MapperTest {
   @Nested
   inner class PrgRam {
-    private val mapper = Mmc1Mapper(Rom())
+    private val mapper = Mmc1Mapper(Rom(), { 0 })
 
     @Test
     fun `load and store`() {
@@ -34,7 +34,7 @@ class Mmc1MapperTest {
   @Nested
   inner class PrgRom {
     private val prgData = ByteArray(8 * 16384)
-    private val mapper = Mmc1Mapper(Rom(prgData = prgData))
+    private val mapper = Mmc1Mapper(Rom(prgData = prgData), { 0 })
 
     @ParameterizedTest
     @ValueSource(ints = [0, 1])
@@ -137,7 +137,7 @@ class Mmc1MapperTest {
 
   @Nested
   inner class ChrRam {
-    private val mapper = Mmc1Mapper(Rom(chrData = ByteArray(0)))
+    private val mapper = Mmc1Mapper(Rom(), { 0 })
 
     @Test
     fun `load and store`() {
@@ -154,7 +154,7 @@ class Mmc1MapperTest {
   @Nested
   inner class ChrRom {
     private val chrData = ByteArray(8 * 4096)
-    private val mapper = Mmc1Mapper(Rom(chrData = chrData))
+    private val mapper = Mmc1Mapper(Rom(chrData = chrData), { 0 })
 
     @Test
     fun `8k mode`() {
@@ -304,7 +304,7 @@ class Mmc1MapperTest {
     }
 
     private fun assertLoadAndStore(mode: Int, source: Address, target: Address) {
-      val mapper = Mmc1Mapper(Rom(chrData = ByteArray(8192)))
+      val mapper = Mmc1Mapper(Rom(chrData = ByteArray(8192)), { 0 })
       val vram = mock<Memory>()
       val chr = mapper.chr(vram)
       mapper.writeReg(0, mode)

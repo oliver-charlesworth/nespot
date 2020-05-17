@@ -288,19 +288,28 @@ class ArithmeticTest {
       DEC,
       target = 0x02,
       expectedRegs = { with(z = _0, n = _0) },
-      expectedStores = { listOf(it to 0x01) }
+      expectedStores = { listOf(
+        it to 0x02,   // Dummy store
+        it to 0x01
+      ) }
     )
     assertForAddressModes(
       DEC,
       target = 0x01,
       expectedRegs = { with(z = _1, n = _0) },
-      expectedStores = { listOf(it to 0x00) }
+      expectedStores = { listOf(
+        it to 0x01,   // Dummy store
+        it to 0x00
+      ) }
     )
     assertForAddressModes(
       DEC,
       target = 0xFF,
       expectedRegs = { with(z = _0, n = _1) },
-      expectedStores = { listOf(it to 0xFE) }
+      expectedStores = { listOf(
+        it to 0xFF,   // Dummy store
+        it to 0xFE
+      ) }
     )
   }
 
@@ -348,19 +357,28 @@ class ArithmeticTest {
       INC,
       target = 0x01,
       expectedRegs = { with(z = _0, n = _0) },
-      expectedStores = { listOf(it to 0x02) }
+      expectedStores = { listOf(
+        it to 0x01,   // Dummy store
+        it to 0x02
+      ) }
     )
     assertForAddressModes(
       INC,
       target = 0xFF,
       expectedRegs = { with(z = _1, n = _0) },
-      expectedStores = { listOf(it to 0x00) }
+      expectedStores = { listOf(
+        it to 0xFF,   // Dummy store
+        it to 0x00
+      ) }
     )
     assertForAddressModes(
       INC,
       target = 0xFE,
       expectedRegs = { with(z = _0, n = _1) },
-      expectedStores = { listOf(it to 0xFF) }
+      expectedStores = { listOf(
+        it to 0xFE,   // Dummy store
+        it to 0xFF
+      ) }
     )
   }
 
@@ -455,7 +473,10 @@ class ArithmeticTest {
       target = target,
       initRegs = initRegs,
       expectedRegs = expectedRegs,
-      expectedStores = { listOf(it to expected) }
+      expectedStores = { listOf(
+        it to target,    // Dummy store
+        it to expected
+      ) }
     )
   }
 }

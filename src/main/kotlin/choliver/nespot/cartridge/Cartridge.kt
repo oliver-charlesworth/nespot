@@ -6,7 +6,7 @@ import choliver.nespot.mappers.NromMapper
 import choliver.nespot.mappers.UxRomMapper
 
 // See https://wiki.nesdev.com/w/index.php/Mapper#iNES_1.0_mapper_grid
-fun createMapper(rom: Rom, getStepCount: () -> Int): Mapper {
+fun createMapper(rom: Rom, getStepCount: () -> Int = { 0 }): Mapper {
   validateMagicNumber(rom)
   return when (rom.mapper) {
     0 -> NromMapper(rom)

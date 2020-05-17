@@ -109,25 +109,22 @@ class Mmc1Mapper(
   private fun updateShiftRegister(addr: Address, data: Data) {
     val currentStep = getStepCount()
     if (currentStep != prevStep) {
-      println("[%04x] <- %02x".format(addr, data))
       if (data.isBitSet(7)) {
         // Reset
         srCount = 5
         sr = 0x00
-        println("Reset")
       } else {
         sr = (sr shr 1) or ((data and 1) shl 4)
-        println("SR = %02x".format(sr))
         if (--srCount == 0) {
           when ((addr and 0x6000) shr 13) {
             0 -> {
               mirrorMode = (sr and 0x03)
-              prgMode = ((sr and 0x0C) shr 2).also { println("PRG mode = ${it}") }
-              chrMode = ((sr and 0x10) shr 4).also { println("CHR mode = ${it}") }
+              prgMode = (sr and 0x0C) shr 2
+              chrMode = (sr and 0x10) shr 4
             }
-            1 -> chr0Bank = (sr % numChrBanks).also { println("CHR 0 bank = ${it}") }
-            2 -> chr1Bank = (sr % numChrBanks).also { println("CHR 1 bank = ${it}") }
-            3 -> prgBank = (sr % numPrgBanks).also { println("PRG bank = ${it}") }
+            1 -> chr0Bank = sr % numChrBanks
+            2 -> chr1Bank = sr % numChrBanks
+            3 -> prgBank = sr % numPrgBanks
           }
           // Reset
           srCount = 5

@@ -32,7 +32,7 @@ class StackTest {
     fun assertBehaviour(data: Data, z: Boolean, n: Boolean) {
       assertForAddressModes(
         PLA,
-        initStores = mapOf(0x123 to data),
+        initStores = listOf(0x123 to data),
         initRegs = { with(s = 0x22) },
         expectedRegs = { with(s = 0x23, a = data, z = z, n = n) }
       )
@@ -47,7 +47,7 @@ class StackTest {
   fun plp() {
     assertForAddressModes(
       PLP,
-      initStores = mapOf(0x123 to 0xCF),
+      initStores = listOf(0x123 to 0xCF),
       initRegs = { with(s = 0x22) },
       expectedRegs = { with(s = 0x23, n = _1, v = _1, d = _1, i = _1, z = _1, c = _1) }
     )

@@ -20,7 +20,10 @@ class Nes(
   onVideoBufferReady: (IntBuffer) -> Unit = {},
   private val onStore: ((Address, Data) -> Unit)? = null
 ) {
-  private val mapper = createMapper(rom)
+  private var steps = 0
+
+
+  private val mapper = createMapper(rom, getStepCount = { steps })
 
   private val apu = Apu(
     memory = mapper.prg,  // DMC can only read from PRG space
@@ -54,6 +57,7 @@ class Nes(
     val cycles = cpu.executeStep()
     apu.advance(cycles)
     ppu.advance(cycles)
+    steps++
   }
 
   private fun pollInterrupts() = (if (apu.irq || mapper.irq) INTERRUPT_IRQ else 0) or (if (ppu.vbl) INTERRUPT_NMI else 0)

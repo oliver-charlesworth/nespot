@@ -7,7 +7,10 @@ import choliver.nespot.cartridge.mirrorHorizontal
 import choliver.nespot.cartridge.mirrorVertical
 
 // https://wiki.nesdev.com/w/index.php/MMC1
-class Mmc1Mapper(private val rom: Rom) : Mapper {
+class Mmc1Mapper(
+  private val rom: Rom,
+  private val getStepCount: () -> Int
+) : Mapper {
   private val prgRam = Ram(PRG_RAM_SIZE)
   private val chrRam = Ram(CHR_RAM_SIZE)
   private val usingChrRam = rom.chrData.isEmpty()
@@ -21,6 +24,7 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
   private var mirrorMode = 0
   private var chrMode = 0
   private var prgMode = 0
+  private var prevStep = -1
 
   override val irq = false
   override val persistentRam = prgRam
@@ -42,7 +46,7 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
       })
     }
 
-    private fun getFromBank(addr: Address, iBank: Int) = rom.prgData[(addr and 0x3FFF) + 0x4000 * iBank].data()
+    private fun getFromBank(addr: Address, iBank: Int) = rom.prgData[(addr % PRG_BANK_SIZE) + iBank * PRG_BANK_SIZE].data()
 
     override fun set(addr: Address, data: Data) {
       when {
@@ -91,7 +95,7 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
       }
     }
 
-    private fun mapToBank(addr: Address, iBank: Int): Address = (addr and 0x0FFF) + 0x1000 * iBank
+    private fun mapToBank(addr: Address, iBank: Int): Address = (addr % CHR_BANK_SIZE) + iBank * CHR_BANK_SIZE
 
     private fun mapToVram(addr: Address): Address = when (mirrorMode) {
       0 -> (addr and 1023)
@@ -103,28 +107,35 @@ class Mmc1Mapper(private val rom: Rom) : Mapper {
   }
 
   private fun updateShiftRegister(addr: Address, data: Data) {
-    if (data.isBitSet(7)) {
-      // Reset
-      srCount = 5
-      sr = 0x00
-    } else {
-      sr = (sr shr 1) or ((data and 1) shl 4)
-      if (--srCount == 0) {
-        when ((addr and 0x6000) shr 13) {
-          0 -> {
-            mirrorMode = (sr and 0x03)
-            prgMode = (sr and 0x0C) shr 2
-            chrMode = (sr and 0x10) shr 4
-          }
-          1 -> chr0Bank = sr % numChrBanks
-          2 -> chr1Bank = sr % numChrBanks
-          3 -> prgBank = sr % numPrgBanks
-        }
+    val currentStep = getStepCount()
+    if (currentStep != prevStep) {
+      println("[%04x] <- %02x".format(addr, data))
+      if (data.isBitSet(7)) {
         // Reset
         srCount = 5
         sr = 0x00
+        println("Reset")
+      } else {
+        sr = (sr shr 1) or ((data and 1) shl 4)
+        println("SR = %02x".format(sr))
+        if (--srCount == 0) {
+          when ((addr and 0x6000) shr 13) {
+            0 -> {
+              mirrorMode = (sr and 0x03)
+              prgMode = ((sr and 0x0C) shr 2).also { println("PRG mode = ${it}") }
+              chrMode = ((sr and 0x10) shr 4).also { println("CHR mode = ${it}") }
+            }
+            1 -> chr0Bank = (sr % numChrBanks).also { println("CHR 0 bank = ${it}") }
+            2 -> chr1Bank = (sr % numChrBanks).also { println("CHR 1 bank = ${it}") }
+            3 -> prgBank = (sr % numPrgBanks).also { println("PRG bank = ${it}") }
+          }
+          // Reset
+          srCount = 5
+          sr = 0x00
+        }
       }
     }
+    prevStep = currentStep
   }
 
   @Suppress("unused")

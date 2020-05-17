@@ -11,6 +11,7 @@ import choliver.nespot.cpu.model.State
 import choliver.nespot.cpu.model.toFlags
 import choliver.nespot.cpu.utils._0
 import choliver.nespot.cpu.utils._1
+import kotlin.system.exitProcess
 
 class Cpu(
   private val memory: Memory,
@@ -55,6 +56,7 @@ class Cpu(
 
   private fun executeInstruction(): Int {
     decoder.decode(decoded, pc = state.regs.pc, x = state.regs.x, y = state.regs.y)
+//    println("[%04x] ${decoder.decodeInstruction(state.regs.pc).instruction}".format(state.regs.pc))
     state.regs.pc = decoded.nextPc
     extraCycles = 0
     state.regs.execute()
@@ -70,7 +72,11 @@ class Cpu(
       CPX -> compare(x, resolve())
       CPY -> compare(y, resolve())
 
-      DEC -> storeResult(resolve() - 1)
+      DEC -> {
+        val data = resolve()
+        storeResult(data)
+        storeResult(data - 1)
+      }
       DEX -> {
         x = (x - 1).data()
         updateZN(x)
@@ -80,7 +86,11 @@ class Cpu(
         updateZN(y)
       }
 
-      INC -> storeResult(resolve() + 1)
+      INC -> {
+        val data = resolve()
+        storeResult(data)
+        storeResult(data + 1)
+      }
       INX -> {
         x = (x + 1).data()
         updateZN(x)
@@ -92,21 +102,25 @@ class Cpu(
 
       ASL -> {
         val data = resolve()
+        storeResult(data)
         storeResult(data shl 1)
         p.c = data.isBitSet(7)
       }
       LSR -> {
         val data = resolve()
+        storeResult(data)
         storeResult(data shr 1)
         p.c = data.isBitSet(0)
       }
       ROL -> {
         val data = resolve()
+        storeResult(data)
         storeResult((data shl 1) or (if (p.c) 1 else 0))
         p.c = data.isBitSet(7)
       }
       ROR -> {
         val data = resolve()
+        storeResult(data)
         storeResult((data shr 1) or (if (p.c) 0x80 else 0))
         p.c = data.isBitSet(0)
       }
@@ -172,7 +186,11 @@ class Cpu(
         pc = addr(lo = pop(), hi = pop())
       }
 
-      BRK -> interrupt(VECTOR_IRQ, updateStack = true, setBreakFlag = true)
+      BRK -> {
+//        println("Uh oh")
+//        exitProcess(0)
+        interrupt(VECTOR_IRQ, updateStack = true, setBreakFlag = true)
+      }
 
       BPL -> branch(!p.n)
       BMI -> branch(p.n)

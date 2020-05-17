@@ -5,7 +5,10 @@ import choliver.nespot.Data
 import choliver.nespot.Memory
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.data
+import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_PRG_ROM
 import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_SR
+import choliver.nespot.mappers.Mmc1Mapper.Companion.CHR_BANK_SIZE
+import choliver.nespot.mappers.Mmc1Mapper.Companion.PRG_BANK_SIZE
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -15,6 +18,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+
 
 class Mmc1MapperTest {
   private var step = 0
@@ -35,111 +39,78 @@ class Mmc1MapperTest {
 
   @Nested
   inner class PrgRom {
-    private val prgData = ByteArray(8 * 16384)
+    private val prgData = ByteArray(8 * PRG_BANK_SIZE)
     private val mapper = Mmc1Mapper(Rom(prgData = prgData), getStepCount = { step })
 
     @ParameterizedTest
     @ValueSource(ints = [0, 1])
     fun `32k mode`(mode: Int) {
-      configure(mode = mode, bank = 6, data = mapOf(
-        (6 * 16384) + 0 to 0x30,
-        (6 * 16384) + 16383 to 0x40,
-        (6 * 16384) + 16384 to 0x50,
-        (6 * 16384) + 32767 to 0x60
-      ))
+      setMode(mode)
+      setBank(6)
 
-      assertLoads(mapOf(
-        0x8000 to 0x30,
-        0xBFFF to 0x40,
-        0xC000 to 0x50,
-        0xFFFF to 0x60
-      ))
+      assertBankMapping(romBank = 6, prgBank = 0)
+      assertBankMapping(romBank = 7, prgBank = 1)
     }
 
     @Test
     fun `variable upper`() {
-      configure(mode = 2, bank = 6, data = mapOf(
-        // First bank (fixed)
-        0 to 0x30,
-        16383 to 0x40,
-        // Variable bank
-        (6 * 16384) + 0 to 0x50,
-        (6 * 16384) + 16383 to 0x60
-      ))
+      setMode(2)
+      setBank(6)
 
-      assertLoads(mapOf(
-        0x8000 to 0x30,
-        0xBFFF to 0x40,
-        0xC000 to 0x50,
-        0xFFFF to 0x60
-      ))
+      assertBankMapping(romBank = 0, prgBank = 0)   // Fixed to first
+      assertBankMapping(romBank = 6, prgBank = 1)
     }
 
     @Test
     fun `variable lower`() {
-      configure(mode = 3, bank = 6, data = mapOf(
-        // Variable bank
-        (6 * 16384) + 0 to 0x30,
-        (6 * 16384) + 16383 to 0x40,
-        // Last bank (fixed)
-        (7 * 16384) + 0 to 0x50,
-        (7 * 16384) + 16383 to 0x60
-      ))
+      setMode(3)
+      setBank(5)
 
-      assertLoads(mapOf(
-        0x8000 to 0x30,
-        0xBFFF to 0x40,
-        0xC000 to 0x50,
-        0xFFFF to 0x60
-      ))
+      assertBankMapping(romBank = 5, prgBank = 0)
+      assertBankMapping(romBank = 7, prgBank = 1)   // Fixed to last
     }
 
     @Test
-    fun `bank-selection wraps`() {
-      configure(mode = 0, bank = 6 + 8, data = mapOf(
-        (6 * 16384) + 0 to 0x30,
-        (6 * 16384) + 16383 to 0x40,
-        (6 * 16384) + 16384 to 0x50,
-        (6 * 16384) + 32767 to 0x60
-      ))
+    fun `bank mapping wraps`() {
+      setMode(0)
+      setBank(6 + 8)
 
-      assertLoads(mapOf(
-        0x8000 to 0x30,
-        0xBFFF to 0x40,
-        0xC000 to 0x50,
-        0xFFFF to 0x60
-      ))
+      assertBankMapping(romBank = 6, prgBank = 0)
+      assertBankMapping(romBank = 7, prgBank = 1)
     }
 
     @Test
     fun `starts up on max bank`() {
-      configure(mode = 3, bank = null, data = mapOf(
-        (7 * 16384) + 0 to 0x30,
-        (7 * 16384) + 16383 to 0x40
-      ))
+      setMode(3)
 
-      assertLoads(mapOf(
-        0x8000 to 0x30,
-        0xBFFF to 0x40
-      ))
+      assertBankMapping(romBank = 7, prgBank = 0)
     }
 
-    private fun configure(mode: Int, bank: Int?, data: Map<Address, Data>) {
-      data.forEach { (addr, data) -> prgData[addr] = data.toByte() }
+    private fun setMode(mode: Int) {
       mapper.writeReg(0, mode shl 2)
-      if (bank != null) {
-        mapper.writeReg(3, bank)
-      }
     }
 
-    private fun assertLoads(expected: Map<Address, Data>) {
-      expected.forEach { (addr, data) -> assertEquals(data, mapper.prg[addr]) }
+    private fun setBank(bank: Int) {
+      mapper.writeReg(3, bank)
+    }
+
+    // Test top and bottom of bank
+    private fun assertBankMapping(romBank: Int, prgBank: Int) {
+      val romBase = romBank * PRG_BANK_SIZE
+      val prgBase = BASE_PRG_ROM + (prgBank * PRG_BANK_SIZE)
+      val offsetLast = PRG_BANK_SIZE - 1
+
+      prgData[romBase] = 0x30
+      prgData[romBase + offsetLast] = 0x40
+
+      assertEquals(0x30, mapper.prg[prgBase])
+      assertEquals(0x40, mapper.prg[prgBase + offsetLast])
     }
   }
 
   @Nested
   inner class ChrRam {
-    private val mapper = Mmc1Mapper(Rom(), { 0 })
+    private val mapper = Mmc1Mapper(Rom(), getStepCount = { 0 })
 
     @Test
     fun `load and store`() {
@@ -155,71 +126,52 @@ class Mmc1MapperTest {
 
   @Nested
   inner class ChrRom {
-    private val chrData = ByteArray(8 * 4096)
+    private val chrData = ByteArray(8 * CHR_BANK_SIZE)
     private val mapper = Mmc1Mapper(Rom(chrData = chrData), getStepCount = { step })
 
     @Test
     fun `8k mode`() {
       // bank1 set to something weird to prove we ignore it
-      configure(mode = 0, bank0 = 6, bank1 = 3, data = mapOf(
-        (6 * 4096) + 0 to 0x30,
-        (6 * 4096) + 4095 to 0x40,
-        (6 * 4096) + 4096 to 0x50,
-        (6 * 4096) + 8191 to 0x60
-      ))
+      setModeAndBanks(mode = 0, bank0 = 6, bank1 = 3)
 
-      assertLoads(mapOf(
-        0x0000 to 0x30,
-        0x0FFF to 0x40,
-        0x1000 to 0x50,
-        0x1FFF to 0x60
-      ))
+      assertBankMapping(romBank = 6, chrBank = 0)
+      assertBankMapping(romBank = 7, chrBank = 1)
     }
 
     @Test
     fun `4k mode`() {
-      configure(mode = 1, bank0 = 6, bank1 = 3, data = mapOf(
-        (6 * 4096) + 0 to 0x30,
-        (6 * 4096) + 4095 to 0x40,
-        (3 * 4096) + 0 to 0x50,
-        (3 * 4096) + 4095 to 0x60
-      ))
+      setModeAndBanks(mode = 1, bank0 = 6, bank1 = 3)
 
-      assertLoads(mapOf(
-        0x0000 to 0x30,
-        0x0FFF to 0x40,
-        0x1000 to 0x50,
-        0x1FFF to 0x60
-      ))
+      assertBankMapping(romBank = 6, chrBank = 0)
+      assertBankMapping(romBank = 3, chrBank = 1)
     }
 
     @Test
     fun `bank-selection wraps`() {
-      configure(mode = 1, bank0 = 6 + 8, bank1 = 3 + 8, data = mapOf(
-        (6 * 4096) + 0 to 0x30,
-        (6 * 4096) + 4095 to 0x40,
-        (3 * 4096) + 0 to 0x50,
-        (3 * 4096) + 4095 to 0x60
-      ))
+      setModeAndBanks(mode = 1, bank0 = 6 + 8, bank1 = 3 + 8)
 
-      assertLoads(mapOf(
-        0x0000 to 0x30,
-        0x0FFF to 0x40,
-        0x1000 to 0x50,
-        0x1FFF to 0x60
-      ))
+      assertBankMapping(romBank = 6, chrBank = 0)
+      assertBankMapping(romBank = 3, chrBank = 1)
     }
 
-    private fun configure(mode: Int, bank0: Int, bank1: Int, data: Map<Int, Data>) {
-      data.forEach { (addr, data) -> chrData[addr] = data.toByte() }
+    private fun setModeAndBanks(mode: Int, bank0: Int, bank1: Int) {
       mapper.writeReg(0, mode shl 4)
       mapper.writeReg(1, bank0)
       mapper.writeReg(2, bank1)
     }
 
-    private fun assertLoads(expected: Map<Address, Data>) {
+    // Test top and bottom of bank
+    private fun assertBankMapping(romBank: Int, chrBank: Int) {
+      val romBase = romBank * CHR_BANK_SIZE
+      val chrBase = chrBank * CHR_BANK_SIZE
+      val offsetLast = CHR_BANK_SIZE - 1
+
+      chrData[romBase] = 0x30
+      chrData[romBase + offsetLast] = 0x40
+
       val chr = mapper.chr(mock())
-      expected.forEach { (addr, data) -> assertEquals(data, chr[addr]) }
+      assertEquals(0x30, chr[chrBase])
+      assertEquals(0x40, chr[chrBase + offsetLast])
     }
   }
 

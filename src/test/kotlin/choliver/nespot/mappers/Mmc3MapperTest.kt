@@ -9,9 +9,13 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.utils._0
 import choliver.nespot.cpu.utils._1
 import choliver.nespot.data
+import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
+import choliver.nespot.mappers.Mmc3Mapper.Companion.BASE_CHR_ROM
+import choliver.nespot.mappers.Mmc3Mapper.Companion.BASE_PRG_RAM
 import choliver.nespot.mappers.Mmc3Mapper.Companion.BASE_PRG_ROM
 import choliver.nespot.mappers.Mmc3Mapper.Companion.CHR_BANK_SIZE
 import choliver.nespot.mappers.Mmc3Mapper.Companion.PRG_BANK_SIZE
+import choliver.nespot.mappers.Mmc3Mapper.Companion.PRG_RAM_SIZE
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -25,14 +29,17 @@ class Mmc3MapperTest {
   @Nested
   inner class PrgRam {
     private val mapper = Mmc3Mapper(Rom())
+    private val checker = BankMappingChecker(
+      bankSize = PRG_RAM_SIZE,
+      srcBase = BASE_PRG_RAM,
+      outBase = BASE_PRG_RAM,
+      setSrc = mapper.prg::set,
+      getOut = mapper.prg::get
+    )
 
     @Test
     fun `load and store`() {
-      mapper.prg[0x6000] = 0x30 // Lowest mapped address
-      mapper.prg[0x7FFF] = 0x40 // Highest mapped address
-
-      assertEquals(0x30, mapper.prg[0x6000])
-      assertEquals(0x40, mapper.prg[0x7FFF])
+      checker.assertMapping(0, 0)
     }
   }
 
@@ -40,16 +47,22 @@ class Mmc3MapperTest {
   inner class PrgRom {
     private val prgData = ByteArray(8 * PRG_BANK_SIZE)
     private val mapper = Mmc3Mapper(Rom(prgData = prgData))
+    private val checker = BankMappingChecker(
+      bankSize = PRG_BANK_SIZE,
+      outBase = BASE_PRG_ROM,
+      setSrc = takesBytes(prgData::set),
+      getOut = mapper.prg::get
+    )
 
     @Test
     fun `mode 0 - variable bank 0, fixed bank 2`() {
       mapper.setModeAndReg(prgMode = 0, reg = 6, data = 3)
       mapper.setModeAndReg(prgMode = 0, reg = 7, data = 5)
 
-      assertBankMapping(romBank = 3, prgBank = 0)
-      assertBankMapping(romBank = 5, prgBank = 1)
-      assertBankMapping(romBank = 6, prgBank = 2)   // Fixed to penultimate
-      assertBankMapping(romBank = 7, prgBank = 3)   // Fixed to last
+      checker.assertMapping(srcBank = 3, outBank = 0)
+      checker.assertMapping(srcBank = 5, outBank = 1)
+      checker.assertMapping(srcBank = 6, outBank = 2)   // Fixed to penultimate
+      checker.assertMapping(srcBank = 7, outBank = 3)   // Fixed to last
     }
 
     @Test
@@ -57,10 +70,10 @@ class Mmc3MapperTest {
       mapper.setModeAndReg(prgMode = 1, reg = 6, data = 3)
       mapper.setModeAndReg(prgMode = 1, reg = 7, data = 5)
 
-      assertBankMapping(romBank = 6, prgBank = 0)   // Fixed to penultimate
-      assertBankMapping(romBank = 5, prgBank = 1)
-      assertBankMapping(romBank = 3, prgBank = 2)
-      assertBankMapping(romBank = 7, prgBank = 3)   // Fixed to last
+      checker.assertMapping(srcBank = 6, outBank = 0)   // Fixed to penultimate
+      checker.assertMapping(srcBank = 5, outBank = 1)
+      checker.assertMapping(srcBank = 3, outBank = 2)
+      checker.assertMapping(srcBank = 7, outBank = 3)   // Fixed to last
     }
 
     @Test
@@ -68,21 +81,8 @@ class Mmc3MapperTest {
       mapper.setModeAndReg(prgMode = 0, reg = 6, data = 3 + 8 + 8)
       mapper.setModeAndReg(prgMode = 0, reg = 7, data = 5 + 8)
 
-      assertBankMapping(romBank = 3, prgBank = 0)
-      assertBankMapping(romBank = 5, prgBank = 1)
-    }
-
-    // Test top and bottom of bank
-    private fun assertBankMapping(romBank: Int, prgBank: Int) {
-      val romBase = romBank * PRG_BANK_SIZE
-      val prgBase = BASE_PRG_ROM + (prgBank * PRG_BANK_SIZE)
-      val offsetLast = PRG_BANK_SIZE - 1
-
-      prgData[romBase] = 0x30
-      prgData[romBase + offsetLast] = 0x40
-
-      assertEquals(0x30, mapper.prg[prgBase])
-      assertEquals(0x40, mapper.prg[prgBase + offsetLast])
+      checker.assertMapping(srcBank = 3, outBank = 0)
+      checker.assertMapping(srcBank = 5, outBank = 1)
     }
   }
 
@@ -90,6 +90,12 @@ class Mmc3MapperTest {
   inner class ChrRom {
     private val chrData = ByteArray(8 * CHR_BANK_SIZE)
     private val mapper = Mmc3Mapper(Rom(chrData = chrData))
+    private val checker = BankMappingChecker(
+      bankSize = CHR_BANK_SIZE,
+      outBase = BASE_CHR_ROM,
+      setSrc = takesBytes(chrData::set),
+      getOut = mapper.chr(mock())::get
+    )
 
     @Test
     fun `mode 0 - low banks are 2k, high banks are 1k`() {
@@ -100,14 +106,14 @@ class Mmc3MapperTest {
       mapper.setModeAndReg(chrMode = 0, reg = 4, data = 2)
       mapper.setModeAndReg(chrMode = 0, reg = 5, data = 1)
 
-      assertBankMapping(romBank = 4, chrBank = 0)
-      assertBankMapping(romBank = 5, chrBank = 1)
-      assertBankMapping(romBank = 0, chrBank = 2)
-      assertBankMapping(romBank = 1, chrBank = 3)
-      assertBankMapping(romBank = 3, chrBank = 4)
-      assertBankMapping(romBank = 6, chrBank = 5)
-      assertBankMapping(romBank = 2, chrBank = 6)
-      assertBankMapping(romBank = 1, chrBank = 7)
+      checker.assertMapping(srcBank = 4, outBank = 0)
+      checker.assertMapping(srcBank = 5, outBank = 1)
+      checker.assertMapping(srcBank = 0, outBank = 2)
+      checker.assertMapping(srcBank = 1, outBank = 3)
+      checker.assertMapping(srcBank = 3, outBank = 4)
+      checker.assertMapping(srcBank = 6, outBank = 5)
+      checker.assertMapping(srcBank = 2, outBank = 6)
+      checker.assertMapping(srcBank = 1, outBank = 7)
     }
 
     @Test
@@ -119,14 +125,14 @@ class Mmc3MapperTest {
       mapper.setModeAndReg(chrMode = 1, reg = 4, data = 2)
       mapper.setModeAndReg(chrMode = 1, reg = 5, data = 1)
 
-      assertBankMapping(romBank = 3, chrBank = 0)
-      assertBankMapping(romBank = 6, chrBank = 1)
-      assertBankMapping(romBank = 2, chrBank = 2)
-      assertBankMapping(romBank = 1, chrBank = 3)
-      assertBankMapping(romBank = 4, chrBank = 4)
-      assertBankMapping(romBank = 5, chrBank = 5)
-      assertBankMapping(romBank = 0, chrBank = 6)
-      assertBankMapping(romBank = 1, chrBank = 7)
+      checker.assertMapping(srcBank = 3, outBank = 0)
+      checker.assertMapping(srcBank = 6, outBank = 1)
+      checker.assertMapping(srcBank = 2, outBank = 2)
+      checker.assertMapping(srcBank = 1, outBank = 3)
+      checker.assertMapping(srcBank = 4, outBank = 4)
+      checker.assertMapping(srcBank = 5, outBank = 5)
+      checker.assertMapping(srcBank = 0, outBank = 6)
+      checker.assertMapping(srcBank = 1, outBank = 7)
     }
 
     @Test
@@ -138,28 +144,14 @@ class Mmc3MapperTest {
       mapper.setModeAndReg(chrMode = 0, reg = 4, data = 2 + 8)
       mapper.setModeAndReg(chrMode = 0, reg = 5, data = 1 + 8)
 
-      assertBankMapping(romBank = 4, chrBank = 0)
-      assertBankMapping(romBank = 5, chrBank = 1)
-      assertBankMapping(romBank = 0, chrBank = 2)
-      assertBankMapping(romBank = 1, chrBank = 3)
-      assertBankMapping(romBank = 3, chrBank = 4)
-      assertBankMapping(romBank = 6, chrBank = 5)
-      assertBankMapping(romBank = 2, chrBank = 6)
-      assertBankMapping(romBank = 1, chrBank = 7)
-    }
-
-    // Test top and bottom of bank
-    private fun assertBankMapping(romBank: Int, chrBank: Int) {
-      val romBase = romBank * CHR_BANK_SIZE
-      val chrBase = chrBank * CHR_BANK_SIZE
-      val offsetLast = CHR_BANK_SIZE - 1
-
-      chrData[romBase] = 0x30
-      chrData[romBase + offsetLast] = 0x40
-
-      val chr = mapper.chr(mock())
-      assertEquals(0x30, chr[chrBase])
-      assertEquals(0x40, chr[chrBase + offsetLast])
+      checker.assertMapping(srcBank = 4, outBank = 0)
+      checker.assertMapping(srcBank = 5, outBank = 1)
+      checker.assertMapping(srcBank = 0, outBank = 2)
+      checker.assertMapping(srcBank = 1, outBank = 3)
+      checker.assertMapping(srcBank = 3, outBank = 4)
+      checker.assertMapping(srcBank = 6, outBank = 5)
+      checker.assertMapping(srcBank = 2, outBank = 6)
+      checker.assertMapping(srcBank = 1, outBank = 7)
     }
   }
 

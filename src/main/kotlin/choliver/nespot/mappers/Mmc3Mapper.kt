@@ -180,6 +180,7 @@ class Mmc3Mapper(rom: Rom) : Mapper {
     const val BASE_PRG_RAM = 0x6000
     const val BASE_PRG_ROM = 0x8000
     const val BASE_REG = 0x8000
+    const val BASE_CHR_ROM = 0x0000
 
     const val PRG_RAM_SIZE = 8192
     const val PRG_BANK_SIZE = 8192

@@ -70,7 +70,10 @@ class Cpu(
       CPX -> compare(x, resolve())
       CPY -> compare(y, resolve())
 
-      DEC -> storeResult(resolve() - 1)
+      DEC -> {
+        val data = resolve()
+        storeResult(data, data - 1)
+      }
       DEX -> {
         x = (x - 1).data()
         updateZN(x)
@@ -80,7 +83,10 @@ class Cpu(
         updateZN(y)
       }
 
-      INC -> storeResult(resolve() + 1)
+      INC -> {
+        val data = resolve()
+        storeResult(data, data + 1)
+      }
       INX -> {
         x = (x + 1).data()
         updateZN(x)
@@ -92,22 +98,22 @@ class Cpu(
 
       ASL -> {
         val data = resolve()
-        storeResult(data shl 1)
+        storeResult(data, data shl 1)
         p.c = data.isBitSet(7)
       }
       LSR -> {
         val data = resolve()
-        storeResult(data shr 1)
+        storeResult(data, data shr 1)
         p.c = data.isBitSet(0)
       }
       ROL -> {
         val data = resolve()
-        storeResult((data shl 1) or (if (p.c) 1 else 0))
+        storeResult(data, (data shl 1) or (if (p.c) 1 else 0))
         p.c = data.isBitSet(7)
       }
       ROR -> {
         val data = resolve()
-        storeResult((data shr 1) or (if (p.c) 0x80 else 0))
+        storeResult(data, (data shr 1) or (if (p.c) 0x80 else 0))
         p.c = data.isBitSet(0)
       }
 
@@ -277,11 +283,13 @@ class Cpu(
     else -> memory[decoded.addr]
   }
 
-  private fun Regs.storeResult(data: Data) {
+  private fun Regs.storeResult(original: Data, data: Data) {
     val d = data.data()
     if (decoded.addressMode == ACCUMULATOR) {
       a = d
     } else {
+      // Read-modify-write ops do dummy store of original value - must model correctly for MMC1
+      memory[decoded.addr] = original
       memory[decoded.addr] = d
     }
     updateZN(d)

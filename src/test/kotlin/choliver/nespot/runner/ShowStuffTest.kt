@@ -32,7 +32,7 @@ class ShowStuffTest {
   @Test
   @Disabled
   fun patterns() {
-    val mapper = createMapper(Rom.parse(File("roms/smb.nes").readBytes()))
+    val mapper = createMapper(Rom.parse(File("roms/sesamestreet.nes").readBytes()))
     val chr = mapper.chr(mock())
 
     fun getPatternData(

@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 private data class Case(
   val operand: (value: Data) -> Operand,
   val regs: Regs.() -> Regs = { this },
-  val mem: Map<Address, Data> = emptyMap(),
+  val mem: List<Pair<Address, Data>> = emptyList(),
   val targetAddr: Address = 0x0000
 )
 
@@ -99,7 +99,7 @@ fun assertForAddressModes(
   modes: Set<AddressMode> = OPCODES_TO_ENCODINGS[op]?.keys ?: error("Unhandled opcode ${op.name}"),
   target: Data = 0x00,
   initRegs: Regs.() -> Regs = { this },
-  initStores: Map<Address, Data> = emptyMap(),
+  initStores: List<Pair<Address, Data>> = emptyList(),
   expectedStores: (operandAddr: Address) -> List<Pair<Address, Data>> = { emptyList() },
   expectedRegs: Regs.() -> Regs = { this }
 ) {
@@ -126,7 +126,7 @@ fun assertCpuEffects(
   instructions: List<Instruction>,
   numStepsToExecute: Int = instructions.size,
   initRegs: Regs,
-  initStores: Map<Address, Data> = emptyMap(),
+  initStores: List<Pair<Address, Data>> = emptyList(),
   expectedRegs: Regs? = null,
   expectedStores: List<Pair<Address, Data>> = emptyList(),
   expectedCycles: Int? = null,
@@ -138,7 +138,7 @@ fun assertCpuEffects(
   var numCycles = 0
   var iStep = 0
 
-  val memory = mockMemory(instructions.memoryMap(BASE_USER) + initStores)
+  val memory = mockMemory((instructions.memoryMap(BASE_USER) + initStores).toMap())
 
   val cpu = Cpu(
     memory,
@@ -161,23 +161,32 @@ fun assertCpuEffects(
     assertEquals(expectedRegs, cpu.diagnostics.state.regs, "Unexpected registers for [${name}]")
   }
 
-  expectedStores.forEach { (addr, data) -> verify(memory)[addr] = data }
-  verify(memory, times(expectedStores.size))[any()] = any()
+  verifyStores(memory, expectedStores)
+
   if (expectedCycles != null) {
     assertEquals(expectedCycles, numCycles, "Unexpected # cycles for [${name}]")
+  }
+}
+
+private fun verifyStores(memory: Memory, expectedStores: List<Pair<Address, Data>>) {
+  verify(memory, times(expectedStores.size))[any()] = any()
+  inOrder(memory) {
+    expectedStores.forEach { (addr, data) ->
+      verify(memory, calls(1))[addr] = data
+    }
   }
 }
 
 fun List<Instruction>.memoryMap(base: Address) = map { it.encode() }
   .flatten()
   .withIndex()
-  .associate { (base + it.index).addr() to it.value }
+  .map { (base + it.index).addr() to it.value }
 
 fun mockMemory(init: Map<Address, Data>) = mock<Memory> {
   on { get(any()) } doAnswer { init[it.getArgument(0)] ?: 0xCC } // Easier to spot during debugging than 0x00
 }
 
-fun addrToMem(addr: Address, data: Int) = mapOf(addr to data.lo(), (addr + 1) to data.hi())
+fun addrToMem(addr: Address, data: Int) = listOf(addr to data.lo(), (addr + 1) to data.hi())
 
 private fun Instruction.encode(): List<Data> {
   fun opEnc(mode: AddressMode) =

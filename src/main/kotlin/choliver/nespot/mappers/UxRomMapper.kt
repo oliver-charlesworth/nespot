@@ -52,6 +52,7 @@ class UxRomMapper(private val rom: Rom) : Mapper {
 
   @Suppress("unused")
   companion object {
+    const val BASE_PRG_ROM = 0x8000
     const val BASE_PRG0_ROM = 0x8000
     const val BASE_PRG1_ROM = 0xC000
     const val BASE_CHR_ROM = 0x0000

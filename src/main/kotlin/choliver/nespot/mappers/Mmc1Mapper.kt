@@ -107,6 +107,7 @@ class Mmc1Mapper(
   }
 
   private fun updateShiftRegister(addr: Address, data: Data) {
+    // We don't update on consecutive stores (we approximate this as multiple stores in the same instruction step)
     val currentStep = getStepCount()
     if (currentStep != prevStep) {
       if (data.isBitSet(7)) {

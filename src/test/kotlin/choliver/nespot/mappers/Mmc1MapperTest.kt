@@ -17,9 +17,11 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
 class Mmc1MapperTest {
+  private var step = 0
+
   @Nested
   inner class PrgRam {
-    private val mapper = Mmc1Mapper(Rom(), { 0 })
+    private val mapper = Mmc1Mapper(Rom(), getStepCount = { 0 })
 
     @Test
     fun `load and store`() {
@@ -34,7 +36,7 @@ class Mmc1MapperTest {
   @Nested
   inner class PrgRom {
     private val prgData = ByteArray(8 * 16384)
-    private val mapper = Mmc1Mapper(Rom(prgData = prgData), { 0 })
+    private val mapper = Mmc1Mapper(Rom(prgData = prgData), getStepCount = { step })
 
     @ParameterizedTest
     @ValueSource(ints = [0, 1])
@@ -154,7 +156,7 @@ class Mmc1MapperTest {
   @Nested
   inner class ChrRom {
     private val chrData = ByteArray(8 * 4096)
-    private val mapper = Mmc1Mapper(Rom(chrData = chrData), { 0 })
+    private val mapper = Mmc1Mapper(Rom(chrData = chrData), getStepCount = { step })
 
     @Test
     fun `8k mode`() {
@@ -304,7 +306,7 @@ class Mmc1MapperTest {
     }
 
     private fun assertLoadAndStore(mode: Int, source: Address, target: Address) {
-      val mapper = Mmc1Mapper(Rom(chrData = ByteArray(8192)), { 0 })
+      val mapper = Mmc1Mapper(Rom(chrData = ByteArray(8192)), getStepCount = { step })
       val vram = mock<Memory>()
       val chr = mapper.chr(vram)
       mapper.writeReg(0, mode)
@@ -323,10 +325,16 @@ class Mmc1MapperTest {
     val d = data and 0x1F
     val addr = BASE_SR or ((idx and 0x03) shl 13)
     prg[addr] = 0x80   // Reset
+    step++
     prg[addr] = d shr 0
+    step++
     prg[addr] = d shr 1
+    step++
     prg[addr] = d shr 2
+    step++
     prg[addr] = d shr 3
+    step++
     prg[addr] = d shr 4
+    step++
   }
 }

@@ -22,7 +22,6 @@ class Nes(
 ) {
   private var steps = 0
 
-
   private val mapper = createMapper(rom, getStepCount = { steps })
 
   private val apu = Apu(

@@ -2,16 +2,24 @@ package choliver.nespot.mappers
 
 import choliver.nespot.*
 import choliver.nespot.cartridge.*
+import choliver.nespot.mappers.Mmc3Mapper.ChrMode.CHR_MODE_0
+import choliver.nespot.mappers.Mmc3Mapper.ChrMode.CHR_MODE_1
+import choliver.nespot.mappers.Mmc3Mapper.MirroringMode.HORIZONTAL
+import choliver.nespot.mappers.Mmc3Mapper.MirroringMode.VERTICAL
+import choliver.nespot.mappers.Mmc3Mapper.PrgMode.PRG_MODE_0
+import choliver.nespot.mappers.Mmc3Mapper.PrgMode.PRG_MODE_1
 
 
 // See https://wiki.nesdev.com/w/index.php/MMC3
-class Mmc3Mapper(private val rom: Rom) : Mapper {
+class Mmc3Mapper(rom: Rom) : Mapper {
   private val prgRam = Ram(PRG_RAM_SIZE)
-  private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
-  private val numChrBanks = (rom.chrData.size / CHR_BANK_SIZE)
-  private var mirrorModeFlag = false
-  private var chrModeFlag = false
-  private var prgModeFlag = false
+  private val prgData = rom.prgData
+  private val chrData = rom.chrData
+  private val numPrgBanks = (prgData.size / PRG_BANK_SIZE)
+  private val numChrBanks = (chrData.size / CHR_BANK_SIZE)
+  private var mirrorMode = VERTICAL
+  private var chrMode = CHR_MODE_0
+  private var prgMode = PRG_MODE_0
   private var regSelect = 0
   private val regs = IntArray(8) { 0 }
   private var irqReload = false
@@ -25,16 +33,15 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
   override val persistentRam = prgRam
 
   override val prg = object : Memory {
-    override operator fun get(addr: Address) = when {
-      (addr >= BASE_PRG_ROM) -> loadFromPrgRom(addr)
-      (addr >= BASE_PRG_RAM) -> prgRam[addr and (PRG_RAM_SIZE - 1)]
-      else -> 0x00
+    override fun get(addr: Address) = when {
+      (addr >= BASE_PRG_ROM) -> prgData[prgRomAddr(addr)].data()
+      else -> prgRam[addr % PRG_RAM_SIZE]
     }
 
     override fun set(addr: Address, data: Data) {
       when {
-        (addr >= BASE_REG) -> writeReg(addr, data)
-        (addr >= BASE_PRG_RAM) -> prgRam[addr and (PRG_RAM_SIZE - 1)] = data
+        (addr >= BASE_REG) -> setReg(addr, data)
+        (addr >= BASE_PRG_RAM) -> prgRam[addr % PRG_RAM_SIZE] = data
       }
     }
   }
@@ -44,7 +51,7 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
       updateIrqState(addr)
       return when {
         (addr >= BASE_VRAM) -> vram[mapToVram(addr)]  // This maps everything >= 0x4000 too
-        else -> loadFromChrRom(addr)
+        else -> chrData[chrRomAddr(addr)].data()
       }
     }
 
@@ -55,25 +62,33 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
       }
     }
 
-    private fun mapToVram(addr: Address): Address = when (mirrorModeFlag) {
-      false -> mirrorVertical(addr)
-      true -> mirrorHorizontal(addr)
+    private fun mapToVram(addr: Address): Address = when (mirrorMode) {
+      VERTICAL -> mirrorVertical(addr)
+      HORIZONTAL -> mirrorHorizontal(addr)
     }
   }
 
-  private fun loadFromPrgRom(addr: Address): Data {
+  private fun prgRomAddr(addr: Address): Int {
     val iBank = when ((addr and 0x6000) shr 13) {
-      0 -> if (prgModeFlag) (numPrgBanks - 2) else regs[6]
+      0 -> when (prgMode) {
+        PRG_MODE_0 -> regs[6]
+        PRG_MODE_1 -> (numPrgBanks - 2)
+      }
       1 -> regs[7]
-      2 -> if (prgModeFlag) regs[6] else (numPrgBanks - 2)
-      3 -> (numPrgBanks - 1)
-      else -> throw IllegalArgumentException()  // Should never happen
+      2 -> when (prgMode) {
+        PRG_MODE_0 -> (numPrgBanks - 2)
+        PRG_MODE_1 -> regs[6]
+      }
+      else -> (numPrgBanks - 1)
     }
-    return rom.prgData[(addr and (PRG_BANK_SIZE - 1)) + PRG_BANK_SIZE * iBank].data()
+    return (addr % PRG_BANK_SIZE) + iBank * PRG_BANK_SIZE
   }
 
-  private fun loadFromChrRom(addr: Address): Data {
-    val a = if (chrModeFlag) (addr xor 0x1000) else addr  // Conditional inversion of A12
+  private fun chrRomAddr(addr: Address): Int {
+    val a = when (chrMode) {
+      CHR_MODE_0 -> addr
+      CHR_MODE_1 -> (addr xor 0x1000)  // Conditional inversion of A12
+    }
     val iBank = when (a shr 10) {
       0 -> regs[0] and 0xFE
       1 -> regs[0] or 0x01
@@ -82,13 +97,12 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
       4 -> regs[2]
       5 -> regs[3]
       6 -> regs[4]
-      7 -> regs[5]
-      else -> throw IllegalArgumentException()  // Should never happen
+      else -> regs[5]
     }
-    return rom.chrData[(a and (CHR_BANK_SIZE - 1)) + CHR_BANK_SIZE * iBank].data()
+    return (a % CHR_BANK_SIZE) + iBank * CHR_BANK_SIZE
   }
 
-  private fun writeReg(addr: Address, data: Data) {
+  private fun setReg(addr: Address, data: Data) {
     val even = (addr % 2) == 0
     when ((addr and 0x6000) shr 13) {
       0 -> when (even) {
@@ -99,14 +113,14 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
           }
         }
         true -> {
-          chrModeFlag = data.isBitSet(7)
-          prgModeFlag = data.isBitSet(6)
+          chrMode = ChrMode.values()[(data and 0x80) shr 7]
+          prgMode = PrgMode.values()[(data and 0x40) shr 6]
           regSelect = data and 0b00000111
         }
       }
       1 -> when (even) {
         false -> Unit // TODO - PRG-RAM protect
-        true -> mirrorModeFlag = data.isBitSet(0)
+        true -> mirrorMode = MirroringMode.values()[data and 0x01]
       }
       2 -> when (even) {
         false -> irqReload = true
@@ -144,6 +158,21 @@ class Mmc3Mapper(private val rom: Rom) : Mapper {
     val clockEdge = !prevA12 && newA12
     prevA12 = newA12
     return clockEdge
+  }
+
+  private enum class PrgMode {
+    PRG_MODE_0,
+    PRG_MODE_1
+  }
+
+  private enum class ChrMode {
+    CHR_MODE_0,
+    CHR_MODE_1
+  }
+
+  private enum class MirroringMode {
+    VERTICAL,
+    HORIZONTAL
   }
 
   @Suppress("unused")

@@ -2,13 +2,11 @@ package choliver.nespot.mappers
 
 import choliver.nespot.Address
 import choliver.nespot.Data
-import choliver.nespot.Memory
 import choliver.nespot.apu.repeat
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.utils._0
 import choliver.nespot.cpu.utils._1
-import choliver.nespot.data
 import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
 import choliver.nespot.mappers.Mmc3Mapper.Companion.BASE_CHR_ROM
 import choliver.nespot.mappers.Mmc3Mapper.Companion.BASE_PRG_RAM
@@ -16,10 +14,7 @@ import choliver.nespot.mappers.Mmc3Mapper.Companion.BASE_PRG_ROM
 import choliver.nespot.mappers.Mmc3Mapper.Companion.CHR_BANK_SIZE
 import choliver.nespot.mappers.Mmc3Mapper.Companion.PRG_BANK_SIZE
 import choliver.nespot.mappers.Mmc3Mapper.Companion.PRG_RAM_SIZE
-import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -169,59 +164,24 @@ class Mmc3MapperTest {
 
   @Nested
   inner class Vram {
+    private val mapper = Mmc3Mapper(Rom())
+
     @Test
     fun `vertical mirroring`() {
-      val cases = mapOf(
-        // Nametable 0
-        0x2000 to 0x0000,
-        0x23FF to 0x03FF,
-        // Nametable 1
-        0x2400 to 0x0400,
-        0x27FF to 0x07FF,
-        // Nametable 2
-        0x2800 to 0x0000,
-        0x2BFF to 0x03FF,
-        // Nametable 3
-        0x2C00 to 0x0400,
-        0x2FFF to 0x07FF
-      )
+      setMode(0)
 
-      cases.forEach { (source, target) -> assertLoadAndStore(mode = 0, source = source, target = target) }
+      assertVramMappings(mapper, 0 to 0, 1 to 1, 0 to 2, 1 to 3)
     }
 
     @Test
     fun `horizontal mirroring`() {
-      val cases = mapOf(
-        // Nametable 0
-        0x2000 to 0x0000,
-        0x23FF to 0x03FF,
-        // Nametable 1
-        0x2400 to 0x0000,
-        0x27FF to 0x03FF,
-        // Nametable 2
-        0x2800 to 0x0400,
-        0x2BFF to 0x07FF,
-        // Nametable 3
-        0x2C00 to 0x0400,
-        0x2FFF to 0x07FF
-      )
+      setMode(1)
 
-      cases.forEach { (source, target) -> assertLoadAndStore(mode = 1, source = source, target = target) }
+      assertVramMappings(mapper, 0 to 0, 0 to 1, 1 to 2, 1 to 3)
     }
 
-    private fun assertLoadAndStore(mode: Int, source: Address, target: Address) {
-      val mapper = Mmc3Mapper(Rom())
-      val vram = mock<Memory>()
-      val chr = mapper.chr(vram)
+    private fun setMode(mode: Int) {
       mapper.prg[0xA000] = mode
-
-      val data = (target + 23).data() // Arbitrary payload
-      whenever(vram[target]) doReturn data
-
-      assertEquals(data, chr[source])
-
-      chr[source] = data
-      verify(vram)[target] = data
     }
   }
 

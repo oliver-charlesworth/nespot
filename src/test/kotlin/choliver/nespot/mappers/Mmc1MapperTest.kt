@@ -1,7 +1,6 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.*
-import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
 import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_CHR_ROM
@@ -184,42 +183,38 @@ class Mmc1MapperTest {
 
   @Nested
   inner class Vram {
+    private val mapper = Mmc1Mapper(Rom(), getStepCount = { step })
+
     @Test
     fun `single-screen - nametable 0`() {
-      assertMappings(
-        0,
-        0 to 0, 0 to 1, 0 to 2, 0 to 3
-      )
+      setMirrorMode(0)
+
+      assertVramMappings(mapper, 0 to 0, 0 to 1, 0 to 2, 0 to 3)
     }
 
     @Test
     fun `single-screen - nametable 1`() {
-      assertMappings(
-        1,
-        1 to 0, 1 to 1, 1 to 2, 1 to 3
-      )
+      setMirrorMode(1)
+
+      assertVramMappings(mapper, 1 to 0, 1 to 1, 1 to 2, 1 to 3)
     }
 
     @Test
     fun `vertical mirroring`() {
-      assertMappings(
-        2,
-        0 to 0, 1 to 1, 0 to 2, 1 to 3
-      )
+      setMirrorMode(2)
+
+      assertVramMappings(mapper, 0 to 0, 1 to 1, 0 to 2, 1 to 3)
     }
 
     @Test
     fun `horizontal mirroring`() {
-      assertMappings(
-        3,
-        0 to 0, 0 to 1, 1 to 2, 1 to 3
-      )
+      setMirrorMode(3)
+
+      assertVramMappings(mapper, 0 to 0, 0 to 1, 1 to 2, 1 to 3)
     }
 
-    private fun assertMappings(mode: Int, vararg vramToChrMappings: Pair<Int, Int>) {
-      val mapper = Mmc1Mapper(Rom(), getStepCount = { step })
+    private fun setMirrorMode(mode: Int) {
       mapper.writeReg(0, mode)
-      assertVramMappings(mapper, *vramToChrMappings)
     }
   }
 

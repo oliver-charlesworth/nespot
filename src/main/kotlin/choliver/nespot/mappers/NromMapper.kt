@@ -2,9 +2,11 @@ package choliver.nespot.mappers
 
 import choliver.nespot.*
 import choliver.nespot.cartridge.*
+import choliver.nespot.cartridge.Rom.Mirroring.*
 
 // https://wiki.nesdev.com/w/index.php/NROM
 class NromMapper(rom: Rom) : Mapper {
+  private val vram = ByteArray(VRAM_SIZE)
   private val prgRam = ByteArray(PRG_RAM_SIZE)
   private val prgData = rom.prgData
   private val chrData = if (rom.chrData.isEmpty()) ByteArray(CHR_RAM_SIZE) else rom.chrData
@@ -26,22 +28,24 @@ class NromMapper(rom: Rom) : Mapper {
     }
   }
 
-  override fun chr(vram: Memory): Memory {
-    val mirroredRam = MirroringMemory(mirroring, vram)
+  override val chr = object : Memory {
+    override fun get(addr: Address) = when {
+      (addr >= BASE_VRAM) -> vram[vramAddr(addr)]    // This maps everything >= 0x4000 too
+      else -> chrData[addr]
+    }.data()
 
-    return object : Memory {
-      override fun get(addr: Address) = when {
-        (addr >= BASE_VRAM) -> mirroredRam[addr]    // This maps everything >= 0x4000 too
-        else -> chrData[addr].data()
-      }
-
-      override fun set(addr: Address, data: Data) {
-        when {
-          (addr >= BASE_VRAM) -> mirroredRam[addr] = data   // This maps everything >= 0x4000 too
-          else -> chrData[addr] = data.toByte()
-        }
+    override fun set(addr: Address, data: Data) {
+      when {
+        (addr >= BASE_VRAM) -> vram[vramAddr(addr)] = data.toByte()   // This maps everything >= 0x4000 too
+        else -> chrData[addr] = data.toByte()
       }
     }
+  }
+
+  private fun vramAddr(addr: Address): Address = when (mirroring) {
+    VERTICAL -> mirrorVertical(addr)
+    HORIZONTAL -> mirrorHorizontal(addr)
+    IGNORED -> throw UnsupportedOperationException()
   }
 
   @Suppress("unused")

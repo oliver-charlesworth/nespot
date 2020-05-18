@@ -30,12 +30,9 @@ class Nes(
   )
 
   private val cpuRam = Ram(CPU_RAM_SIZE)
-  private val ppuRam = Ram(PPU_RAM_SIZE)
-
-  private val ppuMapper = mapper.chr(ppuRam)
 
   private val ppu = Ppu(
-    memory = ppuMapper,
+    memory = mapper.chr,
     onVideoBufferReady = onVideoBufferReady
   )
 
@@ -78,10 +75,9 @@ class Nes(
     val cpu = this@Nes.cpu.diagnostics
     val ppu = this@Nes.ppu.diagnostics
     val ram = this@Nes.cpuRam
-    val vram = this@Nes.ppuRam
     fun step() = this@Nes.step()
     fun peek(addr: Address) = cpuMapper[addr]
-    fun peekV(addr: Address) = ppuMapper[addr]
+    fun peekV(addr: Address) = mapper.chr[addr]
   }
 
   val persistentRam = mapper.persistentRam
@@ -91,7 +87,6 @@ class Nes(
   // TODO - consolidate all the constants
   companion object {
     const val CPU_RAM_SIZE = 2048
-    const val PPU_RAM_SIZE = 2048
 
     const val ADDR_OAMDATA: Address = 0x2004
     const val ADDR_OAMDMA: Address = 0x4014

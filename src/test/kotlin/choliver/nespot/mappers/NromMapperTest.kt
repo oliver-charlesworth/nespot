@@ -11,7 +11,6 @@ import choliver.nespot.mappers.NromMapper.Companion.BASE_PRG_RAM
 import choliver.nespot.mappers.NromMapper.Companion.CHR_RAM_SIZE
 import choliver.nespot.mappers.NromMapper.Companion.PRG_BANK_SIZE
 import choliver.nespot.mappers.NromMapper.Companion.PRG_RAM_SIZE
-import com.nhaarman.mockitokotlin2.mock
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -71,13 +70,12 @@ class NromMapperTest {
   @Nested
   inner class ChrRam {
     private val mapper = mapper()
-    private val chr = mapper.chr(mock())
     private val checker = BankMappingChecker(
       bankSize = CHR_RAM_SIZE,
       srcBase = BASE_CHR_ROM,
       outBase = BASE_CHR_ROM,
-      setSrc = chr::set,
-      getOut = chr::get
+      setSrc = mapper.chr::set,
+      getOut = mapper.chr::get
     )
 
     @Test
@@ -95,7 +93,7 @@ class NromMapperTest {
       srcBase = BASE_CHR_ROM,
       outBase = BASE_CHR_ROM,
       setSrc = takesBytes(chrData::set),
-      getOut = mapper.chr(mock())::get
+      getOut = mapper.chr::get
     )
 
     @Test
@@ -108,12 +106,12 @@ class NromMapperTest {
   inner class Vram {
     @Test
     fun `vertical mirroring`() {
-      assertVramMappings(mapper(mirroring = VERTICAL), 0 to 0, 1 to 1, 0 to 2, 1 to 3)
+      assertVramMappings(mapper(mirroring = VERTICAL), listOf(0, 2), listOf(1, 3))
     }
 
     @Test
     fun `horizontal mirroring`() {
-      assertVramMappings(mapper(mirroring = HORIZONTAL), 0 to 0, 0 to 1, 1 to 2, 1 to 3)
+      assertVramMappings(mapper(mirroring = HORIZONTAL), listOf(0, 1), listOf(2, 3))
     }
   }
 

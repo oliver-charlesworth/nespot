@@ -2,11 +2,9 @@ package choliver.nespot.mappers
 
 import choliver.nespot.Address
 import choliver.nespot.Data
-import choliver.nespot.Ram
 import choliver.nespot.cartridge.BASE_VRAM
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.NAMETABLE_SIZE
-import choliver.nespot.cartridge.VRAM_SIZE
 import org.junit.jupiter.api.Assertions.assertEquals
 
 
@@ -41,27 +39,19 @@ internal class BankMappingChecker(
   }
 }
 
-internal fun assertVramMappings(mapper: Mapper, vararg vramToChrMappings: Pair<Int, Int>) {
-  val vram = Ram(VRAM_SIZE)
-  val chr = mapper.chr(vram)
-
-  val checkerRead = BankMappingChecker(
-    bankSize = NAMETABLE_SIZE,
-    srcBase = 0,
-    outBase = BASE_VRAM,
-    setSrc = vram::set,
-    getOut = chr::get
-  )
-
-  val checkerWrite = BankMappingChecker(
+internal fun assertVramMappings(mapper: Mapper, vararg nametableAliases: List<Int>) {
+  val checker = BankMappingChecker(
     bankSize = NAMETABLE_SIZE,
     srcBase = BASE_VRAM,
-    outBase = 0,
-    setSrc = chr::set,
-    getOut = vram::get
+    outBase = BASE_VRAM,
+    setSrc = mapper.chr::set,
+    getOut = mapper.chr::get
   )
 
-  // Offset read and write values to ensure we're not silently cheating
-  checkerRead.assertMappings(*vramToChrMappings, dataOffset = 0)
-  checkerWrite.assertMappings(*(vramToChrMappings.map { it.second to it.first }.toTypedArray()), dataOffset = 8)
+  val mappings = nametableAliases.flatMap { aliases ->
+    // Cartesian product of all aliases in group - can we get from any alias to any other alias?
+    aliases.flatMap { first -> aliases.map { second -> first to second } }
+  }
+
+  checker.assertMappings(*mappings.toTypedArray())
 }

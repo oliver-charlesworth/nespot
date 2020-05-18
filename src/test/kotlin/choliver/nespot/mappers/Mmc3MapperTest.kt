@@ -14,7 +14,6 @@ import choliver.nespot.mappers.Mmc3Mapper.Companion.BASE_PRG_RAM
 import choliver.nespot.mappers.Mmc3Mapper.Companion.CHR_BANK_SIZE
 import choliver.nespot.mappers.Mmc3Mapper.Companion.PRG_BANK_SIZE
 import choliver.nespot.mappers.Mmc3Mapper.Companion.PRG_RAM_SIZE
-import com.nhaarman.mockitokotlin2.mock
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -95,7 +94,7 @@ class Mmc3MapperTest {
       bankSize = CHR_BANK_SIZE,
       outBase = BASE_CHR_ROM,
       setSrc = takesBytes(chrData::set),
-      getOut = mapper.chr(mock())::get
+      getOut = mapper.chr::get
     )
 
     @Test
@@ -170,14 +169,14 @@ class Mmc3MapperTest {
     fun `vertical mirroring`() {
       setMode(0)
 
-      assertVramMappings(mapper, 0 to 0, 1 to 1, 0 to 2, 1 to 3)
+      assertVramMappings(mapper, listOf(0, 2), listOf(1, 3))
     }
 
     @Test
     fun `horizontal mirroring`() {
       setMode(1)
 
-      assertVramMappings(mapper, 0 to 0, 0 to 1, 1 to 2, 1 to 3)
+      assertVramMappings(mapper, listOf(0, 1), listOf(2, 3))
     }
 
     private fun setMode(mode: Int) {
@@ -188,7 +187,6 @@ class Mmc3MapperTest {
   @Nested
   inner class Irq {
     private val mapper = Mmc3Mapper(Rom(chrData = ByteArray(CHR_BANK_SIZE)))
-    private val chr = mapper.chr(mock())
 
     init {
       setNewValue(3)
@@ -308,7 +306,7 @@ class Mmc3MapperTest {
 
     private fun pumpAndCollect(addrs: List<Address>): List<Boolean> {
       val ret = mutableListOf<Boolean>()
-      addrs.forEach { chr[it]; ret += mapper.irq }
+      addrs.forEach { mapper.chr[it]; ret += mapper.irq }
       return ret
     }
 

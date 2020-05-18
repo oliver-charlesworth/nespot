@@ -23,7 +23,7 @@ class SnapshotManager(private val nes: Nes.Diagnostics) {
     ppu = nes.ppu.state,
     renderer = nes.ppu.renderer.state,
     ram = encodeMemory(2048, nes.ram),
-    vram = encodeMemory(2048, nes.vram),
+    vram = "",  // TODO
     palette = encodeMemory(32, nes.ppu.palette),
     oam = encodeMemory(256, nes.ppu.oam)
   )
@@ -37,7 +37,7 @@ class SnapshotManager(private val nes: Nes.Diagnostics) {
     nes.ppu.state = snapshot.ppu
     nes.ppu.renderer.state = snapshot.renderer
     decodeMemory(2048, nes.ram, snapshot.ram)
-    decodeMemory(2048, nes.vram, snapshot.vram)
+    // TODO - VRAM
     decodeMemory(32, nes.ppu.palette, snapshot.palette)
     decodeMemory(256, nes.ppu.oam, snapshot.oam)
   }

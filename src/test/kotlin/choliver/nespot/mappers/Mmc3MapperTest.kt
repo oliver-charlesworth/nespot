@@ -39,7 +39,7 @@ class Mmc3MapperTest {
 
     @Test
     fun `load and store`() {
-      checker.assertMapping(0, 0)
+      checker.assertMappings(0 to 0)
     }
   }
 
@@ -59,10 +59,12 @@ class Mmc3MapperTest {
       mapper.setModeAndReg(prgMode = 0, reg = 6, data = 3)
       mapper.setModeAndReg(prgMode = 0, reg = 7, data = 5)
 
-      checker.assertMapping(srcBank = 3, outBank = 0)
-      checker.assertMapping(srcBank = 5, outBank = 1)
-      checker.assertMapping(srcBank = 6, outBank = 2)   // Fixed to penultimate
-      checker.assertMapping(srcBank = 7, outBank = 3)   // Fixed to last
+      checker.assertMappings(
+        3 to 0,
+        5 to 1,
+        6 to 2,   // Fixed to penultimate
+        7 to 3    // Fixed to last
+      )
     }
 
     @Test
@@ -70,10 +72,12 @@ class Mmc3MapperTest {
       mapper.setModeAndReg(prgMode = 1, reg = 6, data = 3)
       mapper.setModeAndReg(prgMode = 1, reg = 7, data = 5)
 
-      checker.assertMapping(srcBank = 6, outBank = 0)   // Fixed to penultimate
-      checker.assertMapping(srcBank = 5, outBank = 1)
-      checker.assertMapping(srcBank = 3, outBank = 2)
-      checker.assertMapping(srcBank = 7, outBank = 3)   // Fixed to last
+      checker.assertMappings(
+        6 to 0,   // Fixed to penultimate
+        5 to 1,
+        3 to 2,
+        7 to 3    // Fixed to last
+      )
     }
 
     @Test
@@ -81,8 +85,10 @@ class Mmc3MapperTest {
       mapper.setModeAndReg(prgMode = 0, reg = 6, data = 3 + 8 + 8)
       mapper.setModeAndReg(prgMode = 0, reg = 7, data = 5 + 8)
 
-      checker.assertMapping(srcBank = 3, outBank = 0)
-      checker.assertMapping(srcBank = 5, outBank = 1)
+      checker.assertMappings(
+        3 to 0,
+        5 to 1
+      )
     }
   }
 
@@ -106,14 +112,16 @@ class Mmc3MapperTest {
       mapper.setModeAndReg(chrMode = 0, reg = 4, data = 2)
       mapper.setModeAndReg(chrMode = 0, reg = 5, data = 1)
 
-      checker.assertMapping(srcBank = 4, outBank = 0)
-      checker.assertMapping(srcBank = 5, outBank = 1)
-      checker.assertMapping(srcBank = 0, outBank = 2)
-      checker.assertMapping(srcBank = 1, outBank = 3)
-      checker.assertMapping(srcBank = 3, outBank = 4)
-      checker.assertMapping(srcBank = 6, outBank = 5)
-      checker.assertMapping(srcBank = 2, outBank = 6)
-      checker.assertMapping(srcBank = 1, outBank = 7)
+      checker.assertMappings(
+        4 to 0,
+        5 to 1,
+        0 to 2,
+        1 to 3,
+        3 to 4,
+        6 to 5,
+        2 to 6,
+        1 to 7
+      )
     }
 
     @Test
@@ -125,14 +133,16 @@ class Mmc3MapperTest {
       mapper.setModeAndReg(chrMode = 1, reg = 4, data = 2)
       mapper.setModeAndReg(chrMode = 1, reg = 5, data = 1)
 
-      checker.assertMapping(srcBank = 3, outBank = 0)
-      checker.assertMapping(srcBank = 6, outBank = 1)
-      checker.assertMapping(srcBank = 2, outBank = 2)
-      checker.assertMapping(srcBank = 1, outBank = 3)
-      checker.assertMapping(srcBank = 4, outBank = 4)
-      checker.assertMapping(srcBank = 5, outBank = 5)
-      checker.assertMapping(srcBank = 0, outBank = 6)
-      checker.assertMapping(srcBank = 1, outBank = 7)
+      checker.assertMappings(
+        3 to 0,
+        6 to 1,
+        2 to 2,
+        1 to 3,
+        4 to 4,
+        5 to 5,
+        0 to 6,
+        1 to 7
+      )
     }
 
     @Test
@@ -144,14 +154,16 @@ class Mmc3MapperTest {
       mapper.setModeAndReg(chrMode = 0, reg = 4, data = 2 + 8)
       mapper.setModeAndReg(chrMode = 0, reg = 5, data = 1 + 8)
 
-      checker.assertMapping(srcBank = 4, outBank = 0)
-      checker.assertMapping(srcBank = 5, outBank = 1)
-      checker.assertMapping(srcBank = 0, outBank = 2)
-      checker.assertMapping(srcBank = 1, outBank = 3)
-      checker.assertMapping(srcBank = 3, outBank = 4)
-      checker.assertMapping(srcBank = 6, outBank = 5)
-      checker.assertMapping(srcBank = 2, outBank = 6)
-      checker.assertMapping(srcBank = 1, outBank = 7)
+      checker.assertMappings(
+        4 to 0,
+        5 to 1,
+        0 to 2,
+        1 to 3,
+        3 to 4,
+        6 to 5,
+        2 to 6,
+        1 to 7
+      )
     }
   }
 

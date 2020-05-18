@@ -40,7 +40,7 @@ class Mmc1MapperTest {
 
     @Test
     fun `load and store`() {
-      checker.assertMapping(0, 0)
+      checker.assertMappings(0 to 0)
     }
   }
 
@@ -61,8 +61,10 @@ class Mmc1MapperTest {
       setMode(mode)
       setBank(6)
 
-      checker.assertMapping(srcBank = 6, outBank = 0)
-      checker.assertMapping(srcBank = 7, outBank = 1)
+      checker.assertMappings(
+        6 to 0,
+        7 to 1
+      )
     }
 
     @Test
@@ -70,8 +72,10 @@ class Mmc1MapperTest {
       setMode(2)
       setBank(6)
 
-      checker.assertMapping(srcBank = 0, outBank = 0)   // Fixed to first
-      checker.assertMapping(srcBank = 6, outBank = 1)
+      checker.assertMappings(
+        0 to 0,   // Fixed to first
+        6 to 1
+      )
     }
 
     @Test
@@ -79,8 +83,10 @@ class Mmc1MapperTest {
       setMode(3)
       setBank(5)
 
-      checker.assertMapping(srcBank = 5, outBank = 0)
-      checker.assertMapping(srcBank = 7, outBank = 1)   // Fixed to last
+      checker.assertMappings(
+        5 to 0,
+        7 to 1    // Fixed to last
+      )
     }
 
     @Test
@@ -88,15 +94,17 @@ class Mmc1MapperTest {
       setMode(0)
       setBank(6 + 8)
 
-      checker.assertMapping(srcBank = 6, outBank = 0)
-      checker.assertMapping(srcBank = 7, outBank = 1)
+      checker.assertMappings(
+        6 to 0,
+        7 to 1
+      )
     }
 
     @Test
     fun `starts up on max bank`() {
       setMode(3)
 
-      checker.assertMapping(srcBank = 7, outBank = 0)
+      checker.assertMappings(7 to 0)
     }
 
     private fun setMode(mode: Int) {
@@ -122,8 +130,10 @@ class Mmc1MapperTest {
 
     @Test
     fun `load and store`() {
-      checker.assertMapping(0, 0)
-      checker.assertMapping(1, 1)
+      checker.assertMappings(
+        0 to 0,
+        1 to 1
+      )
     }
 
     // TODO - other modes
@@ -145,24 +155,30 @@ class Mmc1MapperTest {
       // bank1 set to something weird to prove we ignore it
       setModeAndBanks(mode = 0, bank0 = 6, bank1 = 3)
 
-      checker.assertMapping(srcBank = 6, outBank = 0)
-      checker.assertMapping(srcBank = 7, outBank = 1)
+      checker.assertMappings(
+        6 to 0,
+        7 to 1
+      )
     }
 
     @Test
     fun `4k mode`() {
       setModeAndBanks(mode = 1, bank0 = 6, bank1 = 3)
 
-      checker.assertMapping(srcBank = 6, outBank = 0)
-      checker.assertMapping(srcBank = 3, outBank = 1)
+      checker.assertMappings(
+        6 to 0,
+        3 to 1
+      )
     }
 
     @Test
     fun `bank-selection wraps`() {
       setModeAndBanks(mode = 1, bank0 = 6 + 8, bank1 = 3 + 8)
 
-      checker.assertMapping(srcBank = 6, outBank = 0)
-      checker.assertMapping(srcBank = 3, outBank = 1)
+      checker.assertMappings(
+        6 to 0,
+        3 to 1
+      )
     }
 
     private fun setModeAndBanks(mode: Int, bank0: Int, bank1: Int) {

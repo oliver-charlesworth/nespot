@@ -38,26 +38,26 @@ class UxRomMapperTest {
     fun `fixed upper`() {
       setBank(6)
 
-      checker.assertMapping(srcBank = 7, outBank = 1)
+      checker.assertMappings(7 to 1)
     }
 
     @Test
     fun `variable lower`() {
       setBank(6)
 
-      checker.assertMapping(srcBank = 6, outBank = 0)
+      checker.assertMappings(6 to 0)
     }
 
     @Test
     fun `bank mapping wraps`() {
       setBank(6 + 8)
 
-      checker.assertMapping(srcBank = 6, outBank = 0)
+      checker.assertMappings(6 to 0)
     }
 
     @Test
     fun `starts up on min bank`() {
-      checker.assertMapping(srcBank = 0, outBank = 0)
+      checker.assertMappings(0 to 0)
     }
 
     private fun setBank(bank: Int) {
@@ -79,7 +79,7 @@ class UxRomMapperTest {
 
     @Test
     fun `load and store`() {
-      checker.assertMapping(0, 0)
+      checker.assertMappings(0 to 0)
     }
   }
 

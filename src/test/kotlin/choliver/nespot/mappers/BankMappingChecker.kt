@@ -12,7 +12,13 @@ internal class BankMappingChecker(
   private val setSrc: (Address, Data) -> Unit,
   private val getOut: (Address) -> Data
 ) {
-  fun assertMapping(srcBank: Int, outBank: Int) {
+  fun assertMappings(vararg srcToOutMappings: Pair<Int, Int>) {
+    srcToOutMappings.forEach {
+      assertMapping(srcBank = it.first, outBank = it.second, desc = "src: ${it.first}, out: ${it.second}")
+    }
+  }
+
+  private fun assertMapping(srcBank: Int, outBank: Int, desc: String? = null) {
     val srcBankBase = srcBase + (srcBank * bankSize)
     val outBankBase = outBase + (outBank * bankSize)
     val offsetLast = bankSize - 1
@@ -20,8 +26,8 @@ internal class BankMappingChecker(
     setSrc(srcBankBase, 0x30)
     setSrc(srcBankBase + offsetLast, 0x40)
 
-    assertEquals(0x30, getOut(outBankBase))
-    assertEquals(0x40, getOut(outBankBase + offsetLast))
+    assertEquals(0x30, getOut(outBankBase), "[${desc}] low")
+    assertEquals(0x40, getOut(outBankBase + offsetLast), "[${desc}] high")
   }
 
   companion object {

@@ -37,7 +37,7 @@ class NromMapperTest {
 
     @Test
     fun `load and store`() {
-      checker.assertMapping(0, 0)
+      checker.assertMappings(0 to 0)
     }
   }
 
@@ -47,16 +47,20 @@ class NromMapperTest {
     fun `size-32768`() {
       val checker = checker(32768)
 
-      checker.assertMapping(0, 0)
-      checker.assertMapping(1, 1)
+      checker.assertMappings(
+        0 to 0,
+        1 to 1
+      )
     }
 
     @Test
     fun `size-16384`() {
       val checker = checker(16384)
 
-      checker.assertMapping(0, 0)
-      checker.assertMapping(0, 1)
+      checker.assertMappings(
+        0 to 0,
+        0 to 1
+      )
     }
 
     private fun checker(size: Int): BankMappingChecker {
@@ -85,7 +89,7 @@ class NromMapperTest {
 
     @Test
     fun `load and store`() {
-      checker.assertMapping(0, 0)
+      checker.assertMappings(0 to 0)
     }
   }
 
@@ -103,7 +107,7 @@ class NromMapperTest {
 
     @Test
     fun `maps 0x0000 to 0x1FFF`() {
-      checker.assertMapping(0, 0)
+      checker.assertMappings(0 to 0)
     }
   }
 

@@ -40,11 +40,11 @@ class Ppu(
     }
   }
 
-  // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png
+  // See http://wiki.nesdev.com/w/images/d/d1/Ntsc_timing.png.
   // This is implemented as a state machine to minimise use of conditionals.
   // Each state is represented as a lambda, responsible for specifying the next state (nextAction) and
   // dot time (nextDot).
-  // The lambdas have return type of Object to avoid Kotlin generating bridge methods
+  // The lambdas have return type of Object to avoid Kotlin generating bridge methods.
   fun advance(numCycles: Int) {
     repeat(numCycles * DOTS_PER_CYCLE) {
       if (state.dot++ == nextDot) {
@@ -53,9 +53,17 @@ class Ppu(
     }
   }
 
+  // TODO - this is not correct.  Rendering (and thus sprite0-hit) should take place continuously.
   private val actionRender: () -> Object = {
     renderer.loadAndRenderBackground(state)
     renderer.renderSprites(state)
+
+    nextDot = 255
+    nextAction = actionCommit
+    dummy
+  }
+
+  private val actionCommit: () -> Object = {
     renderer.commitToBuffer(state, buffer)
 
     nextDot = 256
@@ -145,7 +153,7 @@ class Ppu(
 
     when {
       (state.scanline < SCREEN_HEIGHT) -> {
-        nextDot = 255
+        nextDot = DOT_RENDER
         nextAction = actionRender
       }
       (state.scanline == SCREEN_HEIGHT + 1) -> {
@@ -156,18 +164,14 @@ class Ppu(
         nextDot = 1
         nextAction = actionClearFlags
       }
-      (state.scanline == 0) -> {
-        nextDot = 255
-        nextAction = actionRender
-      }
     }
     dummy
   }
 
   private val dummy = Object()
   // TODO - these need to be included in State (and serialised) somehow
-  private var nextDot = 255
-  private var nextAction: () -> Object = actionRender
+  private var nextDot = DOT_RENDER
+  private var nextAction = actionRender
 
   private fun State.updateCoordsForScanline() {
     if (bgEnabled || sprEnabled) {
@@ -311,5 +315,8 @@ class Ppu(
 
     const val NAMETABLE_SIZE_BYTES = 0x0400
     const val PATTERN_TABLE_SIZE_BYTES = 0x1000
+
+    // Halfway through the scanline.  Empirically this proves stable for MM, Kirby, SMB3 and SMB, so it's pretty good.
+    private const val DOT_RENDER = 128
   }
 }

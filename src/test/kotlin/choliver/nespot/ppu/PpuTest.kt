@@ -533,13 +533,17 @@ class PpuTest {
       advanceScanlines(scanline)
       reset(renderer)
 
-      advanceDots(252)
+      advanceDots(126)
       verifyZeroInteractions(renderer)
 
-      advanceDots(6)
+      advanceDots(3)
       inOrder(renderer) {
         verify(renderer).loadAndRenderBackground(any())
         verify(renderer).renderSprites(any())
+      }
+
+      advanceDots(128)
+      inOrder(renderer) {
         verify(renderer).commitToBuffer(any(), any())
         verify(renderer).evaluateSprites(any())
       }

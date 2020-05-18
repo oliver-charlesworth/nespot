@@ -3,14 +3,14 @@ package choliver.nespot.mappers
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.apu.repeat
+import choliver.nespot.cartridge.BASE_CHR_ROM
+import choliver.nespot.cartridge.BASE_PRG_ROM
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.utils._0
 import choliver.nespot.cpu.utils._1
 import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
-import choliver.nespot.mappers.Mmc3Mapper.Companion.BASE_CHR_ROM
 import choliver.nespot.mappers.Mmc3Mapper.Companion.BASE_PRG_RAM
-import choliver.nespot.mappers.Mmc3Mapper.Companion.BASE_PRG_ROM
 import choliver.nespot.mappers.Mmc3Mapper.Companion.CHR_BANK_SIZE
 import choliver.nespot.mappers.Mmc3Mapper.Companion.PRG_BANK_SIZE
 import choliver.nespot.mappers.Mmc3Mapper.Companion.PRG_RAM_SIZE

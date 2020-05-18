@@ -1,13 +1,13 @@
 package choliver.nespot.mappers
 
+import choliver.nespot.cartridge.BASE_CHR_ROM
+import choliver.nespot.cartridge.BASE_PRG_ROM
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring
 import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
 import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
 import choliver.nespot.mappers.UxRomMapper.Companion.BASE_BANK_SELECT
-import choliver.nespot.mappers.UxRomMapper.Companion.BASE_CHR_ROM
-import choliver.nespot.mappers.UxRomMapper.Companion.BASE_PRG_ROM
 import choliver.nespot.mappers.UxRomMapper.Companion.CHR_RAM_SIZE
 import choliver.nespot.mappers.UxRomMapper.Companion.PRG_BANK_SIZE
 import com.nhaarman.mockitokotlin2.mock

@@ -1,11 +1,11 @@
 package choliver.nespot.mappers
 
-import choliver.nespot.*
+import choliver.nespot.Data
+import choliver.nespot.cartridge.BASE_CHR_ROM
+import choliver.nespot.cartridge.BASE_PRG_ROM
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
-import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_CHR_ROM
 import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_PRG_RAM
-import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_PRG_ROM
 import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_SR
 import choliver.nespot.mappers.Mmc1Mapper.Companion.CHR_BANK_SIZE
 import choliver.nespot.mappers.Mmc1Mapper.Companion.PRG_BANK_SIZE

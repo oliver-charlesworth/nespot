@@ -2,6 +2,8 @@ package choliver.nespot.mappers
 
 import choliver.nespot.Address
 import choliver.nespot.Data
+import choliver.nespot.Ram
+import choliver.nespot.cartridge.Mapper
 import org.junit.jupiter.api.Assertions.assertEquals
 
 
@@ -34,4 +36,31 @@ internal class BankMappingChecker(
     internal fun takesBytes(setSrc: (Address, Byte) -> Unit) =
       { addr: Address, data: Data -> setSrc(addr, data.toByte()) }
   }
+}
+
+// TODO - constants everywhere
+internal fun assertVramMappings(mapper: Mapper, vararg vramToChrMappings: Pair<Int, Int>) {
+  val vram = Ram(2048)
+  val chr = mapper.chr(vram)
+
+  // TODO - isolate reads and writes
+
+  val checkerRead = BankMappingChecker(
+    bankSize = 1024,
+    srcBase = 0,
+    outBase = 0x2000,
+    setSrc = vram::set,
+    getOut = chr::get
+  )
+
+  val checkerWrite = BankMappingChecker(
+    bankSize = 1024,
+    srcBase = 0x2000,
+    outBase = 0,
+    setSrc = chr::set,
+    getOut = vram::get
+  )
+
+  checkerRead.assertMappings(*vramToChrMappings)
+  checkerWrite.assertMappings(*(vramToChrMappings.map { it.second to it.first }.toTypedArray()))
 }

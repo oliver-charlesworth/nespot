@@ -219,34 +219,7 @@ class Mmc1MapperTest {
     private fun assertMappings(mode: Int, vararg vramToChrMappings: Pair<Int, Int>) {
       val mapper = Mmc1Mapper(Rom(), getStepCount = { step })
       mapper.writeReg(0, mode)
-      assertMappings(mapper, *vramToChrMappings)
-    }
-
-    // TODO - constants everywhere
-    private fun assertMappings(mapper: Mapper, vararg vramToChrMappings: Pair<Int, Int>) {
-      val vram = Ram(2048)
-      val chr = mapper.chr(vram)
-
-      // TODO - isolate reads and writes
-
-      val checkerRead = BankMappingChecker(
-        bankSize = 1024,
-        srcBase = 0,
-        outBase = 0x2000,
-        setSrc = vram::set,
-        getOut = chr::get
-      )
-
-      val checkerWrite = BankMappingChecker(
-        bankSize = 1024,
-        srcBase = 0x2000,
-        outBase = 0,
-        setSrc = chr::set,
-        getOut = vram::get
-      )
-
-      checkerRead.assertMappings(*vramToChrMappings)
-      checkerWrite.assertMappings(*(vramToChrMappings.map { it.second to it.first }.toTypedArray()))
+      assertVramMappings(mapper, *vramToChrMappings)
     }
   }
 

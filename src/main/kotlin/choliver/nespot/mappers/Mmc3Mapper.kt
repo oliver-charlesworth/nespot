@@ -12,7 +12,8 @@ import choliver.nespot.mappers.Mmc3Mapper.PrgMode.PRG_MODE_1
 
 // See https://wiki.nesdev.com/w/index.php/MMC3
 class Mmc3Mapper(rom: Rom) : Mapper {
-  private val prgRam = Ram(PRG_RAM_SIZE)
+  private val vram = ByteArray(VRAM_SIZE)
+  private val prgRam = ByteArray(PRG_RAM_SIZE)
   private val prgData = rom.prgData
   private val chrData = rom.chrData
   private val numPrgBanks = (prgData.size / PRG_BANK_SIZE)
@@ -30,41 +31,36 @@ class Mmc3Mapper(rom: Rom) : Mapper {
   private var _irq = false
 
   override val irq get() = _irq
-  override val persistentRam = prgRam
+  override val persistentRam = Ram.backedBy(prgRam)
 
   override val prg = object : Memory {
     override fun get(addr: Address) = when {
-      (addr >= BASE_PRG_ROM) -> prgData[prgRomAddr(addr)].data()
+      (addr >= BASE_PRG_ROM) -> prgData[prgRomAddr(addr)]
       else -> prgRam[addr % PRG_RAM_SIZE]
-    }
+    }.data()
 
     override fun set(addr: Address, data: Data) {
       when {
         (addr >= BASE_REG) -> setReg(addr, data)
-        (addr >= BASE_PRG_RAM) -> prgRam[addr % PRG_RAM_SIZE] = data
+        (addr >= BASE_PRG_RAM) -> prgRam[addr % PRG_RAM_SIZE] = data.toByte()
       }
     }
   }
 
-  override fun chr(vram: Memory) = object : Memory {
+  override val chr = object : Memory {
     override fun get(addr: Address): Data {
       updateIrqState(addr)
       return when {
-        (addr >= BASE_VRAM) -> vram[mapToVram(addr)]  // This maps everything >= 0x4000 too
-        else -> chrData[chrRomAddr(addr)].data()
-      }
+        (addr >= BASE_VRAM) -> vram[vramAddr(addr)]  // This maps everything >= 0x4000 too
+        else -> chrData[chrRomAddr(addr)]
+      }.data()
     }
 
     override fun set(addr: Address, data: Data) {
       updateIrqState(addr)
       when {
-        (addr >= BASE_VRAM) -> vram[mapToVram(addr)] = data  // This maps everything >= 0x4000 too
+        (addr >= BASE_VRAM) -> vram[vramAddr(addr)] = data.toByte()  // This maps everything >= 0x4000 too
       }
-    }
-
-    private fun mapToVram(addr: Address): Address = when (mirrorMode) {
-      VERTICAL -> mirrorVertical(addr)
-      HORIZONTAL -> mirrorHorizontal(addr)
     }
   }
 
@@ -100,6 +96,11 @@ class Mmc3Mapper(rom: Rom) : Mapper {
       else -> regs[5]
     }
     return (a % CHR_BANK_SIZE) + iBank * CHR_BANK_SIZE
+  }
+
+  private fun vramAddr(addr: Address): Address = when (mirrorMode) {
+    VERTICAL -> mirrorVertical(addr)
+    HORIZONTAL -> mirrorHorizontal(addr)
   }
 
   private fun setReg(addr: Address, data: Data) {

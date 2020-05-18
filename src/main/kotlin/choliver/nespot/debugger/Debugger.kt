@@ -2,7 +2,9 @@ package choliver.nespot.debugger
 
 import choliver.nespot.Address
 import choliver.nespot.Data
+import choliver.nespot.cartridge.BASE_VRAM
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.VRAM_SIZE
 import choliver.nespot.cpu.Cpu.NextStep
 import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
 import choliver.nespot.debugger.CallStackManager.FrameType.NMI
@@ -17,7 +19,6 @@ import choliver.nespot.debugger.PointManager.Point.Breakpoint
 import choliver.nespot.debugger.PointManager.Point.Watchpoint
 import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
-import choliver.nespot.nes.Nes.Companion.PPU_RAM_SIZE
 import choliver.nespot.runner.FakeJoypads
 import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
@@ -271,7 +272,8 @@ class Debugger(
 
       is Info.CpuRam -> displayDump((0 until CPU_RAM_SIZE).map { nes.peek(it) })
 
-      is Info.PpuRam -> displayDump((0 until PPU_RAM_SIZE).map { nes.peekV(it + 0x2000) })
+      // TODO - should this be before or after nametable mapping?
+      is Info.PpuRam -> displayDump((0 until VRAM_SIZE).map { nes.peekV(it + BASE_VRAM) })
 
       is Info.Ppu -> {
         val mapper = jacksonObjectMapper()

@@ -10,7 +10,8 @@ import choliver.nespot.mappers.Mmc1Mapper.PrgMode.*
 
 // https://wiki.nesdev.com/w/index.php/MMC1
 class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
-  private val prgRam = Ram(PRG_RAM_SIZE)
+  private val vram = ByteArray(VRAM_SIZE)
+  private val prgRam = ByteArray(PRG_RAM_SIZE)
   private val prgData = rom.prgData
   private val chrData = if (rom.chrData.isEmpty()) ByteArray(CHR_RAM_SIZE) else rom.chrData
   private val numPrgBanks = (prgData.size / PRG_BANK_SIZE)
@@ -26,40 +27,33 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
   private var prevStep = -1
 
   override val irq = false
-  override val persistentRam = prgRam
+  override val persistentRam = Ram.backedBy(prgRam)
 
   override val prg = object : Memory {
     override fun get(addr: Address) = when {
-      (addr >= BASE_PRG_ROM) -> prgData[prgRomAddr(addr)].data()
+      (addr >= BASE_PRG_ROM) -> prgData[prgRomAddr(addr)]
       else -> prgRam[addr % PRG_RAM_SIZE]
-    }
+    }.data()
 
     override fun set(addr: Address, data: Data) {
       when {
         (addr >= BASE_SR) -> updateShiftRegister(addr, data)
-        (addr >= BASE_PRG_RAM) -> prgRam[addr % PRG_RAM_SIZE] = data
+        (addr >= BASE_PRG_RAM) -> prgRam[addr % PRG_RAM_SIZE] = data.toByte()
       }
     }
   }
 
-  override fun chr(vram: Memory) = object : Memory {
+  override val chr = object : Memory {
     override fun get(addr: Address) = when {
-      (addr >= BASE_VRAM) -> vram[mapToVram(addr)]  // This maps everything >= 0x4000 too
-      else -> chrData[chrAddr(addr)].data()
-    }
+      (addr >= BASE_VRAM) -> vram[vramAddr(addr)]  // This maps everything >= 0x4000 too
+      else -> chrData[chrAddr(addr)]
+    }.data()
 
     override fun set(addr: Address, data: Data) {
       when {
-        (addr >= BASE_VRAM) -> vram[mapToVram(addr)] = data  // This maps everything >= 0x4000 too
+        (addr >= BASE_VRAM) -> vram[vramAddr(addr)] = data.toByte()  // This maps everything >= 0x4000 too
         else -> chrData[chrAddr(addr)] = data.toByte()
       }
-    }
-
-    private fun mapToVram(addr: Address): Address = when (mirrorMode) {
-      FIXED_LOWER -> (addr and 1023)
-      FIXED_UPPER -> (addr and 1023) + 1024
-      VERTICAL -> mirrorVertical(addr)
-      HORIZONTAL -> mirrorHorizontal(addr)
     }
   }
 
@@ -93,6 +87,13 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
       }
     }
     return (addr % CHR_BANK_SIZE) + iBank * CHR_BANK_SIZE
+  }
+
+  private fun vramAddr(addr: Address): Address = when (mirrorMode) {
+    FIXED_LOWER -> (addr % NAMETABLE_SIZE)
+    FIXED_UPPER -> (addr % NAMETABLE_SIZE) + NAMETABLE_SIZE
+    VERTICAL -> mirrorVertical(addr)
+    HORIZONTAL -> mirrorHorizontal(addr)
   }
 
   private fun updateShiftRegister(addr: Address, data: Data) {

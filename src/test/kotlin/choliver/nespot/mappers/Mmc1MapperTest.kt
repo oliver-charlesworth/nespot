@@ -10,7 +10,6 @@ import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_SR
 import choliver.nespot.mappers.Mmc1Mapper.Companion.CHR_BANK_SIZE
 import choliver.nespot.mappers.Mmc1Mapper.Companion.PRG_BANK_SIZE
 import choliver.nespot.mappers.Mmc1Mapper.Companion.PRG_RAM_SIZE
-import com.nhaarman.mockitokotlin2.mock
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -112,13 +111,12 @@ class Mmc1MapperTest {
   @Nested
   inner class ChrRam {
     private val mapper = Mmc1Mapper(Rom(), getStepCount = { 0 })
-    private val chr = mapper.chr(mock())
     private val checker = BankMappingChecker(
       bankSize = CHR_BANK_SIZE,
       srcBase = BASE_CHR_ROM,
       outBase = BASE_CHR_ROM,
-      setSrc = chr::set,
-      getOut = chr::get
+      setSrc = mapper.chr::set,
+      getOut = mapper.chr::get
     )
 
     @Test
@@ -140,7 +138,7 @@ class Mmc1MapperTest {
       bankSize = CHR_BANK_SIZE,
       outBase = BASE_CHR_ROM,
       setSrc = takesBytes(chrData::set),
-      getOut = mapper.chr(mock())::get
+      getOut = mapper.chr::get
     )
 
     @Test
@@ -189,28 +187,29 @@ class Mmc1MapperTest {
     fun `single-screen - nametable 0`() {
       setMirrorMode(0)
 
-      assertVramMappings(mapper, 0 to 0, 0 to 1, 0 to 2, 0 to 3)
+      assertVramMappings(mapper, listOf(0, 1, 2, 3))
     }
 
+    // TODO - distinguish from nametable 0 - only possible if we change mode partway through
     @Test
     fun `single-screen - nametable 1`() {
       setMirrorMode(1)
 
-      assertVramMappings(mapper, 1 to 0, 1 to 1, 1 to 2, 1 to 3)
+      assertVramMappings(mapper, listOf(0, 1, 2, 3))
     }
 
     @Test
     fun `vertical mirroring`() {
       setMirrorMode(2)
 
-      assertVramMappings(mapper, 0 to 0, 1 to 1, 0 to 2, 1 to 3)
+      assertVramMappings(mapper, listOf(0, 2), listOf(1, 3))
     }
 
     @Test
     fun `horizontal mirroring`() {
       setMirrorMode(3)
 
-      assertVramMappings(mapper, 0 to 0, 0 to 1, 1 to 2, 1 to 3)
+      assertVramMappings(mapper, listOf(0, 1), listOf(2, 3))
     }
 
     private fun setMirrorMode(mode: Int) {

@@ -2,10 +2,13 @@ package choliver.nespot.mappers
 
 import choliver.nespot.*
 import choliver.nespot.cartridge.*
+import choliver.nespot.cartridge.Rom.Mirroring.*
+
 
 // See https://wiki.nesdev.com/w/index.php/UxROM
 class UxRomMapper(private val rom: Rom) : Mapper {
-  private val chrRam = Ram(CHR_RAM_SIZE)
+  private val vram = ByteArray(VRAM_SIZE)
+  private val chrRam = ByteArray(CHR_RAM_SIZE)
   private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
   private var prg0Bank = 0
 
@@ -18,7 +21,8 @@ class UxRomMapper(private val rom: Rom) : Mapper {
       if (addr < BASE_PRG1_ROM) { prg0Bank } else { numPrgBanks - 1 } // Upper bank is fixed
     )
 
-    private fun getFromBank(addr: Address, iBank: Int) = rom.prgData[(addr and 0x3FFF) + 0x4000 * iBank].data()
+    private fun getFromBank(addr: Address, iBank: Int) =
+      rom.prgData[(addr % PRG_BANK_SIZE) + iBank * PRG_BANK_SIZE].data()
 
     override operator fun set(addr: Address, data: Data) {
       if (addr >= BASE_BANK_SELECT) {
@@ -27,24 +31,24 @@ class UxRomMapper(private val rom: Rom) : Mapper {
     }
   }
 
-  override fun chr(vram: Memory): Memory {
-    val mirroredRam = MirroringMemory(rom.mirroring, vram)
+  override val chr = object : Memory {
+    override fun get(addr: Address) = when {
+      (addr >= BASE_VRAM) -> vram[vramAddr(addr)]    // This maps everything >= 0x4000 too
+      else -> chrRam[addr]
+    }.data()
 
-    return object : Memory {
-      override fun get(addr: Address) = if (addr >= BASE_VRAM) {
-        mirroredRam[addr]  // This maps everything >= 0x4000 too
-      } else {
-        chrRam[addr]
-      }
-
-      override fun set(addr: Address, data: Data) {
-        if (addr >= BASE_VRAM) {
-          mirroredRam[addr] = data // This maps everything >= 0x4000 too
-        } else {
-          chrRam[addr] = data
-        }
+    override fun set(addr: Address, data: Data) {
+      when {
+        (addr >= BASE_VRAM) -> vram[vramAddr(addr)] = data.toByte()   // This maps everything >= 0x4000 too
+        else -> chrRam[addr] = data.toByte()
       }
     }
+  }
+
+  private fun vramAddr(addr: Address): Address = when (rom.mirroring) {
+    VERTICAL -> mirrorVertical(addr)
+    HORIZONTAL -> mirrorHorizontal(addr)
+    IGNORED -> throw UnsupportedOperationException()
   }
 
   @Suppress("unused")
@@ -55,6 +59,5 @@ class UxRomMapper(private val rom: Rom) : Mapper {
     const val BASE_PRG0_ROM = BASE_PRG_ROM
     const val BASE_PRG1_ROM = BASE_PRG_ROM + PRG_BANK_SIZE
     const val BASE_BANK_SELECT = BASE_PRG_ROM
-
   }
 }

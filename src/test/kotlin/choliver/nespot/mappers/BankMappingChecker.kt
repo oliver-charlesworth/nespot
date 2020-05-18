@@ -13,8 +13,8 @@ internal class BankMappingChecker(
   private val getOut: (Address) -> Data
 ) {
   fun assertMappings(vararg srcToOutMappings: Pair<Int, Int>) {
-    srcToOutMappings.forEach {
-      assertMapping(srcBank = it.first, outBank = it.second, desc = "src: ${it.first}, out: ${it.second}")
+    srcToOutMappings.forEach { (src, out) ->
+      assertMapping(srcBank = src, outBank = out, desc = "src: ${src}, out: ${out}")
     }
   }
 

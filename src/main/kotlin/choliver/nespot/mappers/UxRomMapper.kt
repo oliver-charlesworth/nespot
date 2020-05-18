@@ -1,10 +1,7 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.*
-import choliver.nespot.cartridge.BASE_VRAM
-import choliver.nespot.cartridge.Mapper
-import choliver.nespot.cartridge.MirroringMemory
-import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.*
 
 // See https://wiki.nesdev.com/w/index.php/UxROM
 class UxRomMapper(private val rom: Rom) : Mapper {
@@ -52,12 +49,12 @@ class UxRomMapper(private val rom: Rom) : Mapper {
 
   @Suppress("unused")
   companion object {
-    const val BASE_PRG0_ROM = 0x8000
-    const val BASE_PRG1_ROM = 0xC000
-    const val BASE_CHR_ROM = 0x0000
-    const val BASE_BANK_SELECT = 0xC000
-
     const val CHR_RAM_SIZE = 8192
     const val PRG_BANK_SIZE = 16384
+
+    const val BASE_PRG0_ROM = BASE_PRG_ROM
+    const val BASE_PRG1_ROM = BASE_PRG_ROM + PRG_BANK_SIZE
+    const val BASE_BANK_SELECT = BASE_PRG_ROM
+
   }
 }

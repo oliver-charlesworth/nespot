@@ -1,10 +1,7 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.*
-import choliver.nespot.cartridge.BASE_VRAM
-import choliver.nespot.cartridge.Mapper
-import choliver.nespot.cartridge.MirroringMemory
-import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.*
 
 // https://wiki.nesdev.com/w/index.php/NROM
 class NromMapper(private val rom: Rom) : Mapper {
@@ -63,11 +60,10 @@ class NromMapper(private val rom: Rom) : Mapper {
 
   @Suppress("unused")
   companion object {
-    const val BASE_PRG_RAM = 0x6000
-    const val BASE_PRG_ROM = 0x8000
-    const val BASE_CHR_ROM = 0x0000
-
     const val PRG_RAM_SIZE = 8192
     const val CHR_RAM_SIZE = 8192
+    const val PRG_BANK_SIZE = 16384
+
+    const val BASE_PRG_RAM = BASE_PRG_ROM - PRG_RAM_SIZE
   }
 }

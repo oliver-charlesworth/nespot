@@ -4,8 +4,6 @@ import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Joypads.Button.*
 import choliver.nespot.runner.Event.ControllerButtonDown
 import choliver.nespot.runner.Event.ControllerButtonUp
-import net.java.games.input.Component
-import net.java.games.input.Component.Identifier
 import net.java.games.input.Component.Identifier.Axis
 import net.java.games.input.Controller
 import net.java.games.input.ControllerEnvironment

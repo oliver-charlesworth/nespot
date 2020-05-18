@@ -66,6 +66,7 @@ NESpot is built with JDK 11.  It may work with older Java versions, but this has
 | Kirby's Adventure     | `118307DA6C77A592F0884BAAD14120301D8D3A1B` | 4  | ✅ No known issues. |
 | Bomberman II          | `2E401097B7B6F5DE5B0F88E6A97C5675BD916801` | 1  | ✅ No known issues. |
 | Pacman                | `92C3361B9E3B28A51FD30E7845C988A6D576EE65` | 0  | ✅ No known issues. |
+| Super Mario Bros 2    | `C10575DBB211A5AB5321573D884041FE35BD15E3` | 0  | ✅ No known issues. |
 | Super Mario Bros 3    | `A611B90B4833B20A364BF06EE3BE3B9093EA4DF9` | 4  | ✅ Very playable.  [One known minor graphical glitch](https://github.com/oliver-charlesworth/nespot/issues/144). |
 | Micro Machines        | `C7FD43041FC139DC8440C95C28A0115DC79E2691` | 71 | ✅ Very playable.  [A few graphical glitches](https://github.com/oliver-charlesworth/nespot/issues/88). |
 | Legend of Zelda       | `A12D74C73A0481599A5D832361D168F4737BBCF6` | 1  | ✅ Very playable.  [One known minor bug](https://github.com/oliver-charlesworth/nespot/issues/89). |

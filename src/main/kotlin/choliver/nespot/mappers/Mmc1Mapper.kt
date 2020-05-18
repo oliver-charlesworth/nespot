@@ -56,8 +56,8 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     }
 
     private fun mapToVram(addr: Address): Address = when (mirrorMode) {
-      FIXED_LOWER -> (addr and 1023)
-      FIXED_UPPER -> (addr and 1023) + 1024
+      FIXED_LOWER -> (addr % NAMETABLE_SIZE)
+      FIXED_UPPER -> (addr % NAMETABLE_SIZE) + NAMETABLE_SIZE
       VERTICAL -> mirrorVertical(addr)
       HORIZONTAL -> mirrorHorizontal(addr)
     }

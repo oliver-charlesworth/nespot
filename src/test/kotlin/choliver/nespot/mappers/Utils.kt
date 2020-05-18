@@ -17,22 +17,22 @@ internal class BankMappingChecker(
   private val setSrc: (Address, Data) -> Unit,
   private val getOut: (Address) -> Data
 ) {
-  fun assertMappings(vararg srcToOutMappings: Pair<Int, Int>) {
-    srcToOutMappings.forEach { (src, out) ->
-      assertMapping(srcBank = src, outBank = out, desc = "src: ${src}, out: ${out}")
+  fun assertMappings(vararg srcToOutMappings: Pair<Int, Int>, dataOffset: Int = 0) {
+    srcToOutMappings.forEachIndexed { idx, (src, out) ->
+      assertMapping(srcBank = src, outBank = out, dataOffset = dataOffset + idx, desc = "src: ${src}, out: ${out}")
     }
   }
 
-  private fun assertMapping(srcBank: Int, outBank: Int, desc: String? = null) {
+  private fun assertMapping(srcBank: Int, outBank: Int, dataOffset: Int, desc: String) {
     val srcBankBase = srcBase + (srcBank * bankSize)
     val outBankBase = outBase + (outBank * bankSize)
     val offsetLast = bankSize - 1
 
-    setSrc(srcBankBase, 0x30)
-    setSrc(srcBankBase + offsetLast, 0x40)
+    setSrc(srcBankBase, 0x30 + dataOffset)
+    setSrc(srcBankBase + offsetLast, 0x40 + dataOffset)
 
-    assertEquals(0x30, getOut(outBankBase), "[${desc}] low")
-    assertEquals(0x40, getOut(outBankBase + offsetLast), "[${desc}] high")
+    assertEquals(0x30 + dataOffset, getOut(outBankBase), "[${desc}] low")
+    assertEquals(0x40 + dataOffset, getOut(outBankBase + offsetLast), "[${desc}] high")
   }
 
   companion object {
@@ -41,12 +41,9 @@ internal class BankMappingChecker(
   }
 }
 
-// TODO - constants everywhere
 internal fun assertVramMappings(mapper: Mapper, vararg vramToChrMappings: Pair<Int, Int>) {
   val vram = Ram(VRAM_SIZE)
   val chr = mapper.chr(vram)
-
-  // TODO - isolate reads and writes
 
   val checkerRead = BankMappingChecker(
     bankSize = NAMETABLE_SIZE,
@@ -58,12 +55,13 @@ internal fun assertVramMappings(mapper: Mapper, vararg vramToChrMappings: Pair<I
 
   val checkerWrite = BankMappingChecker(
     bankSize = NAMETABLE_SIZE,
-    srcBase = 0x2000,
+    srcBase = BASE_VRAM,
     outBase = 0,
     setSrc = chr::set,
     getOut = vram::get
   )
 
-  checkerRead.assertMappings(*vramToChrMappings)
-  checkerWrite.assertMappings(*(vramToChrMappings.map { it.second to it.first }.toTypedArray()))
+  // Offset read and write values to ensure we're not silently cheating
+  checkerRead.assertMappings(*vramToChrMappings, dataOffset = 0)
+  checkerWrite.assertMappings(*(vramToChrMappings.map { it.second to it.first }.toTypedArray()), dataOffset = 8)
 }

@@ -1,12 +1,18 @@
 package choliver.nespot
 
 // TODO - power of two for efficiency?  (i.e. bitmask rather than modulo)
-class Ram(val size: Int) : Memory {
-  private val raw = IntArray(size) { 0xCC } // Not bytes, to avoid conversion overhead
+class Ram private constructor(private val raw: ByteArray) : Memory {
+  constructor(size: Int) : this(ByteArray(size) { 0xCC.toByte() })
 
-  override fun get(addr: Address): Data = raw[addr]
+  val size = raw.size
+
+  override fun get(addr: Address): Data = raw[addr].data()
 
   override fun set(addr: Address, data: Data) {
-    raw[addr] = data
+    raw[addr] = data.toByte()
+  }
+
+  companion object {
+    fun backedBy(raw: ByteArray) = Ram(raw)
   }
 }

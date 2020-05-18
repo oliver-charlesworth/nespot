@@ -5,7 +5,7 @@ import choliver.nespot.cartridge.*
 
 // See https://wiki.nesdev.com/w/index.php/UxROM
 class UxRomMapper(private val rom: Rom) : Mapper {
-  private val chrRam = Ram(CHR_RAM_SIZE)
+  private val chrRam = ByteArray(CHR_RAM_SIZE)
   private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
   private var prg0Bank = 0
 
@@ -18,7 +18,8 @@ class UxRomMapper(private val rom: Rom) : Mapper {
       if (addr < BASE_PRG1_ROM) { prg0Bank } else { numPrgBanks - 1 } // Upper bank is fixed
     )
 
-    private fun getFromBank(addr: Address, iBank: Int) = rom.prgData[(addr and 0x3FFF) + 0x4000 * iBank].data()
+    private fun getFromBank(addr: Address, iBank: Int) =
+      rom.prgData[(addr % PRG_BANK_SIZE) + iBank * PRG_BANK_SIZE].data()
 
     override operator fun set(addr: Address, data: Data) {
       if (addr >= BASE_BANK_SELECT) {
@@ -34,14 +35,14 @@ class UxRomMapper(private val rom: Rom) : Mapper {
       override fun get(addr: Address) = if (addr >= BASE_VRAM) {
         mirroredRam[addr]  // This maps everything >= 0x4000 too
       } else {
-        chrRam[addr]
+        chrRam[addr].data()
       }
 
       override fun set(addr: Address, data: Data) {
         if (addr >= BASE_VRAM) {
           mirroredRam[addr] = data // This maps everything >= 0x4000 too
         } else {
-          chrRam[addr] = data
+          chrRam[addr] = data.toByte()
         }
       }
     }
@@ -55,6 +56,5 @@ class UxRomMapper(private val rom: Rom) : Mapper {
     const val BASE_PRG0_ROM = BASE_PRG_ROM
     const val BASE_PRG1_ROM = BASE_PRG_ROM + PRG_BANK_SIZE
     const val BASE_BANK_SELECT = BASE_PRG_ROM
-
   }
 }

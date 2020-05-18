@@ -10,7 +10,7 @@ import choliver.nespot.mappers.Mmc1Mapper.PrgMode.*
 
 // https://wiki.nesdev.com/w/index.php/MMC1
 class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
-  private val prgRam = Ram(PRG_RAM_SIZE)
+  private val prgRam = ByteArray(PRG_RAM_SIZE)
   private val prgData = rom.prgData
   private val chrData = if (rom.chrData.isEmpty()) ByteArray(CHR_RAM_SIZE) else rom.chrData
   private val numPrgBanks = (prgData.size / PRG_BANK_SIZE)
@@ -26,18 +26,18 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
   private var prevStep = -1
 
   override val irq = false
-  override val persistentRam = prgRam
+  override val persistentRam = Ram.backedBy(prgRam)
 
   override val prg = object : Memory {
     override fun get(addr: Address) = when {
-      (addr >= BASE_PRG_ROM) -> prgData[prgRomAddr(addr)].data()
+      (addr >= BASE_PRG_ROM) -> prgData[prgRomAddr(addr)]
       else -> prgRam[addr % PRG_RAM_SIZE]
-    }
+    }.data()
 
     override fun set(addr: Address, data: Data) {
       when {
         (addr >= BASE_SR) -> updateShiftRegister(addr, data)
-        (addr >= BASE_PRG_RAM) -> prgRam[addr % PRG_RAM_SIZE] = data
+        (addr >= BASE_PRG_RAM) -> prgRam[addr % PRG_RAM_SIZE] = data.toByte()
       }
     }
   }

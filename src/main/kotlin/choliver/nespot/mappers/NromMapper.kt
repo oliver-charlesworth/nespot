@@ -4,55 +4,41 @@ import choliver.nespot.*
 import choliver.nespot.cartridge.*
 
 // https://wiki.nesdev.com/w/index.php/NROM
-class NromMapper(private val rom: Rom) : Mapper {
-  private val prgRam = Ram(PRG_RAM_SIZE)
-  private val chrRam = Ram(CHR_RAM_SIZE)
-  private val usingChrRam = rom.chrData.isEmpty()
+class NromMapper(rom: Rom) : Mapper {
+  private val prgRam = ByteArray(PRG_RAM_SIZE)
+  private val prgData = rom.prgData
+  private val chrData = if (rom.chrData.isEmpty()) ByteArray(CHR_RAM_SIZE) else rom.chrData
+  private val mirroring = rom.mirroring
   override val irq = false
   override val persistentRam: Ram? = null   // Don't persist PRG-RAM
 
   override val prg = object : Memory {
     override fun get(addr: Address) = when {
-      (addr >= BASE_PRG_ROM) -> rom.prgData[addr and (rom.prgData.size - 1)].data()
-      (addr >= BASE_PRG_RAM) -> prgRam[addr and (PRG_RAM_SIZE - 1)]
+      (addr >= BASE_PRG_ROM) -> prgData[addr % prgData.size]
+      (addr >= BASE_PRG_RAM) -> prgRam[addr % PRG_RAM_SIZE]
       else -> 0x00
-    }
+    }.data()
 
     override fun set(addr: Address, data: Data) {
       when {
-        (addr >= BASE_PRG_RAM) -> prgRam[addr and (PRG_RAM_SIZE - 1)] = data
+        (addr >= BASE_PRG_RAM) -> prgRam[addr % PRG_RAM_SIZE] = data.toByte()
       }
     }
   }
 
   override fun chr(vram: Memory): Memory {
-    val mirroredRam = MirroringMemory(rom.mirroring, vram)
+    val mirroredRam = MirroringMemory(mirroring, vram)
 
-    return if (usingChrRam) {
-      object : Memory {
-        override fun get(addr: Address) = when {
-          (addr >= BASE_VRAM) -> mirroredRam[addr]    // This maps everything >= 0x4000 too
-          else -> chrRam[addr]
-        }
-
-        override fun set(addr: Address, data: Data) {
-          when {
-            (addr >= BASE_VRAM) -> mirroredRam[addr] = data   // This maps everything >= 0x4000 too
-            else -> chrRam[addr] = data
-          }
-        }
+    return object : Memory {
+      override fun get(addr: Address) = when {
+        (addr >= BASE_VRAM) -> mirroredRam[addr]    // This maps everything >= 0x4000 too
+        else -> chrData[addr].data()
       }
-    } else {
-      object : Memory {
-        override fun get(addr: Address) = when {
-          (addr >= BASE_VRAM) -> mirroredRam[addr]    // This maps everything >= 0x4000 too
-          else -> rom.chrData[addr].data()
-        }
 
-        override fun set(addr: Address, data: Data) {
-          when {
-            (addr >= BASE_VRAM) -> mirroredRam[addr] = data   // This maps everything >= 0x4000 too
-          }
+      override fun set(addr: Address, data: Data) {
+        when {
+          (addr >= BASE_VRAM) -> mirroredRam[addr] = data   // This maps everything >= 0x4000 too
+          else -> chrData[addr] = data.toByte()
         }
       }
     }

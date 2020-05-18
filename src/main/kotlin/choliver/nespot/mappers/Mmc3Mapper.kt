@@ -12,7 +12,7 @@ import choliver.nespot.mappers.Mmc3Mapper.PrgMode.PRG_MODE_1
 
 // See https://wiki.nesdev.com/w/index.php/MMC3
 class Mmc3Mapper(rom: Rom) : Mapper {
-  private val prgRam = Ram(PRG_RAM_SIZE)
+  private val prgRam = ByteArray(PRG_RAM_SIZE)
   private val prgData = rom.prgData
   private val chrData = rom.chrData
   private val numPrgBanks = (prgData.size / PRG_BANK_SIZE)
@@ -30,18 +30,18 @@ class Mmc3Mapper(rom: Rom) : Mapper {
   private var _irq = false
 
   override val irq get() = _irq
-  override val persistentRam = prgRam
+  override val persistentRam = Ram.backedBy(prgRam)
 
   override val prg = object : Memory {
     override fun get(addr: Address) = when {
-      (addr >= BASE_PRG_ROM) -> prgData[prgRomAddr(addr)].data()
+      (addr >= BASE_PRG_ROM) -> prgData[prgRomAddr(addr)]
       else -> prgRam[addr % PRG_RAM_SIZE]
-    }
+    }.data()
 
     override fun set(addr: Address, data: Data) {
       when {
         (addr >= BASE_REG) -> setReg(addr, data)
-        (addr >= BASE_PRG_RAM) -> prgRam[addr % PRG_RAM_SIZE] = data
+        (addr >= BASE_PRG_RAM) -> prgRam[addr % PRG_RAM_SIZE] = data.toByte()
       }
     }
   }

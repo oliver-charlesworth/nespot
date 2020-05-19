@@ -23,7 +23,7 @@ class Sweep(private val timer: Timer) {
     } else {
       iDivider--
     }
-    if ((iDivider == 0) && enabled && !mute) {
+    if ((iDivider == 0) && enabled && !mute && (shift != 0)) {
       timer.periodCycles = targetPeriod()
     }
   }

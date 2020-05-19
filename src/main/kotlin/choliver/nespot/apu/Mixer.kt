@@ -22,20 +22,20 @@ internal class Mixer(
   fun take(): Float {
     val ticks = sequencer.take()
 
-    val pulse1Out = channels.sq1.take(ticks)
-    val pulse2Out = channels.sq2.take(ticks)
-    val triangleOut = channels.tri.take(ticks)
-    val noiseOut = channels.noi.take(ticks)
-    val dmcOut = channels.dmc.take(ticks)
+    val sq1 = channels.sq1.take(ticks)
+    val sq2 = channels.sq2.take(ticks)
+    val tri = channels.tri.take(ticks)
+    val noi = channels.noi.take(ticks)
+    val dmc = channels.dmc.take(ticks)
 
-    val pulseSum = pulse1Out + pulse2Out
-    val otherSum = triangleOut + noiseOut + dmcOut
+    val pulseSum = sq1 + sq2
+    val otherSum = tri + noi + dmc
 
     val pulseOut = if (pulseSum == 0) 0.0f else {
       95.88f / ((8128.0f / pulseSum) + 100.0f)
     }
     val otherOut = if (otherSum == 0) 0.0f else {
-      159.79f / ((1.0f / ((triangleOut / 8227.0f) + (noiseOut / 12241.0f) + (dmcOut / 22638.0f))) + 100.0f)
+      159.79f / ((1.0f / ((tri / 8227.0f) + (noi / 12241.0f) + (dmc / 22638.0f))) + 100.0f)
     }
     val mixed = pulseOut + otherOut
 

@@ -20,8 +20,7 @@ class ControllerManager(
   private val controllers: Array<Controller>
   private val x = AxisManager(LEFT, RIGHT)
   private val y = AxisManager(UP, DOWN)
-
-  private val task = timerTask { onTimer() }
+  private val timer = Timer()
 
   init {
     val dir = createTempDir()
@@ -43,11 +42,11 @@ class ControllerManager(
   }
 
   fun start() {
-    Timer().scheduleAtFixedRate(task, 2, 2)
+    timer.scheduleAtFixedRate(timerTask { onTimer() }, 2, 2)
   }
 
   fun exit() {
-    task.cancel()
+    timer.cancel()
   }
 
   private fun onTimer() {

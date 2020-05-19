@@ -46,6 +46,17 @@ class SweepTest {
   }
 
   @Test
+  fun `doesn't adjust period for shift == 0`() {
+    sweep.negate = true
+    sweep.shift = 0
+
+    assertEquals(
+      listOf(64, 64, 64, 64, 64, 64, 64, 64),
+      take(8)
+    )
+  }
+
+  @Test
   fun `mutes if current period too low`() {
     timer.periodCycles = 16
     assertFalse(sweep.mute)

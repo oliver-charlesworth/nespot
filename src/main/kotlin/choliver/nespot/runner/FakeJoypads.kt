@@ -44,8 +44,8 @@ class FakeJoypads : Joypads {
 
   private fun maybeCopy() {
     if (transparent) {
-      copied.clear()
-      copied += status
+      copied[0] = status[0]
+      copied[1] = status[1]
     }
   }
 }

@@ -42,7 +42,7 @@ class ControllerManager(
   }
 
   fun start() {
-    timer.scheduleAtFixedRate(timerTask { onTimer() }, 2, 2)
+    timer.schedule(timerTask { onTimer() }, 0, SAMPLE_PERIOD_MS)
   }
 
   fun exit() {
@@ -87,5 +87,9 @@ class ControllerManager(
       }
       prev = value
     }
+  }
+
+  companion object {
+    private const val SAMPLE_PERIOD_MS = 1L
   }
 }

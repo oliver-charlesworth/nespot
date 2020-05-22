@@ -128,7 +128,7 @@ fun assertCpuEffects(
   initRegs: Regs,
   initStores: List<Pair<Address, Data>> = emptyList(),
   expectedRegs: Regs? = null,
-  expectedStores: List<Pair<Address, Data>> = emptyList(),
+  expectedStores: List<Pair<Address, Data>>? = emptyList(), // null == no check
   expectedCycles: Int? = null,
   pollReset: (iStep: Int) -> Boolean = { _0 },
   pollNmi: (iStep: Int) -> Boolean = { _0 },
@@ -161,7 +161,9 @@ fun assertCpuEffects(
     assertEquals(expectedRegs, cpu.diagnostics.state.regs, "Unexpected registers for [${name}]")
   }
 
-  verifyStores(memory, expectedStores)
+  if (expectedStores != null) {
+    verifyStores(memory, expectedStores)
+  }
 
   if (expectedCycles != null) {
     assertEquals(expectedCycles, numCycles, "Unexpected # cycles for [${name}]")

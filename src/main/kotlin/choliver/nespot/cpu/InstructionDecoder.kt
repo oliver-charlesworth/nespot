@@ -46,7 +46,7 @@ class InstructionDecoder(private val memory: Memory) {
         pcInc = 1
       }
       IMMEDIATE -> {
-        addr = memory[pc + 1] // TODO - kind of a cheat
+        addr = memory[pc + 1]
         pcInc = 2
       }
       INDIRECT -> {

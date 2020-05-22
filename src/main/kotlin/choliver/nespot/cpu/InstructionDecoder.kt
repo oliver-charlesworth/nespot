@@ -10,6 +10,7 @@ import choliver.nespot.cpu.model.Opcode.NOP
 import choliver.nespot.cpu.model.Operand.*
 import choliver.nespot.cpu.model.Operand.IndexSource.X
 import choliver.nespot.cpu.model.Operand.IndexSource.Y
+import choliver.nespot.cpu.utils.samePage
 
 class InstructionDecoder(private val memory: Memory) {
   @MutableForPerfReasons
@@ -33,6 +34,7 @@ class InstructionDecoder(private val memory: Memory) {
 
     val addr: Address
     val pcInc: Int
+    var pageCrossing = false
 
     when (found.addressMode) {
       IMPLIED -> {
@@ -60,12 +62,16 @@ class InstructionDecoder(private val memory: Memory) {
         pcInc = 3
       }
       ABSOLUTE_X -> {
-        addr = addr(lo = memory[pc + 1], hi = memory[pc + 2]) + x
+        val base = addr(lo = memory[pc + 1], hi = memory[pc + 2])
+        addr = base + x
         pcInc = 3
+        pageCrossing = !samePage(addr, base)
       }
       ABSOLUTE_Y -> {
-        addr = addr(lo = memory[pc + 1], hi = memory[pc + 2]) + y
+        val base = addr(lo = memory[pc + 1], hi = memory[pc + 2])
+        addr = base + y
         pcInc = 3
+        pageCrossing = !samePage(addr, base)
       }
       ZERO_PAGE -> {
         addr = memory[pc + 1]
@@ -84,8 +90,10 @@ class InstructionDecoder(private val memory: Memory) {
         pcInc = 2
       }
       INDIRECT_INDEXED -> {
-        addr = load16FromZeroPage(memory[pc + 1]) + y
+        val base = load16FromZeroPage(memory[pc + 1])
+        addr = base + y
         pcInc = 2
+        pageCrossing = !samePage(addr, base)
       }
     }
 
@@ -93,7 +101,7 @@ class InstructionDecoder(private val memory: Memory) {
     decoded.addressMode = found.addressMode
     decoded.addr = addr.addr()
     decoded.nextPc = pc + pcInc + (if (found.op == BRK) 1 else 0)  // Special case
-    decoded.numCycles = found.numCycles
+    decoded.numCycles = found.enc.numCycles + (if (found.enc.extraCycleForPageCrossing && pageCrossing) 1 else 0)
   }
 
   /** Basically a debug mode. */
@@ -140,7 +148,7 @@ class InstructionDecoder(private val memory: Memory) {
   private data class OpAndMode(
     val op: Opcode,
     val addressMode: AddressMode,
-    val numCycles: Int
+    val enc: EncodingInfo
   )
 
   companion object {
@@ -149,7 +157,7 @@ class InstructionDecoder(private val memory: Memory) {
     private fun createEncodingTable(): List<OpAndMode?> {
       val map = OPCODES_TO_ENCODINGS
         .flatMap { (op, modes) ->
-          modes.map { (mode, enc) -> enc.encoding to OpAndMode(op, mode, enc.numCycles) }
+          modes.map { (mode, enc) -> enc.encoding to OpAndMode(op, mode, enc) }
         }
         .toMap()
 

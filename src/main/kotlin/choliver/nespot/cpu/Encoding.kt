@@ -11,7 +11,8 @@ import choliver.nespot.cpu.model.Operand.IndexSource.Y
 
 data class EncodingInfo(
   val encoding: Data,
-  val numCycles: Int
+  val numCycles: Int,
+  val extraCycleForPageCrossing: Boolean
 )
 
 val OPCODES_TO_ENCODINGS: Map<Opcode, Map<AddressMode, EncodingInfo>> = mapOf(
@@ -68,7 +69,7 @@ val OPCODES_TO_ENCODINGS: Map<Opcode, Map<AddressMode, EncodingInfo>> = mapOf(
   SEC to implied(0x38, 2),
   SED to implied(0xF8, 2),
   SEI to implied(0x78, 2),
-  STA to standard(0x80) - IMMEDIATE,
+  STA to store(0x80),
   STX to store(0x86, Y),
   STY to store(0x84, X),
   TAX to implied(0xAA, 2),
@@ -84,10 +85,20 @@ private fun standard(base: Int) = mapOf(
   ZERO_PAGE to e(0x05, 3),
   IMMEDIATE to e(0x09, 2),
   ABSOLUTE to e(0x0D, 4),
-  INDIRECT_INDEXED to e(0x11, 5), // TODO: +1 if page boundary crossed
+  INDIRECT_INDEXED to e(0x11, 5, extraCycleForPageCrossing = true),
   ZERO_PAGE_X to e(0x15, 4),
-  ABSOLUTE_Y to e(0x19, 4),  // TODO: +1 if page boundary crossed
-  ABSOLUTE_X to e(0x1D, 4)   // TODO: +1 if page boundary crossed
+  ABSOLUTE_Y to e(0x19, 4, extraCycleForPageCrossing = true),
+  ABSOLUTE_X to e(0x1D, 4, extraCycleForPageCrossing = true)
+).encode(base)
+
+private fun store(base: Int) = mapOf(
+  INDEXED_INDIRECT to e(0x01, 6),
+  ZERO_PAGE to e(0x05, 3),
+  ABSOLUTE to e(0x0D, 4),
+  INDIRECT_INDEXED to e(0x11, 6),
+  ZERO_PAGE_X to e(0x15, 4),
+  ABSOLUTE_Y to e(0x19, 5),
+  ABSOLUTE_X to e(0x1D, 5)
 ).encode(base)
 
 private fun incDec(base: Int) = mapOf(
@@ -112,7 +123,7 @@ private fun load(base: Int, source: IndexSource) = mapOf(
   ZERO_PAGE to e(0x04, 3),
   ABSOLUTE to e(0x0C, 4),
   zeroPageIndexedMode(source) to e(0x14, 4),
-  absoluteIndexedMode(source) to e(0x1C, 4)  // TODO: +1 if page boundary crossed
+  absoluteIndexedMode(source) to e(0x1C, 4, extraCycleForPageCrossing = true)
 ).encode(base)
 
 private fun store(base: Int, source: IndexSource) = mapOf(
@@ -136,7 +147,11 @@ private fun implied(enc: Int, numCycles: Int) = mapOf(IMPLIED to e(enc, numCycle
 
 private fun absolute(enc: Int, numCycles: Int) = mapOf(ABSOLUTE to e(enc, numCycles))
 
-private fun e(encoding: Data, numCycles: Int) = EncodingInfo(encoding, numCycles)
+private fun e(
+  encoding: Data,
+  numCycles: Int,
+  extraCycleForPageCrossing: Boolean = false
+) = EncodingInfo(encoding, numCycles, extraCycleForPageCrossing)
 
 private fun Map<AddressMode, EncodingInfo>.encode(base: Data) = entries
   .associate { (k, v) -> k to v.copy(encoding = v.encoding + base) }

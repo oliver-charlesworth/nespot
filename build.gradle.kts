@@ -2,9 +2,9 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  application
-  id("nebula.kotlin") version "1.3.72"
+  kotlin("jvm") version "1.3.72"
   id("org.openjfx.javafxplugin") version "0.0.8"
+  application
 }
 
 repositories {
@@ -32,7 +32,10 @@ javafx {
 
 // We don't need checkParameterIsNotNull (etc.) as we don't interact with Java code
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.freeCompilerArgs += listOf("-Xno-param-assertions", "-Xno-call-assertions", "-Xno-receiver-assertions")
+  kotlinOptions {
+    jvmTarget = "1.8"
+    freeCompilerArgs += listOf("-Xno-param-assertions", "-Xno-call-assertions", "-Xno-receiver-assertions")
+  }
 }
 
 tasks.test {

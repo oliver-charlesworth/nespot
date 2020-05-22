@@ -15,7 +15,8 @@ import net.java.games.input.Component.Identifier.Button as JInputButton
 
 
 class ControllerManager(
-  private val onEvent: (e: choliver.nespot.runner.Event) -> Unit = {}
+  private val onEvent: (e: choliver.nespot.runner.Event) -> Unit = {},
+  private val samplePeriodMs: Long = SAMPLE_PERIOD_MS
 ) {
   private val controllers: Array<Controller>
   private val x = AxisManager(LEFT, RIGHT)
@@ -42,7 +43,7 @@ class ControllerManager(
   }
 
   fun start() {
-    timer.schedule(timerTask { onTimer() }, 0, SAMPLE_PERIOD_MS)
+    timer.schedule(timerTask { onTimer() }, 0, samplePeriodMs)
   }
 
   fun exit() {
@@ -73,20 +74,38 @@ class ControllerManager(
     }
   }
 
-  private inner class AxisManager(private val buttonLow: Button, private val buttonHigh: Button) {
-    private var prev = 0.0f
+  private inner class AxisManager(private val buttonMin: Button, private val buttonMax: Button) {
+    private var state = State.NEUTRAL
 
     fun onEvent(value: Float) {
-      when (prev) {
-        -1.0f -> onEvent(ControllerButtonUp(buttonLow))
-        +1.0f -> onEvent(ControllerButtonUp(buttonHigh))
+      val nextState = when (value) {
+        -1.0f -> State.MIN
+        +1.0f -> State.MAX
+        else -> State.NEUTRAL
       }
-      when (value) {
-        -1.0f -> onEvent(ControllerButtonDown(buttonLow))
-        +1.0f -> onEvent(ControllerButtonDown(buttonHigh))
+
+      if (nextState != state) {
+        when (state) {
+          State.MIN -> onEvent(ControllerButtonUp(buttonMin))
+          State.MAX -> onEvent(ControllerButtonUp(buttonMax))
+          else -> Unit
+        }
+
+        when (nextState) {
+          State.MIN -> onEvent(ControllerButtonDown(buttonMin))
+          State.MAX -> onEvent(ControllerButtonDown(buttonMax))
+          else -> Unit
+        }
       }
-      prev = value
+
+      state = nextState
     }
+  }
+
+  private enum class State {
+    NEUTRAL,
+    MIN,
+    MAX
   }
 
   companion object {

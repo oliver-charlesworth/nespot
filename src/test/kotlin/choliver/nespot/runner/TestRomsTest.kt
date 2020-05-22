@@ -26,7 +26,7 @@ class TestRomsTest {
   fun `cpu_interrupts_v2 - nmi_and_brk`() = run("cpu_interrupts_v2/rom_singles/2-nmi_and_brk.nes")
 
   @Test
-  fun `cpu_interrupts_v2 - nmåi_and_irq`() = run("cpu_interrupts_v2/rom_singles/3-nmi_and_irq.nes")
+  fun `cpu_interrupts_v2 - nmi_and_irq`() = run("cpu_interrupts_v2/rom_singles/3-nmi_and_irq.nes")
 
   @Test
   fun `cpu_interrupts_v2 - irq_and_dma`() = run("cpu_interrupts_v2/rom_singles/4-irq_and_dma.nes")

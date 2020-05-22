@@ -11,6 +11,7 @@ import choliver.nespot.cpu.model.State
 import choliver.nespot.cpu.model.toFlags
 import choliver.nespot.cpu.utils._0
 import choliver.nespot.cpu.utils._1
+import choliver.nespot.cpu.utils.samePage
 
 class Cpu(
   private val memory: Memory,
@@ -226,8 +227,8 @@ class Cpu(
   private fun Regs.branch(cond: Boolean) {
     if (cond) {
       extraCycles++
-      if (((pc xor decoded.addr) and 0xFF00) != 0) {
-        extraCycles++   // Page change
+      if (!samePage(pc, decoded.addr)) {
+        extraCycles++
       }
       pc = decoded.addr
     }

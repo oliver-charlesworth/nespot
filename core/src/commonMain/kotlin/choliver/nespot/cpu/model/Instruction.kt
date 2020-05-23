@@ -1,6 +1,8 @@
 package choliver.nespot.cpu.model
 
 import choliver.nespot.cpu.model.Operand.*
+import choliver.nespot.format16
+import choliver.nespot.format8
 
 data class Instruction(
   val opcode: Opcode,
@@ -11,14 +13,14 @@ data class Instruction(
   private fun formatOperand() = when (operand) {
     is Implied -> ""
     is Accumulator -> " A"
-    is Relative -> " $%02x".format(operand.offset)
-    is Immediate -> " #$%02x".format(operand.literal.toByte())
-    is ZeroPage -> " $%02x".format(operand.addr.toByte())
-    is ZeroPageIndexed -> " $%02x,%s".format(operand.addr.toByte(), operand.source.name)
-    is Absolute -> " $%04x".format(operand.addr.toShort())
-    is AbsoluteIndexed -> " $%04x,%s".format(operand.addr.toShort(), operand.source.name)
-    is Indirect -> " ($%04x)".format(operand.addr.toShort())
-    is IndexedIndirect -> " ($%02x,X)".format(operand.addr.toByte())
-    is IndirectIndexed -> " ($%02x),Y".format(operand.addr.toByte())
+    is Relative -> " ${operand.offset.format8()}"
+    is Immediate -> " #${operand.literal.format8()}"
+    is ZeroPage -> " ${operand.addr.format8()}"
+    is ZeroPageIndexed -> " ${operand.addr.format8()},${operand.source.name}"
+    is Absolute -> " ${operand.addr.format16()}"
+    is AbsoluteIndexed -> " ${operand.addr.format16()},${operand.source.name}"
+    is Indirect -> " (${operand.addr.format16()})"
+    is IndexedIndirect -> " (${operand.addr.format8()},X)"
+    is IndirectIndexed -> " (${operand.addr.format8()}),Y"
   }
 }

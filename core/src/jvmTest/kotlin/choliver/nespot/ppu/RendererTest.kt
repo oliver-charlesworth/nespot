@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import java.nio.IntBuffer
 
 
 class RendererTest {
@@ -781,7 +780,7 @@ class RendererTest {
   @Nested
   inner class CommitToBuffer {
     private val paletteEntries = (0..31).map { it * 2 + 1 }
-    private val videoBuffer = IntBuffer.allocate(SCREEN_WIDTH * SCREEN_HEIGHT)
+    private val videoBuffer = IntArray(SCREEN_WIDTH * SCREEN_HEIGHT)
 
     init {
       paletteEntries.forEachIndexed { idx, data ->

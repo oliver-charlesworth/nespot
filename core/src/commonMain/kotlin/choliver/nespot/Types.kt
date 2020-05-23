@@ -25,3 +25,5 @@ inline fun Data.sext() = this or (if (isNeg()) 0xFF00 else 0x0000)
 inline fun Byte.isBitSet(i: Int) = toInt().isBitSet(i)
 inline fun Int.isBitSet(i: Int) = (this and (1 shl i)) != 0
 
+fun Int.format16() = "$" + toString(16).padStart(4, '0')
+fun Int.format8() = "$" + toString(16).padStart(2, '0')

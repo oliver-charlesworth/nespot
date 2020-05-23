@@ -1,9 +1,6 @@
 package choliver.nespot.cpu.model
 
-import choliver.nespot.Address
-import choliver.nespot.Data
-import choliver.nespot.MutableForPerfReasons
-import choliver.nespot.isBitSet
+import choliver.nespot.*
 
 @MutableForPerfReasons
 data class Regs(
@@ -14,14 +11,7 @@ data class Regs(
   var s: Data = 0x00,
   var p: Flags = Flags()
 ) {
-  override fun toString() = "(PC=0x%04X, S=0x%02X, A=0x%02X, X=0x%02X, Y=0x%02X, P=%s)".format(
-    pc,
-    s,
-    a,
-    x,
-    y,
-    p.toString()
-  )
+  override fun toString() = "(PC=${pc.format16()}, S=${s.format8()}, A=${a.format8()}, X=${x.format8()}, Y=${y.format8()}, P=${p})"
 
   /** Like [copy], but allows us to also set individual status flags. */
   fun with(
@@ -55,14 +45,14 @@ data class Flags(
   var z: Boolean = false,
   var c: Boolean = false
 ) {
-  override fun toString() = "%c%c--%c%c%c%c".format(
-    if (n) 'N' else '-',
-    if (v) 'V' else '-',
-    if (d) 'D' else '-',
-    if (i) 'I' else '-',
-    if (z) 'Z' else '-',
-    if (c) 'C' else '-'
-  )
+  override fun toString() = "" +
+    (if (n) 'N' else '-') +
+    (if (v) 'V' else '-') +
+    "--" +
+    (if (d) 'D' else '-') +
+    (if (i) 'I' else '-') +
+    (if (z) 'Z' else '-') +
+    (if (c) 'C' else '-')
 
   fun data(): Data = (
     (if (n) 0x80 else 0) or

@@ -12,6 +12,7 @@ import choliver.nespot.cpu.model.Operand.IndexSource.X
 import choliver.nespot.cpu.model.Operand.IndexSource.Y
 import choliver.nespot.cpu.utils.samePage
 
+
 class InstructionDecoder(private val memory: Memory) {
   @MutableForPerfReasons
   data class Decoded(
@@ -30,7 +31,7 @@ class InstructionDecoder(private val memory: Memory) {
 
   fun decode(decoded: Decoded, pc: Address, x: Data, y: Data) {
     val opcode = memory[pc]
-    val found = ENCODINGS[opcode] ?: error("Unexpected opcode 0x%02x at 0x%04x".format(opcode, pc))
+    val found = ENCODINGS[opcode] ?: error("Unexpected opcode ${opcode.format8()} at ${opcode.format16()}")
 
     val addr: Address
     val pcInc: Int

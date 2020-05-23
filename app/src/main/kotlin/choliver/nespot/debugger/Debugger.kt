@@ -1,9 +1,6 @@
 package choliver.nespot.debugger
 
-import choliver.nespot.Address
-import choliver.nespot.BASE_VRAM
-import choliver.nespot.Data
-import choliver.nespot.VRAM_SIZE
+import choliver.nespot.*
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.Cpu.NextStep
 import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
@@ -72,7 +69,7 @@ class Debugger(
   private fun consume(parser: CommandParser, enablePrompts: Boolean) {
     while (true) {
       if (enablePrompts) {
-        stdout.print("[${nes.cpu.state.regs.pc.format()}]: ")
+        stdout.print("[${nes.cpu.state.regs.pc.format16()}]: ")
       }
 
       if (!handleCommand(parser.next())) {
@@ -198,11 +195,11 @@ class Debugger(
           is Break.AtOffset -> nextPc(cmd.offset)
           is Break.At -> cmd.pc
         })
-        stdout.println("Breakpoint #${point.num}: ${point.pc.format()} -> ${instAt(point.pc)}")
+        stdout.println("Breakpoint #${point.num}: ${point.pc.format16()} -> ${instAt(point.pc)}")
       }
       is Watch -> {
         val point = points.addWatchpoint(cmd.addr)
-        stdout.println("Watchpoint #${point.num}: ${point.addr.format()}")
+        stdout.println("Watchpoint #${point.num}: ${point.addr.format16()}")
       }
     }
   }
@@ -211,8 +208,8 @@ class Debugger(
     when (cmd) {
       is ByNum -> {
         when (val removed = points.remove(cmd.num)) {
-          is Breakpoint -> stdout.println("Deleted breakpoint #${removed.num}: ${removed.pc.format()} -> ${instAt(removed.pc)}")
-          is Watchpoint -> stdout.println("Deleted watchpoint #${removed.num}: ${removed.addr.format()}")
+          is Breakpoint -> stdout.println("Deleted breakpoint #${removed.num}: ${removed.pc.format16()} -> ${instAt(removed.pc)}")
+          is Watchpoint -> stdout.println("Deleted watchpoint #${removed.num}: ${removed.addr.format16()}")
           null -> stdout.println("No such breakpoint or watchpoint")
         }
       }
@@ -238,29 +235,27 @@ class Debugger(
         stdout.println("No breakpoints")
       } else {
         println("Num  Address  Instruction")
-        points.breakpoints.forEach { (_, v) -> stdout.println("%-4d %s   %s".format(v.num, v.pc.format(), instAt(v.pc))) }
+        points.breakpoints.forEach { (_, v) -> stdout.println("%-4d ${v.pc.format16()}   ${instAt(v.pc)}".format(v.num)) }
       }
 
       is Info.Watch -> if (points.watchpoints.isEmpty()) {
         stdout.println("No watchpoints")
       } else {
         println("Num  Address")
-        points.watchpoints.forEach { (_, v) -> stdout.println("%-4d %s".format(v.num, v.addr.format())) }
+        points.watchpoints.forEach { (_, v) -> stdout.println("%-4d ${v.addr.format16()}".format(v.num)) }
       }
 
       is Info.Display -> if (displays.isEmpty()) {
         stdout.println("No displays")
       } else {
         println("Num  Address")
-        displays.forEach { (k, v) -> stdout.println("%-4d %s".format(k, v.format())) }
+        displays.forEach { (k, v) -> stdout.println("%-4d ${v.format16()}".format(k)) }
       }
 
       is Info.Backtrace -> {
         stack.frames.forEachIndexed { idx, frame ->
-          stdout.println("#%-4d 0x%04x  <0x%04x>  %-20s%s".format(
+          stdout.println("#%-4d ${frame.current.format16()}  <${frame.start.format16()}>  %-20s%s".format(
             idx,
-            frame.current,
-            frame.start,
             instAt(frame.current),
             when (frame.type) {
               NMI, IRQ -> " (${frame.type.name})"
@@ -288,7 +283,7 @@ class Debugger(
         var pc = cmd.pc
         repeat(cmd.num) {
           val decoded = nes.cpu.decodeAt(pc)
-          stdout.println("0x%04x: ${decoded.instruction}".format(pc))
+          stdout.println("${pc.format16()}: ${decoded.instruction}")
           pc = decoded.nextPc
         }
       }
@@ -348,7 +343,7 @@ class Debugger(
 
   private fun maybeTraceInstruction() {
     if (isVerbose) {
-      stdout.println("${nes.cpu.state.regs.pc.format()}: ${instAt(nes.cpu.state.regs.pc)}")
+      stdout.println("${nes.cpu.state.regs.pc.format16()}: ${instAt(nes.cpu.state.regs.pc)}")
     }
   }
 
@@ -361,7 +356,7 @@ class Debugger(
   private fun maybeTraceStores() {
     if (isVerbose) {
       stores.forEach { (addr, data) ->
-        stdout.println("    ${addr.format()} <- ${data.format8()}")
+        stdout.println("    ${addr.format16()} <- ${data.format8()}")
       }
     }
   }
@@ -370,7 +365,7 @@ class Debugger(
     when (val wp = stores.map { points.watchpoints[it.first] }.firstOrNull { it != null }) {
       null -> true
       else -> {
-        stdout.println("Hit watchpoint #${wp.num}: ${wp.addr.format()}")
+        stdout.println("Hit watchpoint #${wp.num}: ${wp.addr.format16()}")
         false
       }
     }
@@ -390,7 +385,7 @@ class Debugger(
 
   private fun displayDisplays() {
     displays.forEach { (k, v) ->
-      stdout.println("${k}: ${v.format()} = ${nes.peek(v).format8()}")
+      stdout.println("${k}: ${v.format16()} = ${nes.peek(v).format8()}")
     }
   }
 
@@ -418,16 +413,13 @@ class Debugger(
               .joinToString("")
           }
 
-        stdout.println("${(i * numPerRow).format()}:  ${hex}  ${chars}")
+        stdout.println("${(i * numPerRow).format16()}:  ${hex}  ${chars}")
       }
   }
 
   private fun showScreen() {
     screen.show()
   }
-
-  private fun Address.format() = "0x%04x".format(this)
-  private fun Data.format8() = "0x%02x".format(this)
 
   companion object {
     @JvmStatic

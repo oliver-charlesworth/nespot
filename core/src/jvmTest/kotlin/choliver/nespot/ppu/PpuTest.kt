@@ -20,13 +20,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import java.nio.IntBuffer
 import kotlin.math.ceil
 
 class PpuTest {
   private val memory = mock<Memory>()
   private val renderer = mock<Renderer>()
-  private val onVideoBufferReady = mock<(IntBuffer) -> Unit>()
+  private val onVideoBufferReady = mock<(IntArray) -> Unit>()
   private val ppu = Ppu(
     memory = memory,
     renderer = renderer,

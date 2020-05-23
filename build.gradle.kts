@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   base
   kotlin("jvm") version "1.3.72" apply false
+  kotlin("multiplatform") version "1.3.72"
 }
 
 allprojects {
@@ -30,3 +31,35 @@ allprojects {
     }
   }
 }
+
+kotlin {
+  jvm()
+  js().browser()
+
+  sourceSets {
+    val commonMain by getting {
+      dependencies {
+        implementation(kotlin("stdlib-common"))
+      }
+    }
+
+    jvm().compilations["main"].defaultSourceSet {
+      dependencies {
+        implementation(kotlin("stdlib-jdk8"))
+      }
+    }
+
+    jvm().compilations["test"].defaultSourceSet {
+      dependencies {
+        implementation(project(":common-test"))
+      }
+    }
+
+    js().compilations["main"].defaultSourceSet  {
+      dependencies {
+        implementation(kotlin("stdlib-js"))
+      }
+    }
+  }
+}
+

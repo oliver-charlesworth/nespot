@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-  implementation(project(":core"))
+  implementation(project(":"))
   implementation(kotlin("stdlib"))
   implementation("com.github.ajalt:clikt:2.6.0")
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.0")

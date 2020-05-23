@@ -6,20 +6,20 @@ import choliver.nespot.ppu.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.io.File
-import java.nio.IntBuffer
 import java.util.concurrent.CountDownLatch
 
 class ShowStuffTest {
   private val latch = CountDownLatch(1)
   private val app = Screen { latch.countDown() }
-  private val buffer = IntBuffer.allocate(SCREEN_HEIGHT * SCREEN_WIDTH)
+  private val buffer = IntArray(SCREEN_HEIGHT * SCREEN_WIDTH)
 
   @Test
   @Disabled
   fun palette() {
+    var i = 0
     for (y in 0 until SCREEN_HEIGHT) {
       for (x in 0 until SCREEN_WIDTH) {
-        buffer.put(COLORS[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16])
+        buffer[i++] = COLORS[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16]
       }
     }
 
@@ -53,6 +53,7 @@ class ShowStuffTest {
       24   // Shitty green
     ).map { COLORS[it] }
 
+    var j = 0
     val scanline = IntArray(SCREEN_WIDTH)
     for (yT in 0 until NUM_TILE_ROWS) {
       for (y in 0 until 8) {
@@ -67,7 +68,7 @@ class ShowStuffTest {
           }
         }
 
-        scanline.forEach { buffer.put(it) }
+        scanline.forEach { buffer[j++] = it }
       }
     }
 

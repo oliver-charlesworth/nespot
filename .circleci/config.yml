@@ -17,6 +17,10 @@ jobs:
           name: Run tests
           command: ./gradlew allTests test
 
+      - run:
+          name: Build JS distribution
+          command: ./gradlew jsBrowserDistribution
+
       - save_cache:
           paths:
             - ~/.gradle/wrapper

@@ -13,3 +13,4 @@ build/
 backups/
 roms/
 snapshots/
+*.nes

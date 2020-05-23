@@ -15,7 +15,11 @@ jobs:
 
       - run:
           name: Run tests
-          command: ./gradlew test
+          command: ./gradlew allTests test
+
+      - run:
+          name: Build JS distribution
+          command: ./gradlew jsBrowserDistribution
 
       - save_cache:
           paths:

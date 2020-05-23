@@ -6,7 +6,7 @@ import java.nio.IntBuffer
 
 sealed class Event {
   class Audio(val buffer: FloatArray) : Event()
-  class Video(val buffer: IntBuffer) : Event()
+  class Video(val buffer: IntArray) : Event()
   data class ControllerButtonDown(val button: Joypads.Button) : Event()
   data class ControllerButtonUp(val button: Joypads.Button) : Event()
   data class KeyDown(val code: KeyCode) : Event()

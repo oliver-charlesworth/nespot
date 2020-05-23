@@ -11,13 +11,13 @@ import choliver.nespot.cpu.Cpu
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_IRQ
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_NMI
 import choliver.nespot.ppu.Ppu
-import java.nio.IntBuffer
+
 
 class Nes(
   rom: Rom,
   joypads: Joypads,
   onAudioBufferReady: (FloatArray) -> Unit = {},
-  onVideoBufferReady: (IntBuffer) -> Unit = {},
+  onVideoBufferReady: (IntArray) -> Unit = {},
   private val onStore: ((Address, Data) -> Unit)? = null
 ) {
   private var steps = 0

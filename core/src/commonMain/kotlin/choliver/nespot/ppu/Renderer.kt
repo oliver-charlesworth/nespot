@@ -4,7 +4,6 @@ import choliver.nespot.*
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Ppu.Companion.BASE_PATTERNS
 import choliver.nespot.ppu.Ppu.Companion.NAMETABLE_SIZE_BYTES
-import java.nio.IntBuffer
 import kotlin.math.min
 import choliver.nespot.ppu.model.State as PpuState
 
@@ -232,15 +231,15 @@ class Renderer(
     }
   }
 
-  fun commitToBuffer(ppu: PpuState, buffer: IntBuffer) {
+  fun commitToBuffer(ppu: PpuState, buffer: IntArray) {
     val mask = if (ppu.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
     for (i in 0 until 32) {
       // Background colour is universal
       colorLookup[i] = colors[palette[if (i % NUM_ENTRIES_PER_PALETTE == 0) 0 else i] and mask]
     }
 
-    buffer.position(ppu.scanline * SCREEN_WIDTH)
-    state.paletteIndices.forEach { buffer.put(colorLookup[it]) }
+    var idx = ppu.scanline * SCREEN_WIDTH
+    state.paletteIndices.forEach { buffer[idx++] = colorLookup[it] }
   }
 
   private fun maybeFlip(v: Int, flip: Boolean) = if (flip) (7 - v) else v

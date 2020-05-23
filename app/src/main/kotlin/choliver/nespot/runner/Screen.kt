@@ -43,9 +43,8 @@ class Screen(
     PixelFormat.getByteBgraPreInstance() // Mac native format
   )
 
-  fun redraw(buffer: IntBuffer) {
+  fun redraw(buffer: IntArray) {
     intBuffer.position(0)
-    buffer.position(0)
     intBuffer.put(buffer)
     onFxThread { pixelBuffer.updateBuffer { null } }
   }

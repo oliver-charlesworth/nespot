@@ -2,19 +2,17 @@ package choliver.nespot.ppu
 
 import choliver.nespot.*
 import choliver.nespot.ppu.model.State
-import java.nio.IntBuffer
 
-@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+
 class Ppu(
   private val memory: Memory,
   private val oam: Memory = Ram(256),
   private val palette: Memory = Palette(),
   private val renderer: Renderer = Renderer(memory, palette, oam),
-  private val onVideoBufferReady: (IntBuffer) -> Unit
+  private val onVideoBufferReady: (IntArray) -> Unit
 ) {
-  // TODO - should these just be IntArrays?  What's the difference?
-  private val bufferA = IntBuffer.allocate(SCREEN_HEIGHT * SCREEN_WIDTH)
-  private val bufferB = IntBuffer.allocate(SCREEN_HEIGHT * SCREEN_WIDTH)
+  private val bufferA = IntArray(SCREEN_HEIGHT * SCREEN_WIDTH)
+  private val bufferB = IntArray(SCREEN_HEIGHT * SCREEN_WIDTH)
   private var buffer = bufferA
 
   private var state = State()
@@ -44,7 +42,7 @@ class Ppu(
   // This is implemented as a state machine to minimise use of conditionals.
   // Each state is represented as a lambda, responsible for specifying the next state (nextAction) and
   // dot time (nextDot).
-  // The lambdas have return type of Object to avoid Kotlin generating bridge methods.
+  // The lambdas have return type of Any to avoid Kotlin generating bridge methods.
   fun advance(numCycles: Int) {
     repeat(numCycles * DOTS_PER_CYCLE) {
       if (state.dot++ == nextDot) {
@@ -54,7 +52,7 @@ class Ppu(
   }
 
   // TODO - this is not correct.  Rendering (and thus sprite0-hit) should take place continuously.
-  private val actionRender: () -> Object = {
+  private val actionRender: () -> Any = {
     renderer.loadAndRenderBackground(state)
     renderer.renderSprites(state)
 
@@ -63,7 +61,7 @@ class Ppu(
     dummy
   }
 
-  private val actionCommit: () -> Object = {
+  private val actionCommit: () -> Any = {
     renderer.commitToBuffer(state, buffer)
 
     nextDot = 256
@@ -71,7 +69,7 @@ class Ppu(
     dummy
   }
 
-  private val actionEvaluate: () -> Object = {
+  private val actionEvaluate: () -> Any = {
     renderer.evaluateSprites(state)
 
     nextDot = 257
@@ -79,7 +77,7 @@ class Ppu(
     dummy
   }
 
-  private val actionUpdateCoordsDuringRender: () -> Object = {
+  private val actionUpdateCoordsDuringRender: () -> Any = {
     state.updateCoordsForScanline()
 
     nextDot = 320
@@ -87,7 +85,7 @@ class Ppu(
     dummy
   }
 
-  private val actionLoadSpritesDuringRender: () -> Object = {
+  private val actionLoadSpritesDuringRender: () -> Any = {
     renderer.loadSprites(state)
 
     nextDot = 340
@@ -95,7 +93,7 @@ class Ppu(
     dummy
   }
 
-  private val actionSetVbl: () -> Object = {
+  private val actionSetVbl: () -> Any = {
     state.inVbl = true
     onVideoBufferReady(buffer)
     buffer = if (buffer === bufferA) bufferB else bufferA
@@ -105,7 +103,7 @@ class Ppu(
     dummy
   }
 
-  private val actionClearFlags: () -> Object = {
+  private val actionClearFlags: () -> Any = {
     state.inVbl = false
     state.sprite0Hit = false
     state.spriteOverflow = false
@@ -115,7 +113,7 @@ class Ppu(
     dummy
   }
 
-  private val actionPreRender: () -> Object = {
+  private val actionPreRender: () -> Any = {
     renderer.loadAndRenderBackground(state) // This happens even on this line
 
     nextDot = 257
@@ -123,7 +121,7 @@ class Ppu(
     dummy
   }
 
-  private val actionUpdateCoordsDuringPreRender: () -> Object = {
+  private val actionUpdateCoordsDuringPreRender: () -> Any = {
     state.updateCoordsForScanline()
 
     nextDot = 280
@@ -131,7 +129,7 @@ class Ppu(
     dummy
   }
 
-  private val actionUpdateCoordsForNextFrame: () -> Object = {
+  private val actionUpdateCoordsForNextFrame: () -> Any = {
     state.coords = state.coordsBacking.copy()
 
     nextDot = 320
@@ -139,7 +137,7 @@ class Ppu(
     dummy
   }
 
-  private val actionLoadSpritesDuringPreRender: () -> Object = {
+  private val actionLoadSpritesDuringPreRender: () -> Any = {
     renderer.loadSprites(state)  // This happens even though we haven't evaluated sprites
 
     nextDot = 340
@@ -147,7 +145,7 @@ class Ppu(
     dummy
   }
 
-  private val actionEndOfLine: () -> Object = {
+  private val actionEndOfLine: () -> Any = {
     state.dot = 0
     state.scanline = (state.scanline + 1) % SCANLINES_PER_FRAME
 
@@ -168,7 +166,7 @@ class Ppu(
     dummy
   }
 
-  private val dummy = Object()
+  private val dummy = Any()
   // TODO - these need to be included in State (and serialised) somehow
   private var nextDot = DOT_RENDER
   private var nextAction = actionRender

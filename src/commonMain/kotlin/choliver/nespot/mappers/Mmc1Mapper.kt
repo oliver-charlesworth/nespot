@@ -1,7 +1,10 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.*
-import choliver.nespot.cartridge.*
+import choliver.nespot.cartridge.Mapper
+import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.mirrorHorizontal
+import choliver.nespot.cartridge.mirrorVertical
 import choliver.nespot.mappers.Mmc1Mapper.ChrMode.CHR_MODE_0
 import choliver.nespot.mappers.Mmc1Mapper.ChrMode.CHR_MODE_1
 import choliver.nespot.mappers.Mmc1Mapper.MirroringMode.*

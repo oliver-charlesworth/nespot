@@ -2,7 +2,6 @@ package choliver.nespot.runner
 
 import choliver.nespot.nes.Joypads
 import javafx.scene.input.KeyCode
-import java.nio.IntBuffer
 
 sealed class Event {
   class Audio(val buffer: FloatArray) : Event()

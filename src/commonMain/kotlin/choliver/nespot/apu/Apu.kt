@@ -1,8 +1,11 @@
 package choliver.nespot.apu
 
-import choliver.nespot.*
+import choliver.nespot.Data
+import choliver.nespot.Memory
+import choliver.nespot.Rational
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
+import choliver.nespot.isBitSet
 
 // TODO - frame interrupt
 class Apu(

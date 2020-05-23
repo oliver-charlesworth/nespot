@@ -1,8 +1,11 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.*
-import choliver.nespot.cartridge.*
+import choliver.nespot.cartridge.Mapper
+import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.*
+import choliver.nespot.cartridge.mirrorHorizontal
+import choliver.nespot.cartridge.mirrorVertical
 
 // https://wiki.nesdev.com/w/index.php/NROM
 class NromMapper(rom: Rom) : Mapper {

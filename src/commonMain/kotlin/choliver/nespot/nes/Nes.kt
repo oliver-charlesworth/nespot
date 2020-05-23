@@ -49,11 +49,12 @@ class Nes(
     pollInterrupts = ::pollInterrupts
   )
 
-  fun step() {
+  fun step(): Int {
     val cycles = cpu.executeStep()
     apu.advance(cycles)
     ppu.advance(cycles)
     steps++
+    return cycles
   }
 
   private fun pollInterrupts() = (if (apu.irq || mapper.irq) INTERRUPT_IRQ else 0) or (if (ppu.vbl) INTERRUPT_NMI else 0)

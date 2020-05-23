@@ -25,6 +25,7 @@ class ArithmeticTest {
 
     @Test
     fun resultIsNegative() {
+      "farts".format()
       assertForAddressModesAndCarry(originalA = 0x20, rhs = 0xD0, a = 0xF0, v = _0, c = _0, n = _1, z = _0)
     }
 

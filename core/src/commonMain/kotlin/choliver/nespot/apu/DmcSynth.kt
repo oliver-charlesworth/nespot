@@ -3,8 +3,8 @@ package choliver.nespot.apu
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Memory
-import java.lang.Integer.max
-import java.lang.Integer.min
+import kotlin.math.max
+import kotlin.math.min
 
 
 // See http://wiki.nesdev.com/w/index.php/APU_DMC

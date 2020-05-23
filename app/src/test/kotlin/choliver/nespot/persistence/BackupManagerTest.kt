@@ -3,8 +3,7 @@ package choliver.nespot.persistence
 import choliver.nespot.Ram
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.data
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.mock
+import choliver.nespot.hash
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -12,16 +11,13 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.file.Path
 
-class BackupManagerTest {
-  private val rom = mock<Rom> {
-    on { hash } doReturn FAKE_HASH
-  }
 
+class BackupManagerTest {
   @Test
   fun `saves data if PRG-RAM present`(@TempDir dir: Path) {
     val expectedData = ByteArray(8) { (0x11 * it).toByte() }
     val bm = BackupManager(
-      rom,
+      ROM,
       Ram(8).initialise(expectedData),
       dir.toFile()
     )
@@ -37,7 +33,7 @@ class BackupManagerTest {
   @Test
   fun `doesn't save anything if PRG-RAM not present`(@TempDir dir: Path) {
     val bm = BackupManager(
-      rom,
+      ROM,
       null,
       dir.toFile()
     )
@@ -52,7 +48,7 @@ class BackupManagerTest {
     val expectedData = ByteArray(8) { (0x11 * it).toByte() }
     val ram = Ram(8)
     val bm = BackupManager(
-      rom,
+      ROM,
       ram,
       dir.toFile()
     )
@@ -67,7 +63,7 @@ class BackupManagerTest {
   fun `doesn't restore if file not present`(@TempDir dir: Path) {
     val ram = Ram(8).initialise(ByteArray(8) { 0 })
     val bm = BackupManager(
-      rom,
+      ROM,
       ram,
       dir.toFile()
     )
@@ -82,7 +78,7 @@ class BackupManagerTest {
     val expectedData = ByteArray(8) { (0x11 * it).toByte() }
     val ram = Ram(9)    // Uh-h
     val bm = BackupManager(
-      rom,
+      ROM,
       ram,
       dir.toFile()
     )
@@ -98,7 +94,8 @@ class BackupManagerTest {
   }
 
   companion object {
-    private const val FAKE_HASH = "abcd1234"
-    private const val BACKUP_FILENAME = "${FAKE_HASH}.backup.dat"
+    private val ROM = Rom()
+    private val FAKE_HASH = ROM.hash
+    private val BACKUP_FILENAME = "${FAKE_HASH}.backup.dat"
   }
 }

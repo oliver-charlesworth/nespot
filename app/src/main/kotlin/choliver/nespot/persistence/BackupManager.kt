@@ -3,6 +3,7 @@ package choliver.nespot.persistence
 import choliver.nespot.Ram
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.data
+import choliver.nespot.hash
 import java.io.File
 
 class BackupManager(

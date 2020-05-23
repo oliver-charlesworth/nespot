@@ -1,10 +1,10 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.Address
+import choliver.nespot.BASE_CHR_ROM
+import choliver.nespot.BASE_PRG_ROM
 import choliver.nespot.Data
 import choliver.nespot.apu.repeat
-import choliver.nespot.cartridge.BASE_CHR_ROM
-import choliver.nespot.cartridge.BASE_PRG_ROM
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.utils._0

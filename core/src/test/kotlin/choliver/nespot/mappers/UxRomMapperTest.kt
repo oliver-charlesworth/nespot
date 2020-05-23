@@ -1,7 +1,7 @@
 package choliver.nespot.mappers
 
-import choliver.nespot.cartridge.BASE_CHR_ROM
-import choliver.nespot.cartridge.BASE_PRG_ROM
+import choliver.nespot.BASE_CHR_ROM
+import choliver.nespot.BASE_PRG_ROM
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring
 import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL

@@ -1,10 +1,10 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.Address
+import choliver.nespot.BASE_VRAM
 import choliver.nespot.Data
-import choliver.nespot.cartridge.BASE_VRAM
+import choliver.nespot.NAMETABLE_SIZE
 import choliver.nespot.cartridge.Mapper
-import choliver.nespot.cartridge.NAMETABLE_SIZE
 import org.junit.jupiter.api.Assertions.assertEquals
 
 

@@ -6,36 +6,23 @@ import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
 
 // TODO - frame interrupt
 class Apu(
+  cpuFreqHz: Rational,
+  sampleRateHz: Int,
+  bufferLengthMs: Int = BUFFER_LENGTH_MS,
   memory: Memory,
-  private val sequencer: FrameSequencer = FrameSequencer(),
-  private val channels: Channels = Channels(
-    sq1 = SynthContext(SquareSynth()),
-    sq2 = SynthContext(SquareSynth()),
-    tri = SynthContext(TriangleSynth()).apply {
-      inhibitMute()
-      fixEnvelope(1)
-    },
-    noi = SynthContext(NoiseSynth()).apply {
-      inhibitMute()
-      timer.periodCycles = NOISE_PERIOD_TABLE[0]
-    },
-    dmc = SynthContext(DmcSynth(memory = memory)).apply {
-      inhibitMute()
-      fixEnvelope(1)
-      timer.periodCycles = DMC_RATE_TABLE[0]
-    }
-  ),
-  private val onAudioBufferReady: (FloatArray) -> Unit,
-  private val bufferSize: Int = BUFFER_SIZE,
-  private val cyclesPerSample: Rational = CYCLES_PER_SAMPLE
+  private val cyclesPerSample: Rational = cpuFreqHz / sampleRateHz,
+  private val sequencer: FrameSequencer = FrameSequencer(cyclesPerSample),
+  private val channels: Channels = Channels(cyclesPerSample, memory),
+  private val onAudioBufferReady: (FloatArray) -> Unit
 ) {
+  private val bufferSize = sampleRateHz * bufferLengthMs / 1000
   private val bufferA = FloatArray(bufferSize)
   private val bufferB = FloatArray(bufferSize)
   private var buffer = bufferA
 
   private var untilNextSample = cyclesPerSample.a
   private var iSample = 0
-  private val mixer = Mixer(sequencer, channels)
+  private val mixer = Mixer(sampleRateHz, sequencer, channels)
 
   val irq get() = channels.dmc.synth.irq
 
@@ -181,7 +168,7 @@ class Apu(
   }
 
   companion object {
-    private const val BUFFER_SIZE = SAMPLE_RATE_HZ / 100    // 10 ms
+    private val BUFFER_LENGTH_MS = 10
 
     // See https://wiki.nesdev.com/w/index.php/2A03
     private val REG_SQ1_RANGE = 0x00..0x03
@@ -202,14 +189,5 @@ class Apu(
     private fun SynthContext<*>.extractTimer() = ((regs[3] and 0x07) shl 8) or regs[2]
 
     private fun SynthContext<*>.extractLength() = LENGTH_TABLE[(regs[3] and 0xF8) shr 3]
-
-    private fun SynthContext<*>.fixEnvelope(level: Int) {
-      envelope.directMode = true
-      envelope.param = level
-    }
-
-    private fun SynthContext<*>.inhibitMute() {
-      sweep.inhibitMute = true
-    }
   }
 }

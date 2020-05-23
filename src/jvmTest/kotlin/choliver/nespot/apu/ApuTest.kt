@@ -1,13 +1,12 @@
 package choliver.nespot.apu
 
-import choliver.nespot.CYCLES_PER_SAMPLE
+import choliver.nespot.Rational
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.cpu.utils._0
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import kotlin.math.floor
 
 
 class ApuTest {
@@ -32,7 +31,9 @@ class ApuTest {
       dmc = dmc
     ),
     onAudioBufferReady = onAudioBufferReady,
-    bufferSize = BUFFER_SIZE
+    cpuFreqHz = CYCLES_PER_SAMPLE * SAMPLE_RATE_HZ,
+    sampleRateHz = SAMPLE_RATE_HZ,
+    bufferLengthMs = BUFFER_SIZE * 1000 / SAMPLE_RATE_HZ
   )
 
   @Nested
@@ -256,7 +257,7 @@ class ApuTest {
     whenever(sequencer.take()) doReturn FrameSequencer.Ticks(_0, _0)
     whenever(sweep.mute) doReturn true
 
-    apu.advance(floor(CYCLES_PER_SAMPLE.toDouble() * BUFFER_SIZE).toInt())
+    apu.advance(CYCLES_PER_SAMPLE.toInt() * BUFFER_SIZE - 1)
 
     verifyZeroInteractions(onAudioBufferReady)
 
@@ -283,6 +284,8 @@ class ApuTest {
   // TODO - generate samples
 
   companion object {
+    private const val SAMPLE_RATE_HZ = 1000
     private const val BUFFER_SIZE = 16
+    private val CYCLES_PER_SAMPLE = Rational.of(100)
   }
 }

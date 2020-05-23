@@ -1,6 +1,5 @@
 package choliver.nespot.apu
 
-import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.Rational
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
@@ -9,7 +8,7 @@ import choliver.nespot.cpu.utils._1
 
 // TODO - interrupts
 class FrameSequencer(
-  cyclesPerSample: Rational = CYCLES_PER_SAMPLE,
+  cyclesPerSample: Rational,
   frameSequencerFourStepPeriodCycles: Int = FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES,
   frameSequencerFiveStepPeriodCycles: Int = FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES
 ) {

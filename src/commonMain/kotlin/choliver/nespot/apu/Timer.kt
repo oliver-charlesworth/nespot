@@ -1,11 +1,10 @@
 package choliver.nespot.apu
 
-import choliver.nespot.CYCLES_PER_SAMPLE
 import choliver.nespot.Rational
 import kotlin.math.max
 
 class Timer(
-  private val cyclesPerSample: Rational = CYCLES_PER_SAMPLE
+  private val cyclesPerSample: Rational
 ) {
   private var pos = 0
   private var dec = cyclesPerSample.a

@@ -18,6 +18,7 @@ import kotlin.math.min
 
 
 class JsRunner(rom: Rom) {
+  private val audioCtx = AudioContext()
   private val canvas = document.getElementById("target") as HTMLCanvasElement
   private val ctx = canvas.getContext("2d") as CanvasRenderingContext2D
   private val img = ctx.createImageData(
@@ -30,6 +31,7 @@ class JsRunner(rom: Rom) {
   private val list = mutableListOf<IntArray>()
   private val joypads = Joypads()
   private val nes = Nes(
+    sampleRateHz = audioCtx.sampleRate.toInt(),
     rom = rom,
     joypads = joypads,
     onVideoBufferReady = { list += it }
@@ -101,7 +103,6 @@ class JsRunner(rom: Rom) {
   }
 
   private fun handleKeyDown(e: KeyboardEvent) {
-    println("Down: ${e.code}")
     keyToButton(e.code)?.let { joypads.down(1, it) }
   }
 

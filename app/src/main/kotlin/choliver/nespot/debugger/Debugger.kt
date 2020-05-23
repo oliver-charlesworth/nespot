@@ -14,9 +14,10 @@ import choliver.nespot.debugger.Command.Event.*
 import choliver.nespot.debugger.Command.Execute.*
 import choliver.nespot.debugger.PointManager.Point.Breakpoint
 import choliver.nespot.debugger.PointManager.Point.Watchpoint
+import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
-import choliver.nespot.nes.Joypads
+import choliver.nespot.runner.AudioPlayer
 import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
@@ -41,11 +42,13 @@ class Debugger(
 
   private val events = LinkedBlockingQueue<RunnerEvent>()
   private val joypads = Joypads()
+  private val audio = AudioPlayer()
   private val screen = Screen(onEvent = { events += it })
 
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
 
   private val nes = Nes(
+    sampleRateHz = audio.sampleRateHz,
     rom = Rom.parse(rom),
     joypads = joypads,
     onVideoBufferReady = { screen.redraw(it) },

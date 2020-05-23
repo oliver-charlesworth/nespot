@@ -1,15 +1,24 @@
 package choliver.nespot.apu
 
 import choliver.nespot.Data
+import choliver.nespot.Rational
 import choliver.nespot.apu.FrameSequencer.Ticks
 
 class SynthContext<S : Synth>(
   val synth: S,
-  val timer: Timer = Timer(),
+  val timer: Timer,
   val envelope: Envelope = Envelope(),
   val sweep: Sweep = Sweep(timer),
   val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00)
 ) {
+  constructor(
+    cyclesPerSample: Rational,
+    synth: S
+  ) : this(
+    synth = synth,
+    timer = Timer(cyclesPerSample)
+  )
+
   fun take(ticks: Ticks): Int {
     if (ticks.quarter) {
       envelope.advance()

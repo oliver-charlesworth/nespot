@@ -14,6 +14,7 @@ class PerfRunner(
 ) {
   private val joypads = Joypads()
   private val nes = Nes(
+    sampleRateHz = 44100,
     rom = rom,
     joypads = joypads,
     onVideoBufferReady = { endOfFrame = true }

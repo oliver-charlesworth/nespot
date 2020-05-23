@@ -23,6 +23,7 @@ class InteractiveRunner(
   private val screen = Screen(onEvent = { events += it })
   private val audio = AudioPlayer()
   private val nes = Nes(
+    sampleRateHz = audio.sampleRateHz,
     rom = rom,
     joypads = joypads,
     onAudioBufferReady = { events += Audio(it) },

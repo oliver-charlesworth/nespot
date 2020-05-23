@@ -1,6 +1,5 @@
 package choliver.nespot.apu
 
-import choliver.nespot.SAMPLE_RATE_HZ
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sqrt
@@ -8,6 +7,7 @@ import kotlin.math.sqrt
 
 // See https://wiki.nesdev.com/w/index.php/APU_Mixer
 internal class Mixer(
+  sampleRateHz: Int,
   private val sequencer: FrameSequencer,
   private val channels: Channels
 ) {
@@ -15,7 +15,7 @@ internal class Mixer(
   private var state: Float = 0.0f
 
   init {
-    val omega = 2 * PI * 14e3 / SAMPLE_RATE_HZ
+    val omega = 2 * PI * 14e3 / sampleRateHz
     alpha = (cos(omega) - 1 + sqrt(cos(omega) * cos(omega) - 4 * cos(omega) + 3)).toFloat()
   }
 

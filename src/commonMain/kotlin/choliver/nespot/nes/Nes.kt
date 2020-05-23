@@ -1,9 +1,6 @@
 package choliver.nespot.nes
 
-import choliver.nespot.Address
-import choliver.nespot.Data
-import choliver.nespot.Memory
-import choliver.nespot.Ram
+import choliver.nespot.*
 import choliver.nespot.apu.Apu
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.createMapper
@@ -14,6 +11,7 @@ import choliver.nespot.ppu.Ppu
 
 
 class Nes(
+  sampleRateHz: Int,
   rom: Rom,
   joypads: Joypads,
   onAudioBufferReady: (FloatArray) -> Unit = {},
@@ -25,6 +23,8 @@ class Nes(
   private val mapper = createMapper(rom, getStepCount = { steps })
 
   private val apu = Apu(
+    cpuFreqHz = CPU_FREQ_HZ,
+    sampleRateHz = sampleRateHz,
     memory = mapper.prg,  // DMC can only read from PRG space
     onAudioBufferReady = onAudioBufferReady
   )

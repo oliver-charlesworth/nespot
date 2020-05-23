@@ -1,6 +1,5 @@
 package choliver.nespot.runner
 
-import choliver.nespot.SAMPLE_RATE_HZ
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import kotlin.math.roundToInt
@@ -11,6 +10,7 @@ class AudioPlayer {
   private val audioFormat = AudioFormat(SAMPLE_RATE_HZ.toFloat(), 16, 1, true, false)
   private val soundLine = AudioSystem.getSourceDataLine(audioFormat)
   private val work = ByteArray(WORK_BUFFER_SIZE * 2)
+  val sampleRateHz = SAMPLE_RATE_HZ
 
   fun start() {
     soundLine.open(audioFormat, LINE_BUFFER_SIZE * 2)
@@ -48,6 +48,8 @@ class AudioPlayer {
   }
 
   companion object {
+    private const val SAMPLE_RATE_HZ = 44100
+
     private const val WORK_BUFFER_LENGTH_MS = 1000
     private const val LINE_BUFFER_LENGTH_MS = 20
     private const val LEVEL = 100f

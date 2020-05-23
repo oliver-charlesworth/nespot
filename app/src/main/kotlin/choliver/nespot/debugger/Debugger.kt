@@ -16,7 +16,7 @@ import choliver.nespot.debugger.PointManager.Point.Breakpoint
 import choliver.nespot.debugger.PointManager.Point.Watchpoint
 import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
-import choliver.nespot.runner.FakeJoypads
+import choliver.nespot.nes.Joypads
 import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
@@ -40,7 +40,7 @@ class Debugger(
   )
 
   private val events = LinkedBlockingQueue<RunnerEvent>()
-  private val joypads = FakeJoypads()
+  private val joypads = Joypads()
   private val screen = Screen(onEvent = { events += it })
 
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global

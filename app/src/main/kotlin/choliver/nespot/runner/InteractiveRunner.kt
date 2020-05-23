@@ -2,6 +2,7 @@ package choliver.nespot.runner
 
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.Cpu.NextStep.RESET
+import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Nes
 import choliver.nespot.persistence.BackupManager
 import choliver.nespot.persistence.SnapshotManager
@@ -18,7 +19,7 @@ class InteractiveRunner(
 ) {
   private val events = LinkedBlockingQueue<Event>()
   private var closed = false
-  private val joypads = FakeJoypads()
+  private val joypads = Joypads()
   private val screen = Screen(onEvent = { events += it })
   private val audio = AudioPlayer()
   private val nes = Nes(

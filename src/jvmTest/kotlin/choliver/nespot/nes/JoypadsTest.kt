@@ -1,13 +1,12 @@
-package choliver.nespot.runner
+package choliver.nespot.nes
 
 import choliver.nespot.Data
-import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Joypads.Button
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class FakeJoypadsTest {
-  private val joypads = FakeJoypads()
+class JoypadsTest {
+  private val joypads = Joypads()
 
   @Test
   fun `state change before sampling is visible`() {

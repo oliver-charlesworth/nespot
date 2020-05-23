@@ -1,17 +1,17 @@
 package choliver.nespot.apu
 
+import choliver.nespot.Rational
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
 import choliver.nespot.apu.FrameSequencer.Ticks
 import choliver.nespot.cpu.utils._0
 import choliver.nespot.cpu.utils._1
-import choliver.nespot.toRational
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class FrameSequencerTest {
   private val sequencer = FrameSequencer(
-    cyclesPerSample = 4.toRational(),
+    cyclesPerSample = Rational.of(4),
     frameSequencerFourStepPeriodCycles = 48,
     frameSequencerFiveStepPeriodCycles = 60
   )

@@ -24,5 +24,11 @@ kotlin {
         implementation(project(":common-test"))
       }
     }
+
+    js().compilations["main"].defaultSourceSet  {
+      dependencies {
+        implementation(kotlin("stdlib-js"))
+      }
+    }
   }
 }

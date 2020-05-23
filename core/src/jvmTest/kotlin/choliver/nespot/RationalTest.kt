@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 class RationalTest {
   @Test
   fun simplify() {
-    val r = Rational(10, 8)
+    val r = Rational.of(10, 8)
 
     assertEquals(5, r.a)
     assertEquals(4, r.b)
@@ -14,8 +14,8 @@ class RationalTest {
 
   @Test
   fun `negative values`() {
-    val r = Rational(-10, 8)
-    val s = Rational(10, -8)
+    val r = Rational.of(-10, 8)
+    val s = Rational.of(10, -8)
 
     assertEquals(-5, r.a)
     assertEquals(4, r.b)
@@ -25,36 +25,36 @@ class RationalTest {
 
   @Test
   fun plus() {
-    assertEquals(Rational(19, 12), Rational(5, 6) + Rational(3, 4))
-    assertEquals(Rational(23, 6), Rational(5, 6) + 3)
+    assertEquals(Rational.of(19, 12), Rational.of(5, 6) + Rational.of(3, 4))
+    assertEquals(Rational.of(23, 6), Rational.of(5, 6) + 3)
   }
 
   @Test
   fun minus() {
-    assertEquals(Rational(1, 12), Rational(5, 6) - Rational(3, 4))
-    assertEquals(Rational(-13, 6), Rational(5, 6) - 3)
+    assertEquals(Rational.of(1, 12), Rational.of(5, 6) - Rational.of(3, 4))
+    assertEquals(Rational.of(-13, 6), Rational.of(5, 6) - 3)
   }
 
   @Test
   fun multiply() {
-    assertEquals(Rational(5, 8), Rational(5, 6) * Rational(3, 4))
-    assertEquals(Rational(5, 2), Rational(5, 6) * 3)
+    assertEquals(Rational.of(5, 8), Rational.of(5, 6) * Rational.of(3, 4))
+    assertEquals(Rational.of(5, 2), Rational.of(5, 6) * 3)
   }
 
   @Test
   fun divide() {
-    assertEquals(Rational(10, 9), Rational(5, 6) / Rational(3, 4))
-    assertEquals(Rational(5, 18), Rational(5, 6) / 3)
+    assertEquals(Rational.of(10, 9), Rational.of(5, 6) / Rational.of(3, 4))
+    assertEquals(Rational.of(5, 18), Rational.of(5, 6) / 3)
   }
 
   @Test
   fun negate() {
-    assertEquals(Rational(-3, 4), -Rational(3, 4))
+    assertEquals(Rational.of(-3, 4), -Rational.of(3, 4))
   }
 
   @Test
   fun toInt() {
-    assertEquals(2, Rational(12, 5).toInt())
-    assertEquals(-2, Rational(-12, 5).toInt())
+    assertEquals(2, Rational.of(12, 5).toInt())
+    assertEquals(-2, Rational.of(-12, 5).toInt())
   }
 }

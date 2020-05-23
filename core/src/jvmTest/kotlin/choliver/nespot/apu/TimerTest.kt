@@ -1,7 +1,7 @@
 package choliver.nespot.apu
 
+import choliver.nespot.Rational
 import choliver.nespot.apu.Timer.Companion.MIN_PERIOD
-import choliver.nespot.toRational
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
@@ -9,7 +9,7 @@ import org.junit.jupiter.api.assertDoesNotThrow
 class TimerTest {
   @Test
   fun `integer multiple`() {
-    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+    val timer = Timer(cyclesPerSample = Rational.of(16)).apply {
       periodCycles = 64
     }
 
@@ -21,7 +21,7 @@ class TimerTest {
 
   @Test
   fun `rational multiple`() {
-    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+    val timer = Timer(cyclesPerSample = Rational.of(16)).apply {
       periodCycles = 40
     }
 
@@ -33,7 +33,7 @@ class TimerTest {
 
   @Test
   fun `unity multiple`() {
-    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+    val timer = Timer(cyclesPerSample = Rational.of(16)).apply {
       periodCycles = 16
     }
 
@@ -45,7 +45,7 @@ class TimerTest {
 
   @Test
   fun `sub-unity integer multiple`() {
-    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+    val timer = Timer(cyclesPerSample = Rational.of(16)).apply {
       periodCycles = 8
     }
 
@@ -57,7 +57,7 @@ class TimerTest {
 
   @Test
   fun `sub-unity rational multiple`() {
-    val timer = Timer(cyclesPerSample = 20.toRational()).apply {
+    val timer = Timer(cyclesPerSample = Rational.of(20)).apply {
       periodCycles = 8
     }
 
@@ -69,7 +69,7 @@ class TimerTest {
 
   @Test
   fun `doesn't immediately restart on new period`() {
-    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+    val timer = Timer(cyclesPerSample = Rational.of(16)).apply {
       periodCycles = 64
     }
 
@@ -84,7 +84,7 @@ class TimerTest {
 
   @Test
   fun `disabled if below minimum period`() {
-    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+    val timer = Timer(cyclesPerSample = Rational.of(16)).apply {
       periodCycles = MIN_PERIOD - 1
     }
 
@@ -96,7 +96,7 @@ class TimerTest {
 
   @Test
   fun `doesn't divide by zero`() {
-    val timer = Timer(cyclesPerSample = 16.toRational()).apply {
+    val timer = Timer(cyclesPerSample = Rational.of(16)).apply {
       periodCycles = 0
     }
 

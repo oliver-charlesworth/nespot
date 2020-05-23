@@ -2,6 +2,7 @@ package choliver.nespot
 
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Joypads
+import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Nes
 import choliver.nespot.ppu.SCREEN_HEIGHT
 import choliver.nespot.ppu.SCREEN_WIDTH
@@ -10,6 +11,7 @@ import org.khronos.webgl.Uint16Array
 import org.khronos.webgl.set
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.events.KeyboardEvent
 import kotlin.browser.document
 import kotlin.browser.window
 import kotlin.math.min
@@ -34,9 +36,11 @@ class JsRunner(rom: Rom) {
   )
 
   fun start() {
+    document.onkeydown = ::handleKeyDown
+    document.onkeyup = ::handleKeyUp
     configureDom()
     window.onresize = { configureDom() }
-    window.requestAnimationFrame(this::executeFrame)
+    window.requestAnimationFrame(::executeFrame)
   }
 
   private fun configureDom() {
@@ -94,6 +98,27 @@ class JsRunner(rom: Rom) {
     }
 
     ctx.putImageData(img, 0.0, 0.0)
+  }
+
+  private fun handleKeyDown(e: KeyboardEvent) {
+    println("Down: ${e.code}")
+    keyToButton(e.code)?.let { joypads.down(1, it) }
+  }
+
+  private fun handleKeyUp(e: KeyboardEvent) {
+    keyToButton(e.code)?.let { joypads.up(1, it) }
+  }
+
+  private fun keyToButton(code: String) = when (code) {
+    "KeyZ" -> Button.A
+    "KeyX" -> Button.B
+    "BracketLeft" -> Button.SELECT
+    "BracketRight" -> Button.START
+    "ArrowLeft" -> Button.LEFT
+    "ArrowRight" -> Button.RIGHT
+    "ArrowUp" -> Button.UP
+    "ArrowDown" -> Button.DOWN
+    else -> null
   }
 
   companion object {

@@ -25,9 +25,8 @@ class JsRunner(rom: Rom) {
   private val data = img.data.unsafeCast<Uint16Array>() // See https://stackoverflow.com/a/49336551
 
   private var base: Double = 0.0
-  private var n = 0
-
-  private var prev: Double? = null
+  private var first: Double? = null
+  private var numFrames = 0
   private val list = mutableListOf<IntArray>()
   private val joypads = Joypads()
   private val videoSink = JsVideoSink(onBufferReady = { list += it })
@@ -77,11 +76,21 @@ class JsRunner(rom: Rom) {
     }
   }
 
-  private fun executeFrame(timestamp: Double) {
-    val delta = timestamp - (prev ?: timestamp)
-    prev = timestamp
+  val frameRateMs = 1000.0 / (CPU_FREQ_HZ / (DOTS_PER_SCANLINE * SCANLINES_PER_FRAME) * DOTS_PER_CYCLE).toDouble()
 
-//    val cycles = ((delta / 1000) * CPU_FREQ_HZ.toDouble()).
+  private fun executeFrame(timestamp: Double) {
+    first = first ?: timestamp
+    val delta = (timestamp - first!!) - (frameRateMs * numFrames)
+    numFrames++
+
+//    println("delta = ${delta.toInt()}")
+
+
+    // TODO:
+    // - calculate runtime
+    // - convert to cycles
+    // - run for that many cycles, collect latest buffer
+
 
     while (list.isEmpty()) {
       nes.step()
@@ -126,16 +135,24 @@ class JsRunner(rom: Rom) {
     else -> null
   }
 
+  // TODO: Needs to be driven by audio needs
+  //  - Thus use audio currentTime - initialTime to determine number of cycles that need running
+  //  - i.e. aim for setpoint of 2 frames
+
+
   private fun handleAudioBufferReady(buffer: FloatArray) {
     val target = audioCtx.createBuffer(1, buffer.size, audioCtx.sampleRate)
-    val raw = target.getChannelData(0)
-    buffer.forEachIndexed { idx, sample -> raw[idx] = sample }
+    val samples = target.getChannelData(0)
+    buffer.forEachIndexed { idx, sample -> samples[idx] = 0.0f /*sample*/ }
 
     val source = audioCtx.createBufferSource()
     source.buffer = target
     source.connect(audioCtx.destination)
-    source.start(base + n.toDouble() / 100)
-    n++
+    source.start(base)
+
+//    println("Lag: ${((base - audioCtx.currentTime) * 1000).toInt()}")
+
+    base += buffer.size / audioCtx.sampleRate
   }
 
   companion object {

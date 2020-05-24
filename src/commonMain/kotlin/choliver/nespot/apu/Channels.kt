@@ -4,39 +4,49 @@ import choliver.nespot.Memory
 import choliver.nespot.Rational
 
 class Channels(
-  val sq1: SynthContext<SquareSynth>,
-  val sq2: SynthContext<SquareSynth>,
-  val tri: SynthContext<TriangleSynth>,
-  val noi: SynthContext<NoiseSynth>,
-  val dmc: SynthContext<DmcSynth>
+  val sq1: SynthContext<SquareSynth, SweepActive, EnvelopeActive>,
+  val sq2: SynthContext<SquareSynth, SweepActive, EnvelopeActive>,
+  val tri: SynthContext<TriangleSynth, SweepInactive, EnvelopeInactive>,
+  val noi: SynthContext<NoiseSynth, SweepInactive, EnvelopeActive>,
+  val dmc: SynthContext<DmcSynth, SweepInactive, EnvelopeInactive>
 ) {
   constructor(
     cyclesPerSample: Rational,
     memory: Memory
   ) : this(
-    sq1 = SynthContext(cyclesPerSample, SquareSynth()),
-    sq2 = SynthContext(cyclesPerSample, SquareSynth()),
-    tri = SynthContext(cyclesPerSample, TriangleSynth()).apply {
-      inhibitMute()
-      fixEnvelope(1)
+    sq1 = Timer(cyclesPerSample).let { timer ->
+      SynthContext(
+        synth = SquareSynth(),
+        timer = timer,
+        sweep = SweepActive(timer, negateWithOnesComplement = false),
+        envelope = EnvelopeActive()
+      )
     },
-    noi = SynthContext(cyclesPerSample, NoiseSynth()).apply {
-      inhibitMute()
+    sq2 = Timer(cyclesPerSample).let { timer ->
+      SynthContext(
+        synth = SquareSynth(),
+        timer = timer,
+        sweep = SweepActive(timer, negateWithOnesComplement = true),
+        envelope = EnvelopeActive()
+      )
     },
-    dmc = SynthContext(cyclesPerSample, DmcSynth(memory = memory)).apply {
-      inhibitMute()
-      fixEnvelope(1)
-    }
+    tri = SynthContext(
+      synth = TriangleSynth(),
+      timer = Timer(cyclesPerSample),
+      sweep = SweepInactive(),
+      envelope = EnvelopeInactive(1)
+    ),
+    noi = SynthContext(
+      synth = NoiseSynth(),
+      timer = Timer(cyclesPerSample),
+      sweep = SweepInactive(),
+      envelope = EnvelopeActive()
+    ),
+    dmc = SynthContext(
+      synth = DmcSynth(memory = memory),
+      timer = Timer(cyclesPerSample),
+      sweep = SweepInactive(),
+      envelope = EnvelopeInactive(1)
+    )
   )
-
-  companion object {
-    private fun SynthContext<*>.fixEnvelope(level: Int) {
-      envelope.directMode = true
-      envelope.param = level
-    }
-
-    private fun SynthContext<*>.inhibitMute() {
-      sweep.inhibitMute = true
-    }
-  }
 }

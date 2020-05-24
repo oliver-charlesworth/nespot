@@ -3,8 +3,8 @@ package choliver.nespot.apu
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class EnvelopeTest {
-  private val env = Envelope().apply {
+class EnvelopeActiveTest {
+  private val env = EnvelopeActive().apply {
     directMode = false
     param = 2 // Actual period is this + 1
   }
@@ -54,5 +54,5 @@ class EnvelopeTest {
     )
   }
 
-  private fun Envelope.take(num: Int) = List(num) { advance(); level }
+  private fun EnvelopeActive.take(num: Int) = List(num) { advance(); level }
 }

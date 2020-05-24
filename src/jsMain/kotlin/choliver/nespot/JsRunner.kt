@@ -24,21 +24,27 @@ class JsRunner(rom: Rom) {
   )
   private val data = img.data.unsafeCast<Uint16Array>() // See https://stackoverflow.com/a/49336551
 
+  private var base: Double = 0.0
+  private var n = 0
+
   private var prev: Double? = null
   private val list = mutableListOf<IntArray>()
   private val joypads = Joypads()
   private val videoSink = JsVideoSink(onBufferReady = { list += it })
+  private val audioSink = XXX
   private val nes = Nes(
     sampleRateHz = audioCtx.sampleRate.toInt(),
     rom = rom,
     joypads = joypads,
-    videoSink = videoSink
+    videoSink = videoSink,
+    audioSink = audioSink
   )
 
-  fun start() {
+  fun run() {
     document.onkeydown = ::handleKeyDown
     document.onkeyup = ::handleKeyUp
     configureDom()
+    base = audioCtx.currentTime
     window.onresize = { configureDom() }
     window.requestAnimationFrame(::executeFrame)
   }
@@ -118,6 +124,18 @@ class JsRunner(rom: Rom) {
     "ArrowUp" -> Button.UP
     "ArrowDown" -> Button.DOWN
     else -> null
+  }
+
+  private fun handleAudioBufferReady(buffer: FloatArray) {
+    val target = audioCtx.createBuffer(1, buffer.size, audioCtx.sampleRate)
+    val raw = target.getChannelData(0)
+    buffer.forEachIndexed { idx, sample -> raw[idx] = sample }
+
+    val source = audioCtx.createBufferSource()
+    source.buffer = target
+    source.connect(audioCtx.destination)
+    source.start(base + n.toDouble() / 100, offset = 0.0, duration = 0.01)
+    n++
   }
 
   companion object {

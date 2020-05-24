@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test
 
 class SynthContextTest {
   private val synth = mock<Synth>()
-  private val sweep = mock<Sweep>()
-  private val envelope = mock<Envelope>()
+  private val sweep = mock<SweepActive>()
+  private val envelope = mock<EnvelopeActive>()
   private val timer = mock<Timer>()
   private val ctx = SynthContext(
     synth = synth,

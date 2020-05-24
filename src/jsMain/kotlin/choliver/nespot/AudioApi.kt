@@ -2,6 +2,7 @@ package choliver.nespot
 
 import org.khronos.webgl.Float32Array
 import org.w3c.dom.WorkerGlobalScope
+import org.w3c.dom.events.Event
 import kotlin.js.Promise
 
 external interface AudioWorkletProcessor {
@@ -36,6 +37,7 @@ abstract external class AudioNode {
 }
 
 abstract external class AudioScheduledSourceNode : AudioNode {
+  var onended: ((Event) -> dynamic)
   fun start(`when`: Double = definedExternally)
 }
 

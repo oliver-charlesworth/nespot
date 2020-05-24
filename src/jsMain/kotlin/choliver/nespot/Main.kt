@@ -1,49 +1,37 @@
 package choliver.nespot
 
-import org.khronos.webgl.Float32Array
-import org.w3c.dom.url.URL
-import org.w3c.files.Blob
-import org.w3c.files.BlobPropertyBag
+import org.khronos.webgl.set
+import kotlin.math.PI
+import kotlin.math.sin
 
-private const val processorName = "balls-processor"
-
-external val self: AudioWorkletGlobalScope
-
-fun jsTypeOf(o: Any): String {
-  return js("typeof o")
-}
+private val ctx = AudioContext()
+private var time = ctx.currentTime
 
 fun main() {
-  println("In main")
+  ohyeah()
+}
 
-  val func = {
-    class MyProcessor : AudioWorkletProcessor {
-      override fun process(
-        inputs: Array<Array<Float32Array>>,
-        outputs: Array<Array<Float32Array>>,
-        parameters: Map<String, Float32Array>
-      ): Boolean {
-        return false
-      }
+fun ohyeah() {
+  val freqHz = 440.0f
+  val lengthMs = 10
+  val lookaheadMs = 30
+  val length = (ctx.sampleRate * lengthMs / 1000.0).toInt()
+  while (time - ctx.currentTime < (lookaheadMs / 1000.0)) {
+    val buffer = ctx.createBuffer(1, length, ctx.sampleRate)
+    val samples = buffer.getChannelData(0)
+    for (i in 0 until length) {
+      val t = time + i / ctx.sampleRate
+      samples[i] = sin(2 * PI * freqHz * t).toFloat()
     }
-    console.log("Ah herro")
-    registerProcessor("balls-processor", ::MyProcessor)
-    console.log("Ah goodbye")
-//    console.log(self)
-  }
 
-  val blob = Blob(arrayOf("(${func})()"), BlobPropertyBag(type = "text/javascript"))
-
-  console.log("blob", blob)
-
-  val audioCtx = AudioContext()
-
-  val url = URL.createObjectURL(blob)
-
-  println(url)
-
-  audioCtx.audioWorklet.addModule(url).then {
-    val node = AudioWorkletNode(audioCtx, processorName)
-    node.connect(audioCtx.destination)
+    val source = ctx.createBufferSource()
+    source.buffer = buffer
+    source.connect(ctx.destination)
+    source.onended = {
+      ohyeah()
+    }
+    source.start(time)
+    time += length / ctx.sampleRate
   }
 }
+

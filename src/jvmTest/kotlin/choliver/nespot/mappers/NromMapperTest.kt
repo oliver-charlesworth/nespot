@@ -3,7 +3,6 @@ package choliver.nespot.mappers
 import choliver.nespot.BASE_CHR_ROM
 import choliver.nespot.BASE_PRG_ROM
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.Rom.Mirroring
 import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
 import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
@@ -18,7 +17,7 @@ import org.junit.jupiter.api.Test
 class NromMapperTest {
   @Nested
   inner class PrgRam {
-    private val mapper = mapper()
+    private val mapper = NromMapper(Rom())
     private val checker = BankMappingChecker(
       bankSize = PRG_RAM_SIZE,
       srcBase = BASE_PRG_RAM,
@@ -57,7 +56,7 @@ class NromMapperTest {
 
     private fun checker(size: Int): BankMappingChecker {
       val prgData = ByteArray(size)
-      val mapper = mapper(prgData = prgData)
+      val mapper = NromMapper(Rom(prgData = prgData))
       return BankMappingChecker(
         bankSize = PRG_BANK_SIZE,
         outBase = BASE_PRG_ROM,
@@ -69,7 +68,7 @@ class NromMapperTest {
 
   @Nested
   inner class ChrRam {
-    private val mapper = mapper()
+    private val mapper = NromMapper(Rom())
     private val checker = BankMappingChecker(
       bankSize = CHR_RAM_SIZE,
       srcBase = BASE_CHR_ROM,
@@ -87,7 +86,7 @@ class NromMapperTest {
   @Nested
   inner class ChrRom {
     private val chrData = ByteArray(8192)
-    private val mapper = mapper(chrData = chrData)
+    private val mapper = NromMapper(Rom(chrData = chrData))
     private val checker = BankMappingChecker(
       bankSize = CHR_RAM_SIZE,
       srcBase = BASE_CHR_ROM,
@@ -106,22 +105,12 @@ class NromMapperTest {
   inner class Vram {
     @Test
     fun `vertical mirroring`() {
-      assertVramMappings(mapper(mirroring = VERTICAL), listOf(0, 2), listOf(1, 3))
+      assertVramMappings(NromMapper(Rom(mirroring = VERTICAL)), listOf(0, 2), listOf(1, 3))
     }
 
     @Test
     fun `horizontal mirroring`() {
-      assertVramMappings(mapper(mirroring = HORIZONTAL), listOf(0, 1), listOf(2, 3))
+      assertVramMappings(NromMapper(Rom(mirroring = HORIZONTAL)), listOf(0, 1), listOf(2, 3))
     }
   }
-
-  private fun mapper(
-    prgData: ByteArray = ByteArray(0),
-    chrData: ByteArray = ByteArray(0),
-    mirroring: Mirroring = VERTICAL
-  ) = NromMapper(Rom(
-    mirroring = mirroring,
-    prgData = prgData,
-    chrData = chrData
-  ))
 }

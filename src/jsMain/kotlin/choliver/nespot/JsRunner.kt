@@ -134,7 +134,7 @@ class JsRunner(rom: Rom) {
     val source = audioCtx.createBufferSource()
     source.buffer = target
     source.connect(audioCtx.destination)
-    source.start(base + n.toDouble() / 100, offset = 0.0, duration = 0.01)
+    source.start(base + n.toDouble() / 100)
     n++
   }
 

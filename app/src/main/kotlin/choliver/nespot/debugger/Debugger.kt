@@ -21,7 +21,6 @@ import choliver.nespot.runner.AudioPlayer
 import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
-import choliver.nespot.runner.ScreenVideoSink
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -45,14 +44,13 @@ class Debugger(
   private val joypads = Joypads()
   private val audio = AudioPlayer()
   private val screen = Screen(onEvent = { events += it })
-  private val videoSink = ScreenVideoSink(onBufferReady = { screen.redraw(it) })
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
 
   private val nes = Nes(
     sampleRateHz = audio.sampleRateHz,
     rom = Rom.parse(rom),
     joypads = joypads,
-    videoSink = videoSink,
+    videoSink = screen.sink,
     onStore = { addr, data -> stores += (addr to data) }
   ).diagnostics
   private val points = PointManager()

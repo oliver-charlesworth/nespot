@@ -10,8 +10,7 @@ import java.util.concurrent.CountDownLatch
 
 class ShowStuffTest {
   private val latch = CountDownLatch(1)
-  private val app = Screen { latch.countDown() }
-  private val buffer = IntArray(SCREEN_HEIGHT * SCREEN_WIDTH)
+  private val screen = Screen { latch.countDown() }
 
   @Test
   @Disabled
@@ -19,12 +18,12 @@ class ShowStuffTest {
     var i = 0
     for (y in 0 until SCREEN_HEIGHT) {
       for (x in 0 until SCREEN_WIDTH) {
-        buffer[i++] = COLORS[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16]
+        screen.sink[i++] = COLORS[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16]
       }
     }
 
-    app.show()
-    app.redraw(buffer)
+    screen.show()
+    screen.sink.commit()
     latch.await()
   }
 
@@ -68,12 +67,12 @@ class ShowStuffTest {
           }
         }
 
-        scanline.forEach { buffer[j++] = it }
+        scanline.forEach { screen.sink[j++] = it }
       }
     }
 
-    app.show()
-    app.redraw(buffer)
+    screen.show()
+    screen.sink.commit()
     latch.await()
   }
 }

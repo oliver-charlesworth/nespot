@@ -1,6 +1,7 @@
 package choliver.nespot
 
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.cpu.Cpu
 import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Nes
 import org.w3c.dom.HTMLCanvasElement
@@ -29,6 +30,7 @@ class JsRunner(rom: Rom) {
     configureDom()
     window.onresize = { configureDom() }
     window.requestAnimationFrame(::executeFrame)
+    restore()
   }
 
   // Every browser frame, we draw the latest completed emulator output, and schedule the emulator to catch up.
@@ -46,6 +48,10 @@ class JsRunner(rom: Rom) {
     while (cycles < target) {
       cycles += nes.step()
     }
+  }
+
+  private fun restore() {
+    nes.diagnostics.cpu.nextStep = Cpu.NextStep.RESET
   }
 
   private fun handleKeyDown(e: KeyboardEvent) {

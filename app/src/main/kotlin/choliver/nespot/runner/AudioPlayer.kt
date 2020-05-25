@@ -6,8 +6,6 @@ import javax.sound.sampled.AudioSystem
 import kotlin.math.roundToInt
 
 class AudioPlayer {
-  private var first = true
-  private var dc = 0f
   private val audioFormat = AudioFormat(SAMPLE_RATE_HZ.toFloat(), 16, 1, true, false)
   private val soundLine = AudioSystem.getSourceDataLine(audioFormat)
   private val buffer = FloatArray(BUFFER_SIZE)
@@ -32,24 +30,13 @@ class AudioPlayer {
   }
 
   private fun play(buffer: FloatArray) {
-    if (first) {
-      initDc(buffer)
-    }
-
     transformBuffer(buffer)
     soundLine.write(work, 0, buffer.size * 2)
-
-    first = false
-  }
-
-  private fun initDc(buffer: FloatArray) {
-    dc = buffer.sum() / buffer.size
   }
 
   private fun transformBuffer(buffer: FloatArray) {
     buffer.forEachIndexed { idx, sample ->
-      val converted = ((sample - dc) * LEVEL).roundToInt()
-      dc = (DC_ALPHA * dc) + (1 - DC_ALPHA) * sample
+      val converted = (sample * LEVEL).roundToInt()
 
       // This seems to be the opposite of little-endian
       work[idx * 2] = (converted shr 8).toByte()
@@ -62,7 +49,6 @@ class AudioPlayer {
     private const val LINE_BUFFER_LENGTH_MS = 20
     private const val BUFFER_LENGTH_MS = 10
     private const val LEVEL = 100f
-    private const val DC_ALPHA = 0.995f
 
     private const val LINE_BUFFER_SIZE = (SAMPLE_RATE_HZ * LINE_BUFFER_LENGTH_MS) / 1000
     private const val BUFFER_SIZE = (SAMPLE_RATE_HZ * BUFFER_LENGTH_MS) / 1000

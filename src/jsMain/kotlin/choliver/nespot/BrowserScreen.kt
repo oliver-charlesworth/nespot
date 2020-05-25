@@ -4,8 +4,10 @@ import org.khronos.webgl.Uint16Array
 import org.khronos.webgl.set
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
+import kotlin.browser.document
 
-class BrowserScreen(canvas: HTMLCanvasElement) {
+class BrowserScreen {
+  val canvas = document.getElementById("target") as HTMLCanvasElement
   private val ctx = canvas.getContext("2d") as CanvasRenderingContext2D
   private val img = ctx.createImageData(
     SCREEN_WIDTH.toDouble(),

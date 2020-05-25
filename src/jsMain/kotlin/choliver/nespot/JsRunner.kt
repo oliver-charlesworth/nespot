@@ -12,8 +12,7 @@ import kotlin.math.min
 
 
 class JsRunner(rom: Rom) {
-  private val canvas = document.getElementById("target") as HTMLCanvasElement
-  private val screen = BrowserScreen(canvas)
+  private val screen = BrowserScreen()
   private val audio = BrowserAudioPlayer()
   private val nes = Nes(
     sampleRateHz = audio.sampleRateHz,
@@ -32,6 +31,9 @@ class JsRunner(rom: Rom) {
     window.requestAnimationFrame(::executeFrame)
   }
 
+  // Every browser frame, we draw the latest completed emulator output, and schedule the emulator to catch up.
+  // The emulator generates frames asynchronously, so we don't necessarily draw every emulator frame.
+  // It also generates audio asynchronously - we schedule every audio chunk to be played.
   private fun executeFrame(timeMs: Double) {
     window.requestAnimationFrame(this::executeFrame)
     screen.redraw()
@@ -66,12 +68,6 @@ class JsRunner(rom: Rom) {
     else -> null
   }
 
-  // Main loop works thus:
-  //  - Run emulation in chunks of BUFFER_LENGTH_MS.
-  //  - Buffer up 3 chunks, and schedule.
-  //  - Run another chunk whenever a scheduled chunk ends.
-  //  - requestAnimationFrame just grabs latest video frame buffer.
-
   private fun configureDom() {
     with(document.body!!.style) {
       margin = "0"
@@ -86,7 +82,7 @@ class JsRunner(rom: Rom) {
 
     val margin = (window.innerWidth - (screen.width.toDouble() * scale * RATIO_STRETCH)) / 2
 
-    with(canvas) {
+    with(screen.canvas) {
       width = screen.width
       height = screen.height
       with(style) {

@@ -21,13 +21,14 @@ class InteractiveRunner(
   private var closed = false
   private val joypads = Joypads()
   private val screen = Screen(onEvent = { events += it })
+  private val videoSink = ScreenVideoSink(onBufferReady = { events += Video(it) })
   private val audio = AudioPlayer()
   private val nes = Nes(
     sampleRateHz = audio.sampleRateHz,
     rom = rom,
     joypads = joypads,
     onAudioBufferReady = { events += Audio(it) },
-    onVideoBufferReady = { events += Video(it) }
+    videoSink = videoSink
   )
   private val controllers = ControllerManager(onEvent = { events += it })
   private val backupManager = BackupManager(rom, nes.persistentRam, BACKUP_DIR)

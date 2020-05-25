@@ -14,6 +14,7 @@ class Renderer(
   private val memory: Memory,
   private val palette: Memory,
   private val oam: Memory,
+  private val videoSink: VideoSink,
   private val colors: List<Int> = COLORS
 ) {
   data class State(
@@ -231,7 +232,7 @@ class Renderer(
     }
   }
 
-  fun commitToBuffer(ppu: PpuState, buffer: IntArray) {
+  fun commitToBuffer(ppu: PpuState) {
     val mask = if (ppu.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
     for (i in 0 until 32) {
       // Background colour is universal
@@ -239,7 +240,7 @@ class Renderer(
     }
 
     var idx = ppu.scanline * SCREEN_WIDTH
-    state.paletteIndices.forEach { buffer[idx++] = colorLookup[it] }
+    state.paletteIndices.forEach { videoSink[idx++] = colorLookup[it] }
   }
 
   private fun maybeFlip(v: Int, flip: Boolean) = if (flip) (7 - v) else v

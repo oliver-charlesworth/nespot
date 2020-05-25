@@ -17,7 +17,7 @@ class PerfRunner(
     sampleRateHz = 44100,
     rom = rom,
     joypads = joypads,
-    onVideoBufferReady = { endOfFrame = true }
+    videoSink = ScreenVideoSink()
   )
   private var endOfFrame = false
 

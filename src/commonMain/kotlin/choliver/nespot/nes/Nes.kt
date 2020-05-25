@@ -8,14 +8,15 @@ import choliver.nespot.cpu.Cpu
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_IRQ
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_NMI
 import choliver.nespot.ppu.Ppu
+import choliver.nespot.ppu.VideoSink
 
 
 class Nes(
   sampleRateHz: Int,
   rom: Rom,
   joypads: Joypads,
+  videoSink: VideoSink,
   onAudioBufferReady: (FloatArray) -> Unit = {},
-  onVideoBufferReady: (IntArray) -> Unit = {},
   private val onStore: ((Address, Data) -> Unit)? = null
 ) {
   private var steps = 0
@@ -33,7 +34,7 @@ class Nes(
 
   private val ppu = Ppu(
     memory = mapper.chr,
-    onVideoBufferReady = onVideoBufferReady
+    videoSink = videoSink
   )
 
   private val cpuMapper = CpuMapper(

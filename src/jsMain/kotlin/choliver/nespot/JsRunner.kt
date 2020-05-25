@@ -30,11 +30,12 @@ class JsRunner(rom: Rom) {
   private var prev: Double? = null
   private val list = mutableListOf<IntArray>()
   private val joypads = Joypads()
+  private val videoSink = JsVideoSink(onBufferReady = { list += it })
   private val nes = Nes(
     sampleRateHz = audioCtx.sampleRate.toInt(),
     rom = rom,
     joypads = joypads,
-    onVideoBufferReady = { list += it }
+    videoSink = videoSink
   )
 
   fun start() {

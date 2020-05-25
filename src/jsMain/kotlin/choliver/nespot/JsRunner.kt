@@ -4,7 +4,6 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.Cpu
 import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Nes
-import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.KeyboardEvent
 import kotlin.browser.document
 import kotlin.browser.window

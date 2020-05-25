@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.FrameSequencer.*
+import choliver.nespot.apu.FrameSequencer.Ticks
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sqrt

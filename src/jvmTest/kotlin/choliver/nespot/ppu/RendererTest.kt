@@ -794,8 +794,10 @@ class RendererTest {
 
       commit()
 
-      for (i in 0 until 32) {
-        verify(videoSink).put(colors[paletteEntries[if (i % 4 == 0) 0 else i]]) // UBG logic
+      inOrder(videoSink) {
+        for (i in 0 until 32) {
+          verify(videoSink, calls(1)).put(colors[paletteEntries[if (i % 4 == 0) 0 else i]]) // UBG logic
+        }
       }
     }
 
@@ -807,8 +809,10 @@ class RendererTest {
 
       commit(true)
 
-      for (i in 0 until 32) {
-        verify(videoSink).put(colors[paletteEntries[if (i % 4 == 0) 0 else i] and 0x30])  // UBG logic + greyscale
+      inOrder(videoSink) {
+        for (i in 0 until 32) {
+          verify(videoSink, calls(1)).put(colors[paletteEntries[if (i % 4 == 0) 0 else i] and 0x30])  // UBG logic + greyscale
+        }
       }
     }
 

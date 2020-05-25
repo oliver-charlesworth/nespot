@@ -21,21 +21,24 @@ class BrowserAudioPlayer {
     override fun put(sample: Float) {
       samples[iSample++] = sample
       if (iSample == bufferSize) {
-        scheduleChunk()
+        maybeScheduleChunk()
         replaceBuffer()
         iSample = 0
       }
     }
   }
 
-  private fun scheduleChunk() {
-    with(ctx.createBufferSource()) {
-      buffer = target
-      connect(ctx.destination)
-      (nextStartTimeSeconds ?: (ctx.currentTime + AUDIO_BUFFER_AHEAD_SECONDS)).let {
-        start(it)
-        nextStartTimeSeconds = it + AUDIO_BUFFER_LENGTH_SECONDS
+  private fun maybeScheduleChunk() {
+    (nextStartTimeSeconds ?: (ctx.currentTime + AUDIO_BUFFER_AHEAD_SECONDS)).let { scheduledTimeSeconds ->
+      // Don't schedule in the past (only relevant if we're catching up)
+      if (scheduledTimeSeconds > ctx.currentTime) {
+        with(ctx.createBufferSource()) {
+          buffer = target
+          connect(ctx.destination)
+          start(scheduledTimeSeconds)
+        }
       }
+      nextStartTimeSeconds = scheduledTimeSeconds + AUDIO_BUFFER_LENGTH_SECONDS
     }
   }
 
@@ -45,7 +48,7 @@ class BrowserAudioPlayer {
   }
 
   companion object {
-    private const val AUDIO_BUFFER_LENGTH_SECONDS = 0.01
-    private const val AUDIO_BUFFER_AHEAD_SECONDS = 0.06
+    private const val AUDIO_BUFFER_LENGTH_SECONDS = 0.025
+    private const val AUDIO_BUFFER_AHEAD_SECONDS = 0.075
   }
 }

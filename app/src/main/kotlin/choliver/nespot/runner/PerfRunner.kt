@@ -1,6 +1,5 @@
 package choliver.nespot.runner
 
-import choliver.nespot.VideoSink
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.Cpu.NextStep.RESET
 import choliver.nespot.nes.Joypads
@@ -17,10 +16,7 @@ class PerfRunner(
   private val nes = Nes(
     sampleRateHz = 44100,
     rom = rom,
-    joypads = joypads,
-    videoSink = object : VideoSink {
-      override fun put(color: Int) {}
-    }
+    joypads = joypads
   )
   private var endOfFrame = false
 

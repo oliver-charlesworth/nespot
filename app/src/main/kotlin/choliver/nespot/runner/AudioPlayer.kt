@@ -1,5 +1,6 @@
 package choliver.nespot.runner
 
+import choliver.nespot.AudioSink
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import kotlin.math.roundToInt
@@ -9,19 +10,28 @@ class AudioPlayer {
   private var dc = 0f
   private val audioFormat = AudioFormat(SAMPLE_RATE_HZ.toFloat(), 16, 1, true, false)
   private val soundLine = AudioSystem.getSourceDataLine(audioFormat)
-  private val work = ByteArray(WORK_BUFFER_SIZE * 2)
+  private val buffer = FloatArray(BUFFER_SIZE)
+  private val work = ByteArray(BUFFER_SIZE * 2)
   val sampleRateHz = SAMPLE_RATE_HZ
+
+  val sink = object : AudioSink {
+    private var idx = 0
+
+    override fun put(sample: Float) {
+      buffer[idx++] = sample
+      if (idx == BUFFER_SIZE) {
+        idx = 0
+        play(buffer)
+      }
+    }
+  }
 
   fun start() {
     soundLine.open(audioFormat, LINE_BUFFER_SIZE * 2)
     soundLine.start()
   }
 
-  fun play(buffer: FloatArray) {
-    if (buffer.size > WORK_BUFFER_SIZE) {
-      throw IllegalArgumentException("Max buffer is ${WORK_BUFFER_SIZE} samples")
-    }
-
+  private fun play(buffer: FloatArray) {
     if (first) {
       initDc(buffer)
     }
@@ -49,13 +59,12 @@ class AudioPlayer {
 
   companion object {
     private const val SAMPLE_RATE_HZ = 44100
-
-    private const val WORK_BUFFER_LENGTH_MS = 1000
     private const val LINE_BUFFER_LENGTH_MS = 20
+    private const val BUFFER_LENGTH_MS = 10
     private const val LEVEL = 100f
     private const val DC_ALPHA = 0.995f
 
-    private const val WORK_BUFFER_SIZE = (SAMPLE_RATE_HZ * WORK_BUFFER_LENGTH_MS) / 1000
     private const val LINE_BUFFER_SIZE = (SAMPLE_RATE_HZ * LINE_BUFFER_LENGTH_MS) / 1000
+    private const val BUFFER_SIZE = (SAMPLE_RATE_HZ * BUFFER_LENGTH_MS) / 1000
   }
 }

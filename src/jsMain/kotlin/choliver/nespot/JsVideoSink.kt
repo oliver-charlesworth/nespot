@@ -11,12 +11,9 @@ class JsVideoSink(
   override fun put(color: Int) {
     buffer[idx++] = color
     if (idx == buffer.size) {
-      commit()
+      idx = 0
+      onBufferReady(buffer)
+      buffer = if (buffer === bufferA) bufferB else bufferA
     }
-  }
-
-  private fun commit() {
-    onBufferReady(buffer)
-    buffer = if (buffer === bufferA) bufferB else bufferA
   }
 }

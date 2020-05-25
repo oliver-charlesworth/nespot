@@ -26,8 +26,8 @@ class InteractiveRunner(
     sampleRateHz = audio.sampleRateHz,
     rom = rom,
     joypads = joypads,
-    onAudioBufferReady = { events += Audio(it) },
-    videoSink = screen.sink
+    videoSink = screen.sink,
+    audioSink = audio.sink
   )
   private val controllers = ControllerManager(onEvent = { events += it })
   private val backupManager = BackupManager(rom, nes.persistentRam, BACKUP_DIR)
@@ -59,7 +59,6 @@ class InteractiveRunner(
 
   private fun consumeEvent() {
     when (val e = events.poll()) {
-      is Audio -> audio.play(e.buffer)
       is ControllerButtonDown -> joypads.down(1, e.button)
       is ControllerButtonUp -> joypads.up(1, e.button)
       is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {

@@ -115,7 +115,6 @@ class Debugger(
           is Joypad -> joypads.up(1, action.button)
         }
         is RunnerEvent.Close -> Unit
-        is RunnerEvent.Audio -> Unit
         is RunnerEvent.Error -> Unit
       }
     }

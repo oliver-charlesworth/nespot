@@ -4,9 +4,6 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Nes
-import choliver.nespot.ppu.SCREEN_HEIGHT
-import choliver.nespot.ppu.SCREEN_WIDTH
-import choliver.nespot.ppu.TILE_SIZE
 import org.khronos.webgl.Uint16Array
 import org.khronos.webgl.set
 import org.w3c.dom.CanvasRenderingContext2D

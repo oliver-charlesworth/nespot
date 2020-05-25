@@ -1,10 +1,7 @@
 package choliver.nespot.ppu
 
-import choliver.nespot.Address
-import choliver.nespot.Data
-import choliver.nespot.Memory
+import choliver.nespot.*
 import choliver.nespot.apu.repeat
-import choliver.nespot.isBitSet
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.model.Coords
 import choliver.nespot.ppu.model.State

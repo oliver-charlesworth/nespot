@@ -1,5 +1,8 @@
 package choliver.nespot.runner
 
+import choliver.nespot.SCREEN_HEIGHT
+import choliver.nespot.SCREEN_WIDTH
+import choliver.nespot.TILE_SIZE
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.createMapper
 import choliver.nespot.ppu.*

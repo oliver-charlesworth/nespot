@@ -4,7 +4,7 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.Cpu.NextStep.RESET
 import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Nes
-import choliver.nespot.ppu.VideoSink
+import choliver.nespot.VideoSink
 import kotlin.math.roundToInt
 import kotlin.system.measureTimeMillis
 

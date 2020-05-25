@@ -1,9 +1,9 @@
 package choliver.nespot.runner
 
-import choliver.nespot.ppu.SCREEN_HEIGHT
-import choliver.nespot.ppu.SCREEN_WIDTH
-import choliver.nespot.ppu.TILE_SIZE
-import choliver.nespot.ppu.VideoSink
+import choliver.nespot.SCREEN_HEIGHT
+import choliver.nespot.SCREEN_WIDTH
+import choliver.nespot.TILE_SIZE
+import choliver.nespot.VideoSink
 import choliver.nespot.runner.Event.*
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D

@@ -1,9 +1,5 @@
 package choliver.nespot
 
-import choliver.nespot.ppu.SCREEN_HEIGHT
-import choliver.nespot.ppu.SCREEN_WIDTH
-import choliver.nespot.ppu.VideoSink
-
 class JsVideoSink(
   private val onBufferReady: (IntArray) -> Unit = {}
 ) : VideoSink {

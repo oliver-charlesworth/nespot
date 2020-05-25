@@ -116,7 +116,6 @@ class Debugger(
         }
         is RunnerEvent.Close -> Unit
         is RunnerEvent.Audio -> Unit
-        is RunnerEvent.Video -> Unit
         is RunnerEvent.Error -> Unit
       }
     }

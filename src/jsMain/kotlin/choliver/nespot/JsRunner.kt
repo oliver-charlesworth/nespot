@@ -4,9 +4,6 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Nes
-import choliver.nespot.ppu.SCREEN_HEIGHT
-import choliver.nespot.ppu.SCREEN_WIDTH
-import choliver.nespot.ppu.TILE_SIZE
 import org.khronos.webgl.Uint16Array
 import org.khronos.webgl.set
 import org.w3c.dom.CanvasRenderingContext2D
@@ -30,11 +27,12 @@ class JsRunner(rom: Rom) {
   private var prev: Double? = null
   private val list = mutableListOf<IntArray>()
   private val joypads = Joypads()
+  private val videoSink = JsVideoSink(onBufferReady = { list += it })
   private val nes = Nes(
     sampleRateHz = audioCtx.sampleRate.toInt(),
     rom = rom,
     joypads = joypads,
-    onVideoBufferReady = { list += it }
+    videoSink = videoSink
   )
 
   fun start() {

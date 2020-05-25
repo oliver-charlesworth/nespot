@@ -1,30 +1,20 @@
 package choliver.nespot.apu
 
-import choliver.nespot.Data
-import choliver.nespot.Memory
-import choliver.nespot.Rational
+import choliver.nespot.*
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
-import choliver.nespot.isBitSet
 
 // TODO - frame interrupt
 class Apu(
   cpuFreqHz: Rational,
   sampleRateHz: Int,
-  bufferLengthMs: Int = BUFFER_LENGTH_MS,
   memory: Memory,
   private val cyclesPerSample: Rational = cpuFreqHz / sampleRateHz,
   private val sequencer: FrameSequencer = FrameSequencer(cyclesPerSample),
   private val channels: Channels = Channels(cyclesPerSample, memory),
-  private val onAudioBufferReady: (FloatArray) -> Unit
+  private val audioSink: AudioSink
 ) {
-  private val bufferSize = sampleRateHz * bufferLengthMs / 1000
-  private val bufferA = FloatArray(bufferSize)
-  private val bufferB = FloatArray(bufferSize)
-  private var buffer = bufferA
-
   private var untilNextSample = cyclesPerSample.a
-  private var iSample = 0
   private val mixer = Mixer(sampleRateHz, sequencer, channels)
 
   val irq get() = channels.dmc.synth.irq
@@ -156,23 +146,11 @@ class Apu(
 
     while (untilNextSample <= 0) {
       untilNextSample += cyclesPerSample.a
-      generateSample()
-    }
-  }
-
-  private fun generateSample() {
-    buffer[iSample] = mixer.take()
-    iSample++
-    if (iSample == bufferSize) {
-      iSample = 0
-      onAudioBufferReady(buffer)
-      buffer = if (buffer === bufferA) bufferB else bufferA
+      audioSink.put(mixer.take())
     }
   }
 
   companion object {
-    private const val BUFFER_LENGTH_MS = 10
-
     // See https://wiki.nesdev.com/w/index.php/2A03
     private val REG_SQ1_RANGE = 0x00..0x03
     private val REG_SQ2_RANGE = 0x04..0x07

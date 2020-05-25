@@ -44,14 +44,13 @@ class Debugger(
   private val joypads = Joypads()
   private val audio = AudioPlayer()
   private val screen = Screen(onEvent = { events += it })
-
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
 
   private val nes = Nes(
     sampleRateHz = audio.sampleRateHz,
     rom = Rom.parse(rom),
     joypads = joypads,
-    onVideoBufferReady = { screen.redraw(it) },
+    videoSink = screen.sink,
     onStore = { addr, data -> stores += (addr to data) }
   ).diagnostics
   private val points = PointManager()
@@ -116,8 +115,6 @@ class Debugger(
           is Joypad -> joypads.up(1, action.button)
         }
         is RunnerEvent.Close -> Unit
-        is RunnerEvent.Audio -> Unit
-        is RunnerEvent.Video -> Unit
         is RunnerEvent.Error -> Unit
       }
     }

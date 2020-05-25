@@ -25,11 +25,11 @@ import kotlin.math.ceil
 class PpuTest {
   private val memory = mock<Memory>()
   private val renderer = mock<Renderer>()
-  private val onVideoBufferReady = mock<(IntArray) -> Unit>()
+  private val videoSink = mock<VideoSink>()
   private val ppu = Ppu(
     memory = memory,
     renderer = renderer,
-    onVideoBufferReady = onVideoBufferReady
+    videoSink = videoSink
   )
 
   @Test
@@ -164,19 +164,6 @@ class PpuTest {
 
   @Nested
   inner class Vbl {
-    @Test
-    fun `invokes callback once per frame at beginning of post-post-render scanline`() {
-      advanceScanlines(SCREEN_HEIGHT + 1)
-      verifyZeroInteractions(onVideoBufferReady)
-
-      advanceDots(3)
-      verify(onVideoBufferReady)(any())
-
-      advanceDots(DOTS_PER_SCANLINE - 3)
-      advanceScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2)
-      verifyNoMoreInteractions(onVideoBufferReady)
-    }
-
     @Test
     fun `interrupt asserted at beginning of post-post-render scanline til beginning of pre-render scanline`() {
       ppu.writeReg(REG_PPUCTRL1, 0x80)
@@ -543,7 +530,7 @@ class PpuTest {
 
       advanceDots(128)
       inOrder(renderer) {
-        verify(renderer).commitToBuffer(any(), any())
+        verify(renderer).commitToBuffer(any())
         verify(renderer).evaluateSprites(any())
       }
 
@@ -563,7 +550,7 @@ class PpuTest {
     @Test
     fun `pre-render scanline does extraneous stuff`() {
       advanceScanlines(SCANLINES_PER_FRAME - 1)
-      reset(onVideoBufferReady)
+      reset(videoSink)
       reset(renderer)
 
       advanceDots(252)
@@ -575,7 +562,7 @@ class PpuTest {
 
       advanceDots(63)
       verify(renderer).loadSprites(any())
-      verifyZeroInteractions(onVideoBufferReady)
+      verifyZeroInteractions(videoSink)
     }
   }
 

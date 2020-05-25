@@ -1,5 +1,6 @@
 package choliver.nespot.apu
 
+import choliver.nespot.AudioSink
 import choliver.nespot.Rational
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.cpu.utils._0
@@ -44,7 +45,6 @@ class ApuTest {
     envelope = EnvelopeInactive(1)
   )
   private val sequencer = mock<FrameSequencer>()
-  private val onAudioBufferReady = mock<(FloatArray) -> Unit>()
   private val apu = Apu(
     memory = mock(),
     sequencer = sequencer,
@@ -55,10 +55,11 @@ class ApuTest {
       noi = noi,
       dmc = dmc
     ),
-    onAudioBufferReady = onAudioBufferReady,
     cpuFreqHz = CYCLES_PER_SAMPLE * SAMPLE_RATE_HZ,
     sampleRateHz = SAMPLE_RATE_HZ,
-    bufferLengthMs = BUFFER_SIZE * 1000 / SAMPLE_RATE_HZ
+    audioSink = object : AudioSink {
+      override fun put(sample: Float) {}
+    }
   )
 
   @Nested
@@ -277,21 +278,6 @@ class ApuTest {
   }
 
   @Test
-  fun `invokes callback when buffer is full`() {
-    // Stuff to make things not throw
-    whenever(sequencer.take()) doReturn FrameSequencer.Ticks(_0, _0)
-    whenever(sweep.mute) doReturn true
-
-    apu.advance(CYCLES_PER_SAMPLE.toInt() * BUFFER_SIZE - 1)
-
-    verifyZeroInteractions(onAudioBufferReady)
-
-    apu.advance(1)
-
-    verify(onAudioBufferReady)(any())
-  }
-
-  @Test
   fun `set sequencer mode`() {
     apu.writeReg(23, 0b1_0000000)
     verify(sequencer).mode = FIVE_STEP
@@ -310,7 +296,6 @@ class ApuTest {
 
   companion object {
     private const val SAMPLE_RATE_HZ = 1000
-    private const val BUFFER_SIZE = 16
     private val CYCLES_PER_SAMPLE = Rational.of(100)
   }
 }

@@ -14,8 +14,12 @@ class Nes(
   sampleRateHz: Int,
   rom: Rom,
   joypads: Joypads,
-  onAudioBufferReady: (FloatArray) -> Unit = {},
-  onVideoBufferReady: (IntArray) -> Unit = {},
+  videoSink: VideoSink = object : VideoSink {
+    override fun put(color: Int) {}
+  },
+  audioSink: AudioSink = object : AudioSink {
+    override fun put(sample: Float) {}
+  },
   private val onStore: ((Address, Data) -> Unit)? = null
 ) {
   private var steps = 0
@@ -26,14 +30,14 @@ class Nes(
     cpuFreqHz = CPU_FREQ_HZ,
     sampleRateHz = sampleRateHz,
     memory = mapper.prg,  // DMC can only read from PRG space
-    onAudioBufferReady = onAudioBufferReady
+    audioSink = audioSink
   )
 
   private val cpuRam = Ram(CPU_RAM_SIZE)
 
   private val ppu = Ppu(
     memory = mapper.chr,
-    onVideoBufferReady = onVideoBufferReady
+    videoSink = videoSink
   )
 
   private val cpuMapper = CpuMapper(

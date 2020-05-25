@@ -1,8 +1,9 @@
 package choliver.nespot.runner
 
-import choliver.nespot.ppu.SCREEN_HEIGHT
-import choliver.nespot.ppu.SCREEN_WIDTH
-import choliver.nespot.ppu.TILE_SIZE
+import choliver.nespot.SCREEN_HEIGHT
+import choliver.nespot.SCREEN_WIDTH
+import choliver.nespot.TILE_SIZE
+import choliver.nespot.VideoSink
 import choliver.nespot.runner.Event.*
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D
@@ -19,7 +20,6 @@ import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.Stage
 import java.nio.ByteBuffer
-import java.nio.IntBuffer
 
 
 class Screen(
@@ -34,19 +34,30 @@ class Screen(
   private var started = false
   private lateinit var stage: Stage
   private lateinit var imageView: ImageView
-  private val byteBuffer = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
-  private val intBuffer: IntBuffer = byteBuffer.asIntBuffer()
-  private val pixelBuffer = PixelBuffer(
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    byteBuffer,
-    PixelFormat.getByteBgraPreInstance() // Mac native format
-  )
 
-  fun redraw(buffer: IntArray) {
-    intBuffer.position(0)
-    intBuffer.put(buffer)
-    onFxThread { pixelBuffer.updateBuffer { null } }
+  val sink = object : VideoSink {
+    private val bufferA = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
+    private val bufferB = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
+    private var buffer = bufferA
+    private var bufferInt = buffer.asIntBuffer()
+
+    override fun put(color: Int) {
+      bufferInt.put(color)
+
+      if (!bufferInt.hasRemaining()) {
+        val bufferToCommit = buffer
+        buffer = if (buffer === bufferA) bufferB else bufferA
+        bufferInt = buffer.asIntBuffer()
+        onFxThread {
+          imageView.image = WritableImage(PixelBuffer(
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
+            bufferToCommit,
+            PixelFormat.getByteBgraPreInstance() // Mac native format
+          ))
+        }
+      }
+    }
   }
 
   fun show() {
@@ -78,7 +89,7 @@ class Screen(
   }
 
   private fun initImageView() {
-    imageView = ImageView(WritableImage(pixelBuffer)).apply {
+    imageView = ImageView().apply {
       // Crop top and bottom tile, per http://wiki.nesdev.com/w/index.php/Overscan
       viewport = Rectangle2D(
         0.0,

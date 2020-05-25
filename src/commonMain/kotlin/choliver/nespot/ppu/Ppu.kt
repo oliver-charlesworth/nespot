@@ -8,13 +8,9 @@ class Ppu(
   private val memory: Memory,
   private val oam: Memory = Ram(256),
   private val palette: Memory = Palette(),
-  private val renderer: Renderer = Renderer(memory, palette, oam),
-  private val onVideoBufferReady: (IntArray) -> Unit
+  private val videoSink: VideoSink,
+  private val renderer: Renderer = Renderer(memory, palette, oam, videoSink)
 ) {
-  private val bufferA = IntArray(SCREEN_HEIGHT * SCREEN_WIDTH)
-  private val bufferB = IntArray(SCREEN_HEIGHT * SCREEN_WIDTH)
-  private var buffer = bufferA
-
   private var state = State()
 
   val vbl get() = state.inVbl && state.vblEnabled
@@ -62,7 +58,7 @@ class Ppu(
   }
 
   private val actionCommit: () -> Any = {
-    renderer.commitToBuffer(state, buffer)
+    renderer.commitToBuffer(state)
 
     nextDot = 256
     nextAction = actionEvaluate
@@ -95,8 +91,6 @@ class Ppu(
 
   private val actionSetVbl: () -> Any = {
     state.inVbl = true
-    onVideoBufferReady(buffer)
-    buffer = if (buffer === bufferA) bufferB else bufferA
 
     nextDot = 340
     nextAction = actionEndOfLine

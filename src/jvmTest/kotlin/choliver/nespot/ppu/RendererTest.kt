@@ -1,10 +1,7 @@
 package choliver.nespot.ppu
 
-import choliver.nespot.Address
-import choliver.nespot.Data
-import choliver.nespot.Memory
+import choliver.nespot.*
 import choliver.nespot.apu.repeat
-import choliver.nespot.isBitSet
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.model.Coords
 import choliver.nespot.ppu.model.State
@@ -21,10 +18,12 @@ class RendererTest {
   private val memory = mock<Memory>()
   private val palette = mock<Memory>()
   private val oam = mock<Memory>()
+  private val videoSink = mock<VideoSink>()
   private val renderer = Renderer(
     memory = memory,
     palette = palette,
     oam = oam,
+    videoSink = videoSink,
     colors = colors
   )
 
@@ -780,7 +779,6 @@ class RendererTest {
   @Nested
   inner class CommitToBuffer {
     private val paletteEntries = (0..31).map { it * 2 + 1 }
-    private val videoBuffer = IntArray(SCREEN_WIDTH * SCREEN_HEIGHT)
 
     init {
       paletteEntries.forEachIndexed { idx, data ->
@@ -796,11 +794,10 @@ class RendererTest {
 
       commit()
 
-      repeat(32) {
-        assertEquals(
-          colors[paletteEntries[if (it % 4 == 0) 0 else it]], // UBG logic
-          videoBuffer[Y_SCANLINE * SCREEN_WIDTH + it]
-        )
+      inOrder(videoSink) {
+        for (i in 0 until 32) {
+          verify(videoSink, calls(1)).put(colors[paletteEntries[if (i % 4 == 0) 0 else i]]) // UBG logic
+        }
       }
     }
 
@@ -812,11 +809,10 @@ class RendererTest {
 
       commit(true)
 
-      repeat(32) {
-        assertEquals(
-          colors[paletteEntries[if (it % 4 == 0) 0 else it] and 0x30],  // UBG logic + greyscale
-          videoBuffer[Y_SCANLINE * SCREEN_WIDTH + it]
-        )
+      inOrder(videoSink) {
+        for (i in 0 until 32) {
+          verify(videoSink, calls(1)).put(colors[paletteEntries[if (i % 4 == 0) 0 else i] and 0x30])  // UBG logic + greyscale
+        }
       }
     }
 
@@ -827,7 +823,7 @@ class RendererTest {
         scanline = Y_SCANLINE,
         greyscale = greyscale
       )
-      renderer.commitToBuffer(state, videoBuffer)
+      renderer.commitToBuffer(state)
     }
   }
 

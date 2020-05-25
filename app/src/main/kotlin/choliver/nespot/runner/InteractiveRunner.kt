@@ -2,7 +2,6 @@ package choliver.nespot.runner
 
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.Cpu.NextStep.RESET
-import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Nes
 import choliver.nespot.persistence.BackupManager
 import choliver.nespot.persistence.SnapshotManager
@@ -19,13 +18,11 @@ class InteractiveRunner(
 ) {
   private val events = LinkedBlockingQueue<Event>()
   private var closed = false
-  private val joypads = Joypads()
   private val screen = Screen(onEvent = { events += it })
   private val audio = AudioPlayer()
   private val nes = Nes(
     sampleRateHz = audio.sampleRateHz,
     rom = rom,
-    joypads = joypads,
     videoSink = screen.sink,
     audioSink = audio.sink
   )
@@ -59,16 +56,16 @@ class InteractiveRunner(
 
   private fun consumeEvent() {
     when (val e = events.poll()) {
-      is ControllerButtonDown -> joypads.down(1, e.button)
-      is ControllerButtonUp -> joypads.up(1, e.button)
+      is ControllerButtonDown -> nes.joypads.down(1, e.button)
+      is ControllerButtonUp -> nes.joypads.up(1, e.button)
       is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
-        is Joypad -> joypads.down(1, action.button)
+        is Joypad -> nes.joypads.down(1, action.button)
         is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
         is Snapshot -> snapshotManager.snapshotToStdout()
         is Restore -> restore()
       }
       is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
-        is Joypad -> joypads.up(1, action.button)
+        is Joypad -> nes.joypads.up(1, action.button)
       }
       is Close -> closed = true
       is Error -> {

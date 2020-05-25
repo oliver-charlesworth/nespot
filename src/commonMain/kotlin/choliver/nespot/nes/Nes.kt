@@ -13,7 +13,6 @@ import choliver.nespot.ppu.Ppu
 class Nes(
   sampleRateHz: Int,
   rom: Rom,
-  joypads: Joypads,
   videoSink: VideoSink = object : VideoSink {
     override fun put(color: Int) {}
   },
@@ -39,6 +38,8 @@ class Nes(
     memory = mapper.chr,
     videoSink = videoSink
   )
+
+  val joypads = Joypads()
 
   private val cpuMapper = CpuMapper(
     prg = mapper.prg,

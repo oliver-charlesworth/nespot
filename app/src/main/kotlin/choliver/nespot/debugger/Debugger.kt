@@ -14,7 +14,6 @@ import choliver.nespot.debugger.Command.Event.*
 import choliver.nespot.debugger.Command.Execute.*
 import choliver.nespot.debugger.PointManager.Point.Breakpoint
 import choliver.nespot.debugger.PointManager.Point.Watchpoint
-import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nespot.runner.AudioPlayer
@@ -41,7 +40,6 @@ class Debugger(
   )
 
   private val events = LinkedBlockingQueue<RunnerEvent>()
-  private val joypads = Joypads()
   private val audio = AudioPlayer()
   private val screen = Screen(onEvent = { events += it })
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
@@ -49,12 +47,12 @@ class Debugger(
   private val nes = Nes(
     sampleRateHz = audio.sampleRateHz,
     rom = Rom.parse(rom),
-    joypads = joypads,
     videoSink = screen.sink,
     onStore = { addr, data -> stores += (addr to data) }
-  ).diagnostics
+  )
+  private val diag = nes.diagnostics
   private val points = PointManager()
-  private val stack = CallStackManager(nes)
+  private val stack = CallStackManager(diag)
   private var stats = Stats(0)
   private var isVerbose = true
   private var macro: Command = Next(1)
@@ -71,7 +69,7 @@ class Debugger(
   private fun consume(parser: CommandParser, enablePrompts: Boolean) {
     while (true) {
       if (enablePrompts) {
-        stdout.print("[${nes.cpu.state.regs.pc.format16()}]: ")
+        stdout.print("[${diag.cpu.state.regs.pc.format16()}]: ")
       }
 
       if (!handleCommand(parser.next())) {
@@ -109,10 +107,10 @@ class Debugger(
     myEvents.forEach { e ->
       when (e) {
         is RunnerEvent.KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
-          is Joypad -> joypads.down(1, action.button)
+          is Joypad -> nes.joypads.down(1, action.button)
         }
         is RunnerEvent.KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
-          is Joypad -> joypads.up(1, action.button)
+          is Joypad -> nes.joypads.up(1, action.button)
         }
         is RunnerEvent.Close -> Unit
         is RunnerEvent.Error -> Unit
@@ -161,21 +159,21 @@ class Debugger(
       }
 
       // Prevent Until(currentPC) from doing nothing
-      is Until -> onePlusUntil { nes.cpu.state.regs.pc == cmd.pc }
+      is Until -> onePlusUntil { diag.cpu.state.regs.pc == cmd.pc }
 
       is UntilOffset -> {
         val target = nextPc(cmd.offset)
-        until { nes.cpu.state.regs.pc == target }
+        until { diag.cpu.state.regs.pc == target }
       }
 
       // Prevent UntilOpcode(currentOpcode) from doing nothing
-      is UntilOpcode -> onePlusUntil { instAt(nes.cpu.state.regs.pc).opcode == cmd.op }
+      is UntilOpcode -> onePlusUntil { instAt(diag.cpu.state.regs.pc).opcode == cmd.op }
 
       // One more so that the interrupt actually occurs
-      is UntilNmi -> untilPlusOne { nes.cpu.nextStep == NextStep.NMI }
+      is UntilNmi -> untilPlusOne { diag.cpu.nextStep == NextStep.NMI }
 
       // One more so that the interrupt actually occurs
-      is UntilIrq -> untilPlusOne { nes.cpu.nextStep == NextStep.IRQ }
+      is UntilIrq -> untilPlusOne { diag.cpu.nextStep == NextStep.IRQ }
 
       is Continue -> until { false }
 
@@ -229,7 +227,7 @@ class Debugger(
     when (cmd) {
       is Info.Stats -> displayStats()
 
-      is Info.Reg -> stdout.println(nes.cpu.state.regs)
+      is Info.Reg -> stdout.println(diag.cpu.state.regs)
 
       is Info.Break -> if (points.breakpoints.isEmpty()) {
         stdout.println("No breakpoints")
@@ -265,24 +263,24 @@ class Debugger(
         }
       }
 
-      is Info.CpuRam -> displayDump((0 until CPU_RAM_SIZE).map { nes.peek(it) })
+      is Info.CpuRam -> displayDump((0 until CPU_RAM_SIZE).map { diag.peek(it) })
 
       // TODO - should this be before or after nametable mapping?
-      is Info.PpuRam -> displayDump((0 until VRAM_SIZE).map { nes.peekV(it + BASE_VRAM) })
+      is Info.PpuRam -> displayDump((0 until VRAM_SIZE).map { diag.peekV(it + BASE_VRAM) })
 
       is Info.PpuState -> {
         val mapper = jacksonObjectMapper()
           .enable(SerializationFeature.INDENT_OUTPUT)
           .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
-        stdout.println(mapper.writeValueAsString(nes.ppu.state))
+        stdout.println(mapper.writeValueAsString(diag.ppu.state))
       }
 
-      is Info.Print -> stdout.println(nes.peek(cmd.addr).format8())
+      is Info.Print -> stdout.println(diag.peek(cmd.addr).format8())
 
       is Info.InspectInst -> {
         var pc = cmd.pc
         repeat(cmd.num) {
-          val decoded = nes.cpu.decodeAt(pc)
+          val decoded = diag.cpu.decodeAt(pc)
           stdout.println("${pc.format16()}: ${decoded.instruction}")
           pc = decoded.nextPc
         }
@@ -291,7 +289,7 @@ class Debugger(
   }
 
   private fun event(cmd: Event) {
-    nes.cpu.nextStep = when (cmd) {
+    diag.cpu.nextStep = when (cmd) {
       is Reset -> NextStep.RESET
       is Nmi -> NextStep.NMI
       is Irq -> NextStep.IRQ
@@ -301,13 +299,13 @@ class Debugger(
 
   private fun button(cmd: Button) {
     when (cmd) {
-      is Button.Up -> joypads.up(cmd.which, cmd.button)
-      is Button.Down -> joypads.down(cmd.which, cmd.button)
+      is Button.Up -> nes.joypads.up(cmd.which, cmd.button)
+      is Button.Down -> nes.joypads.down(cmd.which, cmd.button)
     }
   }
 
   private fun step(): Boolean {
-    val thisStep = nes.cpu.nextStep // nextStep might be modified
+    val thisStep = diag.cpu.nextStep // nextStep might be modified
 
     when (thisStep) {
       NextStep.INSTRUCTION -> {
@@ -343,7 +341,7 @@ class Debugger(
 
   private fun maybeTraceInstruction() {
     if (isVerbose) {
-      stdout.println("${nes.cpu.state.regs.pc.format16()}: ${instAt(nes.cpu.state.regs.pc)}")
+      stdout.println("${diag.cpu.state.regs.pc.format16()}: ${instAt(diag.cpu.state.regs.pc)}")
     }
   }
 
@@ -370,7 +368,7 @@ class Debugger(
       }
     }
 
-  private fun isBreakpointHit() = when (val bp = points.breakpoints[nes.cpu.state.regs.pc]) {
+  private fun isBreakpointHit() = when (val bp = points.breakpoints[diag.cpu.state.regs.pc]) {
     null -> true
     else -> {
       stdout.println("Hit breakpoint #${bp.num}")
@@ -379,13 +377,13 @@ class Debugger(
   }
 
   private fun nextPc(offset: Int = 1) =
-    (0 until offset).fold(nes.cpu.state.regs.pc) { pc, _ -> nes.cpu.decodeAt(pc).nextPc }
+    (0 until offset).fold(diag.cpu.state.regs.pc) { pc, _ -> diag.cpu.decodeAt(pc).nextPc }
 
-  private fun instAt(pc: Address) = nes.cpu.decodeAt(pc).instruction
+  private fun instAt(pc: Address) = diag.cpu.decodeAt(pc).instruction
 
   private fun displayDisplays() {
     displays.forEach { (k, v) ->
-      stdout.println("${k}: ${v.format16()} = ${nes.peek(v).format8()}")
+      stdout.println("${k}: ${v.format16()} = ${diag.peek(v).format8()}")
     }
   }
 

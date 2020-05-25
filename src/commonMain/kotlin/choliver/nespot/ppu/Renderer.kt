@@ -239,8 +239,7 @@ class Renderer(
       colorLookup[i] = colors[palette[if (i % NUM_ENTRIES_PER_PALETTE == 0) 0 else i] and mask]
     }
 
-    var idx = ppu.scanline * SCREEN_WIDTH
-    state.paletteIndices.forEach { videoSink[idx++] = colorLookup[it] }
+    state.paletteIndices.forEach { videoSink.put(colorLookup[it]) }
   }
 
   private fun maybeFlip(v: Int, flip: Boolean) = if (flip) (7 - v) else v

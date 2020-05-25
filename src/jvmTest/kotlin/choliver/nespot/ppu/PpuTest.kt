@@ -165,19 +165,6 @@ class PpuTest {
   @Nested
   inner class Vbl {
     @Test
-    fun `invokes callback once per frame at beginning of post-post-render scanline`() {
-      advanceScanlines(SCREEN_HEIGHT + 1)
-      verifyZeroInteractions(videoSink)
-
-      advanceDots(3)
-      verify(videoSink).commit()
-
-      advanceDots(DOTS_PER_SCANLINE - 3)
-      advanceScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 2)
-      verifyNoMoreInteractions(videoSink)
-    }
-
-    @Test
     fun `interrupt asserted at beginning of post-post-render scanline til beginning of pre-render scanline`() {
       ppu.writeReg(REG_PPUCTRL1, 0x80)
 

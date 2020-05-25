@@ -8,7 +8,6 @@ import choliver.nespot.cpu.Cpu
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_IRQ
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_NMI
 import choliver.nespot.ppu.Ppu
-import choliver.nespot.VideoSink
 
 
 class Nes(

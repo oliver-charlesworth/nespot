@@ -91,7 +91,6 @@ class Ppu(
 
   private val actionSetVbl: () -> Any = {
     state.inVbl = true
-    videoSink.commit()
 
     nextDot = 340
     nextAction = actionEndOfLine

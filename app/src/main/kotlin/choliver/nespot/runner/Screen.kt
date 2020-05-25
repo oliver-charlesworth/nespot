@@ -41,21 +41,21 @@ class Screen(
     private var buffer = bufferA
     private var bufferInt = buffer.asIntBuffer()
 
-    override fun set(idx: Int, color: Int) {
-      bufferInt.put(idx, color)
-    }
+    override fun put(color: Int) {
+      bufferInt.put(color)
 
-    override fun commit() {
-      val bufferToCommit = buffer
-      buffer = if (buffer === bufferA) bufferB else bufferA
-      bufferInt = buffer.asIntBuffer()
-      onFxThread {
-        imageView.image = WritableImage(PixelBuffer(
-          SCREEN_WIDTH,
-          SCREEN_HEIGHT,
-          bufferToCommit,
-          PixelFormat.getByteBgraPreInstance() // Mac native format
-        ))
+      if (!bufferInt.hasRemaining()) {
+        val bufferToCommit = buffer
+        buffer = if (buffer === bufferA) bufferB else bufferA
+        bufferInt = buffer.asIntBuffer()
+        onFxThread {
+          imageView.image = WritableImage(PixelBuffer(
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
+            bufferToCommit,
+            PixelFormat.getByteBgraPreInstance() // Mac native format
+          ))
+        }
       }
     }
   }

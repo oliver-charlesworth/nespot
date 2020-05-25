@@ -5,7 +5,9 @@ import choliver.nespot.SCREEN_WIDTH
 import choliver.nespot.TILE_SIZE
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.createMapper
-import choliver.nespot.ppu.*
+import choliver.nespot.ppu.COLORS
+import choliver.nespot.ppu.NUM_TILE_COLUMNS
+import choliver.nespot.ppu.NUM_TILE_ROWS
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -18,21 +20,22 @@ class ShowStuffTest {
   @Test
   @Disabled
   fun palette() {
-    var i = 0
+    screen.show()
+
     for (y in 0 until SCREEN_HEIGHT) {
       for (x in 0 until SCREEN_WIDTH) {
-        screen.sink[i++] = COLORS[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16]
+        screen.sink.put(COLORS[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16])
       }
     }
 
-    screen.show()
-    screen.sink.commit()
     latch.await()
   }
 
   @Test
   @Disabled
   fun patterns() {
+    screen.show()
+
     val mapper = createMapper(Rom.parse(File("roms/sesamestreet.nes").readBytes()))
 
     fun getPatternData(
@@ -55,7 +58,6 @@ class ShowStuffTest {
       24   // Shitty green
     ).map { COLORS[it] }
 
-    var j = 0
     val scanline = IntArray(SCREEN_WIDTH)
     for (yT in 0 until NUM_TILE_ROWS) {
       for (y in 0 until 8) {
@@ -70,12 +72,10 @@ class ShowStuffTest {
           }
         }
 
-        scanline.forEach { screen.sink[j++] = it }
+        scanline.forEach { screen.sink.put(it) }
       }
     }
 
-    screen.show()
-    screen.sink.commit()
     latch.await()
   }
 }

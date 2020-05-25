@@ -6,12 +6,16 @@ class JsVideoSink(
   private val bufferA = IntArray(SCREEN_HEIGHT * SCREEN_WIDTH)
   private val bufferB = IntArray(SCREEN_HEIGHT * SCREEN_WIDTH)
   private var buffer = bufferA
+  private var idx = 0
 
-  override fun set(idx: Int, color: Int) {
-    buffer[idx] = color
+  override fun put(color: Int) {
+    buffer[idx++] = color
+    if (idx == buffer.size) {
+      commit()
+    }
   }
 
-  override fun commit() {
+  private fun commit() {
     onBufferReady(buffer)
     buffer = if (buffer === bufferA) bufferB else bufferA
   }

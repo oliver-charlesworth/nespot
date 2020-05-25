@@ -1,10 +1,10 @@
 package choliver.nespot.runner
 
+import choliver.nespot.VideoSink
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.Cpu.NextStep.RESET
 import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Nes
-import choliver.nespot.VideoSink
 import kotlin.math.roundToInt
 import kotlin.system.measureTimeMillis
 
@@ -19,8 +19,7 @@ class PerfRunner(
     rom = rom,
     joypads = joypads,
     videoSink = object : VideoSink {
-      override fun set(idx: Int, color: Int) {}
-      override fun commit() {}
+      override fun put(color: Int) {}
     }
   )
   private var endOfFrame = false

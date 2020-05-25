@@ -1,9 +1,7 @@
 package choliver.nespot
 
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Joypads.Button
-import choliver.nespot.nes.Nes
 import org.khronos.webgl.Uint16Array
 import org.khronos.webgl.set
 import org.w3c.dom.CanvasRenderingContext2D
@@ -31,8 +29,7 @@ class JsRunner(rom: Rom) {
     window.requestAnimationFrame(::executeFrame)
   }
 
-  private val joypads = Joypads()
-  private val wotsit = JsWotsit(rom, joypads)
+  private val wotsit = JsWotsit(rom)
 
   private fun executeFrame(timeMs: Double) {
     window.requestAnimationFrame(this::executeFrame)
@@ -57,11 +54,11 @@ class JsRunner(rom: Rom) {
   }
 
   private fun handleKeyDown(e: KeyboardEvent) {
-    keyToButton(e.code)?.let { joypads.down(1, it) }
+    keyToButton(e.code)?.let { wotsit.joypads.down(1, it) }
   }
 
   private fun handleKeyUp(e: KeyboardEvent) {
-    keyToButton(e.code)?.let { joypads.up(1, it) }
+    keyToButton(e.code)?.let { wotsit.joypads.up(1, it) }
   }
 
   private fun keyToButton(code: String) = when (code) {

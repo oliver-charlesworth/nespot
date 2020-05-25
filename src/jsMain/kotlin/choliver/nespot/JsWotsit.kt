@@ -1,13 +1,11 @@
 package choliver.nespot
 
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Nes
 import kotlin.math.ceil
 
 class JsWotsit(
-  rom: Rom,
-  joypads: Joypads
+  rom: Rom
 ) {
   private val audio = JsAudioPlayer()
 
@@ -18,7 +16,6 @@ class JsWotsit(
   private val nes = Nes(
     sampleRateHz = audio.sampleRateHz,
     rom = rom,
-    joypads = joypads,
     videoSink = object : VideoSink {
       private var buffer = videoBuffers[iBuffer]
       override fun put(color: Int) {
@@ -32,6 +29,8 @@ class JsWotsit(
     },
     audioSink = audio.sink
   )
+
+  val joypads = nes.joypads
 
   val latestVideoFrame: IntArray
     get() = videoBuffers[(iBuffer + NUM_VIDEO_BUFFERS - 1) % NUM_VIDEO_BUFFERS]

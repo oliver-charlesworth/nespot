@@ -23,20 +23,6 @@ class JsRunner(rom: Rom) {
   )
   private val data = img.data.unsafeCast<Uint16Array>() // See https://stackoverflow.com/a/49336551
 
-  private var first: Double? = null
-  private var numFrames = 0
-  private val list = mutableListOf<IntArray>()
-  private val joypads = Joypads()
-  private val audio = JsAudioPlayer()
-  private val videoSink = JsVideoSink(onBufferReady = { list += it })
-  private val nes = Nes(
-    sampleRateHz = audio.sampleRateHz,
-    rom = rom,
-    joypads = joypads,
-    videoSink = videoSink,
-    audioSink = audio.sink
-  )
-
   fun run() {
     document.onkeydown = ::handleKeyDown
     document.onkeyup = ::handleKeyUp
@@ -45,63 +31,21 @@ class JsRunner(rom: Rom) {
     window.requestAnimationFrame(::executeFrame)
   }
 
-  private fun configureDom() {
-    with(document.body!!.style) {
-      margin = "0"
-      padding = "0"
-      backgroundColor = "black"
-    }
+  private val joypads = Joypads()
+  private val wotsit = JsWotsit(rom, joypads)
 
-    val scale = min(
-      window.innerWidth.toDouble() / (img.width.toDouble() * RATIO_STRETCH),
-      window.innerHeight.toDouble() / img.height.toDouble()
-    )
-
-    val margin = (window.innerWidth - (img.width.toDouble() * scale * RATIO_STRETCH)) / 2
-
-    with(canvas) {
-      width = img.width
-      height = img.height
-      with(style) {
-        display = "block"
-        marginLeft = "${margin}px"
-        marginRight = "${margin}px"
-        padding = "0"
-        transformOrigin = "0 0"
-        transform = "scale(${scale * RATIO_STRETCH}, ${scale})"
-      }
-    }
-  }
-
-  val frameRateMs = 1000.0 / (CPU_FREQ_HZ / (DOTS_PER_SCANLINE * SCANLINES_PER_FRAME) * DOTS_PER_CYCLE).toDouble()
-
-  private fun executeFrame(timestamp: Double) {
-    first = first ?: timestamp
-    val delta = (timestamp - first!!) - (frameRateMs * numFrames)
-    numFrames++
-
-//    println("delta = ${delta.toInt()}")
-
-
-    // TODO:
-    // - calculate runtime
-    // - convert to cycles
-    // - run for that many cycles, collect latest buffer
-
-
-    while (list.isEmpty()) {
-      nes.step()
-    }
-    updateImage(list.removeAt(0))
+  private fun executeFrame(timeMs: Double) {
     window.requestAnimationFrame(this::executeFrame)
+    updateImage(wotsit.latestVideoFrame)
+    wotsit.runUntil(timeMs / 1000)
   }
 
-  private fun updateImage(buffer: IntArray) {
+  private fun updateImage(frame: IntArray) {
     var i = SCREEN_WIDTH * TILE_SIZE
     var j = 0
     for (y in TILE_SIZE until SCREEN_HEIGHT - TILE_SIZE) {
       for (x in 0 until SCREEN_WIDTH) {
-        val pixel = buffer[i++]
+        val pixel = frame[i++]
         data[j++] = ((pixel shr 8) and 0xFF).toShort()
         data[j++] = ((pixel shr 16) and 0xFF).toShort()
         data[j++] = ((pixel shr 24) and 0xFF).toShort()
@@ -132,10 +76,39 @@ class JsRunner(rom: Rom) {
     else -> null
   }
 
-  // TODO: Needs to be driven by audio needs
-  //  - Thus use audio currentTime - initialTime to determine number of cycles that need running
-  //  - i.e. aim for setpoint of 2 frames
+  // Main loop works thus:
+  //  - Run emulation in chunks of BUFFER_LENGTH_MS.
+  //  - Buffer up 3 chunks, and schedule.
+  //  - Run another chunk whenever a scheduled chunk ends.
+  //  - requestAnimationFrame just grabs latest video frame buffer.
 
+  private fun configureDom() {
+    with(document.body!!.style) {
+      margin = "0"
+      padding = "0"
+      backgroundColor = "black"
+    }
+
+    val scale = min(
+      window.innerWidth.toDouble() / (img.width.toDouble() * RATIO_STRETCH),
+      window.innerHeight.toDouble() / img.height.toDouble()
+    )
+
+    val margin = (window.innerWidth - (img.width.toDouble() * scale * RATIO_STRETCH)) / 2
+
+    with(canvas) {
+      width = img.width
+      height = img.height
+      with(style) {
+        display = "block"
+        marginLeft = "${margin}px"
+        marginRight = "${margin}px"
+        padding = "0"
+        transformOrigin = "0 0"
+        transform = "scale(${scale * RATIO_STRETCH}, ${scale})"
+      }
+    }
+  }
 
   companion object {
     private const val RATIO_STRETCH = (8.0 / 7.0)    // Evidence in forums, etc. that PAR is 8/7, and it looks good

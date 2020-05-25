@@ -9,9 +9,7 @@ class JsAudioPlayer {
   val sampleRateHz = ctx.sampleRate.toInt()
 
   val sink = object : AudioSink {
-    override fun put(sample: Float) {
-      TODO("not implemented")
-    }
+    override fun put(sample: Float) {}
   }
 
   private fun handleAudioBufferReady(buffer: FloatArray) {

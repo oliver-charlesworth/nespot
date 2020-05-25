@@ -5,11 +5,10 @@ import choliver.nespot.nes.Nes
 import kotlin.math.ceil
 
 class JsWotsit(
-  rom: Rom
+  rom: Rom,
+  audio: BrowserAudioPlayer
 ) {
-  private val audio = JsAudioPlayer()
-
-  private var videoBuffers = Array(NUM_VIDEO_BUFFERS) { IntArray(SCREEN_WIDTH * SCREEN_HEIGHT) }
+  private val videoBuffers = Array(NUM_VIDEO_BUFFERS) { IntArray(SCREEN_WIDTH * SCREEN_HEIGHT) }
   private var iBuffer = 0
   private var iPixel = 0
 
@@ -50,5 +49,8 @@ class JsWotsit(
 
   companion object {
     private const val NUM_VIDEO_BUFFERS = 3   // TODO - do we actually need 3 ?
+
+    private const val AUDIO_BUFFER_LENGTH_SECONDS = 0.01
+    private const val AUDIO_BUFFER_AHEAD_SECONDS = 0.03
   }
 }

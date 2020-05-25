@@ -15,7 +15,6 @@ import kotlin.math.min
 
 
 class JsRunner(rom: Rom) {
-  private val audioCtx = AudioContext()
   private val canvas = document.getElementById("target") as HTMLCanvasElement
   private val ctx = canvas.getContext("2d") as CanvasRenderingContext2D
   private val img = ctx.createImageData(
@@ -24,26 +23,24 @@ class JsRunner(rom: Rom) {
   )
   private val data = img.data.unsafeCast<Uint16Array>() // See https://stackoverflow.com/a/49336551
 
-  private var base: Double = 0.0
   private var first: Double? = null
   private var numFrames = 0
   private val list = mutableListOf<IntArray>()
   private val joypads = Joypads()
+  private val audio = JsAudioPlayer()
   private val videoSink = JsVideoSink(onBufferReady = { list += it })
-  private val audioSink = XXX
   private val nes = Nes(
-    sampleRateHz = audioCtx.sampleRate.toInt(),
+    sampleRateHz = audio.sampleRateHz,
     rom = rom,
     joypads = joypads,
     videoSink = videoSink,
-    audioSink = audioSink
+    audioSink = audio.sink
   )
 
   fun run() {
     document.onkeydown = ::handleKeyDown
     document.onkeyup = ::handleKeyUp
     configureDom()
-    base = audioCtx.currentTime
     window.onresize = { configureDom() }
     window.requestAnimationFrame(::executeFrame)
   }
@@ -139,21 +136,6 @@ class JsRunner(rom: Rom) {
   //  - Thus use audio currentTime - initialTime to determine number of cycles that need running
   //  - i.e. aim for setpoint of 2 frames
 
-
-  private fun handleAudioBufferReady(buffer: FloatArray) {
-    val target = audioCtx.createBuffer(1, buffer.size, audioCtx.sampleRate)
-    val samples = target.getChannelData(0)
-    buffer.forEachIndexed { idx, sample -> samples[idx] = 0.0f /*sample*/ }
-
-    val source = audioCtx.createBufferSource()
-    source.buffer = target
-    source.connect(audioCtx.destination)
-    source.start(base)
-
-//    println("Lag: ${((base - audioCtx.currentTime) * 1000).toInt()}")
-
-    base += buffer.size / audioCtx.sampleRate
-  }
 
   companion object {
     private const val RATIO_STRETCH = (8.0 / 7.0)    // Evidence in forums, etc. that PAR is 8/7, and it looks good

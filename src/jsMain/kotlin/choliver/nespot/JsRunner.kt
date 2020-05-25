@@ -2,24 +2,27 @@ package choliver.nespot
 
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Joypads.Button
-import org.khronos.webgl.Uint16Array
-import org.khronos.webgl.set
-import org.w3c.dom.CanvasRenderingContext2D
+import choliver.nespot.nes.Nes
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.KeyboardEvent
 import kotlin.browser.document
 import kotlin.browser.window
+import kotlin.math.ceil
 import kotlin.math.min
 
 
 class JsRunner(rom: Rom) {
   private val canvas = document.getElementById("target") as HTMLCanvasElement
-  private val ctx = canvas.getContext("2d") as CanvasRenderingContext2D
-  private val img = ctx.createImageData(
-    SCREEN_WIDTH.toDouble(),
-    (SCREEN_HEIGHT - 2 * TILE_SIZE).toDouble()
+  private val screen = BrowserScreen(canvas)
+  private val audio = BrowserAudioPlayer()
+  private val nes = Nes(
+    sampleRateHz = audio.sampleRateHz,
+    rom = rom,
+    videoSink = screen.sink,
+    audioSink = audio.sink
   )
-  private val data = img.data.unsafeCast<Uint16Array>() // See https://stackoverflow.com/a/49336551
+  private var cycles: Long = 0
+  private var originSeconds: Double? = null
 
   fun run() {
     document.onkeydown = ::handleKeyDown
@@ -29,36 +32,26 @@ class JsRunner(rom: Rom) {
     window.requestAnimationFrame(::executeFrame)
   }
 
-  private val wotsit = JsWotsit(rom)
-
   private fun executeFrame(timeMs: Double) {
     window.requestAnimationFrame(this::executeFrame)
-    updateImage(wotsit.latestVideoFrame)
-    wotsit.runUntil(timeMs / 1000)
+    screen.redraw()
+    emulateUntil(timeMs / 1000)
   }
 
-  private fun updateImage(frame: IntArray) {
-    var i = SCREEN_WIDTH * TILE_SIZE
-    var j = 0
-    for (y in TILE_SIZE until SCREEN_HEIGHT - TILE_SIZE) {
-      for (x in 0 until SCREEN_WIDTH) {
-        val pixel = frame[i++]
-        data[j++] = ((pixel shr 8) and 0xFF).toShort()
-        data[j++] = ((pixel shr 16) and 0xFF).toShort()
-        data[j++] = ((pixel shr 24) and 0xFF).toShort()
-        data[j++] = 255
-      }
+  private fun emulateUntil(timeSeconds: Double) {
+    originSeconds = originSeconds ?: timeSeconds
+    val target = ceil((timeSeconds - originSeconds!!) * CPU_FREQ_HZ.toDouble()).toInt()
+    while (cycles < target) {
+      cycles += nes.step()
     }
-
-    ctx.putImageData(img, 0.0, 0.0)
   }
 
   private fun handleKeyDown(e: KeyboardEvent) {
-    keyToButton(e.code)?.let { wotsit.joypads.down(1, it) }
+    keyToButton(e.code)?.let { nes.joypads.down(1, it) }
   }
 
   private fun handleKeyUp(e: KeyboardEvent) {
-    keyToButton(e.code)?.let { wotsit.joypads.up(1, it) }
+    keyToButton(e.code)?.let { nes.joypads.up(1, it) }
   }
 
   private fun keyToButton(code: String) = when (code) {
@@ -87,15 +80,15 @@ class JsRunner(rom: Rom) {
     }
 
     val scale = min(
-      window.innerWidth.toDouble() / (img.width.toDouble() * RATIO_STRETCH),
-      window.innerHeight.toDouble() / img.height.toDouble()
+      window.innerWidth.toDouble() / (screen.width.toDouble() * RATIO_STRETCH),
+      window.innerHeight.toDouble() / screen.height.toDouble()
     )
 
-    val margin = (window.innerWidth - (img.width.toDouble() * scale * RATIO_STRETCH)) / 2
+    val margin = (window.innerWidth - (screen.width.toDouble() * scale * RATIO_STRETCH)) / 2
 
     with(canvas) {
-      width = img.width
-      height = img.height
+      width = screen.width
+      height = screen.height
       with(style) {
         display = "block"
         marginLeft = "${margin}px"

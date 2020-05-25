@@ -3,11 +3,10 @@ package choliver.nespot
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.set
 
-class BrowserAudioPlayer {
-  private val ctx = AudioContext()
+class BrowserAudioPlayer(private val ctx: AudioContext) {
   private val bufferSize = (AUDIO_BUFFER_LENGTH_SECONDS * ctx.sampleRate).toInt()
 
-  private var audioBase: Double? = null
+  private var nextStartTimeSeconds: Double? = null
   private lateinit var target: AudioBuffer
   private lateinit var samples: Float32Array
   private var iSample = 0
@@ -33,9 +32,9 @@ class BrowserAudioPlayer {
     with(ctx.createBufferSource()) {
       buffer = target
       connect(ctx.destination)
-      (audioBase ?: (ctx.currentTime + AUDIO_BUFFER_AHEAD_SECONDS)).let { base ->
-        start(base)
-        audioBase = base + AUDIO_BUFFER_LENGTH_SECONDS
+      (nextStartTimeSeconds ?: (ctx.currentTime + AUDIO_BUFFER_AHEAD_SECONDS)).let {
+        start(it)
+        nextStartTimeSeconds = it + AUDIO_BUFFER_LENGTH_SECONDS
       }
     }
   }
@@ -47,6 +46,6 @@ class BrowserAudioPlayer {
 
   companion object {
     private const val AUDIO_BUFFER_LENGTH_SECONDS = 0.01
-    private const val AUDIO_BUFFER_AHEAD_SECONDS = 0.03
+    private const val AUDIO_BUFFER_AHEAD_SECONDS = 0.06
   }
 }

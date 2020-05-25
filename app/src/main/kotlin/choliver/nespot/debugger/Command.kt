@@ -49,7 +49,7 @@ sealed class Command {
     data class InspectInst(val pc: Address, val num: Int) : Info()
     object CpuRam : Info()
     object PpuRam : Info()
-    object Ppu : Info()
+    object PpuState : Info()
   }
 
   object ToggleVerbosity : Command()

@@ -273,7 +273,7 @@ class Debugger(
       // TODO - should this be before or after nametable mapping?
       is Info.PpuRam -> displayDump((0 until VRAM_SIZE).map { nes.peekV(it + BASE_VRAM) })
 
-      is Info.Ppu -> {
+      is Info.PpuState -> {
         val mapper = jacksonObjectMapper()
           .enable(SerializationFeature.INDENT_OUTPUT)
           .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)

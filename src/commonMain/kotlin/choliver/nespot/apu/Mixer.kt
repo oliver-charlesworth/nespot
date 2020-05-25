@@ -37,10 +37,10 @@ internal class Mixer(
 
     val pulseOut = if (pulseSum == 0) 0.0f else {
       95.88f / ((8128.0f / pulseSum) + 100.0f)
-      }
+    }
     val otherOut = if (otherSum == 0) 0.0f else {
       159.79f / ((1.0f / ((tri / 8227.0f) + (noi / 12241.0f) + (dmc / 22638.0f))) + 100.0f)
-      }
+    }
     return pulseOut + otherOut
   }
 

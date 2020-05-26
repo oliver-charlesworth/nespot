@@ -19,8 +19,6 @@ fun main() {
         Emulator(Rom.parse(array))
       }
     }
-
-    Emulator.createFor("/smb3.nes")
   } else {
     val script = document.getElementsByTagName("script")[0] as HTMLScriptElement
     val worker = Worker(script.src)

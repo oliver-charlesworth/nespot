@@ -5,29 +5,30 @@ NESpot is a NES emulator written in Kotlin.  It's not yet cycle accurate and has
 all games work yet.
 
 
-## Running
-
-Two ways to run:
-
-```
-./gradlew install
-build/install/nespot/bin/nespot [<options>] <rom>
-```
-
-or:
+## Running Java app
 
 ```
 ./gradlew run --args "[<options>] <rom>"
 ```
 
-
-## Options
+### Options
 
 | Option | Description |
 | --- | --- |
 | `-f` / `--fullscreen` | Full-screen mode |
 | `-i` / `--info` | Print ROM info |
 | `-s <file>` / `--snapshot <file>` | Restore from snapshot file |
+
+
+## Running in browser
+
+```
+./gradlew jsBrowserProductionRun --continuous"
+```
+
+Then visit http://localhost:8080.
+
+Note that the browser version is currently hardcoded to play a particular game.
 
 
 ## Prerequisites

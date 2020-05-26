@@ -2,10 +2,14 @@ package choliver.nespot
 
 import org.w3c.dom.MessageEvent
 
-const val MSG_SET_SAMPLE_RATE = "MSG_SET_SAMPLE_RATE"
+// Main to worker
+const val MSG_SET_SAMPLE_RATE = "SET_SAMPLE_RATE"
 const val MSG_EMULATE_UNTIL = "EMULATE_UNTIL"
 const val MSG_BUTTON_DOWN = "BUTTON_DOWN"
 const val MSG_BUTTON_UP = "BUTTON_UP"
+
+// Worker to main
+const val MSG_ALIVE = "ALIVE"
 const val MSG_VIDEO_FRAME = "VIDEO_FRAME"
 const val MSG_AUDIO_CHUNK = "AUDIO_CHUNK"
 

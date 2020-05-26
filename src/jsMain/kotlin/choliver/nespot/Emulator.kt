@@ -13,6 +13,7 @@ class Emulator(private val rom: Rom) {
 
   init {
     self.onmessage = messageHandler(::handleMessage)
+    self.postMessage(arrayOf(MSG_ALIVE, null))
   }
 
   private fun handleMessage(type: String, payload: Any?) {
@@ -31,7 +32,7 @@ class Emulator(private val rom: Rom) {
       videoSink = EmulatorVideoSink(),
       audioSink = EmulatorAudioSink(sampleRateHz)
     )
-    restore()
+    nes.diagnostics.cpu.nextStep = Cpu.NextStep.RESET
   }
 
   private fun emulateUntil(timeSeconds: Double) {
@@ -40,9 +41,5 @@ class Emulator(private val rom: Rom) {
     while (cycles < target) {
       cycles += nes.step()
     }
-  }
-
-  private fun restore() {
-    nes.diagnostics.cpu.nextStep = Cpu.NextStep.RESET
   }
 }

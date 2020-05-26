@@ -17,29 +17,24 @@ class JsRunner(private val worker: Worker) {
   private val screen = BrowserScreen()
 
   fun run() {
-    postMessage(MSG_SET_SAMPLE_RATE, audio.sampleRateHz)
     worker.onmessage = messageHandler(::handleMessage)
     document.onkeydown = ::handleKeyDown
     document.onkeyup = ::handleKeyUp
     configureDom()
     window.onresize = { configureDom() }
-    window.requestAnimationFrame(::executeFrame)
   }
 
   private fun handleMessage(type: String, payload: Any?) {
     when (type) {
+      MSG_ALIVE -> handleWorkerReady()
       MSG_VIDEO_FRAME -> screen.absorbFrame(Uint8ClampedArray(payload as ArrayBuffer))
       MSG_AUDIO_CHUNK -> audio.absorbChunk(Float32Array(payload as ArrayBuffer))
     }
   }
 
-  // Every browser frame, we draw the latest completed emulator output, and schedule the emulator to catch up.
-  // The emulator generates frames asynchronously, so we don't necessarily draw every emulator frame.
-  // It also generates audio asynchronously - we schedule every audio chunk to be played.
-  private fun executeFrame(timeMs: Double) {
-    window.requestAnimationFrame(this::executeFrame)
-    screen.redraw()
-    postMessage(MSG_EMULATE_UNTIL, timeMs / 1000)
+  private fun handleWorkerReady() {
+    postMessage(MSG_SET_SAMPLE_RATE, audio.sampleRateHz)
+    window.requestAnimationFrame(::executeFrame)
   }
 
   private fun handleKeyDown(e: KeyboardEvent) {
@@ -64,6 +59,15 @@ class JsRunner(private val worker: Worker) {
     "ArrowUp" -> Button.UP
     "ArrowDown" -> Button.DOWN
     else -> null
+  }
+
+  // Every browser frame, we draw the latest completed emulator output, and schedule the emulator to catch up.
+  // The emulator generates frames asynchronously, so we don't necessarily draw every emulator frame.
+  // It also generates audio asynchronously - we schedule every audio chunk to be played.
+  private fun executeFrame(timeMs: Double) {
+    window.requestAnimationFrame(::executeFrame)
+    screen.redraw()
+    postMessage(MSG_EMULATE_UNTIL, timeMs / 1000)
   }
 
   private fun configureDom() {

@@ -1,16 +1,21 @@
 package choliver.nespot
 
-import choliver.nespot.cartridge.Rom
-import org.khronos.webgl.Int8Array
-import org.khronos.webgl.get
+import choliver.nespot.worker.EmulatorWorker
+import org.w3c.dom.Worker
 import kotlin.browser.window
 
 fun main() {
-  window.fetch("/smb.nes").then { response ->
-    response.arrayBuffer().then { buffer ->
-      val b2 = Int8Array(buffer)
-      val array = ByteArray(buffer.byteLength) { b2[it] }
-      JsRunner(Rom.parse(array)).run()
-    }
+  if (inWorker()) {
+    EmulatorWorker.createFor("/smb.nes")
+  } else {
+    val worker = Worker("/nespot.js")
+    JsRunner(worker).run()
   }
+}
+
+private fun inWorker() = try {
+  window
+  false
+} catch (t: Throwable) {
+  true
 }

@@ -1,35 +1,33 @@
 package choliver.nespot
 
-import choliver.nespot.cartridge.Rom
-import choliver.nespot.cpu.Cpu
 import choliver.nespot.nes.Joypads.Button
-import choliver.nespot.nes.Nes
+import choliver.nespot.worker.*
+import org.w3c.dom.CanvasRenderingContext2D
+import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.ImageBitmap
+import org.w3c.dom.Worker
 import org.w3c.dom.events.KeyboardEvent
 import kotlin.browser.document
 import kotlin.browser.window
-import kotlin.math.ceil
 import kotlin.math.min
 
-
-class JsRunner(rom: Rom) {
-  private val screen = BrowserScreen()
-  private val audio = BrowserAudioPlayer()
-  private val nes = Nes(
-    sampleRateHz = audio.sampleRateHz,
-    rom = rom,
-    videoSink = screen.sink,
-    audioSink = audio.sink
-  )
-  private var cycles: Long = 0
-  private var originSeconds: Double? = null
+class JsRunner(private val worker: Worker) {
+  private val canvas = document.getElementById("target") as HTMLCanvasElement
+  private var image: ImageBitmap? = null
 
   fun run() {
+    worker.onmessage = messageHandler(::handleMessage)
     document.onkeydown = ::handleKeyDown
     document.onkeyup = ::handleKeyUp
     configureDom()
     window.onresize = { configureDom() }
     window.requestAnimationFrame(::executeFrame)
-    restore()
+  }
+
+  private fun handleMessage(type: String, payload: Any?) {
+    when (type) {
+      MSG_VIDEO_FRAME -> image = payload as ImageBitmap
+    }
   }
 
   // Every browser frame, we draw the latest completed emulator output, and schedule the emulator to catch up.
@@ -37,28 +35,28 @@ class JsRunner(rom: Rom) {
   // It also generates audio asynchronously - we schedule every audio chunk to be played.
   private fun executeFrame(timeMs: Double) {
     window.requestAnimationFrame(this::executeFrame)
-    screen.redraw()
-    emulateUntil(timeMs / 1000)
+    redraw()
+    postMessage(MSG_EMULATE_UNTIL, timeMs / 1000)
   }
 
-  private fun emulateUntil(timeSeconds: Double) {
-    originSeconds = originSeconds ?: timeSeconds
-    val target = ceil((timeSeconds - originSeconds!!) * CPU_FREQ_HZ.toDouble()).toInt()
-    while (cycles < target) {
-      cycles += nes.step()
+  private fun redraw() {
+    image?.let {
+      val ctx = canvas.getContext("2d") as CanvasRenderingContext2D
+      ctx.drawImage(it, 0.0, 0.0)
+      it.close()
     }
   }
 
-  private fun restore() {
-    nes.diagnostics.cpu.nextStep = Cpu.NextStep.RESET
-  }
-
   private fun handleKeyDown(e: KeyboardEvent) {
-    keyToButton(e.code)?.let { nes.joypads.down(1, it) }
+    keyToButton(e.code)?.let { postMessage(MSG_BUTTON_DOWN, it.name) }
   }
 
   private fun handleKeyUp(e: KeyboardEvent) {
-    keyToButton(e.code)?.let { nes.joypads.up(1, it) }
+    keyToButton(e.code)?.let { postMessage(MSG_BUTTON_UP, it.name) }
+  }
+
+  private fun postMessage(type: String, payload: Any?) {
+    worker.postMessage(arrayOf(type, payload))
   }
 
   private fun keyToButton(code: String) = when (code) {
@@ -80,16 +78,19 @@ class JsRunner(rom: Rom) {
       backgroundColor = "black"
     }
 
+    val canvasWidth = SCREEN_WIDTH
+    val canvasHeight = (SCREEN_HEIGHT - 2 * TILE_SIZE)
+
     val scale = min(
-      window.innerWidth.toDouble() / (screen.width.toDouble() * RATIO_STRETCH),
-      window.innerHeight.toDouble() / screen.height.toDouble()
+      window.innerWidth.toDouble() / (canvasWidth.toDouble() * RATIO_STRETCH),
+      window.innerHeight.toDouble() / canvasHeight.toDouble()
     )
 
-    val margin = (window.innerWidth - (screen.width.toDouble() * scale * RATIO_STRETCH)) / 2
+    val margin = (window.innerWidth - (canvasWidth.toDouble() * scale * RATIO_STRETCH)) / 2
 
-    with(screen.canvas) {
-      width = screen.width
-      height = screen.height
+    with(canvas) {
+      width = canvasWidth
+      height = canvasHeight
       with(style) {
         display = "block"
         marginLeft = "${margin}px"

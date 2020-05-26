@@ -1,6 +1,5 @@
 package choliver.nespot
 
-import ROM_URL
 import choliver.nespot.emulator.Emulator
 import choliver.nespot.runner.JsRunner
 import org.w3c.dom.HTMLScriptElement

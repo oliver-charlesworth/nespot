@@ -1,7 +1,7 @@
 package choliver.nespot.runner
 
-import VISIBLE_HEIGHT
-import VISIBLE_WIDTH
+import choliver.nespot.VISIBLE_HEIGHT
+import choliver.nespot.VISIBLE_WIDTH
 import org.khronos.webgl.Uint8ClampedArray
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement

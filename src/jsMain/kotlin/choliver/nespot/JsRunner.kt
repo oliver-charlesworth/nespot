@@ -1,12 +1,11 @@
 package choliver.nespot
 
+import VISIBLE_HEIGHT
+import VISIBLE_WIDTH
 import choliver.nespot.nes.Joypads.Button
-import choliver.nespot.worker.*
 import org.khronos.webgl.ArrayBuffer
+import org.khronos.webgl.Float32Array
 import org.khronos.webgl.Uint8ClampedArray
-import org.w3c.dom.CanvasRenderingContext2D
-import org.w3c.dom.HTMLCanvasElement
-import org.w3c.dom.ImageData
 import org.w3c.dom.Worker
 import org.w3c.dom.events.KeyboardEvent
 import kotlin.browser.document
@@ -14,10 +13,11 @@ import kotlin.browser.window
 import kotlin.math.min
 
 class JsRunner(private val worker: Worker) {
-  private val canvas = document.getElementById("target") as HTMLCanvasElement
-  private var raw: Uint8ClampedArray? = null
+  private val audio = BrowserAudioPlayer()
+  private val screen = BrowserScreen()
 
   fun run() {
+    postMessage(MSG_SET_SAMPLE_RATE, audio.sampleRateHz)
     worker.onmessage = messageHandler(::handleMessage)
     document.onkeydown = ::handleKeyDown
     document.onkeyup = ::handleKeyUp
@@ -28,7 +28,8 @@ class JsRunner(private val worker: Worker) {
 
   private fun handleMessage(type: String, payload: Any?) {
     when (type) {
-      MSG_VIDEO_FRAME -> raw = Uint8ClampedArray(payload as ArrayBuffer)
+      MSG_VIDEO_FRAME -> screen.absorbFrame(Uint8ClampedArray(payload as ArrayBuffer))
+      MSG_AUDIO_CHUNK -> audio.absorbChunk(Float32Array(payload as ArrayBuffer))
     }
   }
 
@@ -37,16 +38,8 @@ class JsRunner(private val worker: Worker) {
   // It also generates audio asynchronously - we schedule every audio chunk to be played.
   private fun executeFrame(timeMs: Double) {
     window.requestAnimationFrame(this::executeFrame)
-    redraw()
+    screen.redraw()
     postMessage(MSG_EMULATE_UNTIL, timeMs / 1000)
-  }
-
-  private fun redraw() {
-    raw?.let {
-      val ctx = canvas.getContext("2d") as CanvasRenderingContext2D
-      val id = ImageData(it, SCREEN_WIDTH, (SCREEN_HEIGHT - 2 * TILE_SIZE))
-      ctx.putImageData(id, 0.0, 0.0)
-    }
   }
 
   private fun handleKeyDown(e: KeyboardEvent) {
@@ -80,19 +73,16 @@ class JsRunner(private val worker: Worker) {
       backgroundColor = "black"
     }
 
-    val canvasWidth = SCREEN_WIDTH
-    val canvasHeight = (SCREEN_HEIGHT - 2 * TILE_SIZE)
-
     val scale = min(
-      window.innerWidth.toDouble() / (canvasWidth.toDouble() * RATIO_STRETCH),
-      window.innerHeight.toDouble() / canvasHeight.toDouble()
+      window.innerWidth.toDouble() / (VISIBLE_WIDTH * RATIO_STRETCH),
+      window.innerHeight.toDouble() / VISIBLE_HEIGHT
     )
 
-    val margin = (window.innerWidth - (canvasWidth.toDouble() * scale * RATIO_STRETCH)) / 2
+    val margin = (window.innerWidth - (VISIBLE_WIDTH * scale * RATIO_STRETCH)) / 2
 
-    with(canvas) {
-      width = canvasWidth
-      height = canvasHeight
+    with(screen.canvas) {
+      width = VISIBLE_WIDTH
+      height = VISIBLE_HEIGHT
       with(style) {
         display = "block"
         marginLeft = "${margin}px"

@@ -1,12 +1,10 @@
-package choliver.nespot.worker
+package choliver.nespot
 
-import choliver.nespot.SCREEN_HEIGHT
-import choliver.nespot.SCREEN_WIDTH
-import choliver.nespot.TILE_SIZE
-import choliver.nespot.VideoSink
+import VISIBLE_HEIGHT
+import VISIBLE_WIDTH
 import org.khronos.webgl.*
 
-class WorkerVideoSink : VideoSink {
+class EmulatorVideoSink : VideoSink {
   private lateinit var raw: Uint8ClampedArray
   private lateinit var view: Uint16Array
   private var i: Int = 0
@@ -37,7 +35,7 @@ class WorkerVideoSink : VideoSink {
   private fun reset() {
     i = 0
     j = 0
-    raw = Uint8ClampedArray(SCREEN_WIDTH * (SCREEN_HEIGHT - 2 * TILE_SIZE) * 4)
+    raw = Uint8ClampedArray(VISIBLE_WIDTH * VISIBLE_HEIGHT * 4)
     view = raw.unsafeCast<Uint16Array>()  // See https://stackoverflow.com/a/49336551
   }
 }

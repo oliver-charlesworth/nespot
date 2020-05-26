@@ -1,11 +1,13 @@
-package choliver.nespot.worker
+package choliver.nespot
 
 import org.w3c.dom.MessageEvent
 
+const val MSG_SET_SAMPLE_RATE = "MSG_SET_SAMPLE_RATE"
 const val MSG_EMULATE_UNTIL = "EMULATE_UNTIL"
 const val MSG_BUTTON_DOWN = "BUTTON_DOWN"
 const val MSG_BUTTON_UP = "BUTTON_UP"
 const val MSG_VIDEO_FRAME = "VIDEO_FRAME"
+const val MSG_AUDIO_CHUNK = "AUDIO_CHUNK"
 
 fun messageHandler(block: (type: String, payload: Any?) -> Unit) = { e: MessageEvent ->
   val msg = e.data as Array<*>

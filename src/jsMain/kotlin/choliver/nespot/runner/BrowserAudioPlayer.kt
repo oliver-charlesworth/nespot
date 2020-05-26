@@ -1,7 +1,8 @@
-package choliver.nespot
+package choliver.nespot.runner
 
 import AUDIO_BUFFER_AHEAD_SECONDS
 import AUDIO_BUFFER_LENGTH_SECONDS
+import choliver.nespot.browser.AudioContext
 import org.khronos.webgl.Float32Array
 
 class BrowserAudioPlayer {

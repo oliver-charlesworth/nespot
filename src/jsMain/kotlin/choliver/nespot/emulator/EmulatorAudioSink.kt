@@ -1,6 +1,8 @@
-package choliver.nespot
+package choliver.nespot.emulator
 
 import AUDIO_BUFFER_LENGTH_SECONDS
+import choliver.nespot.AudioSink
+import choliver.nespot.MSG_AUDIO_CHUNK
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.set
 

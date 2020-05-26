@@ -1,4 +1,4 @@
-package choliver.nespot
+package choliver.nespot.runner
 
 import VISIBLE_HEIGHT
 import VISIBLE_WIDTH

@@ -8,4 +8,4 @@ const val AUDIO_BUFFER_AHEAD_SECONDS = 0.075
 const val VISIBLE_WIDTH = SCREEN_WIDTH
 const val VISIBLE_HEIGHT = (SCREEN_HEIGHT - 2 * TILE_SIZE)
 
-const val ROM_PATH = "smb3.nes"
+const val ROM_URL = "smb3.nes"

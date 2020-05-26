@@ -1,4 +1,4 @@
-package choliver.nespot
+package choliver.nespot.emulator
 
 import org.w3c.dom.DedicatedWorkerGlobalScope
 

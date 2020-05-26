@@ -1,9 +1,12 @@
-package choliver.nespot
+package choliver.nespot.emulator
 
+import choliver.nespot.*
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.Cpu
 import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Nes
+import org.khronos.webgl.Int8Array
+import org.khronos.webgl.get
 import kotlin.math.ceil
 
 class Emulator(private val rom: Rom) {
@@ -40,6 +43,18 @@ class Emulator(private val rom: Rom) {
     val target = ceil((timeSeconds - originSeconds!!) * CPU_FREQ_HZ.toDouble()).toInt()
     while (cycles < target) {
       cycles += nes.step()
+    }
+  }
+
+  companion object {
+    fun createFor(romUrl: String) {
+      self.fetch(romUrl).then { response ->
+        response.arrayBuffer().then { buffer ->
+          val b2 = Int8Array(buffer)
+          val array = ByteArray(buffer.byteLength) { b2[it] }
+          Emulator(Rom.parse(array))
+        }
+      }
     }
   }
 }

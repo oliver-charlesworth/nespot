@@ -1,7 +1,8 @@
-package choliver.nespot
+package choliver.nespot.runner
 
 import VISIBLE_HEIGHT
 import VISIBLE_WIDTH
+import choliver.nespot.*
 import choliver.nespot.nes.Joypads.Button
 import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.Float32Array

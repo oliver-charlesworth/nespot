@@ -1,7 +1,8 @@
-package choliver.nespot
+package choliver.nespot.emulator
 
 import VISIBLE_HEIGHT
 import VISIBLE_WIDTH
+import choliver.nespot.*
 import org.khronos.webgl.*
 
 class EmulatorVideoSink : VideoSink {

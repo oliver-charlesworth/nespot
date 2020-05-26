@@ -2,9 +2,11 @@ package choliver.nespot
 
 import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.worker.*
+import org.khronos.webgl.ArrayBuffer
+import org.khronos.webgl.Uint8ClampedArray
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
-import org.w3c.dom.ImageBitmap
+import org.w3c.dom.ImageData
 import org.w3c.dom.Worker
 import org.w3c.dom.events.KeyboardEvent
 import kotlin.browser.document
@@ -13,7 +15,7 @@ import kotlin.math.min
 
 class JsRunner(private val worker: Worker) {
   private val canvas = document.getElementById("target") as HTMLCanvasElement
-  private var image: ImageBitmap? = null
+  private var raw: Uint8ClampedArray? = null
 
   fun run() {
     worker.onmessage = messageHandler(::handleMessage)
@@ -26,7 +28,7 @@ class JsRunner(private val worker: Worker) {
 
   private fun handleMessage(type: String, payload: Any?) {
     when (type) {
-      MSG_VIDEO_FRAME -> image = payload as ImageBitmap
+      MSG_VIDEO_FRAME -> raw = Uint8ClampedArray(payload as ArrayBuffer)
     }
   }
 
@@ -40,10 +42,10 @@ class JsRunner(private val worker: Worker) {
   }
 
   private fun redraw() {
-    image?.let {
+    raw?.let {
       val ctx = canvas.getContext("2d") as CanvasRenderingContext2D
-      ctx.drawImage(it, 0.0, 0.0)
-      it.close()
+      val id = ImageData(it, SCREEN_WIDTH, (SCREEN_HEIGHT - 2 * TILE_SIZE))
+      ctx.putImageData(id, 0.0, 0.0)
     }
   }
 

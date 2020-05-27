@@ -28,7 +28,7 @@ Put your ROMs in the `roms/` directory.  Then:
 ./gradlew jsBrowserProductionRun --continuous"
 ```
 
-Then visit http://localhost:8080/<rom> (without `.nes` suffix).
+Then visit `http://localhost:8080/<rom>` (without a `.nes` suffix).
 
 
 ## Prerequisites

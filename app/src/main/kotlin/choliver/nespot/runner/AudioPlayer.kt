@@ -10,10 +10,11 @@ class AudioPlayer {
   private val soundLine = AudioSystem.getSourceDataLine(audioFormat)
   private val buffer = FloatArray(BUFFER_SIZE)
   private val work = ByteArray(BUFFER_SIZE * 2)
-  val sampleRateHz = SAMPLE_RATE_HZ
 
   val sink = object : AudioSink {
     private var idx = 0
+
+    override val sampleRateHz = SAMPLE_RATE_HZ
 
     override fun put(sample: Float) {
       buffer[idx++] = sample

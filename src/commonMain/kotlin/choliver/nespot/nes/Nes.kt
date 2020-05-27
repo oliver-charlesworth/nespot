@@ -1,7 +1,6 @@
 package choliver.nespot.nes
 
 import choliver.nespot.*
-import choliver.nespot.VideoSink.ColorPackingMode.ABGR
 import choliver.nespot.apu.Apu
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.createMapper
@@ -13,14 +12,8 @@ import choliver.nespot.ppu.Ppu
 
 class Nes(
   rom: Rom,
-  videoSink: VideoSink = object : VideoSink {
-    override val colorPackingMode = ABGR  // Don't care
-    override fun put(color: Int) {}
-  },
-  audioSink: AudioSink = object : AudioSink {
-    override val sampleRateHz = 44100 // Don't care
-    override fun put(sample: Float) {}
-  },
+  videoSink: VideoSink = object : VideoSink {},
+  audioSink: AudioSink = object : AudioSink {},
   private val onStore: ((Address, Data) -> Unit)? = null
 ) {
   private var steps = 0

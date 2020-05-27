@@ -45,7 +45,6 @@ class Debugger(
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
 
   private val nes = Nes(
-    sampleRateHz = audio.sampleRateHz,
     rom = Rom.parse(rom),
     videoSink = screen.sink,
     onStore = { addr, data -> stores += (addr to data) }

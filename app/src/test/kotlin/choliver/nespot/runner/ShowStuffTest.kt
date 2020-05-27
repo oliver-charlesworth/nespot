@@ -5,9 +5,9 @@ import choliver.nespot.SCREEN_WIDTH
 import choliver.nespot.TILE_SIZE
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.createMapper
-import choliver.nespot.ppu.COLORS
 import choliver.nespot.ppu.NUM_TILE_COLUMNS
 import choliver.nespot.ppu.NUM_TILE_ROWS
+import choliver.nespot.ppu.createColorMap
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -16,6 +16,7 @@ import java.util.concurrent.CountDownLatch
 class ShowStuffTest {
   private val latch = CountDownLatch(1)
   private val screen = Screen { latch.countDown() }
+  private val colors = createColorMap(screen.sink.colorPackingMode)
 
   @Test
   @Disabled
@@ -24,7 +25,7 @@ class ShowStuffTest {
 
     for (y in 0 until SCREEN_HEIGHT) {
       for (x in 0 until SCREEN_WIDTH) {
-        screen.sink.put(COLORS[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16])
+        screen.sink.put(colors[(x / (SCREEN_WIDTH / 16)) + (y / (SCREEN_HEIGHT / 4)) * 16])
       }
     }
 
@@ -56,7 +57,7 @@ class ShowStuffTest {
       23,  // Red
       54,  // Yellow
       24   // Shitty green
-    ).map { COLORS[it] }
+    ).map { colors[it] }
 
     val scanline = IntArray(SCREEN_WIDTH)
     for (yT in 0 until NUM_TILE_ROWS) {

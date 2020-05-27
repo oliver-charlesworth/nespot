@@ -7,15 +7,14 @@ import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
 // TODO - frame interrupt
 class Apu(
   cpuFreqHz: Rational,
-  sampleRateHz: Int,
   memory: Memory,
-  private val cyclesPerSample: Rational = cpuFreqHz / sampleRateHz,
+  private val audioSink: AudioSink,
+  private val cyclesPerSample: Rational = cpuFreqHz / audioSink.sampleRateHz,
   private val sequencer: FrameSequencer = FrameSequencer(cyclesPerSample),
-  private val channels: Channels = Channels(cyclesPerSample, memory),
-  private val audioSink: AudioSink
+  private val channels: Channels = Channels(cyclesPerSample, memory)
 ) {
   private var untilNextSample = cyclesPerSample.a
-  private val mixer = Mixer(sampleRateHz, sequencer, channels)
+  private val mixer = Mixer(audioSink.sampleRateHz, sequencer, channels)
 
   val irq get() = channels.dmc.synth.irq
 

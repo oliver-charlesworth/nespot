@@ -30,7 +30,6 @@ class Emulator(private val rom: Rom) {
 
   private fun initNes(sampleRateHz: Int) {
     nes = Nes(
-      sampleRateHz = sampleRateHz,
       rom = rom,
       videoSink = EmulatorVideoSink(),
       audioSink = EmulatorAudioSink(sampleRateHz)

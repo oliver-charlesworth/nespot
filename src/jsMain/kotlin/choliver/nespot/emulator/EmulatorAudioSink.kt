@@ -6,7 +6,7 @@ import choliver.nespot.MSG_AUDIO_CHUNK
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.set
 
-class EmulatorAudioSink(sampleRateHz: Int) : AudioSink {
+class EmulatorAudioSink(override val sampleRateHz: Int) : AudioSink {
   private val bufferSize = (AUDIO_BUFFER_LENGTH_SECONDS * sampleRateHz).toInt()
   private lateinit var raw: Float32Array
   private var i = 0

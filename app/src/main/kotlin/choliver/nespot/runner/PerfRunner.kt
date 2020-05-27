@@ -11,10 +11,7 @@ class PerfRunner(
   rom: Rom,
   private val numFrames: Int
 ) {
-  private val nes = Nes(
-    sampleRateHz = 44100,
-    rom = rom
-  )
+  private val nes = Nes(rom = rom)
   private var endOfFrame = false
 
   fun run() {

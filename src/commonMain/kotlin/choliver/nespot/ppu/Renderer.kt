@@ -15,7 +15,7 @@ class Renderer(
   private val palette: Memory,
   private val oam: Memory,
   private val videoSink: VideoSink,
-  private val colors: List<Int> = COLORS
+  private val colors: List<Int> = createColorMap(videoSink.colorPackingMode)
 ) {
   data class State(
     val paletteIndices: MutableList<Int> = MutableList(SCREEN_WIDTH) { 0 },

@@ -55,8 +55,8 @@ class ApuTest {
       dmc = dmc
     ),
     cpuFreqHz = CYCLES_PER_SAMPLE * SAMPLE_RATE_HZ,
-    sampleRateHz = SAMPLE_RATE_HZ,
     audioSink = object : AudioSink {
+      override val sampleRateHz = SAMPLE_RATE_HZ
       override fun put(sample: Float) {}
     }
   )

@@ -1,6 +1,7 @@
 package choliver.nespot.nes
 
 import choliver.nespot.*
+import choliver.nespot.VideoSink.ColorPackingMode.ABGR
 import choliver.nespot.apu.Apu
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.createMapper
@@ -11,12 +12,13 @@ import choliver.nespot.ppu.Ppu
 
 
 class Nes(
-  sampleRateHz: Int,
   rom: Rom,
   videoSink: VideoSink = object : VideoSink {
+    override val colorPackingMode = ABGR  // Don't care
     override fun put(color: Int) {}
   },
   audioSink: AudioSink = object : AudioSink {
+    override val sampleRateHz = 44100 // Don't care
     override fun put(sample: Float) {}
   },
   private val onStore: ((Address, Data) -> Unit)? = null
@@ -27,7 +29,6 @@ class Nes(
 
   private val apu = Apu(
     cpuFreqHz = CPU_FREQ_HZ,
-    sampleRateHz = sampleRateHz,
     memory = mapper.prg,  // DMC can only read from PRG space
     audioSink = audioSink
   )

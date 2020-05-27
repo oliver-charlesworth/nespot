@@ -4,6 +4,7 @@ import choliver.nespot.SCREEN_HEIGHT
 import choliver.nespot.SCREEN_WIDTH
 import choliver.nespot.TILE_SIZE
 import choliver.nespot.VideoSink
+import choliver.nespot.VideoSink.ColorPackingMode.BGRA
 import choliver.nespot.runner.Event.*
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D
@@ -40,6 +41,8 @@ class Screen(
     private val bufferB = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
     private var buffer = bufferA
     private var bufferInt = buffer.asIntBuffer()
+
+    override val colorPackingMode = BGRA
 
     override fun put(color: Int) {
       bufferInt.put(color)

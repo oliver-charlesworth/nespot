@@ -8,7 +8,7 @@ interface VideoSink {
     ABGR({ listOf(255, it[2], it[1], it[0]) })
   }
 
-  val colorPackingMode: ColorPackingMode
-  fun put(color: Int)
+  val colorPackingMode: ColorPackingMode get() = ColorPackingMode.ABGR  // Don't care
+  fun put(color: Int) {}
 }
 

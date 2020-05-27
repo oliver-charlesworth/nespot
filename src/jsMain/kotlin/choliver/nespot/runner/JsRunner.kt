@@ -25,15 +25,15 @@ class JsRunner(private val worker: Worker) {
 
   private fun handleMessage(type: String, payload: Any?) {
     when (type) {
-      MSG_ALIVE -> handleWorkerReady()
+      MSG_ALIVE -> handleWorkerAlive()
       MSG_VIDEO_FRAME -> screen.absorbFrame(Uint8ClampedArray(payload as ArrayBuffer))
       MSG_AUDIO_CHUNK -> audio.absorbChunk(Float32Array(payload as ArrayBuffer))
     }
   }
 
-  private fun handleWorkerReady() {
-    postMessage(MSG_SET_SAMPLE_RATE, audio.sampleRateHz)
-    window.requestAnimationFrame(::executeFrame)
+  private fun handleWorkerAlive() {
+    postMessage(MSG_SET_SAMPLE_RATE, audio.sampleRateHz)  // Configure worker
+    window.requestAnimationFrame(::executeFrame)          // Start animation loop
   }
 
   private fun handleKeyDown(e: KeyboardEvent) {
@@ -95,10 +95,6 @@ class JsRunner(private val worker: Worker) {
         transform = "scale(${scale * RATIO_STRETCH}, ${scale})"
       }
     }
-  }
-
-  companion object {
-    private const val RATIO_STRETCH = (8.0 / 7.0)    // Evidence in forums, etc. that PAR is 8/7, and it looks good
   }
 }
 

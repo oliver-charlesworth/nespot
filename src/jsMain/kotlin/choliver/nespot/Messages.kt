@@ -2,8 +2,15 @@ package choliver.nespot
 
 import org.w3c.dom.MessageEvent
 
+data class Config(
+  val romPath: String,
+  val sampleRateHz: Int
+) {
+  constructor(obj: dynamic) : this(obj.romPath, obj.sampleRateHz)
+}
+
 // Main to worker
-const val MSG_SET_SAMPLE_RATE = "SET_SAMPLE_RATE"
+const val MSG_CONFIGURE = "CONFIGURE"
 const val MSG_EMULATE_UNTIL = "EMULATE_UNTIL"
 const val MSG_BUTTON_DOWN = "BUTTON_DOWN"
 const val MSG_BUTTON_UP = "BUTTON_UP"

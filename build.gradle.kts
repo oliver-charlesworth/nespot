@@ -55,10 +55,11 @@ kotlin {
       }
     }
 
-    js().compilations["main"].defaultSourceSet  {
+    js().compilations["main"].defaultSourceSet {
       dependencies {
         implementation(kotlin("stdlib-js"))
       }
+      resources.srcDir(File(rootDir, "roms"))
     }
   }
 }

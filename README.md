@@ -22,13 +22,13 @@ all games work yet.
 
 ## Running in browser
 
+Put your ROMs in the `roms/` directory.  Then:
+
 ```
 ./gradlew jsBrowserProductionRun --continuous"
 ```
 
-Then visit http://localhost:8080.
-
-Note that the browser version is currently hardcoded to play a particular game.
+Then visit http://localhost:8080/<rom> (without `.nes` suffix).
 
 
 ## Prerequisites

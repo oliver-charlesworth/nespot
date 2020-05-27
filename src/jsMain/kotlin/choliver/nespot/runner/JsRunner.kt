@@ -11,7 +11,10 @@ import kotlin.browser.document
 import kotlin.browser.window
 import kotlin.math.min
 
-class JsRunner(private val worker: Worker) {
+class JsRunner(
+  private val worker: Worker,
+  private val romPath: String
+) {
   private val audio = BrowserAudioPlayer()
   private val screen = BrowserScreen()
 
@@ -32,7 +35,10 @@ class JsRunner(private val worker: Worker) {
   }
 
   private fun handleWorkerAlive() {
-    postMessage(MSG_SET_SAMPLE_RATE, audio.sampleRateHz)  // Configure worker
+    postMessage(MSG_CONFIGURE, Config(
+      romPath = romPath,
+      sampleRateHz = audio.sampleRateHz
+    ))
     window.requestAnimationFrame(::executeFrame)          // Start animation loop
   }
 

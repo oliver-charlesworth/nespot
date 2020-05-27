@@ -10,11 +10,13 @@ import kotlin.browser.window
 
 fun main() {
   if (inWorker()) {
-    Emulator.createFor(ROM_URL)
+    Emulator()
   } else {
     val script = document.getElementsByTagName("script")[0] as HTMLScriptElement
-    val worker = Worker(script.src)
-    JsRunner(worker).run()
+    JsRunner(
+      worker = Worker(script.src),
+      romPath = window.location.pathname + ".nes"
+    ).run()
   }
 }
 

@@ -21,7 +21,6 @@ class EmulatorAudioSink(override val sampleRateHz: Int) : AudioSink {
     if (i == bufferSize) {
       postAudioChunk()
       reset()
-      i = 0
     }
   }
 

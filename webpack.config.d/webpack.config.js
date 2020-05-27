@@ -3,4 +3,6 @@
 config.output.globalObject = "typeof self !== 'undefined' ? self : this";
 
 // All unknown paths resolve to index.html (allows us to specify ROM name in path)
-config.devServer.historyApiFallback = true;
+if (config.devServer) {
+  config.devServer.historyApiFallback = true;
+}

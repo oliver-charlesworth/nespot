@@ -15,7 +15,7 @@ jobs:
 
       - run:
           name: Run tests
-          command: ./gradlew allTests test
+          command: ./gradlew allTests
 
       - run:
           name: Build JS distribution

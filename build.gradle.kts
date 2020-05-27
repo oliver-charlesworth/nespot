@@ -1,7 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-
 plugins {
   base
   kotlin("jvm") version "1.3.72" apply false
@@ -46,12 +45,22 @@ kotlin {
     jvm().compilations["main"].defaultSourceSet {
       dependencies {
         implementation(kotlin("stdlib-jdk8"))
+        implementation("org.openjfx:javafx-base:14:mac")
+        implementation("org.openjfx:javafx-graphics:14:mac")
+        implementation("com.github.ajalt:clikt:2.6.0")
+        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.0")
+        implementation("net.java.jinput:jinput:2.0.9")
+        runtimeOnly("net.java.jinput:jinput:2.0.9:natives-all")
       }
     }
 
     jvm().compilations["test"].defaultSourceSet {
       dependencies {
-        implementation(project(":common-test"))
+        implementation("org.junit.jupiter:junit-jupiter:5.5.2")
+        implementation("org.hamcrest:hamcrest-library:2.2")
+        implementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
+        // byte-buddy 1.9.10 (pulled in by Mockito) behaves badly with Java 13 - see https://github.com/mockk/mockk/issues/397
+        implementation("net.bytebuddy:byte-buddy:1.10.6")
       }
     }
 
@@ -63,4 +72,3 @@ kotlin {
     }
   }
 }
-

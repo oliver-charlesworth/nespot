@@ -96,10 +96,6 @@ class JsRunner(private val worker: Worker) {
       }
     }
   }
-
-  companion object {
-    private const val RATIO_STRETCH = (8.0 / 7.0)    // Evidence in forums, etc. that PAR is 8/7, and it looks good
-  }
 }
 
 

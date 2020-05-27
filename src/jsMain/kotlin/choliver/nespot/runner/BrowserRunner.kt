@@ -1,7 +1,8 @@
 package choliver.nespot.runner
 
 import choliver.nespot.*
-import choliver.nespot.nes.Joypads.Button
+import choliver.nespot.runner.BrowserKeyAction.Joypad
+import choliver.nespot.runner.BrowserKeyAction.ToggleFullScreen
 import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.Uint8ClampedArray
@@ -11,7 +12,7 @@ import kotlin.browser.document
 import kotlin.browser.window
 import kotlin.math.min
 
-class JsRunner(
+class BrowserRunner(
   private val worker: Worker,
   private val romPath: String
 ) {
@@ -39,31 +40,24 @@ class JsRunner(
       romPath = romPath,
       sampleRateHz = audio.sampleRateHz
     ))
-    window.requestAnimationFrame(::executeFrame)          // Start animation loop
+    window.requestAnimationFrame(::executeFrame) // Start animation loop
   }
 
   private fun handleKeyDown(e: KeyboardEvent) {
-    keyToButton(e.code)?.let { postMessage(MSG_BUTTON_DOWN, it.name) }
+    when (val action = BrowserKeyAction.fromKeyCode(e.code)) {
+      is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
+      is Joypad -> postMessage(MSG_BUTTON_DOWN, action.button.name)
+    }
   }
 
   private fun handleKeyUp(e: KeyboardEvent) {
-    keyToButton(e.code)?.let { postMessage(MSG_BUTTON_UP, it.name) }
+    when (val action = BrowserKeyAction.fromKeyCode(e.code)) {
+      is Joypad -> postMessage(MSG_BUTTON_UP, action.button.name)
+    }
   }
 
   private fun postMessage(type: String, payload: Any?) {
     worker.postMessage(arrayOf(type, payload))
-  }
-
-  private fun keyToButton(code: String) = when (code) {
-    "KeyZ" -> Button.A
-    "KeyX" -> Button.B
-    "BracketLeft" -> Button.SELECT
-    "BracketRight" -> Button.START
-    "ArrowLeft" -> Button.LEFT
-    "ArrowRight" -> Button.RIGHT
-    "ArrowUp" -> Button.UP
-    "ArrowDown" -> Button.DOWN
-    else -> null
   }
 
   // Every browser frame, we draw the latest completed emulator output, and schedule the emulator to catch up.

@@ -14,6 +14,16 @@ class BrowserScreen {
 
   private var frame: Uint8ClampedArray? = null
 
+  var fullScreen: Boolean = false
+    set(value) {
+      field = value
+      if (value) {
+        canvas.requestFullscreen()
+      } else {
+        document.exitFullscreen()
+      }
+    }
+
   fun absorbFrame(frame: Uint8ClampedArray) {
     this.frame = frame
   }

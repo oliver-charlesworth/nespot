@@ -20,9 +20,9 @@ class EmulatorVideoSink : VideoSink {
     if (y in (TILE_SIZE until SCREEN_HEIGHT - TILE_SIZE)) {
       raw[j++] = color
     }
-    if (x++ == SCREEN_WIDTH) {
+    if (++x == SCREEN_WIDTH) {
       x = 0
-      if (y++ == SCREEN_HEIGHT) {
+      if (++y == SCREEN_HEIGHT) {
         postVideoFrame()
         reset()
       }

@@ -19,8 +19,8 @@ class JsRunner(private val worker: Worker) {
     worker.onmessage = messageHandler(::handleMessage)
     document.onkeydown = ::handleKeyDown
     document.onkeyup = ::handleKeyUp
-    configureDom()
     window.onresize = { configureDom() }
+    configureDom()
   }
 
   private fun handleMessage(type: String, payload: Any?) {

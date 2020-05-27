@@ -1,7 +1,14 @@
 package choliver.nespot.ppu
 
+import choliver.nespot.VideoSink.ColorPackingMode
+
+fun createColorMap(mode: ColorPackingMode) = COLORS
+  .chunked(3)
+  .map(mode.convert)
+  .map { it[3] + 256 * (it[2] + 256 * (it[1] + 256 * it[0])) }
+
 // Palette generated using default settings here: http://drag.wootest.net/misc/palgen.html
-val COLORS = listOf(
+private val COLORS = listOf(
   70, 70, 70,
   0, 6, 90,
   0, 6, 120,
@@ -66,4 +73,5 @@ val COLORS = listOf(
   167, 167, 167,
   0, 0, 0,
   0, 0, 0
-).chunked(3).map { 255 + 256 * (it[0] + 256 * (it[1] + 256 * it[2])) }
+)
+

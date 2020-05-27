@@ -1,29 +1,33 @@
 package choliver.nespot.emulator
 
 import choliver.nespot.*
+import choliver.nespot.VideoSink.ColorPackingMode.ABGR
 import org.khronos.webgl.*
 
 class EmulatorVideoSink : VideoSink {
-  private lateinit var raw: Uint8ClampedArray
-  private lateinit var view: Uint16Array
-  private var i: Int = 0
+  private lateinit var raw: Int32Array
+  private var x: Int = 0
+  private var y: Int = 0
   private var j: Int = 0
 
   init {
     reset()
   }
 
-  override fun put(color: Int) {
-    if ((i++ / SCREEN_WIDTH) in (TILE_SIZE until SCREEN_HEIGHT - TILE_SIZE)) {
-      view[j++] = ((color shr 8) and 0xFF).toShort()
-      view[j++] = ((color shr 16) and 0xFF).toShort()
-      view[j++] = ((color shr 24) and 0xFF).toShort()
-      view[j++] = 255.toShort()
-    }
+  override val colorPackingMode = ABGR
 
-    if (i == SCREEN_WIDTH * SCREEN_HEIGHT) {
-      postVideoFrame()
-      reset()
+  override fun put(color: Int) {
+    if (y in (TILE_SIZE until SCREEN_HEIGHT - TILE_SIZE)) {
+      raw[j++] = color
+    }
+    x++
+    if (x == SCREEN_WIDTH) {
+      x = 0
+      y++
+      if (y == SCREEN_HEIGHT) {
+        postVideoFrame()
+        reset()
+      }
     }
   }
 
@@ -32,9 +36,9 @@ class EmulatorVideoSink : VideoSink {
   }
 
   private fun reset() {
-    i = 0
+    x = 0
+    y = 0
     j = 0
-    raw = Uint8ClampedArray(VISIBLE_WIDTH * VISIBLE_HEIGHT * 4)
-    view = raw.unsafeCast<Uint16Array>()  // See https://stackoverflow.com/a/49336551
+    raw = Int32Array(VISIBLE_WIDTH * VISIBLE_HEIGHT)
   }
 }

@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
-
 class InterruptsTest {
   @Nested
   inner class Reset {
@@ -26,11 +25,12 @@ class InterruptsTest {
     @ValueSource(booleans = [_0, _1])
     fun `follows vector and sets I`(I: Boolean) {
       assertCpuEffects(
-        instructions = listOf(Instruction(NOP)),
+        instructions = INSTRUCTIONS,
+        numStepsToExecute = 2,   // Enough for [delay, vector]
         initRegs = Regs(s = 0xFF, p = Flags(i = I)),
         initStores = MEMORY,
         expectedRegs = Regs(s = 0xFF, p = Flags(i = _1), pc = BASE_RESET),
-        expectedCycles = NUM_INTERRUPT_CYCLES,
+        expectedCycles = NUM_DELAY_CYCLES + NUM_INTERRUPT_CYCLES,
         pollReset = { _1 }
       )
     }
@@ -49,8 +49,8 @@ class InterruptsTest {
       ).memoryMap(BASE_RESET)
 
       assertCpuEffects(
-        instructions = listOf(Instruction(NOP)),
-        numStepsToExecute = 2,                                                // Run multiple steps
+        instructions = INSTRUCTIONS,
+        numStepsToExecute = 3,    // Enough for [delay, vector, vector]
         initRegs = Regs(s = 0xFF, p = Flags(i = _0)),
         initStores = MEMORY + isr,
         expectedRegs = Regs(s = 0xFF, p = Flags(i = _1), pc = BASE_RESET),  // Back at the ISR base
@@ -66,16 +66,17 @@ class InterruptsTest {
     fun `follows vector and leaves I unmodified`(I: Boolean) {
       val flags = Flags(i = I)
       assertCpuEffects(
-        instructions = listOf(Instruction(NOP)),
+        instructions = INSTRUCTIONS,
+        numStepsToExecute = 2,   // Enough for [delay, vector]
         initRegs = Regs(s = 0xFF, p = flags),
         initStores = MEMORY,
         expectedRegs = Regs(s = 0xFC, p = flags, pc = BASE_NMI),
         expectedStores = listOf(
-          0x1FF to BASE_USER.hi(),
-          0x1FE to BASE_USER.lo(),
+          0x1FF to PREV_FRAME.hi(),
+          0x1FE to PREV_FRAME.lo(),
           0x1FD to flags.data()
         ),
-        expectedCycles = NUM_INTERRUPT_CYCLES,
+        expectedCycles = NUM_DELAY_CYCLES + NUM_INTERRUPT_CYCLES,
         pollNmi = { _1 }
       )
     }
@@ -93,17 +94,17 @@ class InterruptsTest {
 
       val flags = Flags(i = _0)
       assertCpuEffects(
-        instructions = listOf(Instruction(NOP)),
-        numStepsToExecute = 2,                                              // Enough for [Vector, NOP]
+        instructions = INSTRUCTIONS,
+        numStepsToExecute = 3,    // Enough for [delay, vector, regular instruction]
         initRegs = Regs(s = 0xFF, p = flags),
         initStores = MEMORY + isr,
         expectedRegs = Regs(s = 0xFC, p = flags, pc = BASE_NMI + 1),      // PC has advanced
         expectedStores = listOf(
-          0x1FF to BASE_USER.hi(),
-          0x1FE to BASE_USER.lo(),
+          0x1FF to PREV_FRAME.hi(),
+          0x1FE to PREV_FRAME.lo(),
           0x1FD to flags.data()
         ),
-        pollNmi = { _1 }
+        pollNmi = { _1 }    // Continually asserted
       )
     }
 
@@ -118,20 +119,20 @@ class InterruptsTest {
 
       val flags = Flags(i = _0)
       assertCpuEffects(
-        instructions = listOf(Instruction(NOP)),
-        numStepsToExecute = 3,                                              // Enough for [Vector, NOP, Vector]
+        instructions = INSTRUCTIONS,
+        numStepsToExecute = 4,    // Enough for [delay, vector, delay, vector]
         initRegs = Regs(s = 0xFF, p = flags),
         initStores = MEMORY + isr,
         expectedRegs = Regs(s = 0xF9, p = flags, pc = BASE_NMI),          // Stack is twice as big!
         expectedStores = listOf(
-          0x1FF to BASE_USER.hi(),
-          0x1FE to BASE_USER.lo(),
+          0x1FF to PREV_FRAME.hi(),
+          0x1FE to PREV_FRAME.lo(),
           0x1FD to flags.data(),
           0x1FC to (BASE_NMI + 1).hi(),   // We executed 1 instruction in the first ISR
           0x1FB to (BASE_NMI + 1).lo(),
           0x1FA to flags.data()
         ),
-        pollNmi = { listOf(_1, _0, _1)[it] }   // Assert, de-assert, assert
+        pollNmi = { listOf(_1, _0, _1, _0)[it] }   // Two rising edges
       )
     }
   }
@@ -141,16 +142,17 @@ class InterruptsTest {
     @Test
     fun `follows vector and sets I if I == _0`() {
       assertCpuEffects(
-        instructions = listOf(Instruction(NOP)),
+        instructions = INSTRUCTIONS,
+        numStepsToExecute = 2,   // Enough for [delay, vector]
         initRegs = Regs(s = 0xFF, p = Flags(i = _0)),
         initStores = MEMORY,
         expectedRegs = Regs(s = 0xFC, p = Flags(i = _1), pc = BASE_IRQ),
         expectedStores = listOf(
-          0x1FF to BASE_USER.hi(),
-          0x1FE to BASE_USER.lo(),
+          0x1FF to PREV_FRAME.hi(),
+          0x1FE to PREV_FRAME.lo(),
           0x1FD to Flags(i = _0).data()
         ),
-        expectedCycles = NUM_INTERRUPT_CYCLES,
+        expectedCycles = NUM_DELAY_CYCLES + NUM_INTERRUPT_CYCLES,
         pollIrq = { _1 }
       )
     }
@@ -159,10 +161,11 @@ class InterruptsTest {
     fun `doesn't follow vector if I == _1`() {
       val flags = Flags(i = _1)
       assertCpuEffects(
-        instructions = listOf(Instruction(NOP)),
+        instructions = INSTRUCTIONS,
+        numStepsToExecute = 2,   // Enough for [delay, regular instruction]
         initRegs = Regs(s = 0xFF, p = flags),
         initStores = MEMORY,
-        expectedRegs = Regs(s = 0xFF, p = flags, pc = (BASE_USER + 1)),
+        expectedRegs = Regs(s = 0xFF, p = flags, pc = (BASE_USER + 2)),
         pollIrq = { _1 }
       )
     }
@@ -183,20 +186,20 @@ class InterruptsTest {
       ).memoryMap(BASE_IRQ)
 
       assertCpuEffects(
-        instructions = listOf(Instruction(NOP)),
-        numStepsToExecute = 3,                                              // Enough for [Vector, CLI, vector]
+        instructions = INSTRUCTIONS,
+        numStepsToExecute = 4,    // Enough for [delay, vector, CLI, vector]
         initRegs = Regs(s = 0xFF, p = Flags(i = _0)),
         initStores = MEMORY + isr,
         expectedRegs = Regs(s = 0xF9, p = Flags(i = _1), pc = BASE_IRQ),  // Stack is twice as big!
         expectedStores = listOf(
-          0x1FF to BASE_USER.hi(),
-          0x1FE to BASE_USER.lo(),
+          0x1FF to PREV_FRAME.hi(),
+          0x1FE to PREV_FRAME.lo(),
           0x1FD to Flags(i = _0).data(),
           0x1FC to (BASE_IRQ + 1).hi(),   // We executed 1 instruction in the first ISR
           0x1FB to (BASE_IRQ + 1).lo(),
           0x1FA to Flags(i = _0).data()
         ),
-        pollIrq = { _1 }
+        pollIrq = { _1 }  // Continuously asserted
       )
     }
   }
@@ -206,7 +209,8 @@ class InterruptsTest {
     @Test
     fun `reset has highest priority`() {
       assertCpuEffects(
-        instructions = listOf(Instruction(NOP)),
+        instructions = INSTRUCTIONS,
+        numStepsToExecute = 2,
         initRegs = Regs(s = 0xFF, p = Flags(i = _0)),
         initStores = MEMORY,
         expectedRegs = Regs(s = 0xFF, p = Flags(i = _1), pc = BASE_RESET),
@@ -220,13 +224,14 @@ class InterruptsTest {
     fun `nmi has second highest priority`() {
       val flags = Flags(i = _0)
       assertCpuEffects(
-        instructions = listOf(Instruction(NOP)),
+        instructions = INSTRUCTIONS,
+        numStepsToExecute = 2,
         initRegs = Regs(s = 0xFF, p = flags),
         initStores = MEMORY,
         expectedRegs = Regs(s = 0xFC, p = flags, pc = BASE_NMI),
         expectedStores = listOf(
-          0x1FF to BASE_USER.hi(),
-          0x1FE to BASE_USER.lo(),
+          0x1FF to PREV_FRAME.hi(),
+          0x1FE to PREV_FRAME.lo(),
           0x1FD to flags.data()
         ),
         pollNmi = { _1 },
@@ -244,5 +249,11 @@ class InterruptsTest {
       addrToMem(VECTOR_RESET, BASE_RESET) +
       addrToMem(VECTOR_NMI, BASE_NMI) +
       addrToMem(VECTOR_IRQ, BASE_IRQ)
+
+    private val INSTRUCTIONS = listOf(Instruction(NOP), Instruction(NOP))
+
+    private const val PREV_FRAME = BASE_USER + 1  // Advanced bt 1 due to delayed interrupt polling
+
+    private const val NUM_DELAY_CYCLES = 2  // Delay corresponds to first instruction (i.e. NOP)
   }
 }

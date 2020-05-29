@@ -23,11 +23,12 @@ class Cpu(
   private var extraCycles: Int = 0
   private val decoded = Decoded()
   private val decoder = InstructionDecoder(memory)
-  private var flags = 0
+  private var interrupts = 0
+  private var interruptsNext = 0
 
   fun executeStep(): Int {
     val next = nextStepType()
-    state.prevNmi = (flags and INTERRUPT_NMI != 0)
+    state.prevNmi = (interrupts and INTERRUPT_NMI != 0)
     diagnostics.nextStepOverride = null   // Clear the override
     return when (next) {
       RESET -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
@@ -39,13 +40,27 @@ class Cpu(
 
   // Note the priority order
   private fun nextStepType(): NextStep {
-    flags = pollInterrupts()
+    updateInterrupts()
     return diagnostics.nextStepOverride ?: when {
-      (flags and INTERRUPT_RESET != 0) -> RESET
-      (flags and INTERRUPT_NMI != 0) && !state.prevNmi -> NMI
-      (flags and INTERRUPT_IRQ != 0) && !state.regs.p.i -> IRQ
+      (interrupts and INTERRUPT_RESET != 0) -> RESET
+      (interrupts and INTERRUPT_NMI != 0) && !state.prevNmi -> NMI
+      (interrupts and INTERRUPT_IRQ != 0) && !state.regs.p.i -> IRQ
       else -> INSTRUCTION
     }
+  }
+
+  // In reality, interrupts are polled part way through an instruction; we emulate this by delaying them by a *whole*
+  // instruction.  This is required for New Zealand Story, because it does this:
+  //
+  // waitForNmi:
+  //   bit $2002        # Checks the VBL flag!
+  //   bpl waitForNmi
+  //
+  // nmi:
+  //   lda $2002        # Clears the VBL flag!
+  private fun updateInterrupts() {
+    interrupts = interruptsNext
+    interruptsNext = pollInterrupts()
   }
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {

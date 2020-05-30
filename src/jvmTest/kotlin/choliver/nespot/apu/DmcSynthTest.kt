@@ -7,7 +7,6 @@ import com.nhaarman.mockitokotlin2.whenever
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-// TODO - wraparound
 class DmcSynthTest {
   private val memory = mock<Memory>()
   private val synth = DmcSynth(memory = memory).apply {
@@ -30,16 +29,16 @@ class DmcSynthTest {
       whenever(memory[0xC230 + i]) doReturn (if (i % 2 == 0) 0xFF else 0xAA)  // Nice bit patterns
     }
 
+    skipWarmupSamples()
+
     val expected = listOf(
-      0,
       2,  4,  6,  8,  10, 12, 14, 16,   // Up up up
       14, 16, 14, 16, 14, 16, 14, 16,   // Down and up
       18, 20, 22, 24, 26, 28, 30, 32,   // Up up up
       30, 32, 30, 32, 30, 32, 30, 32,   // Down and up
       34, 36, 38, 40, 42, 44, 46, 48    // Up up up
     )
-
-    assertEquals(expected, synth.take(41))
+    assertEquals(expected, synth.take(40))
   }
 
   @Test
@@ -50,13 +49,13 @@ class DmcSynthTest {
     whenever(memory[0xFFFF]) doReturn 0xFF
     whenever(memory[0x8000]) doReturn 0xAA
 
+    skipWarmupSamples()
+
     val expected = listOf(
-      0,
       2,  4,  6,  8,  10, 12, 14, 16,   // Up up up
       14, 16, 14, 16, 14, 16, 14, 16    // Down and up
     )
-
-    assertEquals(expected, synth.take(17))
+    assertEquals(expected, synth.take(16))
   }
 
   @Test
@@ -66,14 +65,14 @@ class DmcSynthTest {
     whenever(memory[0xC230]) doReturn 0xFF
     whenever(memory[0xC231]) doReturn 0xAA
 
+    skipWarmupSamples()
+
     val expected = listOf(
-      0,
       2,  4,  6,  8,  10, 12, 14, 16,
       14, 16, 14, 16, 14, 16, 14, 16,
       16, 16, 16, 16
     )
-
-    assertEquals(expected, synth.take(21))
+    assertEquals(expected, synth.take(20))
   }
 
   @Test
@@ -85,15 +84,15 @@ class DmcSynthTest {
     whenever(memory[0xC230]) doReturn 0xFF
     whenever(memory[0xC231]) doReturn 0xAA
 
+    skipWarmupSamples()
+
     val expected = listOf(
-      0,
       2,  4,  6,  8,  10, 12, 14, 16,   // Up up up
       14, 16, 14, 16, 14, 16, 14, 16,   // Down and up
       18, 20, 22, 24, 26, 28, 30, 32,   // Up up up
       30, 32, 30, 32, 30, 32, 30, 32    // Down and up
     )
-
-    assertEquals(expected, synth.take(33))
+    assertEquals(expected, synth.take(32))
     assertFalse(synth.irq)
   }
 
@@ -106,15 +105,15 @@ class DmcSynthTest {
     whenever(memory[0xC230]) doReturn 0xFF
     whenever(memory[0xC231]) doReturn 0xAA
 
+    skipWarmupSamples()
+
     val expected = listOf(
-      0,
       2,  4,  6,  8,  10, 12, 14, 16,   // Up up up
       14, 16, 14, 16, 14, 16, 14, 16,   // Down and up
       16, 16, 16, 16, 16, 16, 16, 16,
       16, 16, 16, 16, 16, 16, 16, 16
     )
-
-    assertEquals(expected, synth.take(33))
+    assertEquals(expected, synth.take(32))
     assertTrue(synth.irq)
   }
 
@@ -125,12 +124,12 @@ class DmcSynthTest {
     synth.level = 7
     whenever(memory[0xC230]) doReturn 0x00 // Dowm down down
 
+    skipWarmupSamples()
+
     val expected = listOf(
-      7,
       5, 3, 2, 2, 2, 2, 2, 2
     )
-
-    assertEquals(expected, synth.take(9))
+    assertEquals(expected, synth.take(8))
   }
 
   @Test
@@ -140,12 +139,12 @@ class DmcSynthTest {
     synth.level = 120
     whenever(memory[0xC230]) doReturn 0xFF // Up up up
 
+    skipWarmupSamples()
+
     val expected = listOf(
-      120,
       122, 124, 125, 125, 125, 125, 125, 125
     )
-
-    assertEquals(expected, synth.take(9))
+    assertEquals(expected, synth.take(8))
   }
 
   @Test
@@ -189,16 +188,15 @@ class DmcSynthTest {
     whenever(memory[0xC230]) doReturn 0xFF
     whenever(memory[0xC231]) doReturn 0xAA
 
+    skipWarmupSamples()
     val seq1 = synth.take(4)
     synth.enabled = true
-    val seq2 = synth.take(13)
+    val seq2 = synth.take(12)
 
     val expected = listOf(
-      0,
       2,  4,  6,  8,  10, 12, 14, 16,   // Up up up
       14, 16, 14, 16, 14, 16, 14, 16    // Down and up
     )
-
     assertEquals(expected, seq1 + seq2)
   }
 
@@ -209,20 +207,43 @@ class DmcSynthTest {
     whenever(memory[0xC230]) doReturn 0xFF
     whenever(memory[0xC231]) doReturn 0xAA
 
-    val seq1 = synth.take(9)  // Just after final load
+    skipWarmupSamples()
+    val seq1 = synth.take(8)  // Just after final load
     synth.enabled = true
     val seq2 = synth.take(24)
 
     val expected = listOf(
-      0,
       2,  4,  6,  8,  10, 12, 14, 16,   // Up up up
       14, 16, 14, 16, 14, 16, 14, 16,   // Down and up
       18, 20, 22, 24, 26, 28, 30, 32,   // Up up up
       30, 32, 30, 32, 30, 32, 30, 32    // Down and up
     )
+    assertEquals(expected, seq1 + seq2)
+  }
 
+  @Test
+  fun `sample can only start on octet boundaries`() {
+    synth.length = 2
+    synth.enabled = true
+    whenever(memory[0xC230]) doReturn 0xFF
+    whenever(memory[0xC231]) doReturn 0xAA
+
+    skipWarmupSamples()
+    val seq1 = synth.take(16 + 4)  // Part way into silence octet
+    synth.enabled = true
+    val seq2 = synth.take(4 + 16)
+
+    val expected = listOf(
+      2,  4,  6,  8,  10, 12, 14, 16,   // Sample
+      14, 16, 14, 16, 14, 16, 14, 16,   // "
+      16, 16, 16, 16, 16, 16, 16, 16,   // Silence
+      18, 20, 22, 24, 26, 28, 30, 32,   // Sample starts on octet boundary
+      30, 32, 30, 32, 30, 32, 30, 32    // "
+    )
     assertEquals(expected, seq1 + seq2)
   }
 
   // TODO - play what's left on disable
+
+  private fun skipWarmupSamples() = synth.take(9) // 1 for output-before-advance, 8 for no-sample-loaded
 }

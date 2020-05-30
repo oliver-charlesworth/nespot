@@ -14,6 +14,14 @@ internal class Mixer(
   private var state: Float = 0.0f
   private var dc = 0f
 
+  private val allChannels = listOf(
+    channels.sq1,
+    channels.sq2,
+    channels.tri,
+    channels.noi,
+    channels.dmc
+  )
+
   init {
     val omega = 2 * PI * 14e3 / sampleRateHz
     alpha = (cos(omega) - 1 + sqrt(cos(omega) * cos(omega) - 4 * cos(omega) + 3)).toFloat()
@@ -21,30 +29,34 @@ internal class Mixer(
 
   fun advance(numCycles: Int) {
     val ticks = sequencer.advance(numCycles)
-    channels.sq1.advance(numCycles, ticks)
-    channels.sq2.advance(numCycles, ticks)
-    channels.tri.advance(numCycles, ticks)
-    channels.noi.advance(numCycles, ticks)
-    channels.dmc.advance(numCycles, ticks)
+    allChannels.forEach { ch ->
+      if (ticks.quarter) {
+        ch.onQuarterFrame()
+      }
+      if (ticks.half) {
+        ch.onHalfFrame()
+      }
+      ch.advance(numCycles)
+    }
   }
 
   fun sample() = cutDc(cutHf(mix()))
 
   private fun mix(): Float {
     val pulseSum = 0 +
-      channels.sq1.current +
-      channels.sq2.current
+      channels.sq1.output +
+      channels.sq2.output
 
     val otherSum = 0 +
-      channels.tri.current +
-      channels.noi.current +
-      channels.dmc.current
+      channels.tri.output +
+      channels.noi.output +
+      channels.dmc.output
 
     val pulseOut = if (pulseSum == 0) 0.0f else {
       95.88f / ((8128.0f / pulseSum) + 100.0f)
     }
     val otherOut = if (otherSum == 0) 0.0f else {
-      159.79f / ((1.0f / ((channels.tri.current / 8227.0f) + (channels.noi.current / 12241.0f) + (channels.dmc.current / 22638.0f))) + 100.0f)
+      159.79f / ((1.0f / ((channels.tri.output / 8227.0f) + (channels.noi.output / 12241.0f) + (channels.dmc.output / 22638.0f))) + 100.0f)
     }
     return pulseOut + otherOut
   }

@@ -3,15 +3,15 @@ package choliver.nespot.apu
 import choliver.nespot.Memory
 
 class Channels(
-  val sq1: SynthContext<SquareSynth, SweepActive, EnvelopeActive>,
-  val sq2: SynthContext<SquareSynth, SweepActive, EnvelopeActive>,
-  val tri: SynthContext<TriangleSynth, SweepInactive, EnvelopeInactive>,
-  val noi: SynthContext<NoiseSynth, SweepInactive, EnvelopeActive>,
-  val dmc: SynthContext<DmcSynth, SweepInactive, EnvelopeInactive>
+  val sq1: Channel<SquareSynth, SweepActive, EnvelopeActive>,
+  val sq2: Channel<SquareSynth, SweepActive, EnvelopeActive>,
+  val tri: Channel<TriangleSynth, SweepInactive, EnvelopeInactive>,
+  val noi: Channel<NoiseSynth, SweepInactive, EnvelopeActive>,
+  val dmc: Channel<DmcSynth, SweepInactive, EnvelopeInactive>
 ) {
   constructor(memory: Memory) : this(
     sq1 = Timer().let { timer ->
-      SynthContext(
+      Channel(
         synth = SquareSynth(),
         timer = timer,
         sweep = SweepActive(timer, negateWithOnesComplement = false),
@@ -19,26 +19,26 @@ class Channels(
       )
     },
     sq2 = Timer().let { timer ->
-      SynthContext(
+      Channel(
         synth = SquareSynth(),
         timer = timer,
         sweep = SweepActive(timer, negateWithOnesComplement = true),
         envelope = EnvelopeActive()
       )
     },
-    tri = SynthContext(
+    tri = Channel(
       synth = TriangleSynth(),
       timer = Timer(),
       sweep = SweepInactive(),
       envelope = EnvelopeInactive(1)
     ),
-    noi = SynthContext(
+    noi = Channel(
       synth = NoiseSynth(),
       timer = Timer(),
       sweep = SweepInactive(),
       envelope = EnvelopeActive()
     ),
-    dmc = SynthContext(
+    dmc = Channel(
       synth = DmcSynth(memory = memory),
       timer = Timer(),
       sweep = SweepInactive(),

@@ -48,7 +48,7 @@ class Apu(
   }
 
   // See http://wiki.nesdev.com/w/index.php/APU_Pulse
-  private fun SynthContext<SquareSynth, SweepActive, EnvelopeActive>.updatePulse(idx: Int, data: Data) {
+  private fun Channel<SquareSynth, SweepActive, EnvelopeActive>.updatePulse(idx: Int, data: Data) {
     fun extractPeriodCycles() = (extractTimer() + 1) * 2 // APU clock rather than CPU clock
 
     regs[idx] = data
@@ -78,7 +78,7 @@ class Apu(
   }
 
   // See http://wiki.nesdev.com/w/index.php/APU_Triangle
-  private fun SynthContext<TriangleSynth, SweepInactive, EnvelopeInactive>.updateTriangle(idx: Int, data: Data) {
+  private fun Channel<TriangleSynth, SweepInactive, EnvelopeInactive>.updateTriangle(idx: Int, data: Data) {
     fun extractPeriodCycles() = extractTimer() + 1
 
     regs[idx] = data
@@ -99,7 +99,7 @@ class Apu(
   }
 
   // See https://wiki.nesdev.com/w/index.php/APU_Noise
-  private fun SynthContext<NoiseSynth, SweepInactive, EnvelopeActive>.updateNoise(idx: Int, data: Data) {
+  private fun Channel<NoiseSynth, SweepInactive, EnvelopeActive>.updateNoise(idx: Int, data: Data) {
     regs[idx] = data
     when (idx) {
       0 -> {
@@ -120,7 +120,7 @@ class Apu(
   }
 
   // See http://wiki.nesdev.com/w/index.php/APU_DMC
-  private fun SynthContext<DmcSynth, SweepInactive, EnvelopeInactive>.updateDmc(idx: Int, data: Data) {
+  private fun Channel<DmcSynth, SweepInactive, EnvelopeInactive>.updateDmc(idx: Int, data: Data) {
     regs[idx] = data
     when (idx) {
       0 -> {
@@ -134,7 +134,7 @@ class Apu(
     }
   }
 
-  private fun SynthContext<*, *, EnvelopeActive>.updateEnvelope() {
+  private fun Channel<*, *, EnvelopeActive>.updateEnvelope() {
     envelope.loop = regs[0].isBitSet(5)
     envelope.directMode = regs[0].isBitSet(4)
     envelope.param = regs[0] and 0x0F
@@ -170,8 +170,8 @@ class Apu(
       428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106,  84,  72,  54
     )
 
-    private fun SynthContext<*, *, *>.extractTimer() = ((regs[3] and 0x07) shl 8) or regs[2]
+    private fun Channel<*, *, *>.extractTimer() = ((regs[3] and 0x07) shl 8) or regs[2]
 
-    private fun SynthContext<*, *, *>.extractLength() = LENGTH_TABLE[(regs[3] and 0xF8) shr 3]
+    private fun Channel<*, *, *>.extractLength() = LENGTH_TABLE[(regs[3] and 0xF8) shr 3]
   }
 }

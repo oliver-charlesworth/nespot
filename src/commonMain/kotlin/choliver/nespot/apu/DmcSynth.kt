@@ -6,7 +6,6 @@ import choliver.nespot.Memory
 import kotlin.math.max
 import kotlin.math.min
 
-
 // See http://wiki.nesdev.com/w/index.php/APU_DMC
 class DmcSynth(private val memory: Memory) : Synth {
   private val memoryUnit = MemoryUnit()

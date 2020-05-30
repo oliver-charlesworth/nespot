@@ -1,10 +1,7 @@
 package choliver.nespot.apu
 
 import choliver.nespot.apu.FrameSequencer.Ticks
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -26,7 +23,7 @@ class SynthContextTest {
     whenever(synth.output) doReturn 5
     whenever(envelope.level) doReturn 3
 
-    assertEquals(15, ctx.take(Ticks(quarter = false, half = false)))
+    assertEquals(15, ctx.current)
   }
 
   @Test
@@ -35,21 +32,21 @@ class SynthContextTest {
     whenever(synth.output) doReturn 5
     whenever(envelope.level) doReturn 3
 
-    assertEquals(0, ctx.take(Ticks(quarter = false, half = false)))
+    assertEquals(0, ctx.current)
   }
 
   @Test
   fun `advances synth under timer control`() {
-    whenever(timer.take()) doReturn 3
+    whenever(timer.advance(any())) doReturn 3
 
-    ctx.take(Ticks(quarter = false, half = false))
+    ctx.advance(2, Ticks(quarter = false, half = false))
 
     verify(synth).onTimer(3)
   }
 
   @Test
   fun `invokes envelope and synth on quarter frame`() {
-    ctx.take(Ticks(quarter = true, half = false))
+    ctx.advance(0, Ticks(quarter = true, half = false))
 
     verify(synth).onQuarterFrame()
     verify(envelope).advance()
@@ -57,7 +54,7 @@ class SynthContextTest {
 
   @Test
   fun `invokes sweep and synth on quarter frame`() {
-    ctx.take(Ticks(quarter = false, half = true))
+    ctx.advance(0, Ticks(quarter = false, half = true))
 
     verify(synth).onHalfFrame()
     verify(sweep).advance()

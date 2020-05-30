@@ -142,9 +142,11 @@ class Apu(
 
   fun advance(numCycles: Int) {
     mixer.advance(numCycles)
+    maybeExtractSample(numCycles)
+  }
 
+  private fun maybeExtractSample(numCycles: Int) {
     untilNextSample -= numCycles * cyclesPerSample.b
-
     while (untilNextSample <= 0) {
       untilNextSample += cyclesPerSample.a
       audioSink.put(mixer.sample())

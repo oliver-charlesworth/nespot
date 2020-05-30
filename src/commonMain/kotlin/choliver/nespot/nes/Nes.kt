@@ -17,18 +17,12 @@ class Nes(
   private val onStore: ((Address, Data) -> Unit)? = null
 ) {
   private var steps = 0
-  private var extraCycles = 0
 
   private val mapper = createMapper(rom, getStepCount = { steps })
 
-  private val apuInterceptor = object : Memory {
-    override fun get(addr: Address) = mapper.prg[addr]  // DMC can only read from PRG space
-      .also { extraCycles += 3 }
-  }
-
   private val apu = Apu(
     cpuFreqHz = CPU_FREQ_HZ,
-    memory = apuInterceptor,
+    memory = mapper.prg,  // DMC can only read from PRG space
     audioSink = audioSink
   )
 
@@ -56,11 +50,10 @@ class Nes(
 
   fun step(): Int {
     val cycles = cpu.executeStep()
-    extraCycles = 0
     apu.advance(cycles)
-    ppu.advance(cycles + extraCycles)
+    ppu.advance(cycles)
     steps++
-    return cycles + extraCycles
+    return cycles
   }
 
   private fun pollInterrupts() = (if (apu.irq || mapper.irq) INTERRUPT_IRQ else 0) or (if (ppu.vbl) INTERRUPT_NMI else 0)

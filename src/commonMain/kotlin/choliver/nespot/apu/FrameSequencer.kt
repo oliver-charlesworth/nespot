@@ -1,6 +1,5 @@
 package choliver.nespot.apu
 
-import choliver.nespot.Rational
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
 import choliver.nespot.cpu.utils._0
@@ -8,7 +7,6 @@ import choliver.nespot.cpu.utils._1
 
 // TODO - interrupts
 class FrameSequencer(
-  cyclesPerSample: Rational,
   frameSequencerFourStepPeriodCycles: Int = FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES,
   frameSequencerFiveStepPeriodCycles: Int = FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES
 ) {
@@ -25,7 +23,7 @@ class FrameSequencer(
   private val fourStepPeriod = frameSequencerFourStepPeriodCycles / 4
   private val fiveStepPeriod = frameSequencerFiveStepPeriodCycles / 5 // TODO - fix the inaccuracy here
 
-  private val timer = Timer(cyclesPerSample = cyclesPerSample).apply {
+  private val timer = Timer().apply {
     periodCycles = fourStepPeriod
   }
   private var iSeq = 0
@@ -43,8 +41,9 @@ class FrameSequencer(
       justReset = true
     }
 
-  fun take(): Ticks {
-    val ret = if (timer.take() == 1) {
+  fun advance(numCycles: Int): Ticks {
+    // We don't anticipate (numCycles > period) ever being true, so this is safe
+    val ret = if (timer.advance(numCycles) == 1) {
       when (mode) {
         FOUR_STEP -> {
           iSeq = (iSeq + 1) % 4
@@ -73,6 +72,4 @@ class FrameSequencer(
     justReset = false
     return realRet
   }
-
-
 }

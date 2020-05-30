@@ -1,6 +1,5 @@
 package choliver.nespot.apu
 
-import choliver.nespot.apu.FrameSequencer.Ticks
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sqrt
@@ -20,26 +19,32 @@ internal class Mixer(
     alpha = (cos(omega) - 1 + sqrt(cos(omega) * cos(omega) - 4 * cos(omega) + 3)).toFloat()
   }
 
-  fun take(): Float {
-    val ticks = sequencer.take()
-    return cutDc(cutHf(mix(ticks)))
+  fun advance(numCycles: Int) {
+    val ticks = sequencer.advance(numCycles)
+    channels.sq1.advance(numCycles, ticks)
+    channels.sq2.advance(numCycles, ticks)
+    channels.tri.advance(numCycles, ticks)
+    channels.noi.advance(numCycles, ticks)
+    channels.dmc.advance(numCycles, ticks)
   }
 
-  private fun mix(ticks: Ticks): Float {
-    val sq1 = channels.sq1.take(ticks)
-    val sq2 = channels.sq2.take(ticks)
-    val tri = channels.tri.take(ticks)
-    val noi = channels.noi.take(ticks)
-    val dmc = 0 //channels.dmc.take(ticks)
+  fun sample() = cutDc(cutHf(mix()))
 
-    val pulseSum = sq1 + sq2
-    val otherSum = tri + noi + dmc
+  private fun mix(): Float {
+    val pulseSum = 0 +
+      channels.sq1.current +
+      channels.sq2.current
+
+    val otherSum = 0 +
+      channels.tri.current +
+      channels.noi.current +
+      channels.dmc.current
 
     val pulseOut = if (pulseSum == 0) 0.0f else {
       95.88f / ((8128.0f / pulseSum) + 100.0f)
     }
     val otherOut = if (otherSum == 0) 0.0f else {
-      159.79f / ((1.0f / ((tri / 8227.0f) + (noi / 12241.0f) + (dmc / 22638.0f))) + 100.0f)
+      159.79f / ((1.0f / ((channels.tri.current / 8227.0f) + (channels.noi.current / 12241.0f) + (channels.dmc.current / 22638.0f))) + 100.0f)
     }
     return pulseOut + otherOut
   }

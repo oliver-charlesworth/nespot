@@ -10,7 +10,7 @@ class SynthContext<SynthT : Synth, SweepT : Sweep, EnvelopeT : Envelope>(
   val envelope: EnvelopeT,
   val regs: MutableList<Data> = mutableListOf(0x00, 0x00, 0x00, 0x00)
 ) {
-  fun take(ticks: Ticks): Int {
+  fun advance(numCycles: Int, ticks: Ticks) {
     if (ticks.quarter) {
       envelope.advance()
       synth.onQuarterFrame()
@@ -19,7 +19,8 @@ class SynthContext<SynthT : Synth, SweepT : Sweep, EnvelopeT : Envelope>(
       sweep.advance()
       synth.onHalfFrame()
     }
-    synth.onTimer(timer.take())
-    return if (sweep.mute) 0 else (synth.output * envelope.level)
+    synth.onTimer(timer.advance(numCycles))
   }
+
+  val current get() = if (sweep.mute) 0 else (synth.output * envelope.level)
 }

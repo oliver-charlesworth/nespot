@@ -1,7 +1,6 @@
 package choliver.nespot.apu
 
 import choliver.nespot.Memory
-import choliver.nespot.Rational
 
 class Channels(
   val sq1: SynthContext<SquareSynth, SweepActive, EnvelopeActive>,
@@ -10,11 +9,8 @@ class Channels(
   val noi: SynthContext<NoiseSynth, SweepInactive, EnvelopeActive>,
   val dmc: SynthContext<DmcSynth, SweepInactive, EnvelopeInactive>
 ) {
-  constructor(
-    cyclesPerSample: Rational,
-    memory: Memory
-  ) : this(
-    sq1 = Timer(cyclesPerSample).let { timer ->
+  constructor(memory: Memory) : this(
+    sq1 = Timer().let { timer ->
       SynthContext(
         synth = SquareSynth(),
         timer = timer,
@@ -22,7 +18,7 @@ class Channels(
         envelope = EnvelopeActive()
       )
     },
-    sq2 = Timer(cyclesPerSample).let { timer ->
+    sq2 = Timer().let { timer ->
       SynthContext(
         synth = SquareSynth(),
         timer = timer,
@@ -32,19 +28,19 @@ class Channels(
     },
     tri = SynthContext(
       synth = TriangleSynth(),
-      timer = Timer(cyclesPerSample),
+      timer = Timer(),
       sweep = SweepInactive(),
       envelope = EnvelopeInactive(1)
     ),
     noi = SynthContext(
       synth = NoiseSynth(),
-      timer = Timer(cyclesPerSample),
+      timer = Timer(),
       sweep = SweepInactive(),
       envelope = EnvelopeActive()
     ),
     dmc = SynthContext(
       synth = DmcSynth(memory = memory),
-      timer = Timer(Rational.of(1)),
+      timer = Timer(),
       sweep = SweepInactive(),
       envelope = EnvelopeInactive(1)
     )

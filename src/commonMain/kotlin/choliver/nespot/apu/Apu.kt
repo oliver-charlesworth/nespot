@@ -10,8 +10,8 @@ class Apu(
   memory: Memory,
   private val audioSink: AudioSink,
   private val cyclesPerSample: Rational = cpuFreqHz / audioSink.sampleRateHz,
-  private val sequencer: FrameSequencer = FrameSequencer(cyclesPerSample),
-  private val channels: Channels = Channels(cyclesPerSample, memory)
+  private val sequencer: FrameSequencer = FrameSequencer(),
+  private val channels: Channels = Channels(memory)
 ) {
   private var untilNextSample = cyclesPerSample.a
   private val mixer = Mixer(audioSink.sampleRateHz, sequencer, channels)
@@ -141,16 +141,13 @@ class Apu(
   }
 
   fun advance(numCycles: Int) {
-    {
-      val ticks = channels.dmc.timer.advance(numCycles)
-      channels.dmc.synth.onTimer(ticks)
-    }()
+    mixer.advance(numCycles)
 
     untilNextSample -= numCycles * cyclesPerSample.b
 
     while (untilNextSample <= 0) {
       untilNextSample += cyclesPerSample.a
-      audioSink.put(mixer.take())
+      audioSink.put(mixer.sample())
     }
   }
 

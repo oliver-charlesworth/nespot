@@ -44,7 +44,7 @@ class Channels(
     ),
     dmc = SynthContext(
       synth = DmcSynth(memory = memory),
-      timer = Timer(cyclesPerSample),
+      timer = Timer(Rational.of(1)),
       sweep = SweepInactive(),
       envelope = EnvelopeInactive(1)
     )

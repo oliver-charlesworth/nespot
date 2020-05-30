@@ -21,6 +21,13 @@ class Timer(
       }
     }
 
+  fun advance(numCycles: Int): Int {
+    pos -= numCycles
+    val ticks = max(0, (periodCycles - pos) / periodCycles)
+    pos += ticks * periodCycles
+    return ticks
+  }
+
   fun take(): Int {
     pos -= dec
     val ticks = max(0, (inc - pos) / inc)

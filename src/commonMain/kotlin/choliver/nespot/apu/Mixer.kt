@@ -30,7 +30,7 @@ internal class Mixer(
     val sq2 = channels.sq2.take(ticks)
     val tri = channels.tri.take(ticks)
     val noi = channels.noi.take(ticks)
-    val dmc = channels.dmc.take(ticks)
+    val dmc = 0 //channels.dmc.take(ticks)
 
     val pulseSum = sq1 + sq2
     val otherSum = tri + noi + dmc

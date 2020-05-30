@@ -141,6 +141,11 @@ class Apu(
   }
 
   fun advance(numCycles: Int) {
+    {
+      val ticks = channels.dmc.timer.advance(numCycles)
+      channels.dmc.synth.onTimer(ticks)
+    }()
+
     untilNextSample -= numCycles * cyclesPerSample.b
 
     while (untilNextSample <= 0) {

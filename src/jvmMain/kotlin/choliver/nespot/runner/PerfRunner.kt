@@ -1,5 +1,8 @@
 package choliver.nespot.runner
 
+import choliver.nespot.SCREEN_HEIGHT
+import choliver.nespot.SCREEN_WIDTH
+import choliver.nespot.VideoSink
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.Cpu.NextStep.RESET
 import choliver.nespot.nes.Nes
@@ -11,7 +14,18 @@ class PerfRunner(
   rom: Rom,
   private val numFrames: Int
 ) {
-  private val nes = Nes(rom = rom)
+  private val nes = Nes(
+    rom = rom,
+    videoSink = object : VideoSink {
+      var i = 0
+      override fun put(color: Int) {
+        if (++i == SCREEN_WIDTH * SCREEN_HEIGHT) {
+          endOfFrame = true
+          i = 0
+        }
+      }
+    }
+  )
   private var endOfFrame = false
 
   fun run() {

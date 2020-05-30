@@ -1,11 +1,10 @@
 package choliver.nespot.apu
 
-import choliver.nespot.Rational
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class SweepActiveTest {
-  private val timer = Timer(cyclesPerSample = Rational.of(1)).apply {
+  private val timer = Timer().apply {
     periodCycles = 64
   }
   private val sweep = createSweep(false)

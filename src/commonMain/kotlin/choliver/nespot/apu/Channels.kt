@@ -1,50 +1,46 @@
 package choliver.nespot.apu
 
 import choliver.nespot.Memory
-import choliver.nespot.Rational
 
 class Channels(
-  val sq1: SynthContext<SquareSynth, SweepActive, EnvelopeActive>,
-  val sq2: SynthContext<SquareSynth, SweepActive, EnvelopeActive>,
-  val tri: SynthContext<TriangleSynth, SweepInactive, EnvelopeInactive>,
-  val noi: SynthContext<NoiseSynth, SweepInactive, EnvelopeActive>,
-  val dmc: SynthContext<DmcSynth, SweepInactive, EnvelopeInactive>
+  val sq1: Channel<SquareSynth, SweepActive, EnvelopeActive>,
+  val sq2: Channel<SquareSynth, SweepActive, EnvelopeActive>,
+  val tri: Channel<TriangleSynth, SweepInactive, EnvelopeInactive>,
+  val noi: Channel<NoiseSynth, SweepInactive, EnvelopeActive>,
+  val dmc: Channel<DmcSynth, SweepInactive, EnvelopeInactive>
 ) {
-  constructor(
-    cyclesPerSample: Rational,
-    memory: Memory
-  ) : this(
-    sq1 = Timer(cyclesPerSample).let { timer ->
-      SynthContext(
+  constructor(memory: Memory) : this(
+    sq1 = Timer().let { timer ->
+      Channel(
         synth = SquareSynth(),
         timer = timer,
         sweep = SweepActive(timer, negateWithOnesComplement = false),
         envelope = EnvelopeActive()
       )
     },
-    sq2 = Timer(cyclesPerSample).let { timer ->
-      SynthContext(
+    sq2 = Timer().let { timer ->
+      Channel(
         synth = SquareSynth(),
         timer = timer,
         sweep = SweepActive(timer, negateWithOnesComplement = true),
         envelope = EnvelopeActive()
       )
     },
-    tri = SynthContext(
+    tri = Channel(
       synth = TriangleSynth(),
-      timer = Timer(cyclesPerSample),
+      timer = Timer(),
       sweep = SweepInactive(),
       envelope = EnvelopeInactive(1)
     ),
-    noi = SynthContext(
+    noi = Channel(
       synth = NoiseSynth(),
-      timer = Timer(cyclesPerSample),
+      timer = Timer(),
       sweep = SweepInactive(),
       envelope = EnvelopeActive()
     ),
-    dmc = SynthContext(
+    dmc = Channel(
       synth = DmcSynth(memory = memory),
-      timer = Timer(cyclesPerSample),
+      timer = Timer(),
       sweep = SweepInactive(),
       envelope = EnvelopeInactive(1)
     )

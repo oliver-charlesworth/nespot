@@ -13,31 +13,31 @@ class ApuTest {
   private val envelope = mock<EnvelopeActive>()
   private val sweep = mock<SweepActive>()
   private val timer = mock<Timer>()
-  private val sq1 = SynthContext(
+  private val sq1 = Channel(
     synth = mock<SquareSynth>(),
     timer = timer,
     sweep = sweep,
     envelope = envelope
   )
-  private val sq2 = SynthContext(
+  private val sq2 = Channel(
     synth = mock<SquareSynth>(),
     timer = timer,
     sweep = sweep,
     envelope = envelope
   )
-  private val tri = SynthContext(
+  private val tri = Channel(
     synth = mock<TriangleSynth>(),
     timer = timer,
     sweep = SweepInactive(),
     envelope = EnvelopeInactive(1)
   )
-  private val noi = SynthContext(
+  private val noi = Channel(
     synth = mock<NoiseSynth>(),
     timer = timer,
     sweep = SweepInactive(),
     envelope = envelope
   )
-  private val dmc = SynthContext(
+  private val dmc = Channel(
     synth = mock<DmcSynth>(),
     timer = timer,
     sweep = SweepInactive(),
@@ -102,7 +102,7 @@ class ApuTest {
       assertLength(7, sq2)
     }
 
-    private fun assertMisc(reg: Int, ctx: SynthContext<SquareSynth, SweepActive, EnvelopeActive>) {
+    private fun assertMisc(reg: Int, ctx: Channel<SquareSynth, SweepActive, EnvelopeActive>) {
       apu.writeReg(reg, 0b11_0_0_0000)
       verify(ctx.synth).dutyCycle = 0b11
 
@@ -140,7 +140,7 @@ class ApuTest {
       verify(timer).periodCycles = 0b101110010110
     }
 
-    private fun assertLength(reg: Int, ctx: SynthContext<SquareSynth, SweepActive, EnvelopeActive>) {
+    private fun assertLength(reg: Int, ctx: Channel<SquareSynth, SweepActive, EnvelopeActive>) {
       apu.writeReg(reg, 0b10101_000)
       verify(ctx.synth).length = 20 // See the length table
       verify(envelope).restart()

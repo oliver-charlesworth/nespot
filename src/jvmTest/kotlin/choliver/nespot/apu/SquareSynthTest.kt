@@ -82,11 +82,11 @@ class SquareSynthTest {
   fun `exhaustion is visible`() {
     repeat(7) { synth.onHalfFrame() }
 
-    assertTrue(synth.hasRemainingOutput)
+    assertTrue(synth.outputRemaining)
 
     synth.onHalfFrame()
 
-    assertFalse(synth.hasRemainingOutput)
+    assertFalse(synth.outputRemaining)
   }
 
   @Test
@@ -94,6 +94,6 @@ class SquareSynthTest {
     synth.enabled = false
 
     assertEquals(0, synth.length)
-    assertFalse(synth.hasRemainingOutput)
+    assertFalse(synth.outputRemaining)
   }
 }

@@ -43,11 +43,11 @@ class ApuTest {
     sweep = SweepInactive(),
     envelope = EnvelopeInactive(1)
   )
-  private val sequencer = mock<FrameSequencer>()
+  private val seq = mock<FrameSequencer>()
   private val apu = Apu(
     memory = mock(),
-    sequencer = sequencer,
     channels = Channels(
+      seq = seq,
       sq1 = sq1,
       sq2 = sq2,
       tri = tri,
@@ -265,11 +265,11 @@ class ApuTest {
 
     @Test
     fun read() {
-      whenever(sq1.synth.hasRemainingOutput) doReturn true
-      whenever(sq2.synth.hasRemainingOutput) doReturn false
-      whenever(tri.synth.hasRemainingOutput) doReturn false
-      whenever(noi.synth.hasRemainingOutput) doReturn true
-      whenever(dmc.synth.hasRemainingOutput) doReturn true
+      whenever(sq1.synth.outputRemaining) doReturn true
+      whenever(sq2.synth.outputRemaining) doReturn false
+      whenever(tri.synth.outputRemaining) doReturn false
+      whenever(noi.synth.outputRemaining) doReturn true
+      whenever(dmc.synth.outputRemaining) doReturn true
 
       assertEquals(0b000_11001, apu.readStatus())
     }
@@ -278,7 +278,7 @@ class ApuTest {
   @Test
   fun `set sequencer mode`() {
     apu.writeReg(23, 0b1_0000000)
-    verify(sequencer).mode = FIVE_STEP
+    verify(seq).mode = FIVE_STEP
   }
 
   @Test

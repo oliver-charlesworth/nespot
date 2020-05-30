@@ -7,37 +7,15 @@ import kotlin.math.sqrt
 // See https://wiki.nesdev.com/w/index.php/APU_Mixer
 internal class Mixer(
   sampleRateHz: Int,
-  private val sequencer: FrameSequencer,
   private val channels: Channels
 ) {
   private val alpha: Float
   private var state: Float = 0.0f
   private var dc = 0f
 
-  private val allChannels = listOf(
-    channels.sq1,
-    channels.sq2,
-    channels.tri,
-    channels.noi,
-    channels.dmc
-  )
-
   init {
     val omega = 2 * PI * 14e3 / sampleRateHz
     alpha = (cos(omega) - 1 + sqrt(cos(omega) * cos(omega) - 4 * cos(omega) + 3)).toFloat()
-  }
-
-  fun advance(numCycles: Int) {
-    val ticks = sequencer.advance(numCycles)
-    allChannels.forEach { ch ->
-      if (ticks.quarter) {
-        ch.onQuarterFrame()
-      }
-      if (ticks.half) {
-        ch.onHalfFrame()
-      }
-      ch.advance(numCycles)
-    }
   }
 
   fun sample() = cutDc(cutHf(mix()))

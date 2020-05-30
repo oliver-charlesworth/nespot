@@ -32,7 +32,7 @@ class DmcSynth(private val memory: Memory) : Synth {
       }
       _irq = false
     }
-  override val hasRemainingOutput get() = memoryUnit.numRemaining > 0
+  override val outputRemaining get() = memoryUnit.numRemaining > 0
   override val output get() = level
 
   val irq get() = _irq

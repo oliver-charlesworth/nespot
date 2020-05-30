@@ -15,8 +15,8 @@ class NoiseSynth : Synth {
     get() = lc.enabled
     set(value) { lc.enabled = value }
 
-  override val hasRemainingOutput get() = lc.remaining > 0
-  override val output get() = if (hasRemainingOutput) (sr and 1) else 0
+  override val outputRemaining get() = lc.remaining > 0
+  override val output get() = if (outputRemaining) (sr and 1) else 0
 
   var haltLength = false
   var mode = 0

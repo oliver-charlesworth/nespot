@@ -221,6 +221,28 @@ class DmcSynthTest {
     assertEquals(expected, seq1 + seq2)
   }
 
+  @Test
+  fun `sample can only start on octet boundaries`() {
+    synth.length = 2
+    synth.enabled = true
+    whenever(memory[0xC230]) doReturn 0xFF
+    whenever(memory[0xC231]) doReturn 0xAA
+
+    skipWarmupSamples()
+    val seq1 = synth.take(16 + 4)  // Part way into silence octet
+    synth.enabled = true
+    val seq2 = synth.take(4 + 16)
+
+    val expected = listOf(
+      2,  4,  6,  8,  10, 12, 14, 16,   // Sample
+      14, 16, 14, 16, 14, 16, 14, 16,   // "
+      16, 16, 16, 16, 16, 16, 16, 16,   // Silence
+      18, 20, 22, 24, 26, 28, 30, 32,   // Sample starts on octet boundary
+      30, 32, 30, 32, 30, 32, 30, 32    // "
+    )
+    assertEquals(expected, seq1 + seq2)
+  }
+
   // TODO - play what's left on disable
 
   private fun skipWarmupSamples() = synth.take(9) // 1 for output-before-advance, 8 for no-sample-loaded

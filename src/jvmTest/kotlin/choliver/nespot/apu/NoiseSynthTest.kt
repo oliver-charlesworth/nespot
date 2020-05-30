@@ -65,11 +65,11 @@ class NoiseSynthTest {
     synth.length = 8
     repeat(7) { synth.onHalfFrame() }
 
-    assertTrue(synth.hasRemainingOutput)
+    assertTrue(synth.outputRemaining)
 
     synth.onHalfFrame()
 
-    assertFalse(synth.hasRemainingOutput)
+    assertFalse(synth.outputRemaining)
   }
 
   @Test
@@ -77,6 +77,6 @@ class NoiseSynthTest {
     synth.enabled = false
 
     assertEquals(0, synth.length)
-    assertFalse(synth.hasRemainingOutput)
+    assertFalse(synth.outputRemaining)
   }
 }

@@ -21,7 +21,7 @@ class TriangleSynth : Synth {
     get() = lc.enabled
     set(value) { lc.enabled = value }
 
-  override val hasRemainingOutput get() = lc.remaining > 0   // Doesn't account for linear counter
+  override val outputRemaining get() = lc.remaining > 0   // Doesn't account for linear counter
   override val output get() = SEQUENCE[iSeq]
 
   // Counters gate sequence generation, rather than muting the channel

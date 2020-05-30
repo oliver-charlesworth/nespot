@@ -10,25 +10,24 @@ class Apu(
   memory: Memory,
   private val audioSink: AudioSink,
   private val cyclesPerSample: Rational = cpuFreqHz / audioSink.sampleRateHz,
-  private val sequencer: FrameSequencer = FrameSequencer(),
   private val channels: Channels = Channels(memory)
 ) {
   private var untilNextSample = cyclesPerSample.a
-  private val mixer = Mixer(audioSink.sampleRateHz, sequencer, channels)
+  private val mixer = Mixer(audioSink.sampleRateHz, channels)
 
   val irq get() = channels.dmc.synth.irq
 
   fun readStatus() = 0 +
-    (if (channels.dmc.synth.hasRemainingOutput) 0x10 else 0x00) +
-    (if (channels.noi.synth.hasRemainingOutput) 0x08 else 0x00) +
-    (if (channels.tri.synth.hasRemainingOutput) 0x04 else 0x00) +
-    (if (channels.sq2.synth.hasRemainingOutput) 0x02 else 0x00) +
-    (if (channels.sq1.synth.hasRemainingOutput) 0x01 else 0x00)
+    (if (channels.dmc.synth.outputRemaining) 0x10 else 0x00) +
+    (if (channels.noi.synth.outputRemaining) 0x08 else 0x00) +
+    (if (channels.tri.synth.outputRemaining) 0x04 else 0x00) +
+    (if (channels.sq2.synth.outputRemaining) 0x02 else 0x00) +
+    (if (channels.sq1.synth.outputRemaining) 0x01 else 0x00)
 
   fun writeReg(reg: Int, data: Data) {
     when (reg) {
-      in REG_SQ1_RANGE -> channels.sq1.updatePulse(reg - REG_SQ1_RANGE.first, data)
-      in REG_SQ2_RANGE -> channels.sq2.updatePulse(reg - REG_SQ2_RANGE.first, data)
+      in REG_SQ1_RANGE -> channels.sq1.updateSquare(reg - REG_SQ1_RANGE.first, data)
+      in REG_SQ2_RANGE -> channels.sq2.updateSquare(reg - REG_SQ2_RANGE.first, data)
       in REG_TRI_RANGE -> channels.tri.updateTriangle(reg - REG_TRI_RANGE.first, data)
       in REG_NOI_RANGE -> channels.noi.updateNoise(reg - REG_NOI_RANGE.first, data)
       in REG_DMC_RANGE -> channels.dmc.updateDmc(reg - REG_DMC_RANGE.first, data)
@@ -42,13 +41,13 @@ class Apu(
       }
 
       REG_FRAME_COUNTER_CTRL -> {
-        sequencer.mode = if (data.isBitSet(7)) FIVE_STEP else FOUR_STEP
+        channels.seq.mode = if (data.isBitSet(7)) FIVE_STEP else FOUR_STEP
       }
     }
   }
 
   // See http://wiki.nesdev.com/w/index.php/APU_Pulse
-  private fun Channel<SquareSynth, SweepActive, EnvelopeActive>.updatePulse(idx: Int, data: Data) {
+  private fun SquareChannel.updateSquare(idx: Int, data: Data) {
     fun extractPeriodCycles() = (extractTimer() + 1) * 2 // APU clock rather than CPU clock
 
     regs[idx] = data
@@ -78,7 +77,7 @@ class Apu(
   }
 
   // See http://wiki.nesdev.com/w/index.php/APU_Triangle
-  private fun Channel<TriangleSynth, SweepInactive, EnvelopeInactive>.updateTriangle(idx: Int, data: Data) {
+  private fun TriangleChannel.updateTriangle(idx: Int, data: Data) {
     fun extractPeriodCycles() = extractTimer() + 1
 
     regs[idx] = data
@@ -99,7 +98,7 @@ class Apu(
   }
 
   // See https://wiki.nesdev.com/w/index.php/APU_Noise
-  private fun Channel<NoiseSynth, SweepInactive, EnvelopeActive>.updateNoise(idx: Int, data: Data) {
+  private fun NoiseChannel.updateNoise(idx: Int, data: Data) {
     regs[idx] = data
     when (idx) {
       0 -> {
@@ -120,7 +119,7 @@ class Apu(
   }
 
   // See http://wiki.nesdev.com/w/index.php/APU_DMC
-  private fun Channel<DmcSynth, SweepInactive, EnvelopeInactive>.updateDmc(idx: Int, data: Data) {
+  private fun DmcChannel.updateDmc(idx: Int, data: Data) {
     regs[idx] = data
     when (idx) {
       0 -> {
@@ -141,7 +140,7 @@ class Apu(
   }
 
   fun advance(numCycles: Int) {
-    mixer.advance(numCycles)
+    channels.advance(numCycles)
     maybeExtractSample(numCycles)
   }
 

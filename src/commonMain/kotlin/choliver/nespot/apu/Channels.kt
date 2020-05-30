@@ -1,15 +1,23 @@
 package choliver.nespot.apu
 
 import choliver.nespot.Memory
+import choliver.nespot.apu.FrameSequencer.Ticks
+
+typealias SquareChannel = Channel<SquareSynth, SweepActive, EnvelopeActive>
+typealias TriangleChannel = Channel<TriangleSynth, SweepInactive, EnvelopeInactive>
+typealias NoiseChannel = Channel<NoiseSynth, SweepInactive, EnvelopeActive>
+typealias DmcChannel = Channel<DmcSynth, SweepInactive, EnvelopeInactive>
 
 class Channels(
-  val sq1: Channel<SquareSynth, SweepActive, EnvelopeActive>,
-  val sq2: Channel<SquareSynth, SweepActive, EnvelopeActive>,
-  val tri: Channel<TriangleSynth, SweepInactive, EnvelopeInactive>,
-  val noi: Channel<NoiseSynth, SweepInactive, EnvelopeActive>,
-  val dmc: Channel<DmcSynth, SweepInactive, EnvelopeInactive>
+  val seq: FrameSequencer,
+  val sq1: SquareChannel,
+  val sq2: SquareChannel,
+  val tri: TriangleChannel,
+  val noi: NoiseChannel,
+  val dmc: DmcChannel
 ) {
   constructor(memory: Memory) : this(
+    seq = FrameSequencer(),
     sq1 = Timer().let { timer ->
       Channel(
         synth = SquareSynth(),
@@ -45,4 +53,23 @@ class Channels(
       envelope = EnvelopeInactive(1)
     )
   )
+
+  fun advance(numCycles: Int) {
+    val ticks = seq.advance(numCycles)
+    sq1.advance(numCycles, ticks)
+    sq2.advance(numCycles, ticks)
+    tri.advance(numCycles, ticks)
+    noi.advance(numCycles, ticks)
+    dmc.advance(numCycles, ticks)
+  }
+
+  fun Channel<*, *, *>.advance(numCycles: Int, ticks: Ticks) {
+    if (ticks.quarter) {
+      onQuarterFrame()
+    }
+    if (ticks.half) {
+      onHalfFrame()
+    }
+    this.advance(numCycles)
+  }
 }

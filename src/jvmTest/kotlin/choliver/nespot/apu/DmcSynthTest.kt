@@ -153,11 +153,11 @@ class DmcSynthTest {
     synth.enabled = true
     synth.take(32)
 
-    assertTrue(synth.hasRemainingOutput)
+    assertTrue(synth.outputRemaining)
 
     synth.take(1)   // The sequence is length-40, but the flag is cleared once we've performed all the mem loads
 
-    assertFalse(synth.hasRemainingOutput)
+    assertFalse(synth.outputRemaining)
   }
 
   @Test
@@ -165,7 +165,7 @@ class DmcSynthTest {
     synth.enabled = false
 
     assertEquals(0, synth.length)
-    assertFalse(synth.hasRemainingOutput)
+    assertFalse(synth.outputRemaining)
   }
 
   @Test

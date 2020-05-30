@@ -3,9 +3,7 @@ package choliver.nespot.mappers
 import choliver.nespot.*
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.Rom.Mirroring.*
-import choliver.nespot.cartridge.mirrorHorizontal
-import choliver.nespot.cartridge.mirrorVertical
+import choliver.nespot.cartridge.vramAddr
 
 // https://wiki.nesdev.com/w/index.php/NROM
 class NromMapper(rom: Rom) : Mapper {
@@ -33,22 +31,16 @@ class NromMapper(rom: Rom) : Mapper {
 
   override val chr = object : Memory {
     override fun get(addr: Address) = when {
-      (addr >= BASE_VRAM) -> vram[vramAddr(addr)]    // This maps everything >= 0x4000 too
+      (addr >= BASE_VRAM) -> vram[vramAddr(mirroring, addr)]    // This maps everything >= 0x4000 too
       else -> chrData[addr]
     }.data()
 
     override fun set(addr: Address, data: Data) {
       when {
-        (addr >= BASE_VRAM) -> vram[vramAddr(addr)] = data.toByte()   // This maps everything >= 0x4000 too
+        (addr >= BASE_VRAM) -> vram[vramAddr(mirroring, addr)] = data.toByte()   // This maps everything >= 0x4000 too
         else -> chrData[addr] = data.toByte()
       }
     }
-  }
-
-  private fun vramAddr(addr: Address): Address = when (mirroring) {
-    VERTICAL -> mirrorVertical(addr)
-    HORIZONTAL -> mirrorHorizontal(addr)
-    IGNORED -> throw UnsupportedOperationException()
   }
 
   @Suppress("unused")

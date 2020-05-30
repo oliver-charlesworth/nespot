@@ -1,15 +1,13 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.*
+import choliver.nespot.cartridge.BoringChr
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.vramAddr
 
 
 // See https://wiki.nesdev.com/w/index.php/UxROM
 class UxRomMapper(private val rom: Rom) : Mapper {
-  private val vram = ByteArray(VRAM_SIZE)
-  private val chrRam = ByteArray(CHR_RAM_SIZE)
   private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
   private var prg0Bank = 0
 
@@ -32,19 +30,10 @@ class UxRomMapper(private val rom: Rom) : Mapper {
     }
   }
 
-  override val chr = object : Memory {
-    override fun get(addr: Address) = when {
-      (addr >= BASE_VRAM) -> vram[vramAddr(rom.mirroring, addr)]    // This maps everything >= 0x4000 too
-      else -> chrRam[addr]
-    }.data()
-
-    override fun set(addr: Address, data: Data) {
-      when {
-        (addr >= BASE_VRAM) -> vram[vramAddr(rom.mirroring, addr)] = data.toByte()   // This maps everything >= 0x4000 too
-        else -> chrRam[addr] = data.toByte()
-      }
-    }
-  }
+  override val chr = BoringChr(
+    raw = ByteArray(CHR_RAM_SIZE),
+    mirroring = rom.mirroring
+  )
 
   @Suppress("unused")
   companion object {

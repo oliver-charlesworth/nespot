@@ -2,8 +2,8 @@ package choliver.nespot.mappers
 
 import choliver.nespot.*
 import choliver.nespot.cartridge.ChrMemory
-import choliver.nespot.cartridge.PrgMemory
 import choliver.nespot.cartridge.Mapper
+import choliver.nespot.cartridge.PrgMemory
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL

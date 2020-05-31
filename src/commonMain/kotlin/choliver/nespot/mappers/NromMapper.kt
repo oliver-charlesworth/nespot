@@ -2,8 +2,8 @@ package choliver.nespot.mappers
 
 import choliver.nespot.Ram
 import choliver.nespot.cartridge.ChrMemory
-import choliver.nespot.cartridge.PrgMemory
 import choliver.nespot.cartridge.Mapper
+import choliver.nespot.cartridge.PrgMemory
 import choliver.nespot.cartridge.Rom
 
 // https://wiki.nesdev.com/w/index.php/NROM

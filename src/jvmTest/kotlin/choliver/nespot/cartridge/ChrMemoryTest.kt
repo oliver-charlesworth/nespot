@@ -28,10 +28,9 @@ class ChrMemoryTest {
   @Test
   fun `non-linear ROM loads`() {
     val raw = ByteArray(16384)
-    val mapper = ChrMemory(raw, bankSize = 2048)
+    val mapper = PrgMemory(raw, bankSize = 2048)
     val checker = BankMappingChecker(
       bankSize = 2048,
-      srcBase = BASE_CHR_ROM,
       outBase = BASE_CHR_ROM,
       setSrc = takesBytes(raw::set),
       getOut = mapper::get

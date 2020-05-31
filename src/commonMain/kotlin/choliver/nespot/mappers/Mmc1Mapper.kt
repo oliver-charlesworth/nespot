@@ -29,8 +29,7 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
 
   override val chr = ChrMemory(
     raw = chrData,
-    bankSize = CHR_BANK_SIZE,
-    mirroring = FIXED_LOWER
+    bankSize = CHR_BANK_SIZE
   )
 
   override val irq = false
@@ -39,6 +38,7 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
   init {
     updatePrgBankMap()
     updateChrBankMap()
+    chr.mirroring = FIXED_LOWER
   }
 
   private fun updateShiftRegister(addr: Address, data: Data) {

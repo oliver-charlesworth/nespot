@@ -49,13 +49,13 @@ class Mmc3Mapper(rom: Rom) : Mapper {
 
   private val actualChr = ChrMemory(
     raw = rom.chrData,
-    bankSize = CHR_BANK_SIZE,
-    mirroring = VERTICAL
+    bankSize = CHR_BANK_SIZE
   )
 
   init {
     updatePrgBankMap()
     updateChrBankMap()
+    actualChr.mirroring = VERTICAL
   }
 
   private fun setReg(addr: Address, data: Data) {

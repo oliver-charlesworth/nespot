@@ -23,11 +23,11 @@ class CnRomMapper(rom: Rom) : Mapper {
 
   override val chr = ChrMemory(
     raw = rom.chrData,
-    bankSize = CHR_BANK_SIZE,
-    mirroring = rom.mirroring
+    bankSize = CHR_BANK_SIZE
   )
 
   init {
+    chr.mirroring = rom.mirroring
     prg.bankMap[1] = if (rom.prgData.size > PRG_BANK_SIZE) 1 else 0
   }
 

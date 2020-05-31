@@ -17,11 +17,11 @@ class NromMapper(rom: Rom) : Mapper {
   )
 
   override val chr = ChrMemory(
-    raw = if (rom.chrData.isEmpty()) ByteArray(CHR_RAM_SIZE) else rom.chrData,
-    mirroring = rom.mirroring
+    raw = if (rom.chrData.isEmpty()) ByteArray(CHR_RAM_SIZE) else rom.chrData
   )
 
   init {
+    chr.mirroring = rom.mirroring
     prg.bankMap[1] = if (rom.prgData.size > PRG_BANK_SIZE) 1 else 0
   }
 

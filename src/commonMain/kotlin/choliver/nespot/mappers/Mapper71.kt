@@ -24,11 +24,11 @@ class Mapper71(rom: Rom) : Mapper {
   )
 
   override val chr = ChrMemory(
-    raw = ByteArray(CHR_RAM_SIZE),
-    mirroring = rom.mirroring
+    raw = ByteArray(CHR_RAM_SIZE)
   )
 
   init {
+    chr.mirroring = rom.mirroring
     prg.bankMap[1] = numPrgBanks - 1    // Upper bank is fixed
   }
 

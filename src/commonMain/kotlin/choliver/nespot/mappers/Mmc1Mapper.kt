@@ -1,19 +1,16 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.*
+import choliver.nespot.cartridge.BoringChr
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.mirrorHorizontal
-import choliver.nespot.cartridge.mirrorVertical
+import choliver.nespot.cartridge.Rom.Mirroring.FIXED_LOWER
 import choliver.nespot.mappers.Mmc1Mapper.ChrMode.CHR_MODE_0
 import choliver.nespot.mappers.Mmc1Mapper.ChrMode.CHR_MODE_1
-import choliver.nespot.mappers.Mmc1Mapper.MirroringMode.*
 import choliver.nespot.mappers.Mmc1Mapper.PrgMode.*
-
 
 // https://wiki.nesdev.com/w/index.php/MMC1
 class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
-  private val vram = ByteArray(VRAM_SIZE)
   private val prgRam = ByteArray(PRG_RAM_SIZE)
   private val prgData = rom.prgData
   private val chrData = if (rom.chrData.isEmpty()) ByteArray(CHR_RAM_SIZE) else rom.chrData
@@ -24,7 +21,6 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
   private var chr0Bank = 0
   private var chr1Bank = 0
   private var prgBank = (numPrgBanks - 1)   // Bubble Bobble relies on this to start up
-  private var mirrorMode = FIXED_LOWER
   private var chrMode = CHR_MODE_0
   private var prgMode = PRG_MODE_0
   private var prevStep = -1
@@ -46,19 +42,11 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     }
   }
 
-  override val chr = object : Memory {
-    override fun get(addr: Address) = when {
-      (addr >= BASE_VRAM) -> vram[vramAddr(addr)]  // This maps everything >= 0x4000 too
-      else -> chrData[chrAddr(addr)]
-    }.data()
-
-    override fun set(addr: Address, data: Data) {
-      when {
-        (addr >= BASE_VRAM) -> vram[vramAddr(addr)] = data.toByte()  // This maps everything >= 0x4000 too
-        else -> chrData[chrAddr(addr)] = data.toByte()
-      }
-    }
-  }
+  override val chr = BoringChr(
+    raw = chrData,
+    bankSize = CHR_BANK_SIZE,
+    mirroring = FIXED_LOWER
+  )
 
   private fun prgRomAddr(addr: Address): Int {
     val iBank = if (addr >= BASE_PRG1_ROM) {
@@ -77,28 +65,6 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     return (addr % PRG_BANK_SIZE) + iBank * PRG_BANK_SIZE
   }
 
-  private fun chrAddr(addr: Address): Int {
-    val iBank = if (addr >= BASE_CHR1_ROM) {
-      when (chrMode) {
-        CHR_MODE_0 -> (chr0Bank or 0x01)
-        CHR_MODE_1 -> chr1Bank
-      }
-    } else {
-      when (chrMode) {
-        CHR_MODE_0 -> (chr0Bank and 0x1E)
-        CHR_MODE_1 -> chr0Bank
-      }
-    }
-    return (addr % CHR_BANK_SIZE) + iBank * CHR_BANK_SIZE
-  }
-
-  private fun vramAddr(addr: Address): Address = when (mirrorMode) {
-    FIXED_LOWER -> (addr % NAMETABLE_SIZE)
-    FIXED_UPPER -> (addr % NAMETABLE_SIZE) + NAMETABLE_SIZE
-    VERTICAL -> mirrorVertical(addr)
-    HORIZONTAL -> mirrorHorizontal(addr)
-  }
-
   private fun updateShiftRegister(addr: Address, data: Data) {
     // We don't update on consecutive stores (we approximate this as multiple stores in the same instruction step)
     val currentStep = getStepCount()
@@ -112,7 +78,7 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
         if (--srCount == 0) {
           when ((addr and 0x6000) shr 13) {
             0 -> {
-              mirrorMode = MirroringMode.values()[(sr and 0x03)]
+              chr.mirroring = Rom.Mirroring.values()[(sr and 0x03)]
               prgMode = PrgMode.values()[(sr and 0x0C) shr 2]
               chrMode = ChrMode.values()[(sr and 0x10) shr 4]
             }
@@ -120,6 +86,8 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
             2 -> chr1Bank = sr % numChrBanks
             3 -> prgBank = sr % numPrgBanks
           }
+          updateChrBankMap()
+
           // Reset
           srCount = 5
           sr = 0x00
@@ -127,6 +95,19 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
       }
     }
     prevStep = currentStep
+  }
+
+  private fun updateChrBankMap() {
+    when (chrMode) {
+      CHR_MODE_0 -> {
+        chr.bankMap[0] = chr0Bank and 0x1E
+        chr.bankMap[1] = chr0Bank or 0x01
+      }
+      CHR_MODE_1 -> {
+        chr.bankMap[0] = chr0Bank
+        chr.bankMap[1] = chr1Bank
+      }
+    }
   }
 
   private enum class PrgMode {
@@ -141,13 +122,6 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     CHR_MODE_1
   }
 
-  private enum class MirroringMode {
-    FIXED_LOWER,
-    FIXED_UPPER,
-    VERTICAL,
-    HORIZONTAL
-  }
-
   @Suppress("unused")
   companion object {
     const val PRG_RAM_SIZE = 8192
@@ -158,8 +132,6 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     const val BASE_PRG_RAM = BASE_PRG_ROM - PRG_RAM_SIZE
     const val BASE_PRG0_ROM = BASE_PRG_ROM
     const val BASE_PRG1_ROM = BASE_PRG_ROM + PRG_BANK_SIZE
-    const val BASE_CHR0_ROM = BASE_CHR_ROM
-    const val BASE_CHR1_ROM = BASE_CHR_ROM + CHR_BANK_SIZE
     const val BASE_SR = BASE_PRG_ROM
   }
 }

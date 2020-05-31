@@ -21,7 +21,7 @@ class CnRomMapper(private val rom: Rom) : Mapper {
 
     override operator fun set(addr: Address, data: Data) {
       if (addr >= BASE_BANK_SELECT) {
-        chr.bank = data % numChrBanks
+        chr.bankMap[0] = data % numChrBanks
       }
     }
   }

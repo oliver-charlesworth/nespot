@@ -20,8 +20,10 @@ data class Rom(
   val tvSystem: TvSystem = NTSC
 ) {
   enum class Mirroring {
-    HORIZONTAL,
+    FIXED_LOWER,
+    FIXED_UPPER,
     VERTICAL,
+    HORIZONTAL,
     IGNORED   // TODO - not sure if this is mutually exclusive
   }
 

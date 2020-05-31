@@ -10,7 +10,7 @@ class BoringChr(
   var mirroring: Mirroring = IGNORED
 ) : Memory {
   private val vram = ByteArray(VRAM_SIZE)
-  var bank: Int = 0
+  val bankMap = IntArray(raw.size / bankSize) { it }
 
   override fun get(addr: Address) = when {
     (addr >= BASE_VRAM) -> vram[vramAddr(mirroring, addr)]    // This maps everything >= 0x4000 too
@@ -24,7 +24,5 @@ class BoringChr(
     }
   }
 
-  private fun chrAddr(addr: Address): Int {
-    return (addr % bankSize) + bank * bankSize
-  }
+  private fun chrAddr(addr: Address) = (addr % bankSize) + bankMap[addr / bankSize] * bankSize
 }

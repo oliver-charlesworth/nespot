@@ -1,10 +1,14 @@
 package choliver.nespot.cartridge
 
 import choliver.nespot.Address
+import choliver.nespot.NAMETABLE_SIZE
 import choliver.nespot.cartridge.Rom.Mirroring
 import choliver.nespot.cartridge.Rom.Mirroring.*
+import choliver.nespot.mappers.Mmc1Mapper
 
 internal fun vramAddr(mirroring: Mirroring, addr: Address): Address = when (mirroring) {
+  FIXED_LOWER -> (addr % NAMETABLE_SIZE)
+  FIXED_UPPER -> (addr % NAMETABLE_SIZE) + NAMETABLE_SIZE
   VERTICAL -> mirrorVertical(addr)
   HORIZONTAL -> mirrorHorizontal(addr)
   IGNORED -> throw UnsupportedOperationException()

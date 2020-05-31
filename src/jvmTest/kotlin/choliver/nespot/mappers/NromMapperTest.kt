@@ -1,15 +1,14 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.BASE_CHR_ROM
+import choliver.nespot.BASE_PRG_RAM
 import choliver.nespot.BASE_PRG_ROM
+import choliver.nespot.PRG_RAM_SIZE
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
 import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
-import choliver.nespot.mappers.NromMapper.Companion.BASE_PRG_RAM
 import choliver.nespot.mappers.NromMapper.Companion.CHR_RAM_SIZE
-import choliver.nespot.mappers.NromMapper.Companion.PRG_BANK_SIZE
-import choliver.nespot.mappers.NromMapper.Companion.PRG_RAM_SIZE
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -58,7 +57,7 @@ class NromMapperTest {
       val prgData = ByteArray(size)
       val mapper = NromMapper(Rom(prgData = prgData))
       return BankMappingChecker(
-        bankSize = PRG_BANK_SIZE,
+        bankSize = 16384,
         outBase = BASE_PRG_ROM,
         setSrc = takesBytes(prgData::set),
         getOut = mapper.prg::get

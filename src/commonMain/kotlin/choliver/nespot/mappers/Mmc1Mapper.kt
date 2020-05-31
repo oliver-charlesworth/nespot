@@ -1,7 +1,7 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.*
-import choliver.nespot.cartridge.BoringChr
+import choliver.nespot.cartridge.ChrMemory
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.FIXED_LOWER
@@ -42,7 +42,7 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     }
   }
 
-  override val chr = BoringChr(
+  override val chr = ChrMemory(
     raw = chrData,
     bankSize = CHR_BANK_SIZE,
     mirroring = FIXED_LOWER

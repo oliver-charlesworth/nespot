@@ -26,7 +26,7 @@ class ChrMemory(
 
   private fun map(addr: Address) = (addr % bankSize) + bankMap[addr / bankSize] * bankSize
 
-  private fun vmap(addr: Address): Address = when (mirroring) {
+  private fun vmap(addr: Address) = when (mirroring) {
     FIXED_LOWER -> (addr % NAMETABLE_SIZE)
     FIXED_UPPER -> (addr % NAMETABLE_SIZE) + NAMETABLE_SIZE
     VERTICAL -> addr and 2047

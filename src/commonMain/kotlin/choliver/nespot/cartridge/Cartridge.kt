@@ -9,9 +9,9 @@ fun createMapper(
 ): Mapper {
   validateMagicNumber(rom)
   return when (rom.mapper) {
-    0 -> NromMapper.create(rom)
+    0 -> StandardMapper(NromStuff(rom))
     1 -> Mmc1Mapper(rom, getStepCount)
-    2 -> UxRomMapper.create(rom)
+    2 -> StandardMapper(UxRomStuff(rom))
     3 -> CnRomMapper(rom)
     4 -> Mmc3Mapper(rom)
     71 -> Mapper71(rom)

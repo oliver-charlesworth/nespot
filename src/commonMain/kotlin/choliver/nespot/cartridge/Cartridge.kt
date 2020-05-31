@@ -12,7 +12,7 @@ fun createMapper(
     0 -> StandardMapper(NromMapperConfig(rom))
     1 -> Mmc1Mapper(rom, getStepCount)
     2 -> StandardMapper(UxRomMapperConfig(rom))
-    3 -> CnRomMapper(rom)
+    3 -> StandardMapper(CnRomMapperConfig(rom))
     4 -> Mmc3Mapper(rom)
     71 -> Mapper71(rom)
     else -> throw RuntimeException("Mapper #${rom.mapper}")

@@ -30,6 +30,7 @@ class UxRomMapper(rom: Rom) : Mapper {
     prg.bankMap[1] = numPrgBanks - 1    // Upper bank is fixed
   }
 
+  @Suppress("UNUSED_PARAMETER")
   private fun updateReg(addr: Address, data: Data) {
     prg.bankMap[0] = data % numPrgBanks
   }

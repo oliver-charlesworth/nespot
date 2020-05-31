@@ -4,17 +4,26 @@ import choliver.nespot.*
 
 class PrgMemory(
   private val raw: ByteArray,
-  private val bankSize: Int = raw.size,
+  bankSize: Int = raw.size,
   private val onSet: (addr: Address, data: Data) -> Unit = { _, _ -> }
 ) : Memory {
-  private val numBanks = PRG_ROM_SIZE / bankSize
-  private val pageMap = IntArray(numBanks) { it * bankSize }
+  init {
+    if ((bankSize % PAGE_SIZE) != 0) {
+      throw IllegalArgumentException("Bank size ${bankSize} not a multiple of page size ${PAGE_SIZE}")
+    }
+  }
+
+  // We map at page granularity, rather than bank granularity
+  private val pagesPerBank = bankSize / PAGE_SIZE
+  private val pageMap = IntArray(NUM_PAGES) { it * PAGE_SIZE }
   val bankMap = BankSetter()
   val ram = ByteArray(PRG_RAM_SIZE)
 
   inner class BankSetter {
-    operator fun set(output: Int, underlying: Int) {
-      pageMap[output] = underlying * bankSize
+    operator fun set(idx: Int, underlying: Int) {
+      for (i in 0 until pagesPerBank) {
+        pageMap[idx * pagesPerBank + i] = (underlying * pagesPerBank + i) * PAGE_SIZE
+      }
     }
   }
 
@@ -30,5 +39,10 @@ class PrgMemory(
     }
   }
 
-  private fun map(addr: Address) = (addr % bankSize) + pageMap[addr % PRG_ROM_SIZE / bankSize]
+  private fun map(addr: Address) = (addr % PAGE_SIZE) + pageMap[addr / PAGE_SIZE % NUM_PAGES]
+
+  companion object {
+    private const val PAGE_SIZE = 1024    // This should be no bigger than the minimum known bank size
+    private const val NUM_PAGES = PRG_ROM_SIZE / PAGE_SIZE
+  }
 }

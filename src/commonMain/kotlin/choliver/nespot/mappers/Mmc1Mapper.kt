@@ -111,9 +111,6 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     const val CHR_RAM_SIZE = 8192
     const val PRG_BANK_SIZE = 16384
     const val CHR_BANK_SIZE = 4096
-
-    const val BASE_PRG0_ROM = BASE_PRG_ROM
-    const val BASE_PRG1_ROM = BASE_PRG_ROM + PRG_BANK_SIZE
     const val BASE_SR = BASE_PRG_ROM
   }
 }

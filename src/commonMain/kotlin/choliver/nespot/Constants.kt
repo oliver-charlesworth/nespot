@@ -13,6 +13,7 @@ const val DOTS_PER_CYCLE = 3
 
 const val NAMETABLE_SIZE = 1024
 const val VRAM_SIZE = 2048
+const val CHR_SIZE = 8192
 const val PRG_RAM_SIZE = 8192
 const val PRG_ROM_SIZE = 32768
 

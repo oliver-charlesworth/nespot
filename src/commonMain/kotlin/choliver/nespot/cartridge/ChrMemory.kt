@@ -33,8 +33,4 @@ class ChrMemory(
     HORIZONTAL -> (addr and 1023) or ((addr and 2048) shr 1)
     IGNORED -> throw UnsupportedOperationException()
   }
-
-  companion object {
-    private const val CHR_SIZE = 8192
-  }
 }

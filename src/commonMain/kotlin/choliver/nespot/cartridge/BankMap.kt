@@ -2,7 +2,7 @@ package choliver.nespot.cartridge
 
 import choliver.nespot.Address
 
-class BankSetter(
+class BankMap(
   bankSize: Int,
   addressSpaceSize: Int
 ) {

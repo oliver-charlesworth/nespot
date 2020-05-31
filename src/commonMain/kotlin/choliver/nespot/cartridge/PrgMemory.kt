@@ -8,7 +8,7 @@ class PrgMemory(
   bankSize: Int = raw.size,
   private val onSet: (addr: Address, data: Data) -> Unit = { _, _ -> }
 ) : Memory {
-  val bankMap = BankSetter(bankSize = bankSize, addressSpaceSize = PRG_ROM_SIZE)
+  val bankMap = BankMap(bankSize = bankSize, addressSpaceSize = PRG_ROM_SIZE)
   val ram = ByteArray(PRG_RAM_SIZE)
 
   override fun get(addr: Address) = when {

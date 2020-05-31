@@ -36,6 +36,11 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
   override val irq = false
   override val persistentRam = Ram.backedBy(prg.ram)
 
+  init {
+    updatePrgBankMap()
+    updateChrBankMap()
+  }
+
   private fun updateShiftRegister(addr: Address, data: Data) {
     // We don't update on consecutive stores (we approximate this as multiple stores in the same instruction step)
     val currentStep = getStepCount()

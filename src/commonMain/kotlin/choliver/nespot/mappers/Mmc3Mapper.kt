@@ -53,6 +53,11 @@ class Mmc3Mapper(rom: Rom) : Mapper {
     mirroring = VERTICAL
   )
 
+  init {
+    updatePrgBankMap()
+    updateChrBankMap()
+  }
+
   private fun setReg(addr: Address, data: Data) {
     val even = (addr % 2) == 0
     when ((addr and 0x6000) shr 13) {

@@ -7,8 +7,16 @@ class PrgMemory(
   private val bankSize: Int = raw.size,
   private val onSet: (addr: Address, data: Data) -> Unit = { _, _ -> }
 ) : Memory {
+  private val numBanks = PRG_ROM_SIZE / bankSize
+  private val pageMap = IntArray(numBanks) { it * bankSize }
+  val bankMap = BankSetter()
   val ram = ByteArray(PRG_RAM_SIZE)
-  val bankMap = IntArray(PRG_ROM_SIZE / bankSize) { it }
+
+  inner class BankSetter {
+    operator fun set(output: Int, underlying: Int) {
+      pageMap[output] = underlying * bankSize
+    }
+  }
 
   override fun get(addr: Address) = when {
     (addr >= BASE_PRG_ROM) -> raw[map(addr)]
@@ -22,5 +30,5 @@ class PrgMemory(
     }
   }
 
-  private fun map(addr: Address) = (addr % bankSize) + bankMap[addr % PRG_ROM_SIZE / bankSize] * bankSize
+  private fun map(addr: Address) = (addr % bankSize) + pageMap[addr % PRG_ROM_SIZE / bankSize]
 }

@@ -31,6 +31,7 @@ class CnRomMapper(rom: Rom) : Mapper {
     prg.bankMap[1] = if (rom.prgData.size > PRG_BANK_SIZE) 1 else 0
   }
 
+  @Suppress("UNUSED_PARAMETER")
   private fun updateReg(addr: Address, data: Data) {
     chr.bankMap[0] = data % numChrBanks
   }

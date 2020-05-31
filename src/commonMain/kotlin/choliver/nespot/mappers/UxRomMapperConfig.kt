@@ -4,9 +4,10 @@ import choliver.nespot.Address
 import choliver.nespot.BASE_PRG_ROM
 import choliver.nespot.Data
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.mappers.StandardMapper.Stuff
+import choliver.nespot.cartridge.StandardMapper
+import choliver.nespot.cartridge.StandardMapper.Config
 
-class UxRomStuff(private val rom: Rom) : Stuff {
+class UxRomMapperConfig(private val rom: Rom) : Config {
   private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
 
   override val prgData = rom.prgData

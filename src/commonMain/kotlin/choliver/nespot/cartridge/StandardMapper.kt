@@ -1,19 +1,16 @@
-package choliver.nespot.mappers
+package choliver.nespot.cartridge
 
 import choliver.nespot.Address
 import choliver.nespot.Data
 import choliver.nespot.Ram
-import choliver.nespot.cartridge.ChrMemory
-import choliver.nespot.cartridge.Mapper
-import choliver.nespot.cartridge.PrgMemory
 
 class StandardMapper(
-  stuff: Stuff
+  config: Config
 ) : Mapper {
   override val irq = false
   override val persistentRam: Ram? = null
 
-  override val prg = with(stuff) {
+  override val prg = with(config) {
     PrgMemory(
       raw = prgData,
       bankSize = prgBankSize,
@@ -22,17 +19,17 @@ class StandardMapper(
   }
 
   override val chr = ChrMemory(
-    raw = stuff.chrData,
-    bankSize = stuff.chrBankSize
+    raw = config.chrData,
+    bankSize = config.chrBankSize
   )
 
   init {
-    with(stuff) {
+    with(config) {
       onStartup()
     }
   }
 
-  interface Stuff {
+  interface Config {
     val prgData: ByteArray
     val chrData: ByteArray
     val prgBankSize: Int get() = prgData.size

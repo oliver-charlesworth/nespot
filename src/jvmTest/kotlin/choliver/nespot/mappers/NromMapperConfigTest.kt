@@ -7,15 +7,16 @@ import choliver.nespot.PRG_RAM_SIZE
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
+import choliver.nespot.cartridge.StandardMapper
 import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
-import choliver.nespot.mappers.NromStuff.Companion.CHR_RAM_SIZE
+import choliver.nespot.mappers.NromMapperConfig.Companion.CHR_RAM_SIZE
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class NromMapperTest {
+class NromMapperConfigTest {
   @Nested
   inner class PrgRam {
-    private val mapper = StandardMapper(NromStuff(Rom()))
+    private val mapper = StandardMapper(NromMapperConfig(Rom()))
     private val checker = BankMappingChecker(
       bankSize = PRG_RAM_SIZE,
       srcBase = BASE_PRG_RAM,
@@ -54,7 +55,7 @@ class NromMapperTest {
 
     private fun checker(size: Int): BankMappingChecker {
       val prgData = ByteArray(size)
-      val mapper = StandardMapper(NromStuff(Rom(prgData = prgData)))
+      val mapper = StandardMapper(NromMapperConfig(Rom(prgData = prgData)))
       return BankMappingChecker(
         bankSize = 16384,
         outBase = BASE_PRG_ROM,
@@ -66,7 +67,7 @@ class NromMapperTest {
 
   @Nested
   inner class ChrRam {
-    private val mapper = StandardMapper(NromStuff(Rom()))
+    private val mapper = StandardMapper(NromMapperConfig(Rom()))
     private val checker = BankMappingChecker(
       bankSize = CHR_RAM_SIZE,
       srcBase = BASE_CHR_ROM,
@@ -84,7 +85,7 @@ class NromMapperTest {
   @Nested
   inner class ChrRom {
     private val chrData = ByteArray(8192)
-    private val mapper = StandardMapper(NromStuff(Rom(chrData = chrData)))
+    private val mapper = StandardMapper(NromMapperConfig(Rom(chrData = chrData)))
     private val checker = BankMappingChecker(
       bankSize = CHR_RAM_SIZE,
       srcBase = BASE_CHR_ROM,
@@ -103,12 +104,12 @@ class NromMapperTest {
   inner class Vram {
     @Test
     fun `vertical mirroring`() {
-      assertVramMappings(StandardMapper(NromStuff(Rom(mirroring = VERTICAL))), listOf(0, 2), listOf(1, 3))
+      assertVramMappings(StandardMapper(NromMapperConfig(Rom(mirroring = VERTICAL))), listOf(0, 2), listOf(1, 3))
     }
 
     @Test
     fun `horizontal mirroring`() {
-      assertVramMappings(StandardMapper(NromStuff(Rom(mirroring = HORIZONTAL))), listOf(0, 1), listOf(2, 3))
+      assertVramMappings(StandardMapper(NromMapperConfig(Rom(mirroring = HORIZONTAL))), listOf(0, 1), listOf(2, 3))
     }
   }
 }

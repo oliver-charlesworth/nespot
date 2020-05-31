@@ -1,10 +1,11 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.mappers.StandardMapper.Stuff
+import choliver.nespot.cartridge.StandardMapper
+import choliver.nespot.cartridge.StandardMapper.Config
 
 // https://wiki.nesdev.com/w/index.php/NROM
-class NromStuff(private val rom: Rom) : Stuff {
+class NromMapperConfig(private val rom: Rom) : Config {
   override val prgData = rom.prgData
   override val chrData = if (rom.chrData.isEmpty()) ByteArray(CHR_RAM_SIZE) else rom.chrData
   override val prgBankSize = PRG_BANK_SIZE

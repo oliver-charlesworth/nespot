@@ -5,18 +5,19 @@ import choliver.nespot.BASE_PRG_ROM
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
+import choliver.nespot.cartridge.StandardMapper
 import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
-import choliver.nespot.mappers.UxRomStuff.Companion.BASE_BANK_SELECT
-import choliver.nespot.mappers.UxRomStuff.Companion.CHR_RAM_SIZE
-import choliver.nespot.mappers.UxRomStuff.Companion.PRG_BANK_SIZE
+import choliver.nespot.mappers.UxRomMapperConfig.Companion.BASE_BANK_SELECT
+import choliver.nespot.mappers.UxRomMapperConfig.Companion.CHR_RAM_SIZE
+import choliver.nespot.mappers.UxRomMapperConfig.Companion.PRG_BANK_SIZE
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class UxRomMapperTest {
+class UxRomMapperConfigTest {
   @Nested
   inner class PrgRom {
     private val prgData = ByteArray(8 * 16384)
-    private val mapper = StandardMapper(UxRomStuff(Rom(prgData = prgData)))
+    private val mapper = StandardMapper(UxRomMapperConfig(Rom(prgData = prgData)))
     private val checker = BankMappingChecker(
       bankSize = PRG_BANK_SIZE,
       outBase = BASE_PRG_ROM,
@@ -57,7 +58,7 @@ class UxRomMapperTest {
 
   @Nested
   inner class ChrRam {
-    private val mapper = StandardMapper(UxRomStuff(Rom()))
+    private val mapper = StandardMapper(UxRomMapperConfig(Rom()))
     private val checker = BankMappingChecker(
       bankSize = CHR_RAM_SIZE,
       srcBase = BASE_CHR_ROM,
@@ -76,12 +77,12 @@ class UxRomMapperTest {
   inner class Vram {
     @Test
     fun `vertical mirroring`() {
-      assertVramMappings(StandardMapper(UxRomStuff(Rom(mirroring = VERTICAL))), listOf(0, 2), listOf(1, 3))
+      assertVramMappings(StandardMapper(UxRomMapperConfig(Rom(mirroring = VERTICAL))), listOf(0, 2), listOf(1, 3))
     }
 
     @Test
     fun `horizontal mirroring`() {
-      assertVramMappings(StandardMapper(UxRomStuff(Rom(mirroring = HORIZONTAL))), listOf(0, 1), listOf(2, 3))
+      assertVramMappings(StandardMapper(UxRomMapperConfig(Rom(mirroring = HORIZONTAL))), listOf(0, 1), listOf(2, 3))
     }
   }
 }

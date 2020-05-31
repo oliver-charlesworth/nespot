@@ -7,9 +7,6 @@ import choliver.nespot.Ram
 class StandardMapper(
   config: Config
 ) : Mapper {
-  override val irq = false
-  override val persistentRam: Ram? = null
-
   override val prg = with(config) {
     PrgMemory(
       raw = prgData,
@@ -23,6 +20,12 @@ class StandardMapper(
     bankSize = config.chrBankSize
   )
 
+  override val irq = false
+
+  override val persistentRam = if (config.persistRam) {
+    Ram.backedBy(prg.ram)
+  } else null
+
   init {
     with(config) {
       onStartup()
@@ -34,6 +37,8 @@ class StandardMapper(
     val chrData: ByteArray
     val prgBankSize: Int get() = prgData.size
     val chrBankSize: Int get() = chrData.size
+    val persistRam: Boolean get() = false
+    val irq get() = false
     fun StandardMapper.onStartup() {}
     fun StandardMapper.onPrgSet(addr: Address, data: Data) {}
   }

@@ -7,17 +7,17 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.utils._0
 import choliver.nespot.cpu.utils._1
 import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
-import choliver.nespot.mappers.Mmc3Mapper.Companion.CHR_BANK_SIZE
-import choliver.nespot.mappers.Mmc3Mapper.Companion.PRG_BANK_SIZE
+import choliver.nespot.mappers.Mmc3MapperConfig.Companion.CHR_BANK_SIZE
+import choliver.nespot.mappers.Mmc3MapperConfig.Companion.PRG_BANK_SIZE
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 
-class Mmc3MapperTest {
+class Mmc3MapperConfigTest {
   @Nested
   inner class PrgRam {
-    private val mapper = Mmc3Mapper(Rom())
+    private val mapper = Mmc3MapperConfig(Rom())
     private val checker = BankMappingChecker(
       bankSize = PRG_RAM_SIZE,
       srcBase = BASE_PRG_RAM,
@@ -35,7 +35,7 @@ class Mmc3MapperTest {
   @Nested
   inner class PrgRom {
     private val prgData = ByteArray(8 * PRG_BANK_SIZE)
-    private val mapper = Mmc3Mapper(Rom(prgData = prgData))
+    private val mapper = Mmc3MapperConfig(Rom(prgData = prgData))
     private val checker = BankMappingChecker(
       bankSize = PRG_BANK_SIZE,
       outBase = BASE_PRG_ROM,
@@ -84,7 +84,7 @@ class Mmc3MapperTest {
   @Nested
   inner class ChrRom {
     private val chrData = ByteArray(8 * CHR_BANK_SIZE)
-    private val mapper = Mmc3Mapper(Rom(chrData = chrData))
+    private val mapper = Mmc3MapperConfig(Rom(chrData = chrData))
     private val checker = BankMappingChecker(
       bankSize = CHR_BANK_SIZE,
       outBase = BASE_CHR_ROM,
@@ -158,7 +158,7 @@ class Mmc3MapperTest {
 
   @Nested
   inner class Vram {
-    private val mapper = Mmc3Mapper(Rom())
+    private val mapper = Mmc3MapperConfig(Rom())
 
     @Test
     fun `vertical mirroring`() {
@@ -181,7 +181,7 @@ class Mmc3MapperTest {
 
   @Nested
   inner class Irq {
-    private val mapper = Mmc3Mapper(Rom(chrData = ByteArray(CHR_BANK_SIZE)))
+    private val mapper = Mmc3MapperConfig(Rom(chrData = ByteArray(CHR_BANK_SIZE)))
 
     init {
       setNewValue(3)

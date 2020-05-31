@@ -28,7 +28,6 @@ class Mmc3Mapper(rom: Rom) : Mapper {
   private var irqCounter = 0x00
   private var prevA12 = false
   private var _irq = false
-
   override val irq get() = _irq
   override val persistentRam = Ram.backedBy(prgRam)
 

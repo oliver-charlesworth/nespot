@@ -9,7 +9,6 @@ import choliver.nespot.cartridge.Rom
 // See https://wiki.nesdev.com/w/index.php/CNROM
 class CnRomMapper(private val rom: Rom) : Mapper {
   private val numChrBanks = (rom.chrData.size / CHR_BANK_SIZE)
-
   override val irq = false
   override val persistentRam: Ram? = null
 

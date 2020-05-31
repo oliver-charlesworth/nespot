@@ -10,7 +10,6 @@ import choliver.nespot.cartridge.Rom
 class UxRomMapper(private val rom: Rom) : Mapper {
   private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
   private var prg0Bank = 0
-
   override val irq = false
   override val persistentRam: Ram? = null
 

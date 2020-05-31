@@ -1,63 +1,44 @@
 package choliver.nespot.mappers
 
-import choliver.nespot.*
+import choliver.nespot.Address
+import choliver.nespot.BASE_PRG_ROM
+import choliver.nespot.Data
+import choliver.nespot.Ram
+import choliver.nespot.cartridge.ChrMemory
 import choliver.nespot.cartridge.Mapper
+import choliver.nespot.cartridge.PrgMemory
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.Rom.Mirroring.*
-import choliver.nespot.cartridge.mirrorHorizontal
-import choliver.nespot.cartridge.mirrorVertical
-
 
 // See https://wiki.nesdev.com/w/index.php/CNROM
-class CnRomMapper(private val rom: Rom) : Mapper {
-  private val vram = ByteArray(VRAM_SIZE)
+class CnRomMapper(rom: Rom) : Mapper {
   private val numChrBanks = (rom.chrData.size / CHR_BANK_SIZE)
-  private var chrBank = 0
-
   override val irq = false
   override val persistentRam: Ram? = null
 
-  override val prg = object : Memory {
-    override fun get(addr: Address) = when {
-      (addr >= BASE_PRG_ROM) -> rom.prgData[addr % rom.prgData.size]
-      else -> 0x00
-    }.data()
+  override val prg = PrgMemory(
+    raw = rom.prgData,
+    bankSize = PRG_BANK_SIZE,
+    onSet = ::updateReg
+  )
 
-    override operator fun set(addr: Address, data: Data) {
-      if (addr >= BASE_BANK_SELECT) {
-        chrBank = data % numChrBanks
-      }
-    }
+  override val chr = ChrMemory(
+    raw = rom.chrData,
+    bankSize = CHR_BANK_SIZE,
+    mirroring = rom.mirroring
+  )
+
+  init {
+    prg.bankMap[1] = if (rom.prgData.size > PRG_BANK_SIZE) 1 else 0
   }
 
-  override val chr = object : Memory {
-    override fun get(addr: Address) = when {
-      (addr >= BASE_VRAM) -> vram[vramAddr(addr)]    // This maps everything >= 0x4000 too
-      else -> rom.chrData[chrAddr(addr)]
-    }.data()
-
-    override fun set(addr: Address, data: Data) {
-      when {
-        (addr >= BASE_VRAM) -> vram[vramAddr(addr)] = data.toByte()   // This maps everything >= 0x4000 too
-      }
-    }
-  }
-
-  private fun chrAddr(addr: Address): Int {
-    return (addr % CHR_BANK_SIZE) + chrBank * CHR_BANK_SIZE
-  }
-
-  private fun vramAddr(addr: Address): Address = when (rom.mirroring) {
-    VERTICAL -> mirrorVertical(addr)
-    HORIZONTAL -> mirrorHorizontal(addr)
-    IGNORED -> throw UnsupportedOperationException()
+  private fun updateReg(addr: Address, data: Data) {
+    chr.bankMap[0] = data % numChrBanks
   }
 
   @Suppress("unused")
   companion object {
     const val PRG_BANK_SIZE = 16384
     const val CHR_BANK_SIZE = 8192
-
     const val BASE_BANK_SELECT = BASE_PRG_ROM
   }
 }

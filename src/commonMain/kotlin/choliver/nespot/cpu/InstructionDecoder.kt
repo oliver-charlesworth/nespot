@@ -31,7 +31,7 @@ class InstructionDecoder(private val memory: Memory) {
 
   fun decode(decoded: Decoded, pc: Address, x: Data, y: Data) {
     val opcode = memory[pc]
-    val found = ENCODINGS[opcode] ?: error("Unexpected opcode ${opcode.format8()} at ${opcode.format16()}")
+    val found = ENCODINGS[opcode] ?: error("Unexpected opcode ${opcode.format8()} at ${pc.format16()}")
 
     val addr: Address
     val pcInc: Int

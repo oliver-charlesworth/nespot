@@ -11,7 +11,6 @@ import choliver.nespot.mappers.CnRomMapper.Companion.PRG_BANK_SIZE
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-
 class CnRomMapperTest {
   @Nested
   inner class PrgRom {

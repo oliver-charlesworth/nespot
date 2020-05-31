@@ -21,9 +21,9 @@ class BankMap(
     }
   }
 
-  internal fun map(addr: Address) = (addr % PAGE_SIZE) + pageMap[addr / PAGE_SIZE]
+  fun map(addr: Address) = (addr % PAGE_SIZE) + pageMap[addr / PAGE_SIZE]
 
   companion object {
-    private const val PAGE_SIZE = 1024    // This should be no bigger than the minimum known bank size
+    const val PAGE_SIZE = 1024    // This should be no bigger than the minimum known bank size
   }
 }

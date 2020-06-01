@@ -10,7 +10,7 @@ fun createMapper(
   validateMagicNumber(rom)
   return when (rom.mapper) {
     0 -> StandardMapper(NromMapperConfig(rom))
-    1 -> Mmc1Mapper(rom, getStepCount)
+    1 -> StandardMapper(Mmc1Mapper(rom, getStepCount))
     2 -> StandardMapper(UxRomMapperConfig(rom))
     3 -> StandardMapper(CnRomMapperConfig(rom))
     4 -> StandardMapper(Mmc3MapperConfig(rom))

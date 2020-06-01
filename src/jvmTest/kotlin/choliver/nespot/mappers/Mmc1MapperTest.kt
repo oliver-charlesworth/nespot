@@ -1,7 +1,9 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.*
+import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.StandardMapper
 import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
 import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_SR
 import choliver.nespot.mappers.Mmc1Mapper.Companion.CHR_BANK_SIZE
@@ -11,13 +13,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
-
 class Mmc1MapperTest {
   private var step = 0
 
   @Nested
   inner class PrgRam {
-    private val mapper = Mmc1Mapper(Rom(), getStepCount = { 0 })
+    private val mapper = StandardMapper(Mmc1Mapper(Rom(), getStepCount = { 0 }))
     private val checker = BankMappingChecker(
       bankSize = PRG_RAM_SIZE,
       srcBase = BASE_PRG_RAM,
@@ -35,7 +36,7 @@ class Mmc1MapperTest {
   @Nested
   inner class PrgRom {
     private val prgData = ByteArray(8 * PRG_BANK_SIZE)
-    private val mapper = Mmc1Mapper(Rom(prgData = prgData), getStepCount = { step })
+    private val mapper = StandardMapper(Mmc1Mapper(Rom(prgData = prgData), getStepCount = { step }))
     private val checker = BankMappingChecker(
       bankSize = PRG_BANK_SIZE,
       outBase = BASE_PRG_ROM,
@@ -106,7 +107,7 @@ class Mmc1MapperTest {
 
   @Nested
   inner class ChrRam {
-    private val mapper = Mmc1Mapper(Rom(), getStepCount = { 0 })
+    private val mapper = StandardMapper(Mmc1Mapper(Rom(), getStepCount = { 0 }))
     private val checker = BankMappingChecker(
       bankSize = CHR_BANK_SIZE,
       srcBase = BASE_CHR_ROM,
@@ -129,7 +130,7 @@ class Mmc1MapperTest {
   @Nested
   inner class ChrRom {
     private val chrData = ByteArray(8 * CHR_BANK_SIZE)
-    private val mapper = Mmc1Mapper(Rom(chrData = chrData), getStepCount = { step })
+    private val mapper = StandardMapper(Mmc1Mapper(Rom(chrData = chrData), getStepCount = { step }))
     private val checker = BankMappingChecker(
       bankSize = CHR_BANK_SIZE,
       outBase = BASE_CHR_ROM,
@@ -177,7 +178,7 @@ class Mmc1MapperTest {
 
   @Nested
   inner class Vram {
-    private val mapper = Mmc1Mapper(Rom(), getStepCount = { step })
+    private val mapper = StandardMapper(Mmc1Mapper(Rom(), getStepCount = { step }))
 
     @Test
     fun `single-screen - nametable 0`() {
@@ -213,7 +214,7 @@ class Mmc1MapperTest {
     }
   }
 
-  private fun Mmc1Mapper.writeReg(idx: Int, data: Data) {
+  private fun Mapper.writeReg(idx: Int, data: Data) {
     val d = data and 0x1F
     val addr = BASE_SR or ((idx and 0x03) shl 13)
     prg[addr] = 0x80   // Reset

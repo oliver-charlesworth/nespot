@@ -1,15 +1,18 @@
 package choliver.nespot.mappers
 
 import choliver.nespot.*
-import choliver.nespot.cartridge.ChrMemory
-import choliver.nespot.cartridge.Mapper
-import choliver.nespot.cartridge.PrgMemory
-import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.*
 import choliver.nespot.cartridge.Rom.Mirroring.FIXED_LOWER
+import choliver.nespot.cartridge.StandardMapper.Config
 
 // https://wiki.nesdev.com/w/index.php/MMC1
-class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
-  private val chrData = if (rom.chrData.isEmpty()) ByteArray(CHR_RAM_SIZE) else rom.chrData
+class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Config {
+  override val prgData = rom.prgData
+  override val chrData = if (rom.chrData.isEmpty()) ByteArray(CHR_RAM_SIZE) else rom.chrData
+  override val prgBankSize = PRG_BANK_SIZE
+  override val chrBankSize = CHR_BANK_SIZE
+  override val persistRam = true
+
   private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
   private val numChrBanks = (chrData.size / CHR_BANK_SIZE)
   private var srCount = 0
@@ -21,27 +24,13 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
   private var prgMode = 0
   private var prevStep = -1
 
-  override val prg = PrgMemory(
-    raw = rom.prgData,
-    bankSize = PRG_BANK_SIZE,
-    onSet = ::updateShiftRegister
-  )
-
-  override val chr = ChrMemory(
-    raw = chrData,
-    bankSize = CHR_BANK_SIZE
-  )
-
-  override val irq = false
-  override val persistentRam = Ram.backedBy(prg.ram)
-
-  init {
+  override fun StandardMapper.onStartup() {
     updatePrgBankMap()
     updateChrBankMap()
     chr.mirroring = FIXED_LOWER
   }
 
-  private fun updateShiftRegister(addr: Address, data: Data) {
+  override fun StandardMapper.onPrgSet(addr: Address, data: Data) {
     // We don't update on consecutive stores (we approximate this as multiple stores in the same instruction step)
     val currentStep = getStepCount()
     if (currentStep != prevStep) {
@@ -74,7 +63,7 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     prevStep = currentStep
   }
 
-  private fun updatePrgBankMap() {
+  private fun StandardMapper.updatePrgBankMap() {
     val map = prg.bankMap
     when (prgMode) {
       0, 1 -> {
@@ -92,7 +81,7 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     }
   }
 
-  private fun updateChrBankMap() {
+  private fun StandardMapper.updateChrBankMap() {
     val map = chr.bankMap
     when (chrMode) {
       0 -> {

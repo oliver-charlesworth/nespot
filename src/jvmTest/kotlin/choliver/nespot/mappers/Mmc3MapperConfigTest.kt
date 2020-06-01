@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-
 class Mmc3MapperConfigTest {
   @Nested
   inner class PrgRam {

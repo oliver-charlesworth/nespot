@@ -6,7 +6,9 @@ import choliver.nespot.cartridge.Rom.Mirroring.*
 
 class ChrMemory(
   private val raw: ByteArray,
-  bankSize: Int = raw.size
+  bankSize: Int = raw.size,
+  private val onGet: (addr: Address) -> Unit = {},
+  private val onSet: (addr: Address, data: Data) -> Unit = { _, _ -> }
 ) : Memory {
   private val vram = ByteArray(VRAM_SIZE)
 
@@ -50,12 +52,16 @@ class ChrMemory(
       }
     }
 
-  override fun get(addr: Address) = when {
-    (addr >= BASE_VRAM) -> vram[vbankMap.map(addr - BASE_VRAM)]
-    else -> raw[bankMap.map(addr)]
-  }.data()
+  override fun get(addr: Address): Data {
+    onGet(addr)
+    return when {
+      (addr >= BASE_VRAM) -> vram[vbankMap.map(addr - BASE_VRAM)]
+      else -> raw[bankMap.map(addr)]
+    }.data()
+  }
 
   override fun set(addr: Address, data: Data) {
+    onSet(addr, data)
     when {
       (addr >= BASE_VRAM) -> vram[vbankMap.map(addr - BASE_VRAM)] = data.toByte()
       else -> raw[bankMap.map(addr)] = data.toByte()

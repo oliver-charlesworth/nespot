@@ -51,7 +51,6 @@ class Mmc3MapperConfig(rom: Rom) : Config {
             chrMode = (data and 0x80) shr 7
             prgMode = (data and 0x40) shr 6
             regSelect = data and 0b00000111
-
           }
         }
         updatePrgBankMap()
@@ -78,7 +77,13 @@ class Mmc3MapperConfig(rom: Rom) : Config {
     }
   }
 
-  // TODO - updateIrqState
+  override fun StandardMapper.onChrGet(addr: Address) {
+    updateIrqState(addr)
+  }
+
+  override fun StandardMapper.onChrSet(addr: Address, data: Data) {
+    updateIrqState(addr)
+  }
 
   override val irq get() = _irq
   override val persistRam = true

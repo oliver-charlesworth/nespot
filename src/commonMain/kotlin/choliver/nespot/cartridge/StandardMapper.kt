@@ -5,22 +5,28 @@ import choliver.nespot.Data
 import choliver.nespot.Ram
 
 class StandardMapper(
-  config: Config
+  private val config: Config
 ) : Mapper {
+  // TODO - can we avoid the callback overhead if callbacks not set?
   override val prg = with(config) {
     PrgMemory(
       raw = prgData,
       bankSize = prgBankSize,
-      onSet = { addr, data -> this@StandardMapper.onPrgSet(addr, data) }  // TODO - this might be expensive
+      onSet = { addr, data -> onPrgSet(addr, data) }
     )
   }
 
-  override val chr = ChrMemory(
-    raw = config.chrData,
-    bankSize = config.chrBankSize
-  )
+  // TODO - can we avoid the callback overhead if callbacks not set?
+  override val chr = with(config) {
+    ChrMemory(
+      raw = chrData,
+      bankSize = chrBankSize,
+      onGet = { addr -> onChrGet(addr) },
+      onSet = { addr, data -> onChrSet(addr, data) }
+    )
+  }
 
-  override val irq = false
+  override val irq get() = config.irq
 
   override val persistentRam = if (config.persistRam) {
     Ram.backedBy(prg.ram)
@@ -41,5 +47,7 @@ class StandardMapper(
     val irq get() = false
     fun StandardMapper.onStartup() {}
     fun StandardMapper.onPrgSet(addr: Address, data: Data) {}
+    fun StandardMapper.onChrGet(addr: Address) {}
+    fun StandardMapper.onChrSet(addr: Address, data: Data) {}
   }
 }

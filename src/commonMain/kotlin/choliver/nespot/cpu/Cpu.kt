@@ -324,7 +324,7 @@ class Cpu(
   }
 
   inner class Diagnostics internal constructor() {
-    internal var nextStepOverride: NextStep? = null
+    internal var nextStepOverride: NextStep? = RESET    // Reset on startup
 
     var state
       get() = this@Cpu.state

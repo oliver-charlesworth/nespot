@@ -14,7 +14,6 @@ class Cli : CliktCommand(name = "nespot") {
   private val displayInfo by option("--info", "-i").flag()
   private val numPerfFrames by option("--perf", "-p").int()
   private val fullScreen by option("--fullscreen", "-f").flag()
-  private val snapshotFile by option("--snapshot", "-s").file(mustExist = true, canBeDir = false)
 
   override fun run() {
     val rom = Rom.parse(raw.readBytes())
@@ -22,7 +21,7 @@ class Cli : CliktCommand(name = "nespot") {
     when {
       displayInfo -> InfoRunner(rom).run()
       (numPerfFrames != null) -> PerfRunner(rom, numPerfFrames!!).run()
-      else -> InteractiveRunner(rom, snapshotFile, fullScreen).run()
+      else -> InteractiveRunner(rom, fullScreen).run()
     }
   }
 }

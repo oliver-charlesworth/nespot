@@ -35,7 +35,6 @@ class Emulator {
         videoSink = EmulatorVideoSink(),
         audioSink = EmulatorAudioSink(config.sampleRateHz)
       )
-      nes.diagnostics.cpu.nextStep = Cpu.NextStep.RESET
     }
   }
 

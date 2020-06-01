@@ -49,6 +49,15 @@ class Mmc1MapperTest {
       }
     }
 
+    @Test
+    fun `sets highest bank on startup`() {
+      with(config) {
+        mapper.onStartup()
+      }
+
+      assertEquals(7, map[1])
+    }
+
     @ParameterizedTest
     @ValueSource(ints = [0, 1])
     fun `32k mode`(mode: Int) {
@@ -80,15 +89,6 @@ class Mmc1MapperTest {
       setBank(4 + 8)
 
       assertEquals(listOf(4, 5), map)
-    }
-
-    @Test
-    fun `starts up on max bank`() {
-      with(config) {
-        mapper.onStartup()
-      }
-
-      assertEquals(listOf(6, 7), map)
     }
 
     private fun setMode(mode: Int) {
@@ -144,15 +144,6 @@ class Mmc1MapperTest {
   @Nested
   inner class Mirroring {
     private val config = Mmc1Mapper(Rom(), getStepCount = { step })
-
-    @Test
-    fun `set to something on startup`() {
-      with(config) {
-        mapper.onStartup()
-      }
-
-      verify(mapper.chr).mirroring = any()
-    }
 
     @Test
     fun `fixed-lower`() {

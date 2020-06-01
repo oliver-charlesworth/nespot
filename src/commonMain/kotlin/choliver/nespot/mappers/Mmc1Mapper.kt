@@ -19,15 +19,13 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Config {
   private var sr = 0
   private var chr0Bank = 0
   private var chr1Bank = 0
-  private var prgBank = (numPrgBanks - 1)   // Bubble Bobble relies on this to start up
+  private var prgBank = 0
   private var chrMode = 0
   private var prgMode = 0
   private var prevStep = -1
 
   override fun StandardMapper.onStartup() {
-    updatePrgBankMap()
-    updateChrBankMap()
-    chr.mirroring = FIXED_LOWER
+    prg.bankMap[1] = numPrgBanks - 1    // Bubble Bobble relies on this
   }
 
   override fun StandardMapper.onPrgSet(addr: Address, data: Data) {

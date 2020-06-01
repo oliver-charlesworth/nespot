@@ -14,7 +14,7 @@ fun createMapper(
     2 -> StandardMapper(UxRomMapperConfig(rom))
     3 -> StandardMapper(CnRomMapperConfig(rom))
     4 -> StandardMapper(Mmc3MapperConfig(rom))
-    71 -> Mapper71(rom)
+    71 -> StandardMapper(Mapper71(rom))
     else -> throw RuntimeException("Mapper #${rom.mapper}")
   }
 }

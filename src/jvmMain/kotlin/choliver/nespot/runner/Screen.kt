@@ -15,18 +15,20 @@ import javafx.scene.image.ImageView
 import javafx.scene.image.PixelBuffer
 import javafx.scene.image.PixelFormat
 import javafx.scene.image.WritableImage
+import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCombination
 import javafx.scene.input.KeyEvent
 import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.Stage
+import java.io.Closeable
 import java.nio.ByteBuffer
-
 
 class Screen(
   private val title: String = "NESpot",
   private val onEvent: (e: Event) -> Unit = {}
-) {
+) : Closeable {
+  private val pressedButtons = mutableSetOf<KeyCode>()
   var fullScreen = false
     set(value) {
       field = value
@@ -36,7 +38,7 @@ class Screen(
   private lateinit var stage: Stage
   private lateinit var imageView: ImageView
 
-  val sink = object : VideoSink {
+  val sink get() = object : VideoSink {
     private val bufferA = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
     private val bufferB = ByteBuffer.allocateDirect(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
     private var buffer = bufferA
@@ -77,7 +79,7 @@ class Screen(
     onFxThread { stage.hide() }
   }
 
-  fun exit() {
+  override fun close() {
     Platform.exit()
   }
 
@@ -108,8 +110,16 @@ class Screen(
     stage.fullScreenExitKeyCombination = KeyCombination.NO_MATCH
     stage.title = title
     stage.scene = Scene(Group().apply { children.add(imageView) }, Color.BLACK)
-    stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) { onEvent(KeyDown(it.code)) }
-    stage.scene.addEventFilter(KeyEvent.KEY_RELEASED) { onEvent(KeyUp(it.code)) }
+    stage.scene.addEventFilter(KeyEvent.KEY_PRESSED) {
+      if (it.code !in pressedButtons) {
+        onEvent(KeyDown(it.code))
+        pressedButtons += it.code
+      }
+    }
+    stage.scene.addEventFilter(KeyEvent.KEY_RELEASED) {
+      onEvent(KeyUp(it.code))
+      pressedButtons -= it.code
+    }
     stage.setOnCloseRequest {
       it.consume()
       hide()

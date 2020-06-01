@@ -43,8 +43,9 @@ class InteractiveRunner(
       ex.printStackTrace(System.err)
     } finally {
       screen.hide()
-      screen.exit()
-      controllers.exit()
+      screen.close()
+      audio.close()
+      controllers.close()
     }
   }
 

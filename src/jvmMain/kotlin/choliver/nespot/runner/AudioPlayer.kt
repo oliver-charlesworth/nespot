@@ -1,11 +1,12 @@
 package choliver.nespot.runner
 
 import choliver.nespot.AudioSink
+import java.io.Closeable
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import kotlin.math.roundToInt
 
-class AudioPlayer {
+class AudioPlayer : Closeable {
   private val audioFormat = AudioFormat(SAMPLE_RATE_HZ.toFloat(), 16, 1, true, false)
   private val soundLine = AudioSystem.getSourceDataLine(audioFormat)
   private val buffer = FloatArray(BUFFER_SIZE)
@@ -28,6 +29,10 @@ class AudioPlayer {
   fun start() {
     soundLine.open(audioFormat, LINE_BUFFER_SIZE * 2)
     soundLine.start()
+  }
+
+  override fun close() {
+    soundLine.close()
   }
 
   private fun play(buffer: FloatArray) {

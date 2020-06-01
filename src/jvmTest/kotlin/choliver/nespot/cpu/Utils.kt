@@ -4,6 +4,7 @@ import choliver.nespot.*
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_IRQ
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_NMI
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_RESET
+import choliver.nespot.cpu.Cpu.NextStep.INSTRUCTION
 import choliver.nespot.cpu.model.*
 import choliver.nespot.cpu.model.AddressMode.*
 import choliver.nespot.cpu.model.Operand.*
@@ -149,7 +150,7 @@ fun assertCpuEffects(
         (if (pollIrq(iStep)) INTERRUPT_IRQ else 0)
     }
   )
-
+  cpu.diagnostics.nextStep = INSTRUCTION  // Prevent reset from occurring
   cpu.diagnostics.regs = initRegs.with(pc = BASE_USER)
 
   repeat(numStepsToExecute) {

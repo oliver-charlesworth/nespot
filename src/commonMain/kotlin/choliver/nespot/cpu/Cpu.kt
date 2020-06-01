@@ -7,7 +7,6 @@ import choliver.nespot.cpu.model.AddressMode.ACCUMULATOR
 import choliver.nespot.cpu.model.AddressMode.IMMEDIATE
 import choliver.nespot.cpu.model.Opcode.*
 import choliver.nespot.cpu.model.Regs
-import choliver.nespot.cpu.model.State
 import choliver.nespot.cpu.model.toFlags
 import choliver.nespot.cpu.utils._0
 import choliver.nespot.cpu.utils._1
@@ -17,18 +16,17 @@ class Cpu(
   private val memory: Memory,
   private val pollInterrupts: () -> Int
 ) {
-  private var state = State()
-
-  // Instance-level variables to keep the code clean
+  private var regs = Regs()
+  private var prevNmi: Boolean = false
+  private var interrupts = 0
+  private var interruptsNext = 0
   private var extraCycles: Int = 0
   private val decoded = Decoded()
   private val decoder = InstructionDecoder(memory)
-  private var interrupts = 0
-  private var interruptsNext = 0
 
   fun executeStep(): Int {
     val next = nextStepType()
-    state.prevNmi = (interrupts and INTERRUPT_NMI != 0)
+    prevNmi = (interrupts and INTERRUPT_NMI != 0)
     diagnostics.nextStepOverride = null   // Clear the override
     return when (next) {
       RESET -> vector(VECTOR_RESET, updateStack = false, disableIrq = true)
@@ -43,8 +41,8 @@ class Cpu(
     updateInterrupts()
     return diagnostics.nextStepOverride ?: when {
       (interrupts and INTERRUPT_RESET != 0) -> RESET
-      (interrupts and INTERRUPT_NMI != 0) && !state.prevNmi -> NMI
-      (interrupts and INTERRUPT_IRQ != 0) && !state.regs.p.i -> IRQ
+      (interrupts and INTERRUPT_NMI != 0) && !prevNmi -> NMI
+      (interrupts and INTERRUPT_IRQ != 0) && !regs.p.i -> IRQ
       else -> INSTRUCTION
     }
   }
@@ -64,16 +62,16 @@ class Cpu(
   }
 
   private fun vector(addr: Address, updateStack: Boolean, disableIrq: Boolean): Int {
-    state.regs.interrupt(addr, updateStack = updateStack, setBreakFlag = false)
-    state.regs.p.i = state.regs.p.i || disableIrq
+    regs.interrupt(addr, updateStack = updateStack, setBreakFlag = false)
+    regs.p.i = regs.p.i || disableIrq
     return NUM_INTERRUPT_CYCLES
   }
 
   private fun executeInstruction(): Int {
-    decoder.decode(decoded, pc = state.regs.pc, x = state.regs.x, y = state.regs.y)
-    state.regs.pc = decoded.nextPc
+    decoder.decode(decoded, pc = regs.pc, x = regs.x, y = regs.y)
+    regs.pc = decoded.nextPc
     extraCycles = 0
-    state.regs.execute()
+    regs.execute()
     return decoded.numCycles + extraCycles
   }
 
@@ -294,7 +292,7 @@ class Cpu(
   }
 
   private fun resolve() = when (decoded.addressMode) {
-    ACCUMULATOR -> state.regs.a
+    ACCUMULATOR -> regs.a
     IMMEDIATE -> decoded.addr // The immediate masquerades as the address
     else -> memory[decoded.addr]
   }
@@ -326,9 +324,9 @@ class Cpu(
   inner class Diagnostics internal constructor() {
     internal var nextStepOverride: NextStep? = RESET    // Reset on startup
 
-    var state
-      get() = this@Cpu.state
-      set(value) { this@Cpu.state = value.copy() }
+    var regs
+      get() = this@Cpu.regs
+      set(value) { this@Cpu.regs = value.copy() }
     var nextStep
       get() = nextStepType()
       set(value) { nextStepOverride = value }

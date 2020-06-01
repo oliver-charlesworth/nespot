@@ -73,7 +73,6 @@ class Nes(
   inner class Diagnostics internal constructor() {
     val cpu = this@Nes.cpu.diagnostics
     val ppu = this@Nes.ppu.diagnostics
-    val ram = this@Nes.cpuRam
     fun step() = this@Nes.step()
     fun peek(addr: Address) = cpuMapper[addr]
     fun peekV(addr: Address) = cartridge.chr[addr]

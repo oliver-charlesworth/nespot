@@ -16,7 +16,6 @@ import choliver.nespot.debugger.PointManager.Point.Breakpoint
 import choliver.nespot.debugger.PointManager.Point.Watchpoint
 import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
-import choliver.nespot.runner.AudioPlayer
 import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
@@ -40,7 +39,6 @@ class Debugger(
   )
 
   private val events = LinkedBlockingQueue<RunnerEvent>()
-  private val audio = AudioPlayer()
   private val screen = Screen(onEvent = { events += it })
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
 
@@ -68,7 +66,7 @@ class Debugger(
   private fun consume(parser: CommandParser, enablePrompts: Boolean) {
     while (true) {
       if (enablePrompts) {
-        stdout.print("[${diag.cpu.state.regs.pc.format16()}]: ")
+        stdout.print("[${diag.cpu.regs.pc.format16()}]: ")
       }
 
       if (!handleCommand(parser.next())) {
@@ -158,15 +156,15 @@ class Debugger(
       }
 
       // Prevent Until(currentPC) from doing nothing
-      is Until -> onePlusUntil { diag.cpu.state.regs.pc == cmd.pc }
+      is Until -> onePlusUntil { diag.cpu.regs.pc == cmd.pc }
 
       is UntilOffset -> {
         val target = nextPc(cmd.offset)
-        until { diag.cpu.state.regs.pc == target }
+        until { diag.cpu.regs.pc == target }
       }
 
       // Prevent UntilOpcode(currentOpcode) from doing nothing
-      is UntilOpcode -> onePlusUntil { instAt(diag.cpu.state.regs.pc).opcode == cmd.op }
+      is UntilOpcode -> onePlusUntil { instAt(diag.cpu.regs.pc).opcode == cmd.op }
 
       // One more so that the interrupt actually occurs
       is UntilNmi -> untilPlusOne { diag.cpu.nextStep == NextStep.NMI }
@@ -226,7 +224,7 @@ class Debugger(
     when (cmd) {
       is Info.Stats -> displayStats()
 
-      is Info.Reg -> stdout.println(diag.cpu.state.regs)
+      is Info.Reg -> stdout.println(diag.cpu.regs)
 
       is Info.Break -> if (points.breakpoints.isEmpty()) {
         stdout.println("No breakpoints")
@@ -340,7 +338,7 @@ class Debugger(
 
   private fun maybeTraceInstruction() {
     if (isVerbose) {
-      stdout.println("${diag.cpu.state.regs.pc.format16()}: ${instAt(diag.cpu.state.regs.pc)}")
+      stdout.println("${diag.cpu.regs.pc.format16()}: ${instAt(diag.cpu.regs.pc)}")
     }
   }
 
@@ -367,7 +365,7 @@ class Debugger(
       }
     }
 
-  private fun isBreakpointHit() = when (val bp = points.breakpoints[diag.cpu.state.regs.pc]) {
+  private fun isBreakpointHit() = when (val bp = points.breakpoints[diag.cpu.regs.pc]) {
     null -> true
     else -> {
       stdout.println("Hit breakpoint #${bp.num}")
@@ -376,7 +374,7 @@ class Debugger(
   }
 
   private fun nextPc(offset: Int = 1) =
-    (0 until offset).fold(diag.cpu.state.regs.pc) { pc, _ -> diag.cpu.decodeAt(pc).nextPc }
+    (0 until offset).fold(diag.cpu.regs.pc) { pc, _ -> diag.cpu.decodeAt(pc).nextPc }
 
   private fun instAt(pc: Address) = diag.cpu.decodeAt(pc).instruction
 

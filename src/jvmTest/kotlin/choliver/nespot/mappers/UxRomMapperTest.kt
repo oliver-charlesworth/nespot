@@ -1,8 +1,8 @@
 package choliver.nespot.mappers
 
+import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
-import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.mappers.UxRomMapper.Companion.BASE_BANK_SELECT
 import choliver.nespot.mappers.UxRomMapper.Companion.CHR_RAM_SIZE
 import choliver.nespot.mappers.UxRomMapper.Companion.PRG_BANK_SIZE

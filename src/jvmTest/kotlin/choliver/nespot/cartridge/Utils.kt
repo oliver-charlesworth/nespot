@@ -1,13 +1,9 @@
-package choliver.nespot.mappers
+package choliver.nespot.cartridge
 
 import choliver.nespot.Address
-import choliver.nespot.BASE_VRAM
 import choliver.nespot.Data
-import choliver.nespot.NAMETABLE_SIZE
-import choliver.nespot.cartridge.Mapper
 import org.junit.jupiter.api.Assertions.assertEquals
 
-// TODO - eliminate
 internal class BankMappingChecker(
   private val bankSize: Int,
   private val srcBase: Address = 0x0000,

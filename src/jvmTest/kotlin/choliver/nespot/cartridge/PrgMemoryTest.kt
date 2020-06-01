@@ -1,8 +1,7 @@
 package choliver.nespot.cartridge
 
 import choliver.nespot.*
-import choliver.nespot.mappers.BankMappingChecker
-import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
+import choliver.nespot.cartridge.BankMappingChecker.Companion.takesBytes
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions

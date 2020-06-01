@@ -39,18 +39,23 @@ class Mmc3MapperConfig(rom: Rom) : Config {
   override fun StandardMapper.onPrgSet(addr: Address, data: Data) {
     val even = (addr % 2) == 0
     when ((addr and 0x6000) shr 13) {
-      0 -> when (even) {
-        false -> {
-          when (regSelect) {
-            0, 1, 2, 3, 4, 5 -> regs[regSelect] = data % numChrBanks
-            6, 7 -> regs[regSelect] = data % numPrgBanks
+      0 -> {
+        when (even) {
+          false -> {
+            when (regSelect) {
+              0, 1, 2, 3, 4, 5 -> regs[regSelect] = data % numChrBanks
+              6, 7 -> regs[regSelect] = data % numPrgBanks
+            }
+          }
+          true -> {
+            chrMode = (data and 0x80) shr 7
+            prgMode = (data and 0x40) shr 6
+            regSelect = data and 0b00000111
+
           }
         }
-        true -> {
-          chrMode = (data and 0x80) shr 7
-          prgMode = (data and 0x40) shr 6
-          regSelect = data and 0b00000111
-        }
+        updatePrgBankMap()
+        updateChrBankMap()
       }
       1 -> when (even) {
         false -> Unit // TODO - PRG-RAM protect
@@ -71,8 +76,6 @@ class Mmc3MapperConfig(rom: Rom) : Config {
         }
       }
     }
-    updatePrgBankMap()
-    updateChrBankMap()
   }
 
   // TODO - updateIrqState

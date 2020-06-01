@@ -4,6 +4,7 @@ import choliver.nespot.*
 import choliver.nespot.apu.repeat
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.StandardMapper
 import choliver.nespot.cpu.utils._0
 import choliver.nespot.cpu.utils._1
 import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.Test
 class Mmc3MapperConfigTest {
   @Nested
   inner class PrgRam {
-    private val mapper = Mmc3MapperConfig(Rom())
+    private val mapper = StandardMapper(Mmc3MapperConfig(Rom()))
     private val checker = BankMappingChecker(
       bankSize = PRG_RAM_SIZE,
       srcBase = BASE_PRG_RAM,
@@ -35,7 +36,7 @@ class Mmc3MapperConfigTest {
   @Nested
   inner class PrgRom {
     private val prgData = ByteArray(8 * PRG_BANK_SIZE)
-    private val mapper = Mmc3MapperConfig(Rom(prgData = prgData))
+    private val mapper = StandardMapper(Mmc3MapperConfig(Rom(prgData = prgData)))
     private val checker = BankMappingChecker(
       bankSize = PRG_BANK_SIZE,
       outBase = BASE_PRG_ROM,
@@ -84,7 +85,7 @@ class Mmc3MapperConfigTest {
   @Nested
   inner class ChrRom {
     private val chrData = ByteArray(8 * CHR_BANK_SIZE)
-    private val mapper = Mmc3MapperConfig(Rom(chrData = chrData))
+    private val mapper = StandardMapper(Mmc3MapperConfig(Rom(chrData = chrData)))
     private val checker = BankMappingChecker(
       bankSize = CHR_BANK_SIZE,
       outBase = BASE_CHR_ROM,
@@ -158,7 +159,7 @@ class Mmc3MapperConfigTest {
 
   @Nested
   inner class Vram {
-    private val mapper = Mmc3MapperConfig(Rom())
+    private val mapper = StandardMapper(Mmc3MapperConfig(Rom()))
 
     @Test
     fun `vertical mirroring`() {
@@ -181,7 +182,7 @@ class Mmc3MapperConfigTest {
 
   @Nested
   inner class Irq {
-    private val mapper = Mmc3MapperConfig(Rom(chrData = ByteArray(CHR_BANK_SIZE)))
+    private val mapper = StandardMapper(Mmc3MapperConfig(Rom(chrData = ByteArray(CHR_BANK_SIZE))))
 
     init {
       setNewValue(3)

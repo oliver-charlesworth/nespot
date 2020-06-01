@@ -25,16 +25,13 @@ class PlayTest {
   }
 
   private fun record(name: String) {
-    val recording = runner(name).use { runner -> runner.run() }
+    val recording = runner(name).run()
     writeToZipFile(name, recording)
   }
 
   private fun compare(name: String) {
     val original = readFromZipFile<List<TimestampedEvent>>(name)
-    val recording = runner(name).use { runner -> runner.run(original) }
-
-    fun List<TimestampedEvent>.snapshots() = map { it.event }.filterIsInstance<Snapshot>()
-
+    val recording = runner(name, original).run()
     assertEquals(original.snapshots(), recording.snapshots())
   }
 
@@ -51,11 +48,14 @@ class PlayTest {
       mapper.readValue<T>(zis)
     }
 
-  private fun runner(name: String) = CapturingRunner(Rom.parse(romFile(name).readBytes()))
+  private fun runner(name: String, prerecorded: List<TimestampedEvent>? = null) =
+    CapturingRunner(Rom.parse(romFile(name).readBytes()), prerecorded)
 
   private fun captureFile(name: String) = File(CAPTURES_BASE, "${name}.zip")
 
   private fun romFile(name: String) = File(TEST_ROMS_BASE, "${name}.nes")
+
+  fun List<TimestampedEvent>.snapshots() = map { it.event }.filterIsInstance<Snapshot>()
 
   private val mapper = jacksonObjectMapper()
 

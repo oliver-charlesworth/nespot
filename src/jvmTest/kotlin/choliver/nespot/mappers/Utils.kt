@@ -7,7 +7,6 @@ import choliver.nespot.NAMETABLE_SIZE
 import choliver.nespot.cartridge.Mapper
 import org.junit.jupiter.api.Assertions.assertEquals
 
-
 internal class BankMappingChecker(
   private val bankSize: Int,
   private val srcBase: Address = 0x0000,

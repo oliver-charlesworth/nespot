@@ -31,9 +31,7 @@ class Mmc3MapperConfig(rom: Rom) : Config {
   override val chrBankSize = CHR_BANK_SIZE
 
   override fun StandardMapper.onStartup() {
-    updatePrgBankMap()
-    updateChrBankMap()
-    chr.mirroring = VERTICAL
+    prg.bankMap[3] = numPrgBanks - 1    // The only thing guaranteed on startup
   }
 
   override fun StandardMapper.onPrgSet(addr: Address, data: Data) {

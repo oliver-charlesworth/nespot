@@ -1,187 +1,166 @@
 package choliver.nespot.mappers
 
-import choliver.nespot.*
+import choliver.nespot.Address
+import choliver.nespot.Data
 import choliver.nespot.apu.repeat
-import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
+import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
 import choliver.nespot.cartridge.StandardMapper
+import choliver.nespot.cartridge.StandardMapper.Config
 import choliver.nespot.cpu.utils._0
 import choliver.nespot.cpu.utils._1
-import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
 import choliver.nespot.mappers.Mmc3MapperConfig.Companion.CHR_BANK_SIZE
 import choliver.nespot.mappers.Mmc3MapperConfig.Companion.PRG_BANK_SIZE
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.doAnswer
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.RETURNS_DEEP_STUBS
+import org.mockito.Mockito.verify
 
 class Mmc3MapperConfigTest {
+  private val mapper = mock<StandardMapper>(defaultAnswer = RETURNS_DEEP_STUBS)
+
   @Nested
-  inner class PrgRam {
-    private val mapper = StandardMapper(Mmc3MapperConfig(Rom()))
-    private val checker = BankMappingChecker(
-      bankSize = PRG_RAM_SIZE,
-      srcBase = BASE_PRG_RAM,
-      outBase = BASE_PRG_RAM,
-      setSrc = mapper.prg::set,
-      getOut = mapper.prg::get
-    )
+  inner class Prg {
+    private val map = mutableListOf(0, 0, 0, 0)
+    private val config = Mmc3MapperConfig(Rom(prgData = ByteArray(8 * PRG_BANK_SIZE)))
+
+    init {
+      whenever(mapper.prg.bankMap.set(any(), any())) doAnswer {
+        map[it.getArgument(0)] = it.getArgument(1)
+        Unit
+      }
+    }
 
     @Test
-    fun `load and store`() {
-      checker.assertMappings(0 to 0)
-    }
-  }
+    fun `sets highest bank on startup`() {
+      with(config) {
+        mapper.onStartup()
+      }
 
-  @Nested
-  inner class PrgRom {
-    private val prgData = ByteArray(8 * PRG_BANK_SIZE)
-    private val mapper = StandardMapper(Mmc3MapperConfig(Rom(prgData = prgData)))
-    private val checker = BankMappingChecker(
-      bankSize = PRG_BANK_SIZE,
-      outBase = BASE_PRG_ROM,
-      setSrc = takesBytes(prgData::set),
-      getOut = mapper.prg::get
-    )
+      assertEquals(7, map[3])
+    }
 
     @Test
     fun `mode 0 - variable bank 0, fixed bank 2`() {
-      mapper.setModeAndReg(prgMode = 0, reg = 6, data = 3)
-      mapper.setModeAndReg(prgMode = 0, reg = 7, data = 5)
+      config.setModeAndReg(prgMode = 0, reg = 6, data = 3)
+      config.setModeAndReg(prgMode = 0, reg = 7, data = 5)
 
-      checker.assertMappings(
-        3 to 0,
-        5 to 1,
-        6 to 2,   // Fixed to penultimate
-        7 to 3    // Fixed to last
-      )
+      assertEquals(listOf(
+        3,
+        5,
+        6,      // Fixed to penultimate
+        7       // Fixed to last
+      ), map)
     }
 
     @Test
     fun `mode 1 - fixed bank 0, variable bank 2`() {
-      mapper.setModeAndReg(prgMode = 1, reg = 6, data = 3)
-      mapper.setModeAndReg(prgMode = 1, reg = 7, data = 5)
+      config.setModeAndReg(prgMode = 1, reg = 6, data = 3)
+      config.setModeAndReg(prgMode = 1, reg = 7, data = 5)
 
-      checker.assertMappings(
-        6 to 0,   // Fixed to penultimate
-        5 to 1,
-        3 to 2,
-        7 to 3    // Fixed to last
-      )
+      assertEquals(listOf(
+        6,      // Fixed to penultimate
+        5,
+        3,
+        7       // Fixed to last
+      ), map)
     }
 
     @Test
     fun `bank mapping wraps`() {
-      mapper.setModeAndReg(prgMode = 0, reg = 6, data = 3 + 8 + 8)
-      mapper.setModeAndReg(prgMode = 0, reg = 7, data = 5 + 8)
+      config.setModeAndReg(prgMode = 0, reg = 6, data = 3 + 8 + 8)
+      config.setModeAndReg(prgMode = 0, reg = 7, data = 5 + 8)
 
-      checker.assertMappings(
-        3 to 0,
-        5 to 1
-      )
+      assertEquals(listOf(
+        3,
+        5,
+        6,
+        7
+      ), map)
     }
   }
 
   @Nested
   inner class ChrRom {
-    private val chrData = ByteArray(8 * CHR_BANK_SIZE)
-    private val mapper = StandardMapper(Mmc3MapperConfig(Rom(chrData = chrData)))
-    private val checker = BankMappingChecker(
-      bankSize = CHR_BANK_SIZE,
-      outBase = BASE_CHR_ROM,
-      setSrc = takesBytes(chrData::set),
-      getOut = mapper.chr::get
-    )
+    private val map = mutableListOf(0, 0, 0, 0, 0, 0, 0, 0)
+    private val config = Mmc3MapperConfig(Rom(chrData = ByteArray(8 * CHR_BANK_SIZE)))
+
+    init {
+      whenever(mapper.chr.bankMap.set(any(), any())) doAnswer {
+        map[it.getArgument(0)] = it.getArgument(1)
+        Unit
+      }
+    }
 
     @Test
     fun `mode 0 - low banks are 2k, high banks are 1k`() {
-      mapper.setModeAndReg(chrMode = 0, reg = 0, data = 5) // Note we ignore LSB of selected bank
-      mapper.setModeAndReg(chrMode = 0, reg = 1, data = 0) // Note we ignore LSB of selected bank
-      mapper.setModeAndReg(chrMode = 0, reg = 2, data = 3)
-      mapper.setModeAndReg(chrMode = 0, reg = 3, data = 6)
-      mapper.setModeAndReg(chrMode = 0, reg = 4, data = 2)
-      mapper.setModeAndReg(chrMode = 0, reg = 5, data = 1)
+      config.setModeAndReg(chrMode = 0, reg = 0, data = 5) // Note we ignore LSB of selected bank
+      config.setModeAndReg(chrMode = 0, reg = 1, data = 0) // Note we ignore LSB of selected bank
+      config.setModeAndReg(chrMode = 0, reg = 2, data = 3)
+      config.setModeAndReg(chrMode = 0, reg = 3, data = 6)
+      config.setModeAndReg(chrMode = 0, reg = 4, data = 2)
+      config.setModeAndReg(chrMode = 0, reg = 5, data = 1)
 
-      checker.assertMappings(
-        4 to 0,
-        5 to 1,
-        0 to 2,
-        1 to 3,
-        3 to 4,
-        6 to 5,
-        2 to 6,
-        1 to 7
-      )
+      assertEquals(listOf(4, 5, 0, 1, 3, 6, 2, 1), map)
     }
 
     @Test
     fun `mode 1 - low banks are 1k, high banks are 2k`() {
-      mapper.setModeAndReg(chrMode = 1, reg = 0, data = 5) // Note we ignore LSB of selected bank
-      mapper.setModeAndReg(chrMode = 1, reg = 1, data = 0) // Note we ignore LSB of selected bank
-      mapper.setModeAndReg(chrMode = 1, reg = 2, data = 3)
-      mapper.setModeAndReg(chrMode = 1, reg = 3, data = 6)
-      mapper.setModeAndReg(chrMode = 1, reg = 4, data = 2)
-      mapper.setModeAndReg(chrMode = 1, reg = 5, data = 1)
+      config.setModeAndReg(chrMode = 1, reg = 0, data = 5) // Note we ignore LSB of selected bank
+      config.setModeAndReg(chrMode = 1, reg = 1, data = 0) // Note we ignore LSB of selected bank
+      config.setModeAndReg(chrMode = 1, reg = 2, data = 3)
+      config.setModeAndReg(chrMode = 1, reg = 3, data = 6)
+      config.setModeAndReg(chrMode = 1, reg = 4, data = 2)
+      config.setModeAndReg(chrMode = 1, reg = 5, data = 1)
 
-      checker.assertMappings(
-        3 to 0,
-        6 to 1,
-        2 to 2,
-        1 to 3,
-        4 to 4,
-        5 to 5,
-        0 to 6,
-        1 to 7
-      )
+      assertEquals(listOf(3, 6, 2, 1, 4, 5, 0, 1), map)
     }
 
     @Test
     fun `bank mapping wraps`() {
-      mapper.setModeAndReg(chrMode = 0, reg = 0, data = 5 + 8) // Note we ignore LSB of selected bank
-      mapper.setModeAndReg(chrMode = 0, reg = 1, data = 0 + 8) // Note we ignore LSB of selected bank
-      mapper.setModeAndReg(chrMode = 0, reg = 2, data = 3 + 8)
-      mapper.setModeAndReg(chrMode = 0, reg = 3, data = 6 + 8)
-      mapper.setModeAndReg(chrMode = 0, reg = 4, data = 2 + 8)
-      mapper.setModeAndReg(chrMode = 0, reg = 5, data = 1 + 8)
+      config.setModeAndReg(chrMode = 0, reg = 0, data = 5 + 8) // Note we ignore LSB of selected bank
+      config.setModeAndReg(chrMode = 0, reg = 1, data = 0 + 8) // Note we ignore LSB of selected bank
+      config.setModeAndReg(chrMode = 0, reg = 2, data = 3 + 8)
+      config.setModeAndReg(chrMode = 0, reg = 3, data = 6 + 8)
+      config.setModeAndReg(chrMode = 0, reg = 4, data = 2 + 8)
+      config.setModeAndReg(chrMode = 0, reg = 5, data = 1 + 8)
 
-      checker.assertMappings(
-        4 to 0,
-        5 to 1,
-        0 to 2,
-        1 to 3,
-        3 to 4,
-        6 to 5,
-        2 to 6,
-        1 to 7
-      )
+      assertEquals(listOf(4, 5, 0, 1, 3, 6, 2, 1), map)
     }
   }
 
   @Nested
-  inner class Vram {
-    private val mapper = StandardMapper(Mmc3MapperConfig(Rom()))
+  inner class Mirroring {
+    private val config = Mmc3MapperConfig(Rom())
 
     @Test
-    fun `vertical mirroring`() {
+    fun vertical() {
       setMode(0)
 
-      assertVramMappings(mapper, listOf(0, 2), listOf(1, 3))
+      verify(mapper.chr).mirroring = VERTICAL
     }
 
     @Test
-    fun `horizontal mirroring`() {
+    fun horizontal() {
       setMode(1)
 
-      assertVramMappings(mapper, listOf(0, 1), listOf(2, 3))
+      verify(mapper.chr).mirroring = HORIZONTAL
     }
 
     private fun setMode(mode: Int) {
-      mapper.prg[0xA000] = mode
+      config.setPrg(0xA000, mode)
     }
   }
 
   @Nested
   inner class Irq {
-    private val mapper = StandardMapper(Mmc3MapperConfig(Rom(chrData = ByteArray(CHR_BANK_SIZE))))
+    private val config = Mmc3MapperConfig(Rom())
 
     init {
       setNewValue(3)
@@ -284,24 +263,26 @@ class Mmc3MapperConfigTest {
     }
 
     private fun enable() {
-      mapper.prg[0xE001] = 0xCC
+      config.setPrg(0xE001, 0xCC)
     }
 
     private fun disable() {
-      mapper.prg[0xE000] = 0xCC
+      config.setPrg(0xE000, 0xCC)
     }
 
     private fun setNewValue(n: Int) {
-      mapper.prg[0xC000] = n
+      config.setPrg(0xC000, n)
     }
 
     private fun reload() {
-      mapper.prg[0xC001] = 0xCC
+      config.setPrg(0xC001, 0xCC)
     }
 
     private fun pumpAndCollect(addrs: List<Address>): List<Boolean> {
       val ret = mutableListOf<Boolean>()
-      addrs.forEach { mapper.chr[it]; ret += mapper.irq }
+      with(config) {
+        addrs.forEach { mapper.onChrGet(it); ret += irq }
+      }
       return ret
     }
 
@@ -310,8 +291,14 @@ class Mmc3MapperConfigTest {
     private val enoughToTrigger = listOf(lo, hi, lo, hi, lo, hi, lo, hi)
   }
 
-  private fun Mapper.setModeAndReg(chrMode: Int = 0, prgMode: Int = 0, reg: Int, data: Data) {
-    prg[0x8000] = (chrMode shl 7) or (prgMode shl 6) or reg
-    prg[0x8001] = data
+  private fun Config.setModeAndReg(chrMode: Int = 0, prgMode: Int = 0, reg: Int, data: Data) {
+    setPrg(0x8000, (chrMode shl 7) or (prgMode shl 6) or reg)
+    setPrg(0x8001, data)
+  }
+
+  private fun Config.setPrg(addr: Address, data: Data) {
+    with(this) {
+      mapper.onPrgSet(addr, data)
+    }
   }
 }

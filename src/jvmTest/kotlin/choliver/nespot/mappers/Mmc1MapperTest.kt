@@ -4,6 +4,7 @@ import choliver.nespot.Data
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.*
 import choliver.nespot.cartridge.StandardMapper
+import choliver.nespot.cartridge.StandardMapper.Config
 import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_SR
 import choliver.nespot.mappers.Mmc1Mapper.Companion.CHR_BANK_SIZE
 import choliver.nespot.mappers.Mmc1Mapper.Companion.CHR_RAM_SIZE
@@ -145,37 +146,37 @@ class Mmc1MapperTest {
     private val config = Mmc1Mapper(Rom(), getStepCount = { step })
 
     @Test
-    fun `set on startup`() {
+    fun `set to something on startup`() {
       with(config) {
         mapper.onStartup()
       }
 
-      verify(mapper.chr).mirroring = FIXED_LOWER
+      verify(mapper.chr).mirroring = any()
     }
 
     @Test
-    fun `single-screen - nametable 0`() {
+    fun `fixed-lower`() {
       setMirrorMode(0)
 
       verify(mapper.chr).mirroring = FIXED_LOWER
     }
 
     @Test
-    fun `single-screen - nametable 1`() {
+    fun `fixed-upper`() {
       setMirrorMode(1)
 
       verify(mapper.chr).mirroring = FIXED_UPPER
     }
 
     @Test
-    fun `vertical mirroring`() {
+    fun vertical() {
       setMirrorMode(2)
 
       verify(mapper.chr).mirroring = VERTICAL
     }
 
     @Test
-    fun `horizontal mirroring`() {
+    fun horizontal() {
       setMirrorMode(3)
 
       verify(mapper.chr).mirroring = HORIZONTAL
@@ -186,7 +187,7 @@ class Mmc1MapperTest {
     }
   }
 
-  private fun Mmc1Mapper.writeReg(idx: Int, data: Data) {
+  private fun Config.writeReg(idx: Int, data: Data) {
     with(this) {
       val d = data and 0x1F
       val addr = BASE_SR or ((idx and 0x03) shl 13)

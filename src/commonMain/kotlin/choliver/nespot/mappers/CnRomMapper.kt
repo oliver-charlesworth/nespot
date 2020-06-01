@@ -3,12 +3,12 @@ package choliver.nespot.mappers
 import choliver.nespot.Address
 import choliver.nespot.BASE_PRG_ROM
 import choliver.nespot.Data
+import choliver.nespot.cartridge.Cartridge
+import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.StandardMapper
-import choliver.nespot.cartridge.StandardMapper.Config
 
 // See https://wiki.nesdev.com/w/index.php/CNROM
-class CnRomMapperConfig(private val rom: Rom) : Config {
+class CnRomMapper(private val rom: Rom) : Mapper {
   private val numChrBanks = (rom.chrData.size / CHR_BANK_SIZE)
 
   override val prgData = rom.prgData
@@ -16,13 +16,13 @@ class CnRomMapperConfig(private val rom: Rom) : Config {
   override val prgBankSize = PRG_BANK_SIZE
   override val chrBankSize = CHR_BANK_SIZE
 
-  override fun StandardMapper.onStartup() {
+  override fun Cartridge.onStartup() {
     chr.mirroring = rom.mirroring
     prg.bankMap[1] = if (rom.prgData.size > PRG_BANK_SIZE) 1 else 0
   }
 
   @Suppress("UNUSED_PARAMETER")
-  override fun StandardMapper.onPrgSet(addr: Address, data: Data) {
+  override fun Cartridge.onPrgSet(addr: Address, data: Data) {
     chr.bankMap[0] = data % numChrBanks
   }
 

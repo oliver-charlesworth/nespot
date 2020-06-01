@@ -6,12 +6,12 @@ import choliver.nespot.Data
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
-import choliver.nespot.cartridge.StandardMapper
-import choliver.nespot.cartridge.StandardMapper.Config
+import choliver.nespot.cartridge.Cartridge
+import choliver.nespot.cartridge.Mapper
 import choliver.nespot.isBitSet
 
 // See https://wiki.nesdev.com/w/index.php/MMC3
-class Mmc3MapperConfig(rom: Rom) : Config {
+class Mmc3Mapper(rom: Rom) : Mapper {
   private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
   private val numChrBanks = (rom.chrData.size / CHR_BANK_SIZE)
   private var chrMode = 0
@@ -30,11 +30,11 @@ class Mmc3MapperConfig(rom: Rom) : Config {
   override val prgBankSize = PRG_BANK_SIZE
   override val chrBankSize = CHR_BANK_SIZE
 
-  override fun StandardMapper.onStartup() {
+  override fun Cartridge.onStartup() {
     prg.bankMap[3] = numPrgBanks - 1    // The only thing guaranteed on startup
   }
 
-  override fun StandardMapper.onPrgSet(addr: Address, data: Data) {
+  override fun Cartridge.onPrgSet(addr: Address, data: Data) {
     val even = (addr % 2) == 0
     when ((addr and 0x6000) shr 13) {
       0 -> {
@@ -75,18 +75,18 @@ class Mmc3MapperConfig(rom: Rom) : Config {
     }
   }
 
-  override fun StandardMapper.onChrGet(addr: Address) {
+  override fun Cartridge.onChrGet(addr: Address) {
     updateIrqState(addr)
   }
 
-  override fun StandardMapper.onChrSet(addr: Address, data: Data) {
+  override fun Cartridge.onChrSet(addr: Address, data: Data) {
     updateIrqState(addr)
   }
 
   override val irq get() = _irq
   override val persistRam = true
 
-  private fun StandardMapper.updatePrgBankMap() {
+  private fun Cartridge.updatePrgBankMap() {
     val map = prg.bankMap
     when (prgMode) {
       0 -> {
@@ -102,7 +102,7 @@ class Mmc3MapperConfig(rom: Rom) : Config {
     map[3] = numPrgBanks - 1
   }
 
-  private fun StandardMapper.updateChrBankMap() {
+  private fun Cartridge.updateChrBankMap() {
     val map = chr.bankMap
     when (chrMode) {
       0 -> {

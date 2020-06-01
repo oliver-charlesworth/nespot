@@ -2,13 +2,12 @@ package choliver.nespot.nes
 
 import choliver.nespot.*
 import choliver.nespot.apu.Apu
+import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.createMapper
 import choliver.nespot.cpu.Cpu
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_IRQ
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_NMI
 import choliver.nespot.ppu.Ppu
-
 
 class Nes(
   rom: Rom,
@@ -18,25 +17,25 @@ class Nes(
 ) {
   private var steps = 0
 
-  private val mapper = createMapper(rom, getStepCount = { steps })
+  private val cartridge = Cartridge.create(rom, getStepCount = { steps })
 
   private val apu = Apu(
     cpuFreqHz = CPU_FREQ_HZ,
-    memory = mapper.prg,  // DMC can only read from PRG space
+    memory = cartridge.prg,  // DMC can only read from PRG space
     audioSink = audioSink
   )
 
   private val cpuRam = Ram(CPU_RAM_SIZE)
 
   private val ppu = Ppu(
-    memory = mapper.chr,
+    memory = cartridge.chr,
     videoSink = videoSink
   )
 
   val joypads = Joypads()
 
   private val cpuMapper = CpuMapper(
-    prg = mapper.prg,
+    prg = cartridge.prg,
     ram = cpuRam,
     ppu = ppu,
     apu = apu,
@@ -56,7 +55,7 @@ class Nes(
     return cycles
   }
 
-  private fun pollInterrupts() = (if (apu.irq || mapper.irq) INTERRUPT_IRQ else 0) or (if (ppu.vbl) INTERRUPT_NMI else 0)
+  private fun pollInterrupts() = (if (apu.irq || cartridge.irq) INTERRUPT_IRQ else 0) or (if (ppu.vbl) INTERRUPT_NMI else 0)
 
   private fun maybeIntercept(memory: Memory) = if (onStore != null) {
     val onStore = onStore
@@ -77,10 +76,10 @@ class Nes(
     val ram = this@Nes.cpuRam
     fun step() = this@Nes.step()
     fun peek(addr: Address) = cpuMapper[addr]
-    fun peekV(addr: Address) = mapper.chr[addr]
+    fun peekV(addr: Address) = cartridge.chr[addr]
   }
 
-  val persistentRam = mapper.persistentRam
+  val persistentRam = cartridge.persistentRam
 
   val diagnostics = Diagnostics()
 

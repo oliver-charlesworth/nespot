@@ -7,6 +7,7 @@ import choliver.nespot.NAMETABLE_SIZE
 import choliver.nespot.cartridge.Mapper
 import org.junit.jupiter.api.Assertions.assertEquals
 
+// TODO - eliminate
 internal class BankMappingChecker(
   private val bankSize: Int,
   private val srcBase: Address = 0x0000,
@@ -36,21 +37,4 @@ internal class BankMappingChecker(
     internal fun takesBytes(setSrc: (Address, Byte) -> Unit) =
       { addr: Address, data: Data -> setSrc(addr, data.toByte()) }
   }
-}
-
-internal fun assertVramMappings(mapper: Mapper, vararg nametableAliases: List<Int>) {
-  val checker = BankMappingChecker(
-    bankSize = NAMETABLE_SIZE,
-    srcBase = BASE_VRAM,
-    outBase = BASE_VRAM,
-    setSrc = mapper.chr::set,
-    getOut = mapper.chr::get
-  )
-
-  val mappings = nametableAliases.flatMap { aliases ->
-    // Cartesian product of all aliases in group - can we get from any alias to any other alias?
-    aliases.flatMap { first -> aliases.map { second -> first to second } }
-  }
-
-  checker.assertMappings(*mappings.toTypedArray())
 }

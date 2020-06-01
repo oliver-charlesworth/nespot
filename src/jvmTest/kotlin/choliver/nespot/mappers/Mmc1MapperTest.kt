@@ -3,8 +3,8 @@ package choliver.nespot.mappers
 import choliver.nespot.Data
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.*
-import choliver.nespot.cartridge.StandardMapper
-import choliver.nespot.cartridge.StandardMapper.Config
+import choliver.nespot.cartridge.Cartridge
+import choliver.nespot.cartridge.Mapper
 import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_SR
 import choliver.nespot.mappers.Mmc1Mapper.Companion.CHR_BANK_SIZE
 import choliver.nespot.mappers.Mmc1Mapper.Companion.CHR_RAM_SIZE
@@ -19,31 +19,31 @@ import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.RETURNS_DEEP_STUBS
 
 class Mmc1MapperTest {
-  private val mapper = mock<StandardMapper>(defaultAnswer = RETURNS_DEEP_STUBS)
+  private val cartridge = mock<Cartridge>(defaultAnswer = RETURNS_DEEP_STUBS)
   private var step = 0
 
   @Test
   fun `configures CHR ROM if data is non-empty`() {
     val chrData = ByteArray(4096)
-    val config = Mmc1Mapper(Rom(chrData = chrData), getStepCount = { step })
+    val mapper = Mmc1Mapper(Rom(chrData = chrData), getStepCount = { step })
 
-    assertSame(chrData, config.chrData)
+    assertSame(chrData, mapper.chrData)
   }
 
   @Test
   fun `configures CHR RAM if data is empty`() {
-    val config = Mmc1Mapper(Rom(), getStepCount = { step })
+    val mapper = Mmc1Mapper(Rom(), getStepCount = { step })
 
-    assertEquals(CHR_RAM_SIZE, config.chrData.size)
+    assertEquals(CHR_RAM_SIZE, mapper.chrData.size)
   }
 
   @Nested
   inner class Prg {
     private val map = mutableListOf(0, 0)
-    private val config = Mmc1Mapper(Rom(prgData = ByteArray(8 * PRG_BANK_SIZE)), getStepCount = { step })
+    private val mapper = Mmc1Mapper(Rom(prgData = ByteArray(8 * PRG_BANK_SIZE)), getStepCount = { step })
 
     init {
-      whenever(mapper.prg.bankMap.set(any(), any())) doAnswer {
+      whenever(cartridge.prg.bankMap.set(any(), any())) doAnswer {
         map[it.getArgument(0)] = it.getArgument(1)
         Unit
       }
@@ -51,8 +51,8 @@ class Mmc1MapperTest {
 
     @Test
     fun `sets highest bank on startup`() {
-      with(config) {
-        mapper.onStartup()
+      with(mapper) {
+        cartridge.onStartup()
       }
 
       assertEquals(7, map[1])
@@ -92,21 +92,21 @@ class Mmc1MapperTest {
     }
 
     private fun setMode(mode: Int) {
-      config.writeReg(0, mode shl 2)
+      mapper.writeReg(0, mode shl 2)
     }
 
     private fun setBank(bank: Int) {
-      config.writeReg(3, bank)
+      mapper.writeReg(3, bank)
     }
   }
 
   @Nested
   inner class Chr {
     private val map = mutableListOf(0, 0)
-    private val config = Mmc1Mapper(Rom(chrData = ByteArray(8 * CHR_BANK_SIZE)), getStepCount = { step })
+    private val mapper = Mmc1Mapper(Rom(chrData = ByteArray(8 * CHR_BANK_SIZE)), getStepCount = { step })
 
     init {
-      whenever(mapper.chr.bankMap.set(any(), any())) doAnswer {
+      whenever(cartridge.chr.bankMap.set(any(), any())) doAnswer {
         map[it.getArgument(0)] = it.getArgument(1)
         Unit
       }
@@ -135,64 +135,64 @@ class Mmc1MapperTest {
     }
 
     private fun setModeAndBanks(mode: Int, bank0: Int, bank1: Int) {
-      config.writeReg(0, mode shl 4)
-      config.writeReg(1, bank0)
-      config.writeReg(2, bank1)
+      mapper.writeReg(0, mode shl 4)
+      mapper.writeReg(1, bank0)
+      mapper.writeReg(2, bank1)
     }
   }
 
   @Nested
   inner class Mirroring {
-    private val config = Mmc1Mapper(Rom(), getStepCount = { step })
+    private val mapper = Mmc1Mapper(Rom(), getStepCount = { step })
 
     @Test
     fun `fixed-lower`() {
       setMirrorMode(0)
 
-      verify(mapper.chr).mirroring = FIXED_LOWER
+      verify(cartridge.chr).mirroring = FIXED_LOWER
     }
 
     @Test
     fun `fixed-upper`() {
       setMirrorMode(1)
 
-      verify(mapper.chr).mirroring = FIXED_UPPER
+      verify(cartridge.chr).mirroring = FIXED_UPPER
     }
 
     @Test
     fun vertical() {
       setMirrorMode(2)
 
-      verify(mapper.chr).mirroring = VERTICAL
+      verify(cartridge.chr).mirroring = VERTICAL
     }
 
     @Test
     fun horizontal() {
       setMirrorMode(3)
 
-      verify(mapper.chr).mirroring = HORIZONTAL
+      verify(cartridge.chr).mirroring = HORIZONTAL
     }
 
     private fun setMirrorMode(mode: Int) {
-      config.writeReg(0, mode)
+      mapper.writeReg(0, mode)
     }
   }
 
-  private fun Config.writeReg(idx: Int, data: Data) {
+  private fun Mapper.writeReg(idx: Int, data: Data) {
     with(this) {
       val d = data and 0x1F
       val addr = BASE_SR or ((idx and 0x03) shl 13)
-      mapper.onPrgSet(addr, 0x80)   // Reset
+      cartridge.onPrgSet(addr, 0x80)   // Reset
       step++
-      mapper.onPrgSet(addr, d shr 0)
+      cartridge.onPrgSet(addr, d shr 0)
       step++
-      mapper.onPrgSet(addr, d shr 1)
+      cartridge.onPrgSet(addr, d shr 1)
       step++
-      mapper.onPrgSet(addr, d shr 2)
+      cartridge.onPrgSet(addr, d shr 2)
       step++
-      mapper.onPrgSet(addr, d shr 3)
+      cartridge.onPrgSet(addr, d shr 3)
       step++
-      mapper.onPrgSet(addr, d shr 4)
+      cartridge.onPrgSet(addr, d shr 4)
       step++
     }
   }

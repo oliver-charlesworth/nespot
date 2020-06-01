@@ -3,8 +3,8 @@ package choliver.nespot.runner
 import choliver.nespot.SCREEN_HEIGHT
 import choliver.nespot.SCREEN_WIDTH
 import choliver.nespot.TILE_SIZE
+import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.createMapper
 import choliver.nespot.ppu.NUM_TILE_COLUMNS
 import choliver.nespot.ppu.NUM_TILE_ROWS
 import choliver.nespot.ppu.createColorMap
@@ -37,7 +37,7 @@ class ShowStuffTest {
   fun patterns() {
     screen.show()
 
-    val mapper = createMapper(Rom.parse(File("roms/sesamestreet.nes").readBytes()))
+    val cartridge = Cartridge.create(Rom.parse(File("roms/sesamestreet.nes").readBytes()))
 
     fun getPatternData(
       patternTable: Int,    // 0 to 1
@@ -46,8 +46,8 @@ class ShowStuffTest {
       row: Int              // 0 to 7
     ): List<Int> {
       val addr = (((patternTable * 256) + (tileRow * 16) + tileCol) * 16) + row
-      val p0 = mapper.chr[addr]
-      val p1 = mapper.chr[addr + 8]
+      val p0 = cartridge.chr[addr]
+      val p1 = cartridge.chr[addr + 8]
 
       return (0..7).map { ((p0 shr (7 - it)) and 1) or (((p1 shr (7 - it)) and 1) * 2) }
     }

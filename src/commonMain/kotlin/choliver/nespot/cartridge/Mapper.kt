@@ -1,17 +1,17 @@
 package choliver.nespot.cartridge
 
-import choliver.nespot.Memory
-import choliver.nespot.Ram
+import choliver.nespot.Address
+import choliver.nespot.Data
 
-
-/**
- * Loosely encapsulates the notion of a cartridge mapper.
- *
- * Takes on more responsibility for perf reasons - in particular it must implement the 2kB VRAM.
- */
 interface Mapper {
-  val irq: Boolean
-  val persistentRam: Ram?
-  val prg: Memory
-  val chr: Memory
+  val prgData: ByteArray
+  val chrData: ByteArray
+  val prgBankSize: Int get() = prgData.size
+  val chrBankSize: Int get() = chrData.size
+  val persistRam: Boolean get() = false
+  val irq get() = false
+  fun Cartridge.onStartup() {}
+  fun Cartridge.onPrgSet(addr: Address, data: Data) {}
+  fun Cartridge.onChrGet(addr: Address) {}
+  fun Cartridge.onChrSet(addr: Address, data: Data) {}
 }

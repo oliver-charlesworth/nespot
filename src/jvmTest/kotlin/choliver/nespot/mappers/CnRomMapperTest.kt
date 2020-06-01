@@ -1,8 +1,8 @@
 package choliver.nespot.mappers
 
+import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
-import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.mappers.CnRomMapper.Companion.BASE_BANK_SELECT
 import choliver.nespot.mappers.CnRomMapper.Companion.CHR_BANK_SIZE
 import com.nhaarman.mockitokotlin2.mock

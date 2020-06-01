@@ -4,7 +4,6 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.Cpu.NextStep.RESET
 import choliver.nespot.nes.Nes
 import choliver.nespot.persistence.BackupManager
-import choliver.nespot.persistence.SnapshotManager
 import choliver.nespot.runner.Event.*
 import choliver.nespot.runner.KeyAction.*
 import java.io.File
@@ -13,7 +12,6 @@ import java.util.concurrent.LinkedBlockingQueue
 
 class InteractiveRunner(
   rom: Rom,
-  private val snapshotFile: File?,
   private val fullScreen: Boolean
 ) {
   private val events = LinkedBlockingQueue<Event>()
@@ -27,12 +25,9 @@ class InteractiveRunner(
   )
   private val controllers = ControllerManager(onEvent = { events += it })
   private val backupManager = BackupManager(rom, nes.persistentRam, BACKUP_DIR)
-  private val snapshotManager = SnapshotManager(nes.diagnostics)
 
   fun run() {
     backupManager.maybeRestore()
-    restore()
-
     screen.fullScreen = fullScreen
     screen.show()
     audio.start()
@@ -43,7 +38,7 @@ class InteractiveRunner(
         nes.step()
         consumeEvent()
       }
-      maybeBackup()
+      backupManager.maybeSave()
     } catch (ex: Exception) {
       ex.printStackTrace(System.err)
     } finally {
@@ -60,8 +55,7 @@ class InteractiveRunner(
       is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
         is Joypad -> nes.joypads.down(1, action.button)
         is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
-        is Snapshot -> snapshotManager.snapshotToStdout()
-        is Restore -> restore()
+        is Reset -> nes.diagnostics.cpu.nextStep = RESET
       }
       is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
         is Joypad -> nes.joypads.up(1, action.button)
@@ -71,22 +65,6 @@ class InteractiveRunner(
         e.cause.printStackTrace(System.err)
         closed = true
       }
-    }
-  }
-
-  private fun restore() {
-    if (snapshotFile != null) {
-      snapshotManager.restore(snapshotFile)
-    } else {
-      // TODO - reset
-      nes.diagnostics.cpu.nextStep = RESET
-    }
-  }
-
-  private fun maybeBackup() {
-    // We don't want state from snapshot to overwrite main backup
-    if (snapshotFile == null) {
-      backupManager.maybeSave()
     }
   }
 

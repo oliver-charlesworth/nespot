@@ -2,7 +2,6 @@ package choliver.nespot.emulator
 
 import choliver.nespot.*
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cpu.Cpu
 import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Nes
 import org.khronos.webgl.Int8Array
@@ -35,7 +34,6 @@ class Emulator {
         videoSink = EmulatorVideoSink(),
         audioSink = EmulatorAudioSink(config.sampleRateHz)
       )
-      nes.diagnostics.cpu.nextStep = Cpu.NextStep.RESET
     }
   }
 

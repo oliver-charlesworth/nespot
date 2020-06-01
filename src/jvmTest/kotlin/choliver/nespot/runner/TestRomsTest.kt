@@ -108,7 +108,7 @@ class TestRomsTest {
 
   private fun run(romFile: String) {
     val rom = Rom.parse(File(TEST_ROMS_BASE, romFile).readBytes())
-    InteractiveRunner(rom, snapshotFile = null, fullScreen = false).run()
+    InteractiveRunner(rom, fullScreen = false).run()
   }
 
   companion object {

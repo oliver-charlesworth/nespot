@@ -161,7 +161,6 @@ class Ppu(
   }
 
   private val dummy = Any()
-  // TODO - these need to be included in State (and serialised) somehow
   private var nextDot = DOT_RENDER
   private var nextAction = actionRender
 

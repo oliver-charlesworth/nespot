@@ -36,6 +36,9 @@ class CapturingRunner(
           inject(prerecorded)
         } else {
           consumeEvent()
+          if (timestamp % SNAPSHOT_PERIOD == 0L) {
+            takeSnapshot()
+          }
         }
         timestamp++
       }
@@ -51,10 +54,10 @@ class CapturingRunner(
   private fun inject(prerecorded: List<TimestampedEvent>) {
     if (prerecorded[idxPrerecorded].timestamp == timestamp) {
       when (val e = prerecorded[idxPrerecorded].event) {
-        is ButtonDown -> onButtonDown(e.button)
-        is ButtonUp -> onButtonUp(e.button)
-        is Snapshot -> onSnapshot()
-        is Close -> onClose()
+        is ButtonDown -> buttonDown(e.button)
+        is ButtonUp -> buttonUp(e.button)
+        is Snapshot -> takeSnapshot()
+        is Close -> close()
       }
       idxPrerecorded++
     }
@@ -63,33 +66,36 @@ class CapturingRunner(
   private fun consumeEvent() {
     when (val e = this@CapturingRunner.events.poll()) {
       is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
-        is KeyAction.Joypad -> onButtonDown(action.button)
-        is KeyAction.Snapshot -> onSnapshot()
+        is KeyAction.Joypad -> buttonDown(action.button)
       }
       is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
-        is KeyAction.Joypad -> onButtonUp(action.button)
+        is KeyAction.Joypad -> buttonUp(action.button)
       }
-      is Event.Close -> onClose()
-      is Error -> onClose()
+      is Event.Close -> close()
+      is Error -> close()
     }
   }
 
-  private fun onButtonDown(button: Joypads.Button) {
+  private fun buttonDown(button: Joypads.Button) {
     recording += TimestampedEvent(timestamp, ButtonDown(button))
     nes.joypads.down(1, button)
   }
 
-  private fun onButtonUp(button: Joypads.Button) {
+  private fun buttonUp(button: Joypads.Button) {
     recording += TimestampedEvent(timestamp, ButtonUp(button))
     nes.joypads.up(1, button)
   }
 
-  private fun onSnapshot() {
+  private fun takeSnapshot() {
     recording += TimestampedEvent(timestamp, Snapshot(sink.snapshot))
   }
 
-  private fun onClose() {
+  private fun close() {
     recording += TimestampedEvent(timestamp, Close)
     closed = true
+  }
+
+  companion object {
+    private const val SNAPSHOT_PERIOD = 1_000_000
   }
 }

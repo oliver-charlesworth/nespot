@@ -7,14 +7,12 @@ import javafx.scene.input.KeyCode.*
 sealed class KeyAction {
   object ToggleFullScreen : KeyAction()
   object Reset : KeyAction()
-  object Snapshot : KeyAction()
   data class Joypad(val button: Button) : KeyAction()
 
   companion object {
     fun fromKeyCode(code: KeyCode) = when (code) {
       F -> ToggleFullScreen
       R -> Reset
-      S -> Snapshot
       Z -> Joypad(Button.A)
       X -> Joypad(Button.B)
       CLOSE_BRACKET -> Joypad(Button.START)

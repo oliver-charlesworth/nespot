@@ -1,12 +1,14 @@
 package choliver.nespot.mappers
 
-import choliver.nespot.*
-import choliver.nespot.cartridge.ChrMemory
-import choliver.nespot.cartridge.Mapper
-import choliver.nespot.cartridge.PrgMemory
+import choliver.nespot.Address
+import choliver.nespot.BASE_PRG_ROM
+import choliver.nespot.Data
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
+import choliver.nespot.cartridge.Cartridge
+import choliver.nespot.cartridge.Mapper
+import choliver.nespot.isBitSet
 
 // See https://wiki.nesdev.com/w/index.php/MMC3
 class Mmc3Mapper(rom: Rom) : Mapper {
@@ -23,60 +25,38 @@ class Mmc3Mapper(rom: Rom) : Mapper {
   private var prevA12 = false
   private var _irq = false
 
-  override val prg = PrgMemory(
-    raw = rom.prgData,
-    bankSize = PRG_BANK_SIZE
-  ) { addr, data ->
-    if (addr >= BASE_REG) {
-      setReg(addr, data)
-    }
+  override val prgData = rom.prgData
+  override val chrData = rom.chrData
+  override val prgBankSize = PRG_BANK_SIZE
+  override val chrBankSize = CHR_BANK_SIZE
+
+  override fun Cartridge.onStartup() {
+    prg.bankMap[3] = numPrgBanks - 1    // The only thing guaranteed on startup
   }
 
-  override val chr = object : Memory {
-    override fun get(addr: Address): Data {
-      updateIrqState(addr)
-      return actualChr[addr]
-    }
-
-    override fun set(addr: Address, data: Data) {
-      updateIrqState(addr)
-      actualChr[addr] = data
-    }
-  }
-
-  override val irq get() = _irq
-  override val persistentRam = Ram.backedBy(prg.ram)
-
-  private val actualChr = ChrMemory(
-    raw = rom.chrData,
-    bankSize = CHR_BANK_SIZE,
-    mirroring = VERTICAL
-  )
-
-  init {
-    updatePrgBankMap()
-    updateChrBankMap()
-  }
-
-  private fun setReg(addr: Address, data: Data) {
+  override fun Cartridge.onPrgSet(addr: Address, data: Data) {
     val even = (addr % 2) == 0
     when ((addr and 0x6000) shr 13) {
-      0 -> when (even) {
-        false -> {
-          when (regSelect) {
-            0, 1, 2, 3, 4, 5 -> regs[regSelect] = data % numChrBanks
-            6, 7 -> regs[regSelect] = data % numPrgBanks
+      0 -> {
+        when (even) {
+          false -> {
+            when (regSelect) {
+              0, 1, 2, 3, 4, 5 -> regs[regSelect] = data % numChrBanks
+              6, 7 -> regs[regSelect] = data % numPrgBanks
+            }
+          }
+          true -> {
+            chrMode = (data and 0x80) shr 7
+            prgMode = (data and 0x40) shr 6
+            regSelect = data and 0b00000111
           }
         }
-        true -> {
-          chrMode = (data and 0x80) shr 7
-          prgMode = (data and 0x40) shr 6
-          regSelect = data and 0b00000111
-        }
+        updatePrgBankMap()
+        updateChrBankMap()
       }
       1 -> when (even) {
         false -> Unit // TODO - PRG-RAM protect
-        true -> actualChr.mirroring = when (data and 0x01) {
+        true -> chr.mirroring = when (data and 0x01) {
           0 -> VERTICAL
           else -> HORIZONTAL
         }
@@ -93,11 +73,20 @@ class Mmc3Mapper(rom: Rom) : Mapper {
         }
       }
     }
-    updatePrgBankMap()
-    updateChrBankMap()
   }
 
-  private fun updatePrgBankMap() {
+  override fun Cartridge.onChrGet(addr: Address) {
+    updateIrqState(addr)
+  }
+
+  override fun Cartridge.onChrSet(addr: Address, data: Data) {
+    updateIrqState(addr)
+  }
+
+  override val irq get() = _irq
+  override val persistRam = true
+
+  private fun Cartridge.updatePrgBankMap() {
     val map = prg.bankMap
     when (prgMode) {
       0 -> {
@@ -113,8 +102,8 @@ class Mmc3Mapper(rom: Rom) : Mapper {
     map[3] = numPrgBanks - 1
   }
 
-  private fun updateChrBankMap() {
-    val map = actualChr.bankMap
+  private fun Cartridge.updateChrBankMap() {
+    val map = chr.bankMap
     when (chrMode) {
       0 -> {
         map[0] = regs[0] and 0xFE

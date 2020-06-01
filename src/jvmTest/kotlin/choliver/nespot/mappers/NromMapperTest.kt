@@ -1,115 +1,61 @@
 package choliver.nespot.mappers
 
-import choliver.nespot.BASE_CHR_ROM
-import choliver.nespot.BASE_PRG_RAM
-import choliver.nespot.BASE_PRG_ROM
-import choliver.nespot.PRG_RAM_SIZE
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
-import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
+import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.mappers.NromMapper.Companion.CHR_RAM_SIZE
-import org.junit.jupiter.api.Nested
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
-
+import org.mockito.Answers.RETURNS_DEEP_STUBS
 
 class NromMapperTest {
-  @Nested
-  inner class PrgRam {
-    private val mapper = NromMapper(Rom())
-    private val checker = BankMappingChecker(
-      bankSize = PRG_RAM_SIZE,
-      srcBase = BASE_PRG_RAM,
-      outBase = BASE_PRG_RAM,
-      setSrc = mapper.prg::set,
-      getOut = mapper.prg::get
-    )
+  private val cartridge = mock<Cartridge>(defaultAnswer = RETURNS_DEEP_STUBS)
 
-    @Test
-    fun `load and store`() {
-      checker.assertMappings(0 to 0)
-    }
+  @Test
+  fun `configures CHR ROM if data is non-empty`() {
+    val chrData = ByteArray(4096)
+    val mapper = NromMapper(Rom(chrData = chrData))
+
+    assertSame(chrData, mapper.chrData)
   }
 
-  @Nested
-  inner class PrgRom {
-    @Test
-    fun `size-32768`() {
-      val checker = checker(32768)
+  @Test
+  fun `configures CHR RAM if data is empty`() {
+    val mapper = NromMapper(Rom())
 
-      checker.assertMappings(
-        0 to 0,
-        1 to 1
-      )
-    }
-
-    @Test
-    fun `size-16384`() {
-      val checker = checker(16384)
-
-      checker.assertMappings(
-        0 to 0,
-        0 to 1
-      )
-    }
-
-    private fun checker(size: Int): BankMappingChecker {
-      val prgData = ByteArray(size)
-      val mapper = NromMapper(Rom(prgData = prgData))
-      return BankMappingChecker(
-        bankSize = 16384,
-        outBase = BASE_PRG_ROM,
-        setSrc = takesBytes(prgData::set),
-        getOut = mapper.prg::get
-      )
-    }
+    assertEquals(CHR_RAM_SIZE, mapper.chrData.size)
   }
 
-  @Nested
-  inner class ChrRam {
-    private val mapper = NromMapper(Rom())
-    private val checker = BankMappingChecker(
-      bankSize = CHR_RAM_SIZE,
-      srcBase = BASE_CHR_ROM,
-      outBase = BASE_CHR_ROM,
-      setSrc = mapper.chr::set,
-      getOut = mapper.chr::get
-    )
-
-    @Test
-    fun `load and store`() {
-      checker.assertMappings(0 to 0)
+  @Test
+  fun `maps both PRG banks to 0 for size-16384`() {
+    with(NromMapper(Rom(prgData = ByteArray(16384)))) {
+      cartridge.onStartup()
     }
+
+    verify(cartridge.prg.bankMap)[1] = 0
+    verifyNoMoreInteractions(cartridge.prg.bankMap)
   }
 
-  @Nested
-  inner class ChrRom {
-    private val chrData = ByteArray(8192)
-    private val mapper = NromMapper(Rom(chrData = chrData))
-    private val checker = BankMappingChecker(
-      bankSize = CHR_RAM_SIZE,
-      srcBase = BASE_CHR_ROM,
-      outBase = BASE_CHR_ROM,
-      setSrc = takesBytes(chrData::set),
-      getOut = mapper.chr::get
-    )
-
-    @Test
-    fun `maps 0x0000 to 0x1FFF`() {
-      checker.assertMappings(0 to 0)
+  @Test
+  fun `maps both PRG banks to 1 for size-32768`() {
+    with(NromMapper(Rom(prgData = ByteArray(32768)))) {
+      cartridge.onStartup()
     }
+
+    verify(cartridge.prg.bankMap)[1] = 1
+    verifyNoMoreInteractions(cartridge.prg.bankMap)
   }
 
-  @Nested
-  inner class Vram {
-    @Test
-    fun `vertical mirroring`() {
-      assertVramMappings(NromMapper(Rom(mirroring = VERTICAL)), listOf(0, 2), listOf(1, 3))
+  @Test
+  fun `sets mirroring on startup`() {
+    with(NromMapper(Rom(mirroring = VERTICAL))) {
+      cartridge.onStartup()
     }
 
-    @Test
-    fun `horizontal mirroring`() {
-      assertVramMappings(NromMapper(Rom(mirroring = HORIZONTAL)), listOf(0, 1), listOf(2, 3))
-    }
+    verify(cartridge.chr).mirroring = VERTICAL
   }
 }

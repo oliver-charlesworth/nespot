@@ -1,47 +1,37 @@
 package choliver.nespot.mappers
 
-import choliver.nespot.*
-import choliver.nespot.cartridge.ChrMemory
+import choliver.nespot.Address
+import choliver.nespot.BASE_PRG_ROM
+import choliver.nespot.Data
+import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Mapper
-import choliver.nespot.cartridge.PrgMemory
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.Rom.Mirroring.FIXED_LOWER
+import choliver.nespot.isBitSet
 
 // https://wiki.nesdev.com/w/index.php/MMC1
 class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
-  private val chrData = if (rom.chrData.isEmpty()) ByteArray(CHR_RAM_SIZE) else rom.chrData
+  override val prgData = rom.prgData
+  override val chrData = if (rom.chrData.isEmpty()) ByteArray(CHR_RAM_SIZE) else rom.chrData
+  override val prgBankSize = PRG_BANK_SIZE
+  override val chrBankSize = CHR_BANK_SIZE
+  override val persistRam = true
+
   private val numPrgBanks = (rom.prgData.size / PRG_BANK_SIZE)
   private val numChrBanks = (chrData.size / CHR_BANK_SIZE)
   private var srCount = 0
   private var sr = 0
   private var chr0Bank = 0
   private var chr1Bank = 0
-  private var prgBank = (numPrgBanks - 1)   // Bubble Bobble relies on this to start up
+  private var prgBank = 0
   private var chrMode = 0
   private var prgMode = 0
   private var prevStep = -1
 
-  override val prg = PrgMemory(
-    raw = rom.prgData,
-    bankSize = PRG_BANK_SIZE,
-    onSet = ::updateShiftRegister
-  )
-
-  override val chr = ChrMemory(
-    raw = chrData,
-    bankSize = CHR_BANK_SIZE,
-    mirroring = FIXED_LOWER
-  )
-
-  override val irq = false
-  override val persistentRam = Ram.backedBy(prg.ram)
-
-  init {
-    updatePrgBankMap()
-    updateChrBankMap()
+  override fun Cartridge.onStartup() {
+    prg.bankMap[1] = numPrgBanks - 1    // Bubble Bobble relies on this
   }
 
-  private fun updateShiftRegister(addr: Address, data: Data) {
+  override fun Cartridge.onPrgSet(addr: Address, data: Data) {
     // We don't update on consecutive stores (we approximate this as multiple stores in the same instruction step)
     val currentStep = getStepCount()
     if (currentStep != prevStep) {
@@ -74,7 +64,7 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     prevStep = currentStep
   }
 
-  private fun updatePrgBankMap() {
+  private fun Cartridge.updatePrgBankMap() {
     val map = prg.bankMap
     when (prgMode) {
       0, 1 -> {
@@ -92,7 +82,7 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     }
   }
 
-  private fun updateChrBankMap() {
+  private fun Cartridge.updateChrBankMap() {
     val map = chr.bankMap
     when (chrMode) {
       0 -> {
@@ -111,9 +101,6 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     const val CHR_RAM_SIZE = 8192
     const val PRG_BANK_SIZE = 16384
     const val CHR_BANK_SIZE = 4096
-
-    const val BASE_PRG0_ROM = BASE_PRG_ROM
-    const val BASE_PRG1_ROM = BASE_PRG_ROM + PRG_BANK_SIZE
     const val BASE_SR = BASE_PRG_ROM
   }
 }

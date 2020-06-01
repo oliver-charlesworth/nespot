@@ -1,91 +1,63 @@
 package choliver.nespot.mappers
 
-import choliver.nespot.BASE_CHR_ROM
-import choliver.nespot.BASE_PRG_ROM
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
-import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
+import choliver.nespot.cartridge.Cartridge
+import choliver.nespot.mappers.CnRomMapper.Companion.BASE_BANK_SELECT
 import choliver.nespot.mappers.CnRomMapper.Companion.CHR_BANK_SIZE
-import choliver.nespot.mappers.CnRomMapper.Companion.PRG_BANK_SIZE
-import org.junit.jupiter.api.Nested
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import org.junit.jupiter.api.Test
+import org.mockito.Answers.RETURNS_DEEP_STUBS
 
 class CnRomMapperTest {
-  @Nested
-  inner class PrgRom {
-    @Test
-    fun `size-32768`() {
-      val checker = checker(32768)
+  private val cartridge = mock<Cartridge>(defaultAnswer = RETURNS_DEEP_STUBS)
 
-      checker.assertMappings(
-        0 to 0,
-        1 to 1
-      )
-    }
+  @Test
+  fun `dynamically sets lower bank`() {
+    with(CnRomMapper(Rom(chrData = ByteArray(8 * CHR_BANK_SIZE)))) {
+      cartridge.onPrgSet(BASE_BANK_SELECT, 6)
 
-    @Test
-    fun `size-16384`() {
-      val checker = checker(16384)
-
-      checker.assertMappings(
-        0 to 0,
-        0 to 1
-      )
-    }
-
-    private fun checker(size: Int): BankMappingChecker {
-      val prgData = ByteArray(size)
-      val mapper = CnRomMapper(Rom(prgData = prgData))
-      return BankMappingChecker(
-        bankSize = PRG_BANK_SIZE,
-        outBase = BASE_PRG_ROM,
-        setSrc = takesBytes(prgData::set),
-        getOut = mapper.prg::get
-      )
+      verify(cartridge.chr.bankMap)[0] = 6
     }
   }
 
-  @Nested
-  inner class ChrRom {
-    private val chrData = ByteArray(8 * CHR_BANK_SIZE)
-    private val mapper = CnRomMapper(Rom(chrData = chrData))
-    private val checker = BankMappingChecker(
-      bankSize = CHR_BANK_SIZE,
-      outBase = BASE_CHR_ROM,
-      setSrc = takesBytes(chrData::set),
-      getOut = mapper.chr::get
-    )
+  @Test
+  fun `bank mapping wraps`() {
+    with(CnRomMapper(Rom(chrData = ByteArray(8 * CHR_BANK_SIZE)))) {
+      cartridge.onPrgSet(BASE_BANK_SELECT, 6 + 8)
 
-    @Test
-    fun variable() {
-      setBank(6)
-
-      checker.assertMappings(6 to 0)
-    }
-
-    @Test
-    fun `bank mapping wraps`() {
-      setBank(6 + 8)
-
-      checker.assertMappings(6 to 0)
-    }
-
-    private fun setBank(bank: Int) {
-      mapper.prg[0x8000] = bank
+      verify(cartridge.chr.bankMap)[0] = 6
     }
   }
 
-  @Nested
-  inner class Vram {
-    @Test
-    fun `vertical mirroring`() {
-      assertVramMappings(CnRomMapper(Rom(mirroring = VERTICAL)), listOf(0, 2), listOf(1, 3))
+  @Test
+  fun `maps both PRG banks to 0 for size-16384`() {
+    with(CnRomMapper(Rom(prgData = ByteArray(16384)))) {
+      cartridge.onStartup()
     }
 
-    @Test
-    fun `horizontal mirroring`() {
-      assertVramMappings(CnRomMapper(Rom(mirroring = HORIZONTAL)), listOf(0, 1), listOf(2, 3))
+    verify(cartridge.prg.bankMap)[1] = 0
+    verifyNoMoreInteractions(cartridge.prg.bankMap)
+  }
+
+  @Test
+  fun `maps both PRG banks to 1 for size-32768`() {
+    with(CnRomMapper(Rom(prgData = ByteArray(32768)))) {
+      cartridge.onStartup()
     }
+
+    verify(cartridge.prg.bankMap)[1] = 1
+    verifyNoMoreInteractions(cartridge.prg.bankMap)
+  }
+
+  @Test
+  fun `sets mirroring on startup`() {
+    with(CnRomMapper(Rom(mirroring = VERTICAL))) {
+      cartridge.onStartup()
+    }
+
+    verify(cartridge.chr).mirroring = VERTICAL
   }
 }

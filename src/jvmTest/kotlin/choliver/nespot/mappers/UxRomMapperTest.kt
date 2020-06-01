@@ -1,88 +1,62 @@
 package choliver.nespot.mappers
 
-import choliver.nespot.BASE_CHR_ROM
-import choliver.nespot.BASE_PRG_ROM
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
-import choliver.nespot.mappers.BankMappingChecker.Companion.takesBytes
+import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.mappers.UxRomMapper.Companion.BASE_BANK_SELECT
 import choliver.nespot.mappers.UxRomMapper.Companion.CHR_RAM_SIZE
 import choliver.nespot.mappers.UxRomMapper.Companion.PRG_BANK_SIZE
-import org.junit.jupiter.api.Nested
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-
+import org.mockito.Answers.RETURNS_DEEP_STUBS
 
 class UxRomMapperTest {
-  @Nested
-  inner class PrgRom {
-    private val prgData = ByteArray(8 * 16384)
-    private val mapper = UxRomMapper(Rom(prgData = prgData))
-    private val checker = BankMappingChecker(
-      bankSize = PRG_BANK_SIZE,
-      outBase = BASE_PRG_ROM,
-      setSrc = takesBytes(prgData::set),
-      getOut = mapper.prg::get
-    )
+  private val cartridge = mock<Cartridge>(defaultAnswer = RETURNS_DEEP_STUBS)
 
-    @Test
-    fun `fixed upper`() {
-      setBank(6)
+  @Test
+  fun `configures CHR RAM`() {
+    val mapper = UxRomMapper(Rom())
 
-      checker.assertMappings(7 to 1)
+    assertEquals(CHR_RAM_SIZE, mapper.chrData.size)
+  }
+
+  @Test
+  fun `fixes upper bank on startup`() {
+    with(UxRomMapper(Rom(prgData = ByteArray(8 * PRG_BANK_SIZE)))) {
+      cartridge.onStartup()
     }
 
-    @Test
-    fun `variable lower`() {
-      setBank(6)
+    verify(cartridge.prg.bankMap)[1] = 7
+    verifyNoMoreInteractions(cartridge.prg.bankMap)
+  }
 
-      checker.assertMappings(6 to 0)
-    }
+  @Test
+  fun `dynamically sets lower bank`() {
+    with(UxRomMapper(Rom(prgData = ByteArray(8 * PRG_BANK_SIZE)))) {
+      cartridge.onPrgSet(BASE_BANK_SELECT, 6)
 
-    @Test
-    fun `bank mapping wraps`() {
-      setBank(6 + 8)
-
-      checker.assertMappings(6 to 0)
-    }
-
-    @Test
-    fun `starts up on min bank`() {
-      checker.assertMappings(0 to 0)
-    }
-
-    private fun setBank(bank: Int) {
-      mapper.prg[BASE_BANK_SELECT] = bank
+      verify(cartridge.prg.bankMap)[0] = 6
     }
   }
 
-  @Nested
-  inner class ChrRam {
-    private val mapper = UxRomMapper(Rom())
-    private val checker = BankMappingChecker(
-      bankSize = CHR_RAM_SIZE,
-      srcBase = BASE_CHR_ROM,
-      outBase = BASE_CHR_ROM,
-      setSrc = mapper.chr::set,
-      getOut = mapper.chr::get
-    )
+  @Test
+  fun `bank mapping wraps`() {
+    with(UxRomMapper(Rom(prgData = ByteArray(8 * PRG_BANK_SIZE)))) {
+      cartridge.onPrgSet(BASE_BANK_SELECT, 6 + 8)
 
-    @Test
-    fun `load and store`() {
-      checker.assertMappings(0 to 0)
+      verify(cartridge.prg.bankMap)[0] = 6
     }
   }
 
-  @Nested
-  inner class Vram {
-    @Test
-    fun `vertical mirroring`() {
-      assertVramMappings(UxRomMapper(Rom(mirroring = VERTICAL)), listOf(0, 2), listOf(1, 3))
+  @Test
+  fun `sets mirroring on startup`() {
+    with(UxRomMapper(Rom(mirroring = VERTICAL))) {
+      cartridge.onStartup()
     }
 
-    @Test
-    fun `horizontal mirroring`() {
-      assertVramMappings(UxRomMapper(Rom(mirroring = HORIZONTAL)), listOf(0, 1), listOf(2, 3))
-    }
+    verify(cartridge.chr).mirroring = VERTICAL
   }
 }

@@ -2,31 +2,69 @@ package choliver.nespot.cartridge
 
 import choliver.nespot.*
 import choliver.nespot.cartridge.Rom.Mirroring
-import choliver.nespot.cartridge.Rom.Mirroring.IGNORED
+import choliver.nespot.cartridge.Rom.Mirroring.*
 
 class ChrMemory(
   private val raw: ByteArray,
-  private val bankSize: Int = raw.size,
-  var mirroring: Mirroring = IGNORED
+  bankSize: Int = raw.size,
+  private val onGet: (addr: Address) -> Unit = {},
+  private val onSet: (addr: Address, data: Data) -> Unit = { _, _ -> }
 ) : Memory {
   private val vram = ByteArray(VRAM_SIZE)
-  val bankMap = IntArray(CHR_SIZE / bankSize) { it }
 
-  override fun get(addr: Address) = when {
-    (addr >= BASE_VRAM) -> vram[vramAddr(mirroring, addr)]    // This maps everything >= 0x4000 too
-    else -> raw[map(addr)]
-  }.data()
+  val bankMap = BankMap(bankSize = bankSize, addressSpaceSize = CHR_SIZE)
+  private val vbankMap = BankMap(
+    bankSize = NAMETABLE_SIZE,
+    addressSpaceSize = VRAM_SIZE * 4     // Whole space is mirrored
+  )
 
-  override fun set(addr: Address, data: Data) {
-    when {
-      (addr >= BASE_VRAM) -> vram[vramAddr(mirroring, addr)] = data.toByte()   // This maps everything >= 0x4000 too
-      else -> raw[map(addr)] = data.toByte()
+  var mirroring: Mirroring = IGNORED
+    set(value) {
+      field = value
+      for (base in 0 until 8 step 4) {
+        when (value) {
+          FIXED_LOWER -> {
+            vbankMap[base + 0] = 0
+            vbankMap[base + 1] = 0
+            vbankMap[base + 2] = 0
+            vbankMap[base + 3] = 0
+          }
+          FIXED_UPPER -> {
+            vbankMap[base + 0] = 1
+            vbankMap[base + 1] = 1
+            vbankMap[base + 2] = 1
+            vbankMap[base + 3] = 1
+          }
+          VERTICAL -> {
+            vbankMap[base + 0] = 0
+            vbankMap[base + 1] = 1
+            vbankMap[base + 2] = 0
+            vbankMap[base + 3] = 1
+          }
+          HORIZONTAL -> {
+            vbankMap[base + 0] = 0
+            vbankMap[base + 1] = 0
+            vbankMap[base + 2] = 1
+            vbankMap[base + 3] = 1
+          }
+          IGNORED -> Unit
+        }
+      }
     }
+
+  override fun get(addr: Address): Data {
+    onGet(addr)
+    return when {
+      (addr >= BASE_VRAM) -> vram[vbankMap.map(addr - BASE_VRAM)]
+      else -> raw[bankMap.map(addr)]
+    }.data()
   }
 
-  private fun map(addr: Address) = (addr % bankSize) + bankMap[addr / bankSize] * bankSize
-
-  companion object {
-    private const val CHR_SIZE = 8192
+  override fun set(addr: Address, data: Data) {
+    onSet(addr, data)
+    when {
+      (addr >= BASE_VRAM) -> vram[vbankMap.map(addr - BASE_VRAM)] = data.toByte()
+      else -> raw[bankMap.map(addr)] = data.toByte()
+    }
   }
 }

@@ -21,7 +21,7 @@ class RunnerCore(
   )
   private var closed = false
   private var timestamp = 0L
-  val stimuli = mutableListOf<Stimulus>()
+  private val stimuli = mutableListOf<Stimulus>()
 
   fun run(onStep: RunnerCore.(Long) -> Unit): Scenario {
     while (!closed) {

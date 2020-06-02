@@ -2,6 +2,7 @@ package choliver.nespot.playtest
 
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.playtest.Scenario.Stimulus.Snapshot
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
@@ -42,16 +43,18 @@ class PlayTest {
     val rom = Rom.parse(romFile.readBytes())
 
     if (RECORD) {
-      val recording = CapturingRunner(rom).run()
+      val recording = capture(rom)
       serdes.serialiseTo(captureFile(name), recording)
     } else {
       val original = serdes.deserialiseFrom(captureFile(name))
-      val recording = GhostingRunner(rom, original).run()
+      val recording = ghostCapture(rom, original)
       assertEquals(original, recording)
     }
   }
 
   private fun assertEquals(expected: Scenario, actual: Scenario) {
+    assertEquals(expected.romHash, actual.romHash, "Mismatched hashes")
+
     fun Scenario.snapshots() = stimuli.filterIsInstance<Snapshot>()
 
     (expected.snapshots() zip actual.snapshots()).forEachIndexed { idx, (expected, actual) ->
@@ -62,7 +65,7 @@ class PlayTest {
   private fun assertNearlyEquals(expected: List<Byte>, actual: List<Byte>, idxImage: Int) {
     (expected zip actual).forEachIndexed { idx, (expected, actual) ->
       val delta = abs(expected - actual)
-      assertTrue(delta <= TOLERANCE, "Deltae at byte #${idx} of image #${idxImage} out of range (${delta})")
+      assertTrue(delta <= TOLERANCE, "Delta at byte #${idx} of image #${idxImage} out of range (${delta})")
     }
   }
 

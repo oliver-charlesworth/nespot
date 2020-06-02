@@ -1,7 +1,7 @@
-package choliver.nespot.runner
+package choliver.nespot.playtest
 
 import choliver.nespot.nes.Joypads.Button
-import choliver.nespot.runner.SerialisedScenario.Stimulus.*
+import choliver.nespot.playtest.SerialisedScenario.Stimulus.*
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 

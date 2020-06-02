@@ -1,4 +1,4 @@
-package choliver.nespot.runner
+package choliver.nespot.playtest
 
 import choliver.nespot.SCREEN_HEIGHT
 import choliver.nespot.SCREEN_WIDTH

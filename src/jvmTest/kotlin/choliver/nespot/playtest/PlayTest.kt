@@ -1,7 +1,7 @@
-package choliver.nespot.runner
+package choliver.nespot.playtest
 
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.runner.Scenario.Stimulus.Snapshot
+import choliver.nespot.playtest.Scenario.Stimulus.Snapshot
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File

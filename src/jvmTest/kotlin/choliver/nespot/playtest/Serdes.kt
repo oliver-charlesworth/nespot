@@ -1,8 +1,8 @@
-package choliver.nespot.runner
+package choliver.nespot.playtest
 
 import choliver.nespot.SCREEN_HEIGHT
 import choliver.nespot.SCREEN_WIDTH
-import choliver.nespot.runner.Scenario.Stimulus.*
+import choliver.nespot.playtest.Scenario.Stimulus.*
 import choliver.nespot.sha1
 import com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET
 import com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE

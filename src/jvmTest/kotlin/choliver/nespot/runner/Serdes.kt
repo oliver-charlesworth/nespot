@@ -77,7 +77,7 @@ class Serdes {
           is ButtonDown -> SerialisedScenario.Stimulus.ButtonDown(s.timestamp, s.button)
           is ButtonUp -> SerialisedScenario.Stimulus.ButtonUp(s.timestamp, s.button)
           is Snapshot -> {
-            val imageAndHash = convertImage(s.pixels)
+            val imageAndHash = convertImage(s.bytes)
             snapshots[imageAndHash.hash] = imageAndHash.image
             SerialisedScenario.Stimulus.Snapshot(s.timestamp, imageAndHash.hash)
           }
@@ -108,15 +108,14 @@ class Serdes {
     )
   }
 
-  private fun convertImage(pixels: List<Int>): ImageAndHash {
-    val raw = toRaw(pixels)
+  private fun convertImage(bytes: List<Byte>): ImageAndHash {
     return ImageAndHash(
-      image = createImage(raw),
-      hash = raw.toByteArray().sha1()
+      image = createImage(bytes),
+      hash = bytes.toByteArray().sha1()
     )
   }
 
-  private fun unconvertImage(image: BufferedImage): List<Int> {
+  private fun unconvertImage(image: BufferedImage): List<Byte> {
     val raw = MutableList<Byte>(SCREEN_WIDTH * SCREEN_HEIGHT * 4) { 0 }
     for (i in 0 until SCREEN_WIDTH * SCREEN_HEIGHT) {
       val pixel = image.getRGB(i % SCREEN_WIDTH, i / SCREEN_WIDTH)
@@ -125,7 +124,7 @@ class Serdes {
       raw[i * 4 + 2] = (pixel shr 8).toByte()
       raw[i * 4 + 3] = (pixel shr 0).toByte()
     }
-    return fromRaw(raw)
+    return raw
   }
 
   private fun createImage(raw: List<Byte>) =
@@ -138,21 +137,6 @@ class Serdes {
           (raw[i * 4 + 3].toInt() shl 0)
         )
       }
-    }
-
-  private fun toRaw(pixels: List<Int>) = pixels
-    .flatMap { listOf(it shr 0, it shr 8, it shr 16, it shr 24) }
-    .map { it.toByte() }
-
-  private fun fromRaw(raw: List<Byte>) = raw
-    .map { it.toInt() }
-    .chunked(4)
-    .map {
-      0 +
-        ((it[0] shl 0) and 0xFF) +
-        ((it[1] shl 8) and 0xFF00) +
-        ((it[2] shl 16) and 0xFF0000) +
-        (it[3] shl 24)
     }
 
   private class ScenarioAndSnapshots(

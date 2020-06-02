@@ -11,7 +11,7 @@ data class Scenario(
 
     data class ButtonDown(override val timestamp: Long, val button: Joypads.Button) : Stimulus()
     data class ButtonUp(override val timestamp: Long, val button: Joypads.Button) : Stimulus()
-    data class Snapshot(override val timestamp: Long, val pixels: List<Int>) : Stimulus()
+    data class Snapshot(override val timestamp: Long, val bytes: List<Byte>) : Stimulus()
     data class Close(override val timestamp: Long) : Stimulus()
   }
 }

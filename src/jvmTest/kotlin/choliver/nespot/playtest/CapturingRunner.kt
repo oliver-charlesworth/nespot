@@ -7,22 +7,23 @@ import choliver.nespot.runner.Event.*
 import choliver.nespot.runner.KeyAction
 import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
+import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
 
 class CapturingRunner(
-  rom: Rom
+  private val rom: Rom
 ) {
-  private val events = LinkedBlockingQueue<Event>()
-  private val screen = Screen(onEvent = { events += it })
-  private val audio = AudioPlayer()
-
-  private val core = RunnerCore(
-    rom = rom,
-    videoSink = screen.sink,
-    audioSink = audio.sink
-  )
-
   fun run(): Scenario {
+    val events = LinkedBlockingQueue<Event>()
+    val screen = Screen(onEvent = { events += it })
+    val audio = AudioPlayer()
+
+    val core = RunnerCore(
+      rom = rom,
+      videoSink = screen.sink,
+      audioSink = audio.sink
+    )
+
     screen.show()
     audio.start()
 
@@ -31,7 +32,7 @@ class CapturingRunner(
         if (timestamp % SNAPSHOT_PERIOD == 0L && (timestamp > 0)) {
           takeSnapshot()
         }
-        consumeEvent()
+        consumeEvent(events)
       }
     } finally {
       screen.hide()
@@ -40,8 +41,8 @@ class CapturingRunner(
     }
   }
 
-  private fun RunnerCore.consumeEvent() {
-    when (val e = this@CapturingRunner.events.poll()) {
+  private fun RunnerCore.consumeEvent(events: Queue<Event>) {
+    when (val e = events.poll()) {
       is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
         is Joypad -> buttonDown(action.button)
       }

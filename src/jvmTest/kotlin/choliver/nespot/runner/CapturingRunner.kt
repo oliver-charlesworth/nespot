@@ -1,16 +1,16 @@
 package choliver.nespot.runner
 
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.hash
 import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Nes
 import choliver.nespot.runner.Event.*
-import choliver.nespot.runner.TimestampedEvent.Event.*
-import choliver.nespot.runner.TimestampedEvent.Event.Close
+import choliver.nespot.runner.Scenario.Stimulus
 import java.util.concurrent.LinkedBlockingQueue
 
 class CapturingRunner(
-  rom: Rom,
-  private val prerecorded: List<TimestampedEvent>? = null
+  private val rom: Rom,
+  private val ghost: Scenario? = null
 ) {
   private val events = LinkedBlockingQueue<Event>()
   private val screen = Screen(onEvent = { events += it })
@@ -23,20 +23,20 @@ class CapturingRunner(
   )
   private var closed = false
   private var timestamp = 0L
-  private var idxPrerecorded = 0
-  val recording = mutableListOf<TimestampedEvent>()
+  private var idxGhost = 0
+  val stimuli = mutableListOf<Stimulus>()
 
-  fun run(): List<TimestampedEvent> {
+  fun run(): Scenario {
     screen.show()
     audio.start()
     try {
       while (!closed) {
         nes.step()
-        if (prerecorded != null) {
-          inject(prerecorded)
+        if (ghost != null) {
+          inject(ghost)
         } else {
           consumeEvent()
-          if (timestamp % SNAPSHOT_PERIOD == 0L) {
+          if (timestamp % SNAPSHOT_PERIOD == 0L && (timestamp > 0)) {
             takeSnapshot()
           }
         }
@@ -48,18 +48,21 @@ class CapturingRunner(
       audio.close()
     }
 
-    return recording
+    return Scenario(
+      romHash = rom.hash,
+      stimuli = stimuli
+    )
   }
 
-  private fun inject(prerecorded: List<TimestampedEvent>) {
-    if (prerecorded[idxPrerecorded].timestamp == timestamp) {
-      when (val e = prerecorded[idxPrerecorded].event) {
-        is ButtonDown -> buttonDown(e.button)
-        is ButtonUp -> buttonUp(e.button)
-        is Snapshot -> takeSnapshot()
-        is Close -> close()
+  private fun inject(ghost: Scenario) {
+    if (ghost.stimuli[idxGhost].timestamp == timestamp) {
+      when (val s = ghost.stimuli[idxGhost]) {
+        is Stimulus.ButtonDown -> buttonDown(s.button)
+        is Stimulus.ButtonUp -> buttonUp(s.button)
+        is Stimulus.Snapshot -> takeSnapshot()
+        is Stimulus.Close -> close()
       }
-      idxPrerecorded++
+      idxGhost++
     }
   }
 
@@ -71,27 +74,27 @@ class CapturingRunner(
       is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
         is KeyAction.Joypad -> buttonUp(action.button)
       }
-      is Event.Close -> close()
+      is Close -> close()
       is Error -> close()
     }
   }
 
   private fun buttonDown(button: Joypads.Button) {
-    recording += TimestampedEvent(timestamp, ButtonDown(button))
+    stimuli += Stimulus.ButtonDown(timestamp, button)
     nes.joypads.down(1, button)
   }
 
   private fun buttonUp(button: Joypads.Button) {
-    recording += TimestampedEvent(timestamp, ButtonUp(button))
+    stimuli += Stimulus.ButtonUp(timestamp, button)
     nes.joypads.up(1, button)
   }
 
   private fun takeSnapshot() {
-    recording += TimestampedEvent(timestamp, Snapshot(sink.snapshot))
+    stimuli += Stimulus.Snapshot(timestamp, sink.snapshot)
   }
 
   private fun close() {
-    recording += TimestampedEvent(timestamp, Close)
+    stimuli += Stimulus.Close(timestamp)
     closed = true
   }
 

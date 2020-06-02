@@ -1,10 +1,6 @@
 package choliver.nespot
 
 import choliver.nespot.cartridge.Rom
-import java.security.MessageDigest
-
-
-val Rom.hash get() = (prgData + chrData).sha1()
 
 fun Rom.printInfo() {
   println("Magic #:       ${String(magic)}")
@@ -21,10 +17,4 @@ fun Rom.printInfo() {
   println("CHR:           ${if (chrData.isNotEmpty()) chrData.sha1() else "-"}")
 }
 
-private fun ByteArray.sha1(): String {
-  val md = MessageDigest.getInstance("SHA-1")
-  md.update(this)
-  return md.digest().hex()
-}
-
-private fun ByteArray.hex() = joinToString("") { "%02X".format(it) }
+val Rom.hash get() = (prgData + chrData).sha1()

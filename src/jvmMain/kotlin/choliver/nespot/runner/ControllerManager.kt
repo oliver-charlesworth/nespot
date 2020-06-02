@@ -8,6 +8,7 @@ import net.java.games.input.Component.Identifier.Axis
 import net.java.games.input.Controller
 import net.java.games.input.ControllerEnvironment
 import net.java.games.input.Event
+import java.io.Closeable
 import java.io.File
 import java.util.*
 import kotlin.concurrent.timerTask
@@ -17,7 +18,7 @@ import net.java.games.input.Component.Identifier.Button as JInputButton
 class ControllerManager(
   private val onEvent: (e: choliver.nespot.runner.Event) -> Unit = {},
   private val samplePeriodMs: Long = SAMPLE_PERIOD_MS
-) {
+) : Closeable {
   private val controllers: Array<Controller>
   private val x = AxisManager(LEFT, RIGHT)
   private val y = AxisManager(UP, DOWN)
@@ -46,7 +47,7 @@ class ControllerManager(
     timer.schedule(timerTask { onTimer() }, 0, samplePeriodMs)
   }
 
-  fun exit() {
+  override fun close() {
     timer.cancel()
   }
 

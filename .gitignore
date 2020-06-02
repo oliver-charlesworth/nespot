@@ -12,5 +12,5 @@ build/
 # NESpot
 backups/
 roms/
-snapshots/
 *.nes
+*.png

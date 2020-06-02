@@ -3,23 +3,26 @@ package choliver.nespot.playtest
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.playtest.Scenario.Stimulus.Snapshot
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import java.io.File
 import kotlin.math.abs
 
 class PlayTest {
-
-  // TODO - expectation that .nes file exists
   @Test
   fun `super mario bros`() = execute("smb")
 
   private fun execute(name: String) {
+    val romFile = romFile(name)
+
+    assumeTrue(romFile.exists())
+
     if (RECORD) {
-      val recording = runner(name).run()
+      val recording = runner(romFile).run()
       serdes.serialiseTo(captureFile(name), recording)
     } else {
       val original = serdes.deserialiseFrom(captureFile(name))
-      val recording = runner(name, original).run()
+      val recording = runner(romFile, original).run()
       assertEquals(original, recording)
     }
   }
@@ -40,8 +43,8 @@ class PlayTest {
   }
 
 
-  private fun runner(name: String, ghost: Scenario? = null) =
-    CapturingRunner(Rom.parse(romFile(name).readBytes()), ghost)
+  private fun runner(romFile: File, ghost: Scenario? = null) =
+    CapturingRunner(Rom.parse(romFile.readBytes()), ghost)
 
   private fun captureFile(name: String) = File(CAPTURES_BASE, "${name}.zip")
   private fun romFile(name: String) = File(TEST_ROMS_BASE, "${name}.nes")

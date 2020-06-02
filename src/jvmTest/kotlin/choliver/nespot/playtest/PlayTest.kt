@@ -15,6 +15,27 @@ class PlayTest {
   @Test
   fun `super mario bros 3`() = execute("smb3")
 
+  @Test
+  fun `bubble bobble`() = execute("bb")
+
+  @Test
+  fun `donkey kong`() = execute("dk")
+
+  @Test
+  fun `kirby's adventure`() = execute("kirby")
+
+  @Test
+  fun `micro machines`() = execute("mm")
+
+  @Test
+  fun `mig-29 soviet fighter`() = execute("mig29")
+
+  @Test
+  fun castelian() = execute("castelian")
+
+  @Test
+  fun `jurassic park`() = execute("jp")
+
   private fun execute(name: String) {
     val romFile = romFile(name)
     assumeTrue(romFile.exists())

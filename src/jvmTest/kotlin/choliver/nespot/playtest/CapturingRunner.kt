@@ -13,8 +13,7 @@ import choliver.nespot.runner.Screen
 import java.util.concurrent.LinkedBlockingQueue
 
 class CapturingRunner(
-  private val rom: Rom,
-  private val ghost: Scenario? = null
+  private val rom: Rom
 ) {
   private val events = LinkedBlockingQueue<Event>()
   private val screen = Screen(onEvent = { events += it })
@@ -27,7 +26,6 @@ class CapturingRunner(
   )
   private var closed = false
   private var timestamp = 0L
-  private var idxGhost = 0
   val stimuli = mutableListOf<Stimulus>()
 
   fun run(): Scenario {
@@ -36,13 +34,9 @@ class CapturingRunner(
     try {
       while (!closed) {
         nes.step()
-        if (ghost != null) {
-          inject(ghost)
-        } else {
-          consumeEvent()
-          if (timestamp % SNAPSHOT_PERIOD == 0L && (timestamp > 0)) {
-            takeSnapshot()
-          }
+        consumeEvent()
+        if (timestamp % SNAPSHOT_PERIOD == 0L && (timestamp > 0)) {
+          takeSnapshot()
         }
         timestamp++
       }
@@ -56,18 +50,6 @@ class CapturingRunner(
       romHash = rom.hash,
       stimuli = stimuli
     )
-  }
-
-  private fun inject(ghost: Scenario) {
-    if (ghost.stimuli[idxGhost].timestamp == timestamp) {
-      when (val s = ghost.stimuli[idxGhost]) {
-        is Stimulus.ButtonDown -> buttonDown(s.button)
-        is Stimulus.ButtonUp -> buttonUp(s.button)
-        is Stimulus.Snapshot -> takeSnapshot()
-        is Stimulus.Close -> close()
-      }
-      idxGhost++
-    }
   }
 
   private fun consumeEvent() {

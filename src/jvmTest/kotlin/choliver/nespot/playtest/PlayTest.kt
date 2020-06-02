@@ -14,15 +14,15 @@ class PlayTest {
 
   private fun execute(name: String) {
     val romFile = romFile(name)
-
     assumeTrue(romFile.exists())
+    val rom = Rom.parse(romFile.readBytes())
 
     if (RECORD) {
-      val recording = runner(romFile).run()
+      val recording = CapturingRunner(rom).run()
       serdes.serialiseTo(captureFile(name), recording)
     } else {
       val original = serdes.deserialiseFrom(captureFile(name))
-      val recording = runner(romFile, original).run()
+      val recording = GhostingRunner(rom, original).run()
       assertEquals(original, recording)
     }
   }
@@ -41,10 +41,6 @@ class PlayTest {
       assertTrue(delta <= TOLERANCE, "Deltae at byte #${idx} of image #${idxImage} out of range (${delta})")
     }
   }
-
-
-  private fun runner(romFile: File, ghost: Scenario? = null) =
-    CapturingRunner(Rom.parse(romFile.readBytes()), ghost)
 
   private fun captureFile(name: String) = File(CAPTURES_BASE, "${name}.zip")
   private fun romFile(name: String) = File(TEST_ROMS_BASE, "${name}.nes")

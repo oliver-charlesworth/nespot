@@ -12,6 +12,9 @@ class PlayTest {
   @Test
   fun `super mario bros`() = execute("smb")
 
+  @Test
+  fun `super mario bros 3`() = execute("smb3")
+
   private fun execute(name: String) {
     val romFile = romFile(name)
     assumeTrue(romFile.exists())

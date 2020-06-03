@@ -13,7 +13,7 @@ import kotlin.math.abs
 class Engine(
   private val romsBase: File,
   private val capturesBase: File,
-  private val mode: Mode
+  private val mode: Mode = modeFromEnv()
 ) {
   enum class Mode {
     RECORD,
@@ -58,5 +58,9 @@ class Engine(
 
   companion object {
     private const val TOLERANCE = 1   // PNG has lsb-level rounding errors
+
+    private fun modeFromEnv() =
+      Mode.valueOf(System.getenv("ENGINE_MODE")?.toUpperCase() ?: COMPARE.toString())
   }
 }
+

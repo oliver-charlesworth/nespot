@@ -1,7 +1,6 @@
 package choliver.nespot.playtest
 
 import choliver.nespot.playtest.engine.Engine
-import choliver.nespot.playtest.engine.Engine.Mode.COMPARE
 import org.junit.jupiter.api.Test
 import java.io.File
 
@@ -33,9 +32,11 @@ class GamesTest {
   @Test
   fun `jurassic park`() = engine.execute("jp")
 
+  @Test
+  fun `new zealand story`() = engine.execute("nzs")
+
   private val engine = Engine(
     romsBase = File("roms"),
-    capturesBase = File("captures"),
-    mode = COMPARE
+    capturesBase = File("captures")
   )
 }

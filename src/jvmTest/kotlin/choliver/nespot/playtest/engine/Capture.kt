@@ -1,10 +1,10 @@
-package choliver.nespot.playtest
+package choliver.nespot.playtest.engine
 
 import choliver.nespot.AudioSink
 import choliver.nespot.VideoSink
 import choliver.nespot.VideoSink.ColorPackingMode.BGRA
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.playtest.Scenario.Stimulus
+import choliver.nespot.playtest.engine.Scenario.Stimulus
 import choliver.nespot.runner.AudioPlayer
 import choliver.nespot.runner.Event
 import choliver.nespot.runner.Event.*
@@ -59,7 +59,9 @@ fun liveCapture(rom: Rom): Scenario {
 fun ghostCapture(rom: Rom, ghost: Scenario): Scenario {
   val captor = ScenarioCaptor(
     rom = rom,
-    videoSink = object : VideoSink { override val colorPackingMode = BGRA },
+    videoSink = object : VideoSink {
+      override val colorPackingMode = BGRA
+    },
     audioSink = object : AudioSink {}
   )
 

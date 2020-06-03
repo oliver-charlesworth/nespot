@@ -13,12 +13,15 @@ import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
 import java.util.concurrent.LinkedBlockingQueue
 
-fun capture(rom: Rom): Scenario {
+/**
+ * Capture scenario based on live user input.
+ */
+fun liveCapture(rom: Rom): Scenario {
   val events = LinkedBlockingQueue<Event>()
   val screen = Screen(onEvent = { events += it })
   val audio = AudioPlayer()
 
-  val core = RunnerCore(
+  val core = ScenarioCaptor(
     rom = rom,
     videoSink = screen.sink,
     audioSink = audio.sink
@@ -28,7 +31,7 @@ fun capture(rom: Rom): Scenario {
   audio.start()
 
   try {
-    return core.run { timestamp ->
+    return core.capture { timestamp ->
       if (timestamp % SNAPSHOT_PERIOD == 0L && (timestamp > 0)) {
         takeSnapshot()
       }
@@ -50,17 +53,18 @@ fun capture(rom: Rom): Scenario {
   }
 }
 
+/**
+ * Capture scenario based on ghosting a previous scenario.
+ */
 fun ghostCapture(rom: Rom, ghost: Scenario): Scenario {
-  val core = RunnerCore(
+  val captor = ScenarioCaptor(
     rom = rom,
-    videoSink = object : VideoSink {
-      override val colorPackingMode = BGRA
-    },
+    videoSink = object : VideoSink { override val colorPackingMode = BGRA },
     audioSink = object : AudioSink {}
   )
 
   var idxGhost = 0
-  return core.run { timestamp ->
+  return captor.capture { timestamp ->
     if (ghost.stimuli[idxGhost].timestamp == timestamp) {
       when (val s = ghost.stimuli[idxGhost]) {
         is Stimulus.ButtonDown -> buttonDown(s.button)

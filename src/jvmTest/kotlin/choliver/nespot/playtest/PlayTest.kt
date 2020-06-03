@@ -43,7 +43,7 @@ class PlayTest {
     val rom = Rom.parse(romFile.readBytes())
 
     if (RECORD) {
-      val recording = capture(rom)
+      val recording = liveCapture(rom)
       serdes.serialiseTo(captureFile(name), recording)
     } else {
       val original = serdes.deserialiseFrom(captureFile(name))

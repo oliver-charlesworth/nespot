@@ -8,7 +8,7 @@ import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Nes
 import choliver.nespot.playtest.Scenario.Stimulus
 
-class RunnerCore(
+class ScenarioCaptor(
   private val rom: Rom,
   videoSink: VideoSink,
   audioSink: AudioSink
@@ -23,7 +23,7 @@ class RunnerCore(
   private var timestamp = 0L
   private val stimuli = mutableListOf<Stimulus>()
 
-  fun run(onStep: RunnerCore.(Long) -> Unit): Scenario {
+  fun capture(onStep: ScenarioCaptor.(Long) -> Unit): Scenario {
     while (!closed) {
       nes.step()
       onStep(timestamp)

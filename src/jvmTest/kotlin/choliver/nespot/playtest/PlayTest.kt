@@ -43,12 +43,12 @@ class PlayTest {
     val rom = Rom.parse(romFile.readBytes())
 
     if (RECORD) {
-      val recording = liveCapture(rom)
-      serdes.serialiseTo(captureFile(name), recording)
+      val capture = liveCapture(rom)
+      serdes.serialiseTo(captureFile(name), capture)
     } else {
       val original = serdes.deserialiseFrom(captureFile(name))
-      val recording = ghostCapture(rom, original)
-      assertEquals(original, recording)
+      val capture = ghostCapture(rom, original)
+      assertEquals(original, capture)
     }
   }
 
@@ -78,7 +78,7 @@ class PlayTest {
     private val CAPTURES_BASE = File("captures")
     private val TEST_ROMS_BASE = File("roms")
 
-    private const val TOLERANCE = 1   // PNG isn't completely lossless at lsb
+    private const val TOLERANCE = 1   // PNG has lsb-level rounding errors
 
     const val RECORD = false
   }

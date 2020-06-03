@@ -1,6 +1,7 @@
 package choliver.nespot.playtest
 
 import choliver.nespot.playtest.engine.Engine
+import choliver.nespot.playtest.engine.SnapshotPattern.PERIODIC
 import org.junit.jupiter.api.Test
 import java.io.File
 
@@ -37,6 +38,7 @@ class GamesTest {
 
   private val engine = Engine(
     romsBase = File("roms"),
-    capturesBase = File("captures")
+    capturesBase = File("captures"),
+    snapshotPattern = PERIODIC
   )
 }

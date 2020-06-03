@@ -19,6 +19,7 @@ import javax.imageio.ImageIO
 
 fun Scenario.serialiseTo(zip: File) {
   val converted = convertScenario(this)
+  zip.parentFile.mkdirs()
   toZip(zip, converted)
 }
 

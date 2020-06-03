@@ -5,6 +5,8 @@ import choliver.nespot.VideoSink
 import choliver.nespot.VideoSink.ColorPackingMode.BGRA
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.playtest.engine.Scenario.Stimulus
+import choliver.nespot.playtest.engine.SnapshotPattern.FINAL
+import choliver.nespot.playtest.engine.SnapshotPattern.PERIODIC
 import choliver.nespot.runner.AudioPlayer
 import choliver.nespot.runner.Event
 import choliver.nespot.runner.Event.*
@@ -13,10 +15,18 @@ import choliver.nespot.runner.KeyAction.Joypad
 import choliver.nespot.runner.Screen
 import java.util.concurrent.LinkedBlockingQueue
 
+enum class SnapshotPattern {
+  PERIODIC,
+  FINAL
+}
+
 /**
  * Capture scenario based on live user input.
  */
-fun liveCapture(rom: Rom): Scenario {
+fun liveCapture(
+  rom: Rom,
+  snapshotPattern: SnapshotPattern
+): Scenario {
   val events = LinkedBlockingQueue<Event>()
   val screen = Screen(onEvent = { events += it })
   val audio = AudioPlayer()
@@ -32,7 +42,7 @@ fun liveCapture(rom: Rom): Scenario {
 
   try {
     return core.capture { timestamp ->
-      if (timestamp % SNAPSHOT_PERIOD == 0L && (timestamp > 0)) {
+      if (timestamp % SNAPSHOT_PERIOD == 0L && (timestamp > 0) && snapshotPattern == PERIODIC) {
         takeSnapshot()
       }
       when (val e = events.poll()) {
@@ -42,8 +52,13 @@ fun liveCapture(rom: Rom): Scenario {
         is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> buttonUp(action.button)
         }
-        is Close -> close()
-        is Error -> close()
+        is Close -> {
+          if (snapshotPattern == FINAL) {
+            takeSnapshot()
+          }
+          close()
+        }
+        is Error -> throw RuntimeException()
       }
     }
   } finally {
@@ -56,7 +71,10 @@ fun liveCapture(rom: Rom): Scenario {
 /**
  * Capture scenario based on ghosting a previous scenario.
  */
-fun ghostCapture(rom: Rom, ghost: Scenario): Scenario {
+fun ghostCapture(
+  rom: Rom,
+  ghost: Scenario
+): Scenario {
   val captor = ScenarioCaptor(
     rom = rom,
     videoSink = object : VideoSink {
@@ -67,7 +85,7 @@ fun ghostCapture(rom: Rom, ghost: Scenario): Scenario {
 
   var idxGhost = 0
   return captor.capture { timestamp ->
-    if (ghost.stimuli[idxGhost].timestamp == timestamp) {
+    if (timestamp >= ghost.stimuli[idxGhost].timestamp) {
       when (val s = ghost.stimuli[idxGhost]) {
         is Stimulus.ButtonDown -> buttonDown(s.button)
         is Stimulus.ButtonUp -> buttonUp(s.button)

@@ -13,6 +13,7 @@ import kotlin.math.abs
 class Engine(
   private val romsBase: File,
   private val capturesBase: File,
+  private val snapshotPattern: SnapshotPattern,
   private val mode: Mode = modeFromEnv()
 ) {
   enum class Mode {
@@ -28,7 +29,7 @@ class Engine(
 
     when (mode) {
       RECORD -> {
-        val capture = liveCapture(rom)
+        val capture = liveCapture(rom, snapshotPattern)
         capture.serialiseTo(captureFile)
       }
       COMPARE -> {

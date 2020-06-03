@@ -1,11 +1,11 @@
-package choliver.nespot.playtest
+package choliver.nespot.playtest.engine
 
 import choliver.nespot.nes.Joypads.Button
-import choliver.nespot.playtest.SerialisedScenario.Stimulus.*
+import choliver.nespot.playtest.engine.SerialisedScenario.Stimulus.*
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 
-data class SerialisedScenario(
+internal data class SerialisedScenario(
   val romHash: String,
   val stimuli: List<Stimulus>
 ) {

@@ -1,4 +1,4 @@
-package choliver.nespot.playtest
+package choliver.nespot.playtest.engine
 
 import choliver.nespot.nes.Joypads
 

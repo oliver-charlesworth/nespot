@@ -1,9 +1,9 @@
 package choliver.nespot.playtest.engine
 
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.playtest.engine.Scenario.Stimulus.Snapshot
 import choliver.nespot.playtest.engine.Engine.Mode.COMPARE
 import choliver.nespot.playtest.engine.Engine.Mode.RECORD
+import choliver.nespot.playtest.engine.Scenario.Stimulus.Snapshot
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue

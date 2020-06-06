@@ -1,5 +1,7 @@
 package choliver.nespot.cpu
 
+import choliver.nespot.common._0
+import choliver.nespot.common._1
 import choliver.nespot.common.hi
 import choliver.nespot.common.lo
 import choliver.nespot.cpu.Cpu.Companion.NUM_INTERRUPT_CYCLES

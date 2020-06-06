@@ -1,6 +1,8 @@
 package choliver.nespot.cpu
 
 import choliver.nespot.common.Data
+import choliver.nespot.common._0
+import choliver.nespot.common._1
 import choliver.nespot.cpu.Opcode.*
 import org.junit.jupiter.api.Test
 

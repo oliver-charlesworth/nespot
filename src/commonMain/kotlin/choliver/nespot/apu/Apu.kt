@@ -173,6 +173,12 @@ class Apu(
       428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106,  84,  72,  54
     )
 
+    // See http://wiki.nesdev.com/w/index.php/APU_Length_Counter
+    private val LENGTH_TABLE = listOf(
+      10, 254, 20, 2, 40, 4, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14,
+      12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
+    )
+
     private fun Channel<*, *, *>.extractTimer() = ((regs[3] and 0x07) shl 8) or regs[2]
 
     private fun Channel<*, *, *>.extractLength() = LENGTH_TABLE[(regs[3] and 0xF8) shr 3]

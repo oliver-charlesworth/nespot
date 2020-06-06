@@ -2,8 +2,8 @@ package choliver.nespot.apu
 
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
-import choliver.nespot.cpu._0
-import choliver.nespot.cpu._1
+import choliver.nespot.common._0
+import choliver.nespot.common._1
 
 // TODO - interrupts
 class FrameSequencer(
@@ -71,5 +71,11 @@ class FrameSequencer(
     val realRet = if (justReset && mode == FIVE_STEP) Ticks(_1, _1) else ret
     justReset = false
     return realRet
+  }
+
+  companion object {
+    // See https://wiki.nesdev.com/w/index.php/APU_Frame_Counter
+    private const val FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES = 29830
+    private const val FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES = 37282
   }
 }

@@ -1,4 +1,4 @@
-package choliver.nespot.runner
+package choliver.nespot.ui
 
 import choliver.nespot.nes.AudioSink
 import java.io.Closeable

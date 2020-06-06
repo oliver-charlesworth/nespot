@@ -1,11 +1,11 @@
-package choliver.nespot.runner
+package choliver.nespot.ui
 
 import choliver.nespot.AUDIO_BUFFER_AHEAD_SECONDS
 import choliver.nespot.AUDIO_BUFFER_LENGTH_SECONDS
-import choliver.nespot.browser.AudioContext
+import choliver.nespot.dom.AudioContext
 import org.khronos.webgl.Float32Array
 
-class BrowserAudioPlayer {
+class AudioPlayer {
   private val ctx = AudioContext()
   private var nextStartTimeSeconds: Double? = null
   val sampleRateHz = ctx.sampleRate.toInt()

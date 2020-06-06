@@ -1,9 +1,9 @@
-package choliver.nespot.runner
+package choliver.nespot.ui
 
 import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Joypads.Button.*
-import choliver.nespot.runner.Event.ControllerButtonDown
-import choliver.nespot.runner.Event.ControllerButtonUp
+import choliver.nespot.ui.Event.ControllerButtonDown
+import choliver.nespot.ui.Event.ControllerButtonUp
 import net.java.games.input.Component.Identifier.Axis
 import net.java.games.input.Controller
 import net.java.games.input.ControllerEnvironment
@@ -16,7 +16,7 @@ import net.java.games.input.Component.Identifier.Button as JInputButton
 
 
 class ControllerManager(
-  private val onEvent: (e: choliver.nespot.runner.Event) -> Unit = {},
+  private val onEvent: (e: choliver.nespot.ui.Event) -> Unit = {},
   private val samplePeriodMs: Long = SAMPLE_PERIOD_MS
 ) : Closeable {
   private val controllers: Array<Controller>

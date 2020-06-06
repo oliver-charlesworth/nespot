@@ -7,12 +7,12 @@ import choliver.nespot.nes.VideoSink.ColorPackingMode.BGRA
 import choliver.nespot.playtest.engine.Scenario.Stimulus
 import choliver.nespot.playtest.engine.SnapshotPattern.FINAL
 import choliver.nespot.playtest.engine.SnapshotPattern.PERIODIC
-import choliver.nespot.runner.AudioPlayer
-import choliver.nespot.runner.Event
-import choliver.nespot.runner.Event.*
-import choliver.nespot.runner.KeyAction
-import choliver.nespot.runner.KeyAction.Joypad
-import choliver.nespot.runner.Screen
+import choliver.nespot.ui.AudioPlayer
+import choliver.nespot.ui.Event
+import choliver.nespot.ui.Event.*
+import choliver.nespot.ui.KeyAction
+import choliver.nespot.ui.KeyAction.Joypad
+import choliver.nespot.ui.Screen
 import java.util.concurrent.LinkedBlockingQueue
 
 enum class SnapshotPattern {

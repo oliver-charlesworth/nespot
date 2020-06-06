@@ -1,4 +1,4 @@
-package choliver.nespot.runner
+package choliver.nespot.ui
 
 import choliver.nespot.VISIBLE_HEIGHT
 import choliver.nespot.VISIBLE_WIDTH
@@ -8,7 +8,7 @@ import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.ImageData
 import kotlin.browser.document
 
-class BrowserScreen {
+class Screen {
   val canvas = document.getElementById("target") as HTMLCanvasElement
   private val ctx = canvas.getContext("2d") as CanvasRenderingContext2D
 

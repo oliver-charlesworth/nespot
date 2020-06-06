@@ -1,4 +1,4 @@
-package choliver.nespot.browser
+package choliver.nespot.dom
 
 import org.khronos.webgl.Float32Array
 import org.w3c.dom.events.Event

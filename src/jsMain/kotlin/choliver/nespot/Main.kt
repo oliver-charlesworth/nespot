@@ -1,22 +1,21 @@
 package choliver.nespot
 
-import choliver.nespot.emulator.Emulator
-import choliver.nespot.runner.BrowserRunner
+import choliver.nespot.ui.Ui
+import choliver.nespot.worker.Worker
 import org.w3c.dom.HTMLScriptElement
-import org.w3c.dom.Worker
 import org.w3c.dom.get
 import kotlin.browser.document
 import kotlin.browser.window
 
 fun main() {
   if (inWorker()) {
-    Emulator()
+    Worker()
   } else {
     val script = document.getElementsByTagName("script")[0] as HTMLScriptElement
-    BrowserRunner(
-      worker = Worker(script.src),
+    Ui(
+      worker = org.w3c.dom.Worker(script.src),
       romPath = window.location.pathname + ".nes"
-    ).run()
+    )
   }
 }
 

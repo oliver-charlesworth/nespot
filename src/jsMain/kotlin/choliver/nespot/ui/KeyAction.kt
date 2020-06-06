@@ -1,10 +1,10 @@
-package choliver.nespot.runner
+package choliver.nespot.ui
 
 import choliver.nespot.nes.Joypads.Button
 
-sealed class BrowserKeyAction {
-  object ToggleFullScreen : BrowserKeyAction()
-  data class Joypad(val button: Button) : BrowserKeyAction()
+sealed class KeyAction {
+  object ToggleFullScreen : KeyAction()
+  data class Joypad(val button: Button) : KeyAction()
 
   companion object {
     fun fromKeyCode(code: String) = when (code) {

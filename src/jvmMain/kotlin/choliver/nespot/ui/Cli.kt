@@ -1,4 +1,4 @@
-package choliver.nespot.runner
+package choliver.nespot.ui
 
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.printInfo

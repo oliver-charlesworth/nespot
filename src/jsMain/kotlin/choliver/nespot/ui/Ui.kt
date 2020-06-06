@@ -1,8 +1,8 @@
-package choliver.nespot.runner
+package choliver.nespot.ui
 
 import choliver.nespot.*
-import choliver.nespot.runner.BrowserKeyAction.Joypad
-import choliver.nespot.runner.BrowserKeyAction.ToggleFullScreen
+import choliver.nespot.ui.KeyAction.Joypad
+import choliver.nespot.ui.KeyAction.ToggleFullScreen
 import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.Uint8ClampedArray
@@ -12,14 +12,14 @@ import kotlin.browser.document
 import kotlin.browser.window
 import kotlin.math.min
 
-class BrowserRunner(
+class Ui(
   private val worker: Worker,
   private val romPath: String
 ) {
-  private val audio = BrowserAudioPlayer()
-  private val screen = BrowserScreen()
+  private val audio = AudioPlayer()
+  private val screen = Screen()
 
-  fun run() {
+  init {
     worker.onmessage = messageHandler(::handleMessage)
     document.onkeydown = ::handleKeyDown
     document.onkeyup = ::handleKeyUp
@@ -44,14 +44,14 @@ class BrowserRunner(
   }
 
   private fun handleKeyDown(e: KeyboardEvent) {
-    when (val action = BrowserKeyAction.fromKeyCode(e.code)) {
+    when (val action = KeyAction.fromKeyCode(e.code)) {
       is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
       is Joypad -> postMessage(MSG_BUTTON_DOWN, action.button.name)
     }
   }
 
   private fun handleKeyUp(e: KeyboardEvent) {
-    when (val action = BrowserKeyAction.fromKeyCode(e.code)) {
+    when (val action = KeyAction.fromKeyCode(e.code)) {
       is Joypad -> postMessage(MSG_BUTTON_UP, action.button.name)
     }
   }

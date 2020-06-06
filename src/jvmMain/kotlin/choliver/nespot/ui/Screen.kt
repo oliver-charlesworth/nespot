@@ -1,11 +1,11 @@
-package choliver.nespot.runner
+package choliver.nespot.ui
 
 import choliver.nespot.SCREEN_HEIGHT
 import choliver.nespot.SCREEN_WIDTH
 import choliver.nespot.TILE_SIZE
 import choliver.nespot.nes.VideoSink
 import choliver.nespot.nes.VideoSink.ColorPackingMode.BGRA
-import choliver.nespot.runner.Event.*
+import choliver.nespot.ui.Event.*
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D
 import javafx.scene.Cursor

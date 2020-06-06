@@ -1,11 +1,11 @@
-package choliver.nespot.runner
+package choliver.nespot.ui
 
 import choliver.nespot.backup.BackupManager
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.Cpu.NextStep.RESET
 import choliver.nespot.nes.Nes
-import choliver.nespot.runner.Event.*
-import choliver.nespot.runner.KeyAction.*
+import choliver.nespot.ui.Event.*
+import choliver.nespot.ui.KeyAction.*
 import java.io.File
 import java.util.concurrent.LinkedBlockingQueue
 

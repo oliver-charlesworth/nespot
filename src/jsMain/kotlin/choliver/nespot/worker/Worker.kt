@@ -1,4 +1,4 @@
-package choliver.nespot.emulator
+package choliver.nespot.worker
 
 import choliver.nespot.*
 import choliver.nespot.cartridge.Rom
@@ -6,9 +6,10 @@ import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Nes
 import org.khronos.webgl.Int8Array
 import org.khronos.webgl.get
+import org.w3c.dom.DedicatedWorkerGlobalScope
 import kotlin.math.ceil
 
-class Emulator {
+class Worker {
   private lateinit var nes: Nes
   private var cycles: Long = 0
   private var originSeconds: Double? = null
@@ -31,8 +32,8 @@ class Emulator {
     fetchRom(config.romPath) { rom ->
       nes = Nes(
         rom = rom,
-        videoSink = EmulatorVideoSink(),
-        audioSink = EmulatorAudioSink(config.sampleRateHz)
+        videoSink = WorkerVideoSink(self),
+        audioSink = WorkerAudioSink(config.sampleRateHz, self)
       )
     }
   }
@@ -55,3 +56,5 @@ class Emulator {
     }
   }
 }
+
+private external val self: DedicatedWorkerGlobalScope

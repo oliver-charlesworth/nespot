@@ -1,12 +1,16 @@
-package choliver.nespot.emulator
+package choliver.nespot.worker
 
 import choliver.nespot.AUDIO_BUFFER_LENGTH_SECONDS
 import choliver.nespot.MSG_AUDIO_CHUNK
 import choliver.nespot.nes.AudioSink
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.set
+import org.w3c.dom.DedicatedWorkerGlobalScope
 
-class EmulatorAudioSink(override val sampleRateHz: Int) : AudioSink {
+class WorkerAudioSink(
+  override val sampleRateHz: Int,
+  private val self: DedicatedWorkerGlobalScope
+) : AudioSink {
   private val bufferSize = (AUDIO_BUFFER_LENGTH_SECONDS * sampleRateHz).toInt()
   private lateinit var raw: Float32Array
   private var i = 0

@@ -1,11 +1,14 @@
-package choliver.nespot.emulator
+package choliver.nespot.worker
 
 import choliver.nespot.*
 import choliver.nespot.nes.VideoSink
 import choliver.nespot.nes.VideoSink.ColorPackingMode.ABGR
 import org.khronos.webgl.*
+import org.w3c.dom.DedicatedWorkerGlobalScope
 
-class EmulatorVideoSink : VideoSink {
+class WorkerVideoSink(
+  private val self: DedicatedWorkerGlobalScope
+) : VideoSink {
   private lateinit var raw: Int32Array
   private var x: Int = 0
   private var y: Int = 0

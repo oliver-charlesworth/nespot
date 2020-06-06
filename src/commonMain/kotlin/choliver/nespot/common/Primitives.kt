@@ -27,3 +27,9 @@ inline fun Int.isBitSet(i: Int) = (this and (1 shl i)) != 0
 
 fun Int.format16() = "$" + toString(16).padStart(4, '0')
 fun Int.format8() = "$" + toString(16).padStart(2, '0')
+
+@Suppress("ObjectPropertyName")
+const val _0 = false
+
+@Suppress("ObjectPropertyName")
+const val _1 = true

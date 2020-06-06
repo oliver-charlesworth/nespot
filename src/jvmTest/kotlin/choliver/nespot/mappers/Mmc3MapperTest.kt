@@ -8,8 +8,8 @@ import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
 import choliver.nespot.common.Address
 import choliver.nespot.common.Data
-import choliver.nespot.cpu._0
-import choliver.nespot.cpu._1
+import choliver.nespot.common._0
+import choliver.nespot.common._1
 import choliver.nespot.mappers.Mmc3Mapper.Companion.CHR_BANK_SIZE
 import choliver.nespot.mappers.Mmc3Mapper.Companion.PRG_BANK_SIZE
 import com.nhaarman.mockitokotlin2.any

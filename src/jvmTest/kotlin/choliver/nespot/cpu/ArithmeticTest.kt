@@ -1,8 +1,6 @@
 package choliver.nespot.cpu
 
-import choliver.nespot.common.Data
-import choliver.nespot.common.hi
-import choliver.nespot.common.lo
+import choliver.nespot.common.*
 import choliver.nespot.cpu.AddressMode.ACCUMULATOR
 import choliver.nespot.cpu.Opcode.*
 import choliver.nespot.cpu.Operand.Immediate

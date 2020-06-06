@@ -1,5 +1,6 @@
 package choliver.nespot.cpu
 
+import choliver.nespot.common._1
 import choliver.nespot.cpu.Opcode.*
 import choliver.nespot.cpu.Operand.*
 import choliver.nespot.cpu.Operand.IndexSource.X

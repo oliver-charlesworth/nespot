@@ -1,6 +1,6 @@
 @file:Suppress("NOTHING_TO_INLINE")
 
-package choliver.nespot
+package choliver.nespot.common
 
 typealias Data = Int      // 8-bit in reality (usually unsigned)
 typealias Address8 = Int   // 8-bit in reality (unsigned)

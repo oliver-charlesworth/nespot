@@ -2,9 +2,9 @@ package choliver.nespot.runner
 
 import choliver.nespot.SCREEN_HEIGHT
 import choliver.nespot.SCREEN_WIDTH
-import choliver.nespot.VideoSink
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.nes.Nes
+import choliver.nespot.nes.VideoSink
 import kotlin.math.roundToInt
 import kotlin.system.measureTimeMillis
 

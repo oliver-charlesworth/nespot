@@ -1,11 +1,12 @@
 package choliver.nespot.cpu
 
-import choliver.nespot.*
+import choliver.nespot.common.*
 import choliver.nespot.cpu.AddressMode.ACCUMULATOR
 import choliver.nespot.cpu.AddressMode.IMMEDIATE
 import choliver.nespot.cpu.Cpu.NextStep.*
 import choliver.nespot.cpu.InstructionDecoder.Decoded
 import choliver.nespot.cpu.Opcode.*
+import choliver.nespot.memory.Memory
 
 class Cpu(
   private val memory: Memory,

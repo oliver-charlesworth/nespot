@@ -1,8 +1,8 @@
 package choliver.nespot.nes
 
-import choliver.nespot.Data
-import choliver.nespot.data
-import choliver.nespot.isBitSet
+import choliver.nespot.common.Data
+import choliver.nespot.common.data
+import choliver.nespot.common.isBitSet
 
 class Joypads {
   // See http://wiki.nesdev.com/w/index.php/Standard_controller#Report

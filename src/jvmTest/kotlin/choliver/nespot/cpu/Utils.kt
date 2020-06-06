@@ -1,6 +1,6 @@
 package choliver.nespot.cpu
 
-import choliver.nespot.*
+import choliver.nespot.common.*
 import choliver.nespot.cpu.AddressMode.*
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_IRQ
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_NMI
@@ -9,6 +9,7 @@ import choliver.nespot.cpu.Cpu.NextStep.INSTRUCTION
 import choliver.nespot.cpu.Operand.*
 import choliver.nespot.cpu.Operand.IndexSource.X
 import choliver.nespot.cpu.Operand.IndexSource.Y
+import choliver.nespot.memory.Memory
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
 

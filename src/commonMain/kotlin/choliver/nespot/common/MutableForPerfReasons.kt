@@ -1,4 +1,4 @@
-package choliver.nespot
+package choliver.nespot.common
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)

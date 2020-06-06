@@ -1,10 +1,10 @@
 package choliver.nespot.mappers
 
-import choliver.nespot.Data
 import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.*
+import choliver.nespot.common.Data
 import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_SR
 import choliver.nespot.mappers.Mmc1Mapper.Companion.CHR_BANK_SIZE
 import choliver.nespot.mappers.Mmc1Mapper.Companion.CHR_RAM_SIZE

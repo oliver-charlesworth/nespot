@@ -1,13 +1,13 @@
 package choliver.nespot.cpu
 
+import choliver.nespot.common.hi
+import choliver.nespot.common.lo
 import choliver.nespot.cpu.Cpu.Companion.NUM_INTERRUPT_CYCLES
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_IRQ
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_NMI
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_RESET
 import choliver.nespot.cpu.Opcode.CLI
 import choliver.nespot.cpu.Opcode.NOP
-import choliver.nespot.hi
-import choliver.nespot.lo
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest

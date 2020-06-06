@@ -1,7 +1,12 @@
 package choliver.nespot.debugger
 
-import choliver.nespot.*
+import choliver.nespot.BASE_VRAM
+import choliver.nespot.VRAM_SIZE
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
+import choliver.nespot.common.format16
+import choliver.nespot.common.format8
 import choliver.nespot.cpu.Cpu.NextStep
 import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
 import choliver.nespot.debugger.CallStackManager.FrameType.NMI

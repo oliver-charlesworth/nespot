@@ -1,4 +1,4 @@
-package choliver.nespot
+package choliver.nespot.common
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

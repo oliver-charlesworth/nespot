@@ -1,6 +1,6 @@
 package choliver.nespot.runner
 
-import choliver.nespot.AudioSink
+import choliver.nespot.nes.AudioSink
 import java.io.Closeable
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem

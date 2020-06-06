@@ -1,6 +1,6 @@
 package choliver.nespot.debugger
 
-import choliver.nespot.Address
+import choliver.nespot.common.Address
 import choliver.nespot.cpu.Opcode
 import choliver.nespot.nes.Joypads
 

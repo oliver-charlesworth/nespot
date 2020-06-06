@@ -3,8 +3,8 @@ package choliver.nespot.runner
 import choliver.nespot.SCREEN_HEIGHT
 import choliver.nespot.SCREEN_WIDTH
 import choliver.nespot.TILE_SIZE
-import choliver.nespot.VideoSink
-import choliver.nespot.VideoSink.ColorPackingMode.BGRA
+import choliver.nespot.nes.VideoSink
+import choliver.nespot.nes.VideoSink.ColorPackingMode.BGRA
 import choliver.nespot.runner.Event.*
 import javafx.application.Platform
 import javafx.geometry.Rectangle2D

@@ -1,7 +1,6 @@
-package choliver.nespot
+package choliver.nespot.common
 
 import kotlin.math.absoluteValue
-
 
 data class Rational private constructor(val a: Int, val b: Int) {
   operator fun plus(rhs: Rational) = of(a * rhs.b + b * rhs.a, b * rhs.b)

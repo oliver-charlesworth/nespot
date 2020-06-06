@@ -1,9 +1,9 @@
 package choliver.nespot.backup
 
-import choliver.nespot.Ram
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.data
+import choliver.nespot.common.data
 import choliver.nespot.hash
+import choliver.nespot.memory.Ram
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

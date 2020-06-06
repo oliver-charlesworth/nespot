@@ -1,12 +1,12 @@
 package choliver.nespot.mappers
 
-import choliver.nespot.Address
-import choliver.nespot.Data
 import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.FIXED_LOWER
 import choliver.nespot.cartridge.Rom.Mirroring.FIXED_UPPER
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
 
 // See https://wiki.nesdev.com/w/index.php/AxROM
 class AxRomMapper(rom: Rom) : Mapper {

@@ -1,7 +1,7 @@
 package choliver.nespot.ppu
 
-import choliver.nespot.MutableForPerfReasons
 import choliver.nespot.TILE_SIZE
+import choliver.nespot.common.MutableForPerfReasons
 
 @MutableForPerfReasons
 data class Coords(

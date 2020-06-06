@@ -1,6 +1,12 @@
 package choliver.nespot.ppu
 
-import choliver.nespot.*
+import choliver.nespot.DOTS_PER_CYCLE
+import choliver.nespot.SCANLINES_PER_FRAME
+import choliver.nespot.SCREEN_HEIGHT
+import choliver.nespot.common.*
+import choliver.nespot.memory.Memory
+import choliver.nespot.memory.Ram
+import choliver.nespot.nes.VideoSink
 
 
 class Ppu(

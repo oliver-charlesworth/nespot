@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-import choliver.nespot.Data
+import choliver.nespot.common.Data
 
 class Channel<SynthT : Synth, SweepT : Sweep, EnvelopeT : Envelope>(
   val synth: SynthT,

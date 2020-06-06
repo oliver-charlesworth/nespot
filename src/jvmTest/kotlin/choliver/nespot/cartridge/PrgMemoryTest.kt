@@ -1,7 +1,11 @@
 package choliver.nespot.cartridge
 
-import choliver.nespot.*
+import choliver.nespot.BASE_PRG_RAM
+import choliver.nespot.BASE_PRG_ROM
+import choliver.nespot.PRG_RAM_SIZE
 import choliver.nespot.cartridge.BankMappingChecker.Companion.takesBytes
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions

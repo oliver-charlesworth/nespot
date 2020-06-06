@@ -1,6 +1,6 @@
 package choliver.nespot.cpu
 
-import choliver.nespot.*
+import choliver.nespot.common.*
 
 @MutableForPerfReasons
 data class Regs(

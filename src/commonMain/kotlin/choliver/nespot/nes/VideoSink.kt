@@ -1,4 +1,4 @@
-package choliver.nespot
+package choliver.nespot.nes
 
 interface VideoSink {
   enum class ColorPackingMode(

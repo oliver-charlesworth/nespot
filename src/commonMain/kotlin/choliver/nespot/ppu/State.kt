@@ -1,9 +1,9 @@
 package choliver.nespot.ppu
 
-import choliver.nespot.Address
-import choliver.nespot.Address8
-import choliver.nespot.Data
-import choliver.nespot.MutableForPerfReasons
+import choliver.nespot.common.Address
+import choliver.nespot.common.Address8
+import choliver.nespot.common.Data
+import choliver.nespot.common.MutableForPerfReasons
 
 @MutableForPerfReasons
 data class State(

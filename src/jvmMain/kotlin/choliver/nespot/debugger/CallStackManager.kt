@@ -1,7 +1,7 @@
 package choliver.nespot.debugger
 
-import choliver.nespot.Address
-import choliver.nespot.addr
+import choliver.nespot.common.Address
+import choliver.nespot.common.addr
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_IRQ
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_NMI
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_RESET

@@ -1,8 +1,12 @@
 package choliver.nespot.cartridge
 
-import choliver.nespot.*
+import choliver.nespot.BASE_CHR_ROM
+import choliver.nespot.BASE_VRAM
+import choliver.nespot.NAMETABLE_SIZE
 import choliver.nespot.cartridge.BankMappingChecker.Companion.takesBytes
 import choliver.nespot.cartridge.Rom.Mirroring.*
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import org.junit.jupiter.api.Nested

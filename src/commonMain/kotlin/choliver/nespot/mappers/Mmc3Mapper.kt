@@ -1,14 +1,14 @@
 package choliver.nespot.mappers
 
-import choliver.nespot.Address
 import choliver.nespot.BASE_PRG_ROM
-import choliver.nespot.Data
 import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Mapper
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.HORIZONTAL
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
-import choliver.nespot.isBitSet
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
+import choliver.nespot.common.isBitSet
 
 // See https://wiki.nesdev.com/w/index.php/MMC3
 class Mmc3Mapper(rom: Rom) : Mapper {

@@ -1,6 +1,6 @@
 package choliver.nespot.cpu
 
-import choliver.nespot.Data
+import choliver.nespot.common.Data
 import choliver.nespot.cpu.AddressMode.*
 import choliver.nespot.cpu.Opcode.*
 import choliver.nespot.cpu.Operand.IndexSource

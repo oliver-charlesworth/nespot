@@ -1,7 +1,7 @@
 package choliver.nespot.cartridge
 
-import choliver.nespot.Ram
 import choliver.nespot.mappers.*
+import choliver.nespot.memory.Ram
 
 class Cartridge(private val mapper: Mapper) {
   // TODO - can we avoid the callback overhead if callbacks not set?

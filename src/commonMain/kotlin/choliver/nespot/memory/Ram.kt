@@ -1,4 +1,8 @@
-package choliver.nespot
+package choliver.nespot.memory
+
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
+import choliver.nespot.common.data
 
 // TODO - power of two for efficiency?  (i.e. bitmask rather than modulo)
 class Ram private constructor(private val raw: ByteArray) : Memory {

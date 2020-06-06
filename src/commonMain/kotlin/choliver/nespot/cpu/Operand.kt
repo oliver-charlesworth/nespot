@@ -1,8 +1,8 @@
 package choliver.nespot.cpu
 
-import choliver.nespot.Address
-import choliver.nespot.Address8
-import choliver.nespot.Data
+import choliver.nespot.common.Address
+import choliver.nespot.common.Address8
+import choliver.nespot.common.Data
 
 sealed class Operand {
   enum class IndexSource { X, Y }

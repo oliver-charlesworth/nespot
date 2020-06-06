@@ -1,7 +1,8 @@
 package choliver.nespot.emulator
 
 import choliver.nespot.*
-import choliver.nespot.VideoSink.ColorPackingMode.ABGR
+import choliver.nespot.nes.VideoSink
+import choliver.nespot.nes.VideoSink.ColorPackingMode.ABGR
 import org.khronos.webgl.*
 
 class EmulatorVideoSink : VideoSink {

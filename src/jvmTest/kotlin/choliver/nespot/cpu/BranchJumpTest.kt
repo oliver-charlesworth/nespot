@@ -1,10 +1,10 @@
 package choliver.nespot.cpu
 
-import choliver.nespot.Address
+import choliver.nespot.common.Address
+import choliver.nespot.common.hi
+import choliver.nespot.common.lo
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_IRQ
 import choliver.nespot.cpu.Opcode.*
-import choliver.nespot.hi
-import choliver.nespot.lo
 import org.junit.jupiter.api.Test
 
 class BranchJumpTest {

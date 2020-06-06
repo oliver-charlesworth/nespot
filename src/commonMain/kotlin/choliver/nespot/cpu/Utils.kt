@@ -1,6 +1,6 @@
 package choliver.nespot.cpu
 
-import choliver.nespot.Address
+import choliver.nespot.common.Address
 
 @Suppress("ObjectPropertyName")
 const val _0 = false

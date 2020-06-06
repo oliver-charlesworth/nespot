@@ -1,7 +1,7 @@
 package choliver.nespot.nes
 
-import choliver.nespot.Memory
 import choliver.nespot.apu.Apu
+import choliver.nespot.memory.Memory
 import choliver.nespot.nes.Nes.Companion.ADDR_APU_STATUS
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD1
 import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD2

@@ -1,6 +1,6 @@
 package choliver.nespot.nes
 
-import choliver.nespot.Data
+import choliver.nespot.common.Data
 import choliver.nespot.nes.Joypads.Button
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

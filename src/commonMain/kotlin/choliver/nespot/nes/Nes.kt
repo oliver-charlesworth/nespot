@@ -1,12 +1,16 @@
 package choliver.nespot.nes
 
-import choliver.nespot.*
+import choliver.nespot.CPU_FREQ_HZ
 import choliver.nespot.apu.Apu
 import choliver.nespot.cartridge.Cartridge
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
 import choliver.nespot.cpu.Cpu
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_IRQ
 import choliver.nespot.cpu.Cpu.Companion.INTERRUPT_NMI
+import choliver.nespot.memory.Memory
+import choliver.nespot.memory.Ram
 import choliver.nespot.ppu.Ppu
 
 class Nes(

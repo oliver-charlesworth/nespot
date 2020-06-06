@@ -2,7 +2,7 @@ package choliver.nespot.playtest.engine
 
 import choliver.nespot.SCREEN_HEIGHT
 import choliver.nespot.SCREEN_WIDTH
-import choliver.nespot.VideoSink
+import choliver.nespot.nes.VideoSink
 
 class CapturingVideoSink(private val delegate: VideoSink) : VideoSink {
   private var idx = 0

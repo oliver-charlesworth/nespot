@@ -1,8 +1,8 @@
 package choliver.nespot.ppu
 
-import choliver.nespot.Address
-import choliver.nespot.Data
-import choliver.nespot.Memory
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
+import choliver.nespot.memory.Memory
 
 class Palette : Memory {
   private val raw = IntArray(32) { 0x00 } // Not bytes, to avoid conversion overhead

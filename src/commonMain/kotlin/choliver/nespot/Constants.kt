@@ -1,5 +1,7 @@
 package choliver.nespot
 
+import choliver.nespot.common.Rational
+
 // See https://wiki.nesdev.com/w/index.php/Cycle_reference_chart
 val MASTER_FREQ_HZ = Rational.of(945e6.toInt(), 4) / 11
 val CPU_FREQ_HZ = MASTER_FREQ_HZ / 12

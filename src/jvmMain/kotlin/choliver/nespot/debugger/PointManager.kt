@@ -1,6 +1,6 @@
 package choliver.nespot.debugger
 
-import choliver.nespot.Address
+import choliver.nespot.common.Address
 import choliver.nespot.debugger.PointManager.Point.Breakpoint
 import choliver.nespot.debugger.PointManager.Point.Watchpoint
 

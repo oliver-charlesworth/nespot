@@ -1,7 +1,7 @@
 package choliver.nespot.apu
 
-import choliver.nespot.Memory
 import choliver.nespot.apu.FrameSequencer.Ticks
+import choliver.nespot.memory.Memory
 
 typealias SquareChannel = Channel<SquareSynth, SweepActive, EnvelopeActive>
 typealias TriangleChannel = Channel<TriangleSynth, SweepInactive, EnvelopeInactive>

@@ -1,11 +1,11 @@
 package choliver.nespot.playtest.engine
 
-import choliver.nespot.AudioSink
-import choliver.nespot.VideoSink
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.hash
+import choliver.nespot.nes.AudioSink
 import choliver.nespot.nes.Joypads
 import choliver.nespot.nes.Nes
+import choliver.nespot.nes.VideoSink
 import choliver.nespot.playtest.engine.Scenario.Stimulus
 
 class ScenarioCaptor(

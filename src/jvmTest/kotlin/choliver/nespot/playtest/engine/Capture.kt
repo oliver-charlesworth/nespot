@@ -1,9 +1,9 @@
 package choliver.nespot.playtest.engine
 
-import choliver.nespot.AudioSink
-import choliver.nespot.VideoSink
-import choliver.nespot.VideoSink.ColorPackingMode.BGRA
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.nes.AudioSink
+import choliver.nespot.nes.VideoSink
+import choliver.nespot.nes.VideoSink.ColorPackingMode.BGRA
 import choliver.nespot.playtest.engine.Scenario.Stimulus
 import choliver.nespot.playtest.engine.SnapshotPattern.FINAL
 import choliver.nespot.playtest.engine.SnapshotPattern.PERIODIC

@@ -1,8 +1,8 @@
 package choliver.nespot.cpu
 
+import choliver.nespot.common.format16
+import choliver.nespot.common.format8
 import choliver.nespot.cpu.Operand.*
-import choliver.nespot.format16
-import choliver.nespot.format8
 
 data class Instruction(
   val opcode: Opcode,

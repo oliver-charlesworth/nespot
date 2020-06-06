@@ -1,6 +1,12 @@
 package choliver.nespot.cartridge
 
-import choliver.nespot.*
+import choliver.nespot.BASE_PRG_ROM
+import choliver.nespot.PRG_RAM_SIZE
+import choliver.nespot.PRG_ROM_SIZE
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
+import choliver.nespot.common.data
+import choliver.nespot.memory.Memory
 
 // TODO - unify with RAM
 class PrgMemory(

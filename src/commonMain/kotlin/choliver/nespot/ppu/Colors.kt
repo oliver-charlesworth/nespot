@@ -1,6 +1,6 @@
 package choliver.nespot.ppu
 
-import choliver.nespot.VideoSink.ColorPackingMode
+import choliver.nespot.nes.VideoSink.ColorPackingMode
 
 fun createColorMap(mode: ColorPackingMode) = COLORS
   .chunked(3)

@@ -1,14 +1,13 @@
 package choliver.nespot.cpu
 
-import choliver.nespot.Address
-import choliver.nespot.Data
-import choliver.nespot.Memory
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
 import choliver.nespot.cpu.InstructionDecoder.Decoded
-import choliver.nespot.cpu.model.Instruction
-import choliver.nespot.cpu.model.Opcode.*
-import choliver.nespot.cpu.model.Operand.*
-import choliver.nespot.cpu.model.Operand.IndexSource.X
-import choliver.nespot.cpu.model.Operand.IndexSource.Y
+import choliver.nespot.cpu.Opcode.*
+import choliver.nespot.cpu.Operand.*
+import choliver.nespot.cpu.Operand.IndexSource.X
+import choliver.nespot.cpu.Operand.IndexSource.Y
+import choliver.nespot.memory.Memory
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever

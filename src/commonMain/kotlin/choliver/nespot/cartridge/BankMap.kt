@@ -1,6 +1,6 @@
 package choliver.nespot.cartridge
 
-import choliver.nespot.Address
+import choliver.nespot.common.Address
 
 class BankMap(
   bankSize: Int,

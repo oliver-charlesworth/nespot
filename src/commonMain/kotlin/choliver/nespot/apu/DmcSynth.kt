@@ -1,8 +1,8 @@
 package choliver.nespot.apu
 
-import choliver.nespot.Address
-import choliver.nespot.Data
-import choliver.nespot.Memory
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
+import choliver.nespot.memory.Memory
 import kotlin.math.max
 import kotlin.math.min
 

@@ -1,7 +1,12 @@
 package choliver.nespot.debugger
 
-import choliver.nespot.*
+import choliver.nespot.BASE_VRAM
+import choliver.nespot.VRAM_SIZE
 import choliver.nespot.cartridge.Rom
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
+import choliver.nespot.common.format16
+import choliver.nespot.common.format8
 import choliver.nespot.cpu.Cpu.NextStep
 import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
 import choliver.nespot.debugger.CallStackManager.FrameType.NMI
@@ -16,9 +21,9 @@ import choliver.nespot.debugger.PointManager.Point.Breakpoint
 import choliver.nespot.debugger.PointManager.Point.Watchpoint
 import choliver.nespot.nes.Nes
 import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
-import choliver.nespot.runner.KeyAction
-import choliver.nespot.runner.KeyAction.Joypad
-import choliver.nespot.runner.Screen
+import choliver.nespot.ui.KeyAction
+import choliver.nespot.ui.KeyAction.Joypad
+import choliver.nespot.ui.Screen
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -26,7 +31,7 @@ import java.io.File
 import java.io.InputStream
 import java.io.PrintStream
 import java.util.concurrent.LinkedBlockingQueue
-import choliver.nespot.runner.Event as RunnerEvent
+import choliver.nespot.ui.Event as RunnerEvent
 
 class Debugger(
   rom: ByteArray,

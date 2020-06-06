@@ -1,15 +1,20 @@
 # NESpot
 
-NESpot is a NES emulator written in Kotlin.  It's not yet cycle accurate and has low coverage of
-[mapper variants](https://wiki.nesdev.com/w/index.php/Mapper#iNES_1.0_mapper_grid), so not
-all games work yet.
+NESpot is a platform-independent NES emulator.  It's written in Kotlin, so compiles to either a standalone JVM app or
+JavaScript that runs in a browser.
+
+Whilst game coverage is increasingly reasonable, the lack of full cycle accuracy means that various games don't work
+properly (or at all).
 
 
-## Running Java app
+## Running as an app
 
 ```
 ./gradlew run --args "[<options>] <rom>"
 ```
+
+NESpot is developed and tested against JDK 11.  It may work with older Java versions, but this has not been tested.
+
 
 ### Options
 
@@ -19,20 +24,15 @@ all games work yet.
 | `-i` / `--info` | Print ROM info |
 
 
-## Running in browser
+## Running in a browser
 
 Put your ROMs in the `roms/` directory.  Then:
 
 ```
-./gradlew jsBrowserProductionRun --continuous"
+./gradlew jsBrowserProductionRun --continuous
 ```
 
 Then visit `http://localhost:8080/<rom>` (without a `.nes` suffix).
-
-
-## Prerequisites
-
-NESpot is built with JDK 11.  It may work with older Java versions, but this has not been tested.
 
 
 ## Key bindings
@@ -50,7 +50,7 @@ NESpot is built with JDK 11.  It may work with older Java versions, but this has
 | Cmd+Q | Quit |
 
 
-## Games tested
+## Known game coverage
 
 | Game | SHA-1 (PRG+CHR) | Mapper | Status |
 | --- | --- | --- | --- |
@@ -94,6 +94,4 @@ For 6502 emulation:
 
 For NES internals:
 
-- http://wiki.nesdev.com/w/index.php/CPU
-- http://wiki.nesdev.com/w/index.php/PPU
-- http://wiki.nesdev.com/w/index.php/APU
+- http://wiki.nesdev.com/w/index.php/NES_reference_guide

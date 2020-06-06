@@ -1,8 +1,15 @@
 package choliver.nespot.cartridge
 
-import choliver.nespot.*
+import choliver.nespot.BASE_VRAM
+import choliver.nespot.CHR_SIZE
+import choliver.nespot.NAMETABLE_SIZE
+import choliver.nespot.VRAM_SIZE
 import choliver.nespot.cartridge.Rom.Mirroring
 import choliver.nespot.cartridge.Rom.Mirroring.*
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
+import choliver.nespot.common.data
+import choliver.nespot.memory.Memory
 
 class ChrMemory(
   private val raw: ByteArray,

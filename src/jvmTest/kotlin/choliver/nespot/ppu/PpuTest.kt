@@ -1,8 +1,17 @@
 package choliver.nespot.ppu
 
-import choliver.nespot.*
-import choliver.nespot.cpu.utils._0
-import choliver.nespot.cpu.utils._1
+import choliver.nespot.DOTS_PER_CYCLE
+import choliver.nespot.DOTS_PER_SCANLINE
+import choliver.nespot.SCANLINES_PER_FRAME
+import choliver.nespot.SCREEN_HEIGHT
+import choliver.nespot.common.Address
+import choliver.nespot.common.hi
+import choliver.nespot.common.isBitSet
+import choliver.nespot.common.lo
+import choliver.nespot.cpu._0
+import choliver.nespot.cpu._1
+import choliver.nespot.memory.Memory
+import choliver.nespot.nes.VideoSink
 import choliver.nespot.ppu.Ppu.Companion.BASE_PALETTE
 import choliver.nespot.ppu.Ppu.Companion.REG_OAMADDR
 import choliver.nespot.ppu.Ppu.Companion.REG_OAMDATA
@@ -12,7 +21,6 @@ import choliver.nespot.ppu.Ppu.Companion.REG_PPUCTRL2
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUDATA
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSCROLL
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSTATUS
-import choliver.nespot.ppu.model.State
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested

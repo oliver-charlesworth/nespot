@@ -3,7 +3,7 @@ package choliver.nespot.cartridge
 import choliver.nespot.cartridge.Rom.Mirroring.*
 import choliver.nespot.cartridge.Rom.TvSystem.NTSC
 import choliver.nespot.cartridge.Rom.TvSystem.PAL
-import choliver.nespot.isBitSet
+import choliver.nespot.common.isBitSet
 
 
 @Suppress("ArrayInDataClass")

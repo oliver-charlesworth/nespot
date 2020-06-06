@@ -1,7 +1,7 @@
 package choliver.nespot.cartridge
 
-import choliver.nespot.Address
-import choliver.nespot.Data
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
 
 interface Mapper {
   val prgData: ByteArray

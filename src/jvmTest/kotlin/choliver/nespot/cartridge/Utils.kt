@@ -1,7 +1,7 @@
 package choliver.nespot.cartridge
 
-import choliver.nespot.Address
-import choliver.nespot.Data
+import choliver.nespot.common.Address
+import choliver.nespot.common.Data
 import org.junit.jupiter.api.Assertions.assertEquals
 
 internal class BankMappingChecker(

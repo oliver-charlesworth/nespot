@@ -31,8 +31,8 @@ jobs:
           key: v1-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
 
       - store_test_results:
-          path: build/test-results/test
+          path: build/test-results/jvmTest
 
       - store_artifacts:
-          path: build/test-results/test
+          path: build/test-results/jvmTest
           when: always

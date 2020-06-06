@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-import choliver.nespot.isBitSet
+import choliver.nespot.common.isBitSet
 
 // http://wiki.nesdev.com/w/index.php/APU_Noise
 class NoiseSynth : Synth {

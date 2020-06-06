@@ -1,6 +1,6 @@
 package choliver.nespot.apu
 
-import choliver.nespot.Memory
+import choliver.nespot.memory.Memory
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever

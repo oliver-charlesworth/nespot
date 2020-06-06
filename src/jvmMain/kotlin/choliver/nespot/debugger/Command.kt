@@ -1,7 +1,7 @@
 package choliver.nespot.debugger
 
-import choliver.nespot.Address
-import choliver.nespot.cpu.model.Opcode
+import choliver.nespot.common.Address
+import choliver.nespot.cpu.Opcode
 import choliver.nespot.nes.Joypads
 
 sealed class Command {

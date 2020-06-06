@@ -9,13 +9,13 @@ data class Config(
   constructor(obj: dynamic) : this(obj.romPath, obj.sampleRateHz)
 }
 
-// Main to worker
+// UI to worker
 const val MSG_CONFIGURE = "CONFIGURE"
 const val MSG_EMULATE_UNTIL = "EMULATE_UNTIL"
 const val MSG_BUTTON_DOWN = "BUTTON_DOWN"
 const val MSG_BUTTON_UP = "BUTTON_UP"
 
-// Worker to main
+// Worker to UI
 const val MSG_ALIVE = "ALIVE"
 const val MSG_VIDEO_FRAME = "VIDEO_FRAME"
 const val MSG_AUDIO_CHUNK = "AUDIO_CHUNK"

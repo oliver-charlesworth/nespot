@@ -1,4 +1,4 @@
-package choliver.nespot.ppu.model
+package choliver.nespot.ppu
 
 import choliver.nespot.Address
 import choliver.nespot.Address8

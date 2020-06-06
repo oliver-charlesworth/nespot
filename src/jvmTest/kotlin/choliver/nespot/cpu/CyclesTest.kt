@@ -1,14 +1,9 @@
 package choliver.nespot.cpu
 
-import choliver.nespot.cpu.model.Flags
-import choliver.nespot.cpu.model.Instruction
-import choliver.nespot.cpu.model.Opcode
-import choliver.nespot.cpu.model.Opcode.*
-import choliver.nespot.cpu.model.Operand.*
-import choliver.nespot.cpu.model.Operand.IndexSource.X
-import choliver.nespot.cpu.model.Operand.IndexSource.Y
-import choliver.nespot.cpu.model.Regs
-import choliver.nespot.cpu.utils._1
+import choliver.nespot.cpu.Opcode.*
+import choliver.nespot.cpu.Operand.*
+import choliver.nespot.cpu.Operand.IndexSource.X
+import choliver.nespot.cpu.Operand.IndexSource.Y
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 

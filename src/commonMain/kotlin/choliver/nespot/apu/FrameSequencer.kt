@@ -2,8 +2,8 @@ package choliver.nespot.apu
 
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.apu.FrameSequencer.Mode.FOUR_STEP
-import choliver.nespot.cpu.utils._0
-import choliver.nespot.cpu.utils._1
+import choliver.nespot.cpu._0
+import choliver.nespot.cpu._1
 
 // TODO - interrupts
 class FrameSequencer(

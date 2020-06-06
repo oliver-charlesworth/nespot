@@ -1,6 +1,6 @@
-package choliver.nespot.cpu.model
+package choliver.nespot.cpu
 
-import choliver.nespot.cpu.model.Operand.*
+import choliver.nespot.cpu.Operand.*
 import choliver.nespot.format16
 import choliver.nespot.format8
 

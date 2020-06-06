@@ -1,4 +1,4 @@
-package choliver.nespot.cpu.model
+package choliver.nespot.cpu
 
 import choliver.nespot.Address
 import choliver.nespot.Address8

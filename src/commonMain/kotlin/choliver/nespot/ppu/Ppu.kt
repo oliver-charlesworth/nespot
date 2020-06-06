@@ -1,7 +1,6 @@
 package choliver.nespot.ppu
 
 import choliver.nespot.*
-import choliver.nespot.ppu.model.State
 
 
 class Ppu(

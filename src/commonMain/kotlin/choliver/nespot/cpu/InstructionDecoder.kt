@@ -1,16 +1,12 @@
 package choliver.nespot.cpu
 
 import choliver.nespot.*
-import choliver.nespot.cpu.model.AddressMode
-import choliver.nespot.cpu.model.AddressMode.*
-import choliver.nespot.cpu.model.Instruction
-import choliver.nespot.cpu.model.Opcode
-import choliver.nespot.cpu.model.Opcode.BRK
-import choliver.nespot.cpu.model.Opcode.NOP
-import choliver.nespot.cpu.model.Operand.*
-import choliver.nespot.cpu.model.Operand.IndexSource.X
-import choliver.nespot.cpu.model.Operand.IndexSource.Y
-import choliver.nespot.cpu.utils.samePage
+import choliver.nespot.cpu.AddressMode.*
+import choliver.nespot.cpu.Opcode.BRK
+import choliver.nespot.cpu.Opcode.NOP
+import choliver.nespot.cpu.Operand.*
+import choliver.nespot.cpu.Operand.IndexSource.X
+import choliver.nespot.cpu.Operand.IndexSource.Y
 
 
 class InstructionDecoder(private val memory: Memory) {

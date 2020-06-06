@@ -1,6 +1,6 @@
 package choliver.nespot.debugger
 
-import choliver.nespot.cpu.model.Opcode
+import choliver.nespot.cpu.Opcode
 import choliver.nespot.debugger.Command.*
 import choliver.nespot.debugger.Command.CreatePoint.Break
 import choliver.nespot.debugger.Command.CreatePoint.Watch

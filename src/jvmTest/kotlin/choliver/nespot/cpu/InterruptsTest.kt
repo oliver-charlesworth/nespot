@@ -4,13 +4,8 @@ import choliver.nespot.cpu.Cpu.Companion.NUM_INTERRUPT_CYCLES
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_IRQ
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_NMI
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_RESET
-import choliver.nespot.cpu.model.Flags
-import choliver.nespot.cpu.model.Instruction
-import choliver.nespot.cpu.model.Opcode.CLI
-import choliver.nespot.cpu.model.Opcode.NOP
-import choliver.nespot.cpu.model.Regs
-import choliver.nespot.cpu.utils._0
-import choliver.nespot.cpu.utils._1
+import choliver.nespot.cpu.Opcode.CLI
+import choliver.nespot.cpu.Opcode.NOP
 import choliver.nespot.hi
 import choliver.nespot.lo
 import org.junit.jupiter.api.Nested

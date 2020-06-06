@@ -1,4 +1,4 @@
-package choliver.nespot.cpu.utils
+package choliver.nespot.cpu
 
 import choliver.nespot.Address
 

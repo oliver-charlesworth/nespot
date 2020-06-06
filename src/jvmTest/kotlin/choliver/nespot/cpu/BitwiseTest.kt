@@ -1,8 +1,6 @@
 package choliver.nespot.cpu
 
-import choliver.nespot.cpu.model.Opcode.*
-import choliver.nespot.cpu.utils._0
-import choliver.nespot.cpu.utils._1
+import choliver.nespot.cpu.Opcode.*
 import org.junit.jupiter.api.Test
 
 class BitwiseTest {

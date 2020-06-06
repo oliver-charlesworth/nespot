@@ -3,8 +3,6 @@ package choliver.nespot.ppu
 import choliver.nespot.*
 import choliver.nespot.apu.repeat
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
-import choliver.nespot.ppu.model.Coords
-import choliver.nespot.ppu.model.State
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested

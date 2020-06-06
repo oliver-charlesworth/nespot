@@ -5,9 +5,9 @@ import choliver.nespot.addr
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_IRQ
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_NMI
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_RESET
-import choliver.nespot.cpu.model.Opcode.*
-import choliver.nespot.cpu.model.Opcode.JSR
-import choliver.nespot.cpu.model.Operand.Absolute
+import choliver.nespot.cpu.Opcode.*
+import choliver.nespot.cpu.Opcode.JSR
+import choliver.nespot.cpu.Operand.Absolute
 import choliver.nespot.debugger.CallStackManager.Entry.Frame
 import choliver.nespot.debugger.CallStackManager.Entry.UserData
 import choliver.nespot.debugger.CallStackManager.FrameType.*

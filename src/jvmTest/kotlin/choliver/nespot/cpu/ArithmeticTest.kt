@@ -1,15 +1,10 @@
 package choliver.nespot.cpu
 
 import choliver.nespot.Data
-import choliver.nespot.cpu.model.AddressMode.ACCUMULATOR
-import choliver.nespot.cpu.model.Instruction
-import choliver.nespot.cpu.model.Opcode
-import choliver.nespot.cpu.model.Opcode.*
-import choliver.nespot.cpu.model.Operand.Immediate
-import choliver.nespot.cpu.model.Operand.ZeroPage
-import choliver.nespot.cpu.model.Regs
-import choliver.nespot.cpu.utils._0
-import choliver.nespot.cpu.utils._1
+import choliver.nespot.cpu.AddressMode.ACCUMULATOR
+import choliver.nespot.cpu.Opcode.*
+import choliver.nespot.cpu.Operand.Immediate
+import choliver.nespot.cpu.Operand.ZeroPage
 import choliver.nespot.hi
 import choliver.nespot.lo
 import org.junit.jupiter.api.Nested

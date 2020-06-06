@@ -5,7 +5,7 @@ import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
 import choliver.nespot.ppu.Ppu.Companion.BASE_PATTERNS
 import choliver.nespot.ppu.Ppu.Companion.NAMETABLE_SIZE_BYTES
 import kotlin.math.min
-import choliver.nespot.ppu.model.State as PpuState
+import choliver.nespot.ppu.State as PpuState
 
 
 // TODO - eliminate all the magic numbers here

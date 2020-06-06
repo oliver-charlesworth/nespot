@@ -1,9 +1,9 @@
-package choliver.nespot.cpu.model
+package choliver.nespot.cpu
 
-import choliver.nespot.cpu.model.Opcode.*
-import choliver.nespot.cpu.model.Operand.*
-import choliver.nespot.cpu.model.Operand.IndexSource.X
-import choliver.nespot.cpu.model.Operand.IndexSource.Y
+import choliver.nespot.cpu.Opcode.*
+import choliver.nespot.cpu.Operand.*
+import choliver.nespot.cpu.Operand.IndexSource.X
+import choliver.nespot.cpu.Operand.IndexSource.Y
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

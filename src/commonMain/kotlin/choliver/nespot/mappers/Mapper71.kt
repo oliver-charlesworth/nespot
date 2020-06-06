@@ -32,7 +32,6 @@ class Mapper71(private val rom: Rom) : Mapper {
     }
   }
 
-  @Suppress("unused")
   companion object {
     const val CHR_RAM_SIZE = 8192
     const val PRG_BANK_SIZE = 16384

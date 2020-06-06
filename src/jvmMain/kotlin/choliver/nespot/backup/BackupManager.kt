@@ -1,4 +1,4 @@
-package choliver.nespot.persistence
+package choliver.nespot.backup
 
 import choliver.nespot.Ram
 import choliver.nespot.cartridge.Rom

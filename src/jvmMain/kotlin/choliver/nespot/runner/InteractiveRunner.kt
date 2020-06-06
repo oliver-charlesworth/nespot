@@ -1,14 +1,13 @@
 package choliver.nespot.runner
 
+import choliver.nespot.backup.BackupManager
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.cpu.Cpu.NextStep.RESET
 import choliver.nespot.nes.Nes
-import choliver.nespot.persistence.BackupManager
 import choliver.nespot.runner.Event.*
 import choliver.nespot.runner.KeyAction.*
 import java.io.File
 import java.util.concurrent.LinkedBlockingQueue
-
 
 class InteractiveRunner(
   rom: Rom,

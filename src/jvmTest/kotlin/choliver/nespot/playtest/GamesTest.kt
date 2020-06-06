@@ -36,6 +36,9 @@ class GamesTest {
   @Test
   fun `new zealand story`() = engine.execute("nzs")
 
+  @Test
+  fun `fire hawk`() = engine.execute("firehawk")
+
   private val engine = Engine(
     romsBase = File("roms"),
     capturesBase = File("captures"),

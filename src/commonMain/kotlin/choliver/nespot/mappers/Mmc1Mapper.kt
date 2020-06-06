@@ -96,7 +96,6 @@ class Mmc1Mapper(rom: Rom, private val getStepCount: () -> Int) : Mapper {
     }
   }
 
-  @Suppress("unused")
   companion object {
     const val CHR_RAM_SIZE = 8192
     const val PRG_BANK_SIZE = 16384

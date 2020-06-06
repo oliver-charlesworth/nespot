@@ -49,6 +49,7 @@ class Cartridge(private val mapper: Mapper) {
           2 -> UxRomMapper(rom)
           3 -> CnRomMapper(rom)
           4 -> Mmc3Mapper(rom)
+          7 -> AxRomMapper(rom)
           71 -> Mapper71(rom)
           else -> throw RuntimeException("Mapper #${rom.mapper}")
         }

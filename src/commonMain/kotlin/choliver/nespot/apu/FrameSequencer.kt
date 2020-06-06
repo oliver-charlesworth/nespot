@@ -72,4 +72,10 @@ class FrameSequencer(
     justReset = false
     return realRet
   }
+
+  companion object {
+    // See https://wiki.nesdev.com/w/index.php/APU_Frame_Counter
+    private const val FRAME_SEQUENCER_4_STEP_PERIOD_CYCLES = 29830
+    private const val FRAME_SEQUENCER_5_STEP_PERIOD_CYCLES = 37282
+  }
 }

@@ -42,4 +42,13 @@ class CpuMapper(
   private fun oamDma(page: Data) {
     (0x00..0xFF).forEach { this[ADDR_OAMDATA] = this[addr(hi = page, lo = it)] }
   }
+
+  companion object {
+    const val ADDR_OAMDATA: Address = 0x2004
+    const val ADDR_OAMDMA: Address = 0x4014
+    const val ADDR_APU_STATUS: Address = 0x4015
+    const val ADDR_JOYPADS: Address = 0x4016
+    const val ADDR_JOYPAD1: Address = 0x4016
+    const val ADDR_JOYPAD2: Address = 0x4017
+  }
 }

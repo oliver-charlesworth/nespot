@@ -1,6 +1,7 @@
 package choliver.nespot.debugger
 
 import choliver.nespot.BASE_VRAM
+import choliver.nespot.RAM_SIZE
 import choliver.nespot.VRAM_SIZE
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.common.Address
@@ -19,8 +20,8 @@ import choliver.nespot.debugger.Command.Event.*
 import choliver.nespot.debugger.Command.Execute.*
 import choliver.nespot.debugger.PointManager.Point.Breakpoint
 import choliver.nespot.debugger.PointManager.Point.Watchpoint
+import choliver.nespot.memory.Memory
 import choliver.nespot.nes.Nes
-import choliver.nespot.nes.Nes.Companion.CPU_RAM_SIZE
 import choliver.nespot.ui.KeyAction
 import choliver.nespot.ui.KeyAction.Joypad
 import choliver.nespot.ui.Screen
@@ -50,7 +51,15 @@ class Debugger(
   private val nes = Nes(
     rom = Rom.parse(rom),
     videoSink = screen.sink,
-    onStore = { addr, data -> stores += (addr to data) }
+    intercept = { memory ->
+      object : Memory {
+        override fun get(addr: Address) = memory[addr]
+        override fun set(addr: Address, data: Data) {
+          memory[addr] = data
+          stores += (addr to data)
+        }
+      }
+    }
   )
   private val diag = nes.diagnostics
   private val points = PointManager()
@@ -265,7 +274,7 @@ class Debugger(
         }
       }
 
-      is Info.CpuRam -> displayDump((0 until CPU_RAM_SIZE).map { diag.peek(it) })
+      is Info.CpuRam -> displayDump((0 until RAM_SIZE).map { diag.peek(it) })
 
       // TODO - should this be before or after nametable mapping?
       is Info.PpuRam -> displayDump((0 until VRAM_SIZE).map { diag.peekV(it + BASE_VRAM) })

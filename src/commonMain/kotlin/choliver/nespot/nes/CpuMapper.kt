@@ -5,12 +5,6 @@ import choliver.nespot.common.Address
 import choliver.nespot.common.Data
 import choliver.nespot.common.addr
 import choliver.nespot.memory.Memory
-import choliver.nespot.nes.Nes.Companion.ADDR_APU_STATUS
-import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD1
-import choliver.nespot.nes.Nes.Companion.ADDR_JOYPAD2
-import choliver.nespot.nes.Nes.Companion.ADDR_JOYPADS
-import choliver.nespot.nes.Nes.Companion.ADDR_OAMDATA
-import choliver.nespot.nes.Nes.Companion.ADDR_OAMDMA
 import choliver.nespot.ppu.Ppu
 
 class CpuMapper(

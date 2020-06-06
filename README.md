@@ -60,7 +60,7 @@ NESpot is built with JDK 11.  It may work with older Java versions, but this has
 | Castelian             | `847D56E43754E402666A91188520737094E9ECFA` | 2  | ✅ No known issues. |
 | Dizzy the Adventurer  | `5A4EF3B2F5880D3B4609AE4F3381D688B3A02CAC` | 71 | ✅ No known issues. |
 | Donkey Kong           | `D222DBBA5BD3716BBF62CA91167C6A9D15C60065` | 0  | ✅ No known issues. |
-| Fire Hawk             | `334781C830F135CF30A33E392D8AAA4AFDC223F9` | 71 | ❌ Unplayable.      |
+| Fire Hawk             | `334781C830F135CF30A33E392D8AAA4AFDC223F9` | 71 | ❌ Unplayable.  [Graphical glitches + hangs](https://github.com/oliver-charlesworth/nespot/issues/208). |
 | Hook                  | `EAE5205928D3FA2AFEA0374B457D2BB91E414D99` | 1  | ✅ No known issues. |
 | Jurassic Park         | `57F755C6A10C6681761070B0350DA72432A534E9` | 4  | ✅ No known issues. |
 | Kirby's Adventure     | `118307DA6C77A592F0884BAAD14120301D8D3A1B` | 4  | ✅ No known issues. |

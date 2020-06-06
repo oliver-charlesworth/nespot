@@ -25,6 +25,7 @@ class BackupManager(
 
   fun maybeSave() {
     if (persistentRam != null) {
+      file.parentFile.mkdirs()
       file.writeBytes(ByteArray(persistentRam.size) { persistentRam[it].toByte() })
     }
   }

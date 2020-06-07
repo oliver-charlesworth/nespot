@@ -144,17 +144,22 @@ class Apu(
   }
 
   fun advance(numCycles: Int) {
-    channels.advance(numCycles)
-    maybeExtractSample(numCycles)
-  }
-
-  private fun maybeExtractSample(numCycles: Int) {
-    untilNextSample -= numCycles * cyclesPerSample.b
-    while (untilNextSample <= 0) {
+    var numRemaining = numCycles
+    // Process in successive chunks that generate an output sample
+    while (numRemaining * cyclesPerSample.b >= untilNextSample) {
+      val numChunk = divRoundUp(untilNextSample, cyclesPerSample.b)
+      channels.advance(numChunk)
+      untilNextSample -= numChunk * cyclesPerSample.b
       untilNextSample += cyclesPerSample.a
       audioSink.put(mixer.sample())
+      numRemaining -= numChunk
     }
+    // Process remainder
+    channels.advance(numRemaining)
+    untilNextSample -= numRemaining * cyclesPerSample.b
   }
+
+  private fun divRoundUp(a: Int, b: Int) = (a + b - 1) / b
 
   companion object {
     // See https://wiki.nesdev.com/w/index.php/2A03

@@ -7,6 +7,7 @@ import choliver.nespot.nes.CpuMapper.Companion.ADDR_JOYPAD1
 import choliver.nespot.nes.CpuMapper.Companion.ADDR_JOYPAD2
 import choliver.nespot.nes.CpuMapper.Companion.ADDR_JOYPADS
 import choliver.nespot.nes.CpuMapper.Companion.ADDR_OAMDMA
+import choliver.nespot.nes.CpuMapper.Companion.DMA_CYCLES
 import choliver.nespot.ppu.Ppu
 import choliver.nespot.ppu.Ppu.Companion.REG_OAMDATA
 import com.nhaarman.mockitokotlin2.doReturn
@@ -22,12 +23,14 @@ class CpuMapperTest {
   private val ppu = mock<Ppu>()
   private val apu = mock<Apu>()
   private val joypads = mock<Joypads>()
+  private val addExtraCycles = mock<(Int) -> Unit>()
   private val mapper = CpuMapper(
     prg = prg,
     ram = ram,
     ppu = ppu,
     apu = apu,
-    joypads = joypads
+    joypads = joypads,
+    addExtraCycles = addExtraCycles
   )
 
   @Test
@@ -109,6 +112,7 @@ class CpuMapperTest {
     (0..255).forEach {
       verify(ppu).writeReg(REG_OAMDATA, 0xFF - it)
     }
+    verify(addExtraCycles)(DMA_CYCLES)
   }
 
   @Test

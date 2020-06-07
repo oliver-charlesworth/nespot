@@ -39,6 +39,13 @@ class GamesTest {
   @Test
   fun `fire hawk`() = engine.execute("firehawk")
 
+  @Test
+  fun battletoads() = engine.execute("battletoads")
+
+  @Test
+  fun `wwf wrestlemania`() = engine.execute("wwf")
+
+
   private val engine = Engine(
     romsBase = File("roms"),
     capturesBase = File("captures"),

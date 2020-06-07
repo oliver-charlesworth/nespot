@@ -12,7 +12,8 @@ class CpuMapper(
   private val ram: Memory,
   private val ppu: Ppu,
   private val apu: Apu,
-  private val joypads: Joypads
+  private val joypads: Joypads,
+  private val addExtraCycles: (Int) -> Unit = {}
 ) : Memory {
   override fun get(addr: Address) = when {
     addr >= 0x4020 -> prg[addr]
@@ -35,6 +36,7 @@ class CpuMapper(
 
   private fun oamDma(page: Data) {
     (0x00..0xFF).forEach { this[ADDR_OAMDATA] = this[addr(hi = page, lo = it)] }
+    addExtraCycles(DMA_CYCLES)
   }
 
   companion object {
@@ -44,5 +46,7 @@ class CpuMapper(
     const val ADDR_JOYPADS: Address = 0x4016
     const val ADDR_JOYPAD1: Address = 0x4016
     const val ADDR_JOYPAD2: Address = 0x4017
+
+    const val DMA_CYCLES = 513    // Variable in practice, but this gets most of the way there
   }
 }

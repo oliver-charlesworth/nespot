@@ -55,7 +55,7 @@ Then visit `http://localhost:8080/<rom>` (without a `.nes` suffix).
 | Game | SHA-1 (PRG+CHR) | Mapper | Status |
 | --- | --- | --- | --- |
 | Arkanoid              | `230FC31D2C2EB20E78711C82574F29F28117EBA3` | 3  | ✅ No known issues. |
-| Battletoads           | `D85C9FF489672534FBF61A15F8FA56FFF489A34B` | 7  | ❌ Unplayable.  [Gameplay hangs](https://github.com/oliver-charlesworth/nespot/issues/210). |
+| Battletoads           | `D85C9FF489672534FBF61A15F8FA56FFF489A34B` | 7  | ✅ No known issues. |
 | Bomberman II          | `2E401097B7B6F5DE5B0F88E6A97C5675BD916801` | 1  | ✅ No known issues. |
 | Bubble Bobble         | `C1A8F6A9316080487CFEACA62F3D573CD9D484E9` | 1  | ✅ No known issues. |
 | Castelian             | `847D56E43754E402666A91188520737094E9ECFA` | 2  | ✅ No known issues. |
@@ -79,7 +79,7 @@ Then visit `http://localhost:8080/<rom>` (without a `.nes` suffix).
 | Super Turrican        | `33487D9A013F81F434323960203E564434F8D2F8` | 4  | ✅ No known issues. |
 | Track and Field II    | `87E7943769CE95747AC80DA044B2CF9E63410AF2` | 1  | ✅ No known issues. |
 | Tetris                | `FD9079CB5E8479EB06D93C2AE5175BFCE871746A` | 1  | ✅ No known issues. |
-| WWF Wrestlemania      | `D55E8202929D922A84122921EF5C9671135B3E77` | 7  | ❌ Unplayable.  [Massive graphical glitches](https://github.com/oliver-charlesworth/nespot/issues/211). |
+| WWF Wrestlemania      | `D55E8202929D922A84122921EF5C9671135B3E77` | 7  | ✅ No known issues. |
 | Xenophobe             | `2C430A5D4AF069A4C4B9082422B7F570ADA5AE31` | 1  | ❌ Mostly unplayable.  [Tile corruption](https://github.com/oliver-charlesworth/nespot/issues/97). |
 
 

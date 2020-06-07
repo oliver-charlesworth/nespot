@@ -10,10 +10,8 @@ fun main() {
     .map { if (it >= 0) it else (it + 256) }
     .chunked(3)
     .chunked(64)
-    .joinToString(",\n  // -------------- //\n") {
-      it.joinToString(",\n") { it2 ->
-        "  ${it2[0]}, ${it2[1]}, ${it2[2]}"
-      }
+    .joinToString(",\n") { chunk ->
+      chunk.joinToString(", ") { "Rgb(${it[0]}, ${it[1]}, ${it[2]})" }
     }
 
   println(str)

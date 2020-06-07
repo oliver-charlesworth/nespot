@@ -2,12 +2,12 @@ package choliver.nespot.utils
 
 import java.io.File
 
+@ExperimentalUnsignedTypes
 fun main() {
   val bytes = File("palette.pal").readBytes()
 
-  val str = bytes.toList()
-    .map { it.toInt() }
-    .map { if (it >= 0) it else (it + 256) }
+  val str = bytes
+    .map { it.toUByte() }
     .chunked(3)
     .chunked(64)
     .joinToString(",\n") { chunk ->

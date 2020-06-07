@@ -22,8 +22,6 @@ class Ui(
     worker.onmessage = messageHandler(::handleMessage)
     document.onkeydown = ::handleKeyDown
     document.onkeyup = ::handleKeyUp
-    window.onresize = { configureDom() }
-    configureDom()
   }
 
   private fun handleMessage(type: String, payload: Any?) {
@@ -66,36 +64,6 @@ class Ui(
     window.requestAnimationFrame(::executeFrame)
     screen.redraw()
     postMessage(MSG_EMULATE_UNTIL, timeMs / 1000)
-  }
-
-  private fun configureDom() {
-    with(document.body!!.style) {
-      margin = "0"
-      padding = "0"
-      backgroundColor = "black"
-    }
-
-    val displayInfo = DisplayInfo(
-      targetWidth = window.innerWidth.toDouble(),
-      targetHeight = window.innerHeight.toDouble()
-    )
-
-    with(screen.canvas) {
-      width = displayInfo.sourceWidth.toInt()
-      height = displayInfo.sourceHeight.toInt()
-      with(style) {
-        display = "block"
-        marginLeft = "${displayInfo.marginHorizontal}px"
-        marginRight = "${displayInfo.marginHorizontal}px"
-        marginTop = "${displayInfo.marginVertical}px"
-        marginBottom = "${displayInfo.marginVertical}px"
-        padding = "0"
-        transformOrigin = "0 0"
-        transform = "scale(${displayInfo.scaleHorizontal}, ${displayInfo.scaleVertical})"
-      }
-    }
-
-    console.log("configureDom", displayInfo)
   }
 }
 

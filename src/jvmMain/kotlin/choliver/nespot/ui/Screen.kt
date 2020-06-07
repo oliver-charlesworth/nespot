@@ -136,33 +136,27 @@ class Screen(
 
   private fun configureForFullScreen() {
     val bounds = Screen.getPrimary().visualBounds
-    val displayInfo = DisplayInfo(targetWidth = bounds.width, targetHeight = bounds.height)
-
-    with(imageView) {
-      x = displayInfo.marginHorizontal
-      y = displayInfo.marginVertical
-      fitWidth = displayInfo.resultWidth
-      fitHeight = displayInfo.resultHeight
-    }
-
+    configureImageView(DisplayInfo(targetWidth = bounds.width, targetHeight = bounds.height))
     stage.scene.cursor = Cursor.NONE
     stage.isFullScreen = true
   }
 
   private fun configureForWindowed() {
-    val displayInfo = DisplayInfo(scale = SCALE)
-
-    with(imageView) {
-      x = displayInfo.marginHorizontal
-      y = displayInfo.marginVertical
-      fitWidth = displayInfo.resultWidth
-      fitHeight = displayInfo.resultHeight
-    }
+    configureImageView(DisplayInfo(scale = SCALE))
     with(stage) {
       sizeToScene()
       scene.cursor = Cursor.DEFAULT
       isResizable = false
       isFullScreen = false
+    }
+  }
+
+  private fun configureImageView(displayInfo: DisplayInfo) {
+    with(imageView) {
+      x = displayInfo.marginHorizontal
+      y = displayInfo.marginVertical
+      fitWidth = displayInfo.resultWidth
+      fitHeight = displayInfo.resultHeight
     }
   }
 

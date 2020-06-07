@@ -7,8 +7,6 @@ import choliver.nespot.common.Rational
 import choliver.nespot.common.isBitSet
 import choliver.nespot.memory.Memory
 import choliver.nespot.nes.AudioSink
-import kotlin.math.ceil
-import kotlin.math.min
 
 // TODO - frame interrupt
 class Apu(
@@ -146,18 +144,22 @@ class Apu(
   }
 
   fun advance(numCycles: Int) {
-    var n = numCycles
-    while (n * cyclesPerSample.b >= untilNextSample) {
-      val numChunk = ceil(untilNextSample.toDouble() / cyclesPerSample.b).toInt()
+    var numRemaining = numCycles
+    // Process in successive chunks that generate an output sample
+    while (numRemaining * cyclesPerSample.b >= untilNextSample) {
+      val numChunk = divRoundUp(untilNextSample, cyclesPerSample.b)
       channels.advance(numChunk)
       untilNextSample -= numChunk * cyclesPerSample.b
       untilNextSample += cyclesPerSample.a
       audioSink.put(mixer.sample())
-      n -= numChunk
+      numRemaining -= numChunk
     }
-    channels.advance(n)
-    untilNextSample -= n * cyclesPerSample.b
+    // Process remainder
+    channels.advance(numRemaining)
+    untilNextSample -= numRemaining * cyclesPerSample.b
   }
+
+  private fun divRoundUp(a: Int, b: Int) = (a + b - 1) / b
 
   companion object {
     // See https://wiki.nesdev.com/w/index.php/2A03

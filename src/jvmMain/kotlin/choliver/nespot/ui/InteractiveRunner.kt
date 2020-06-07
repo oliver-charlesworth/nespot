@@ -41,7 +41,6 @@ class InteractiveRunner(
     } catch (ex: Exception) {
       ex.printStackTrace(System.err)
     } finally {
-      screen.hide()
       screen.close()
       audio.close()
       controllers.close()

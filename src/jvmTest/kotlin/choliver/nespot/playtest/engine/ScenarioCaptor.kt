@@ -13,6 +13,10 @@ class ScenarioCaptor(
   videoSink: VideoSink,
   audioSink: AudioSink
 ) {
+  interface StepHandler {
+    fun ScenarioCaptor.handleStep(timestamp: Long)
+  }
+
   private val sink = CapturingVideoSink(videoSink)
   private val nes = Nes(
     rom = rom,
@@ -23,11 +27,13 @@ class ScenarioCaptor(
   private var timestamp = 0L
   private val stimuli = mutableListOf<Stimulus>()
 
-  fun capture(onStep: ScenarioCaptor.(Long) -> Unit): Scenario {
-    while (!closed) {
-      nes.step()
-      onStep(timestamp)
-      timestamp++
+  fun capture(handler: StepHandler): Scenario {
+    with(handler) {
+      while (!closed) {
+        nes.step()
+        handleStep(timestamp)
+        timestamp++
+      }
     }
 
     return Scenario(

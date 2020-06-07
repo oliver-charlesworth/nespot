@@ -1,8 +1,7 @@
 package choliver.nespot.playtest.engine
 
 import choliver.nespot.cartridge.Rom
-import choliver.nespot.playtest.engine.Engine.Mode.COMPARE
-import choliver.nespot.playtest.engine.Engine.Mode.RECORD
+import choliver.nespot.playtest.engine.Engine.Mode.*
 import choliver.nespot.playtest.engine.Scenario.Stimulus.Snapshot
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -18,7 +17,9 @@ class Engine(
 ) {
   enum class Mode {
     RECORD,
-    COMPARE
+    COMPARE,
+    RERECORD,
+    REPLAY
   }
 
   fun execute(name: String) {
@@ -32,10 +33,19 @@ class Engine(
         val capture = liveCapture(rom, snapshotPattern)
         capture.serialiseTo(captureFile)
       }
+      RERECORD -> {
+        val original = deserialiseFrom(captureFile)
+        val capture = headlessGhostCapture(rom, original)
+        capture.serialiseTo(captureFile)
+      }
       COMPARE -> {
         val original = deserialiseFrom(captureFile)
-        val capture = ghostCapture(rom, original)
+        val capture = headlessGhostCapture(rom, original)
         assertEquals(original, capture)
+      }
+      REPLAY -> {
+        val original = deserialiseFrom(captureFile)
+        uiGhostCapture(rom, original)
       }
     }
   }
@@ -53,7 +63,7 @@ class Engine(
   private fun assertNearlyEquals(expected: List<Byte>, actual: List<Byte>, idxImage: Int) {
     (expected zip actual).forEachIndexed { idx, (expected, actual) ->
       val delta = abs(expected - actual)
-      assertTrue(delta <= TOLERANCE, "Delta at byte #${idx} of image #${idxImage} out of range (${delta})")
+      assertTrue(delta <= TOLERANCE, "Delta at byte #${idx} of image #${idxImage} above threshold (${delta})")
     }
   }
 
@@ -61,7 +71,7 @@ class Engine(
     private const val TOLERANCE = 1   // PNG has lsb-level rounding errors
 
     private fun modeFromEnv() =
-      Mode.valueOf(System.getenv("ENGINE_MODE")?.toUpperCase() ?: COMPARE.toString())
+      valueOf(System.getenv("ENGINE_MODE")?.toUpperCase() ?: COMPARE.toString())
   }
 }
 

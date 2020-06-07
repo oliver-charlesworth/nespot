@@ -80,6 +80,7 @@ class Screen(
   }
 
   override fun close() {
+    hide()
     Platform.exit()
   }
 

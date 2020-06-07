@@ -20,14 +20,15 @@ class ScenarioCaptor(
     audioSink = audioSink
   )
   private var closed = false
-  private var timestamp = 0L
+  private var _timestamp = 0L
+  val timestamp get() = _timestamp
   private val stimuli = mutableListOf<Stimulus>()
 
-  fun capture(onStep: ScenarioCaptor.(Long) -> Unit): Scenario {
+  fun capture(onStep: ScenarioCaptor.() -> Unit): Scenario {
     while (!closed) {
       nes.step()
-      onStep(timestamp)
-      timestamp++
+      onStep()
+      _timestamp++
     }
 
     return Scenario(
@@ -37,21 +38,21 @@ class ScenarioCaptor(
   }
 
   fun buttonDown(button: Joypads.Button) {
-    stimuli += Stimulus.ButtonDown(timestamp, button)
+    stimuli += Stimulus.ButtonDown(_timestamp, button)
     nes.joypads.down(1, button)
   }
 
   fun buttonUp(button: Joypads.Button) {
-    stimuli += Stimulus.ButtonUp(timestamp, button)
+    stimuli += Stimulus.ButtonUp(_timestamp, button)
     nes.joypads.up(1, button)
   }
 
   fun takeSnapshot() {
-    stimuli += Stimulus.Snapshot(timestamp, sink.snapshot)
+    stimuli += Stimulus.Snapshot(_timestamp, sink.snapshot)
   }
 
   fun close() {
-    stimuli += Stimulus.Close(timestamp)
+    stimuli += Stimulus.Close(_timestamp)
     closed = true
   }
 }

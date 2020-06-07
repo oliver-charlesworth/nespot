@@ -101,6 +101,7 @@ class TestRomsTest {
   @Test
   fun `sprite_hit_tests - timing_order`() = engine.execute("sprite_hit_tests_2005.10.05/10.timing_order")
 
+  @Disabled
   @Test
   fun `sprite_hit_tests - edge_timing`() = engine.execute("sprite_hit_tests_2005.10.05/11.edge_timing")
 

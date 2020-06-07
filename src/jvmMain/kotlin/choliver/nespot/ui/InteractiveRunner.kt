@@ -22,7 +22,7 @@ class InteractiveRunner(
     videoSink = screen.sink,
     audioSink = audio.sink
   )
-  private val controllers = ControllerManager(onEvent = { events += it })
+  private val gamepads = GamepadManager(onEvent = { events += it })
   private val backupManager = BackupManager(rom, nes.persistentRam, BACKUP_DIR)
 
   fun run() {
@@ -30,7 +30,7 @@ class InteractiveRunner(
     screen.fullScreen = fullScreen
     screen.show()
     audio.start()
-    controllers.start()
+    gamepads.start()
 
     try {
       while (!closed) {
@@ -43,14 +43,14 @@ class InteractiveRunner(
     } finally {
       screen.close()
       audio.close()
-      controllers.close()
+      gamepads.close()
     }
   }
 
   private fun consumeEvent() {
     when (val e = events.poll()) {
-      is ControllerButtonDown -> nes.joypads.down(1, e.button)
-      is ControllerButtonUp -> nes.joypads.up(1, e.button)
+      is GamepadButtonDown -> nes.joypads.down(1, e.button)
+      is GamepadButtonUp -> nes.joypads.up(1, e.button)
       is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
         is Joypad -> nes.joypads.down(1, action.button)
         is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen

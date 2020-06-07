@@ -2,8 +2,8 @@ package choliver.nespot.ui
 
 import choliver.nespot.nes.Joypads.Button
 import choliver.nespot.nes.Joypads.Button.*
-import choliver.nespot.ui.Event.ControllerButtonDown
-import choliver.nespot.ui.Event.ControllerButtonUp
+import choliver.nespot.ui.Event.GamepadButtonDown
+import choliver.nespot.ui.Event.GamepadButtonUp
 import net.java.games.input.Component.Identifier.Axis
 import net.java.games.input.Controller
 import net.java.games.input.ControllerEnvironment
@@ -15,7 +15,7 @@ import kotlin.concurrent.timerTask
 import net.java.games.input.Component.Identifier.Button as JInputButton
 
 
-class ControllerManager(
+class GamepadManager(
   private val onEvent: (e: choliver.nespot.ui.Event) -> Unit = {},
   private val samplePeriodMs: Long = SAMPLE_PERIOD_MS
 ) : Closeable {
@@ -70,8 +70,8 @@ class ControllerManager(
 
   private fun onButtonEvent(value: Float, button: Button) {
     when (value) {
-      1.0f -> onEvent(ControllerButtonDown(button))
-      else -> onEvent(ControllerButtonUp(button))
+      1.0f -> onEvent(GamepadButtonDown(button))
+      else -> onEvent(GamepadButtonUp(button))
     }
   }
 
@@ -87,14 +87,14 @@ class ControllerManager(
 
       if (nextState != state) {
         when (state) {
-          State.MIN -> onEvent(ControllerButtonUp(buttonMin))
-          State.MAX -> onEvent(ControllerButtonUp(buttonMax))
+          State.MIN -> onEvent(GamepadButtonUp(buttonMin))
+          State.MAX -> onEvent(GamepadButtonUp(buttonMax))
           else -> Unit
         }
 
         when (nextState) {
-          State.MIN -> onEvent(ControllerButtonDown(buttonMin))
-          State.MAX -> onEvent(ControllerButtonDown(buttonMax))
+          State.MIN -> onEvent(GamepadButtonDown(buttonMin))
+          State.MAX -> onEvent(GamepadButtonDown(buttonMax))
           else -> Unit
         }
       }

@@ -1,6 +1,8 @@
 package choliver.nespot.ui
 
 import choliver.nespot.*
+import choliver.nespot.ui.Event.GamepadButtonDown
+import choliver.nespot.ui.Event.GamepadButtonUp
 import choliver.nespot.ui.KeyAction.Joypad
 import choliver.nespot.ui.KeyAction.ToggleFullScreen
 import org.khronos.webgl.ArrayBuffer
@@ -15,6 +17,7 @@ class Ui(
   private val worker: Worker,
   private val romPath: String
 ) {
+  private val gamepads = GamepadManager(onEvent = ::handleEvent)
   private val audio = AudioPlayer()
   private val screen = Screen()
 
@@ -38,6 +41,13 @@ class Ui(
       sampleRateHz = audio.sampleRateHz
     ))
     window.requestAnimationFrame(::executeFrame) // Start animation loop
+  }
+
+  private fun handleEvent(e: Event) {
+    when (e) {
+      is GamepadButtonDown -> postMessage(MSG_BUTTON_DOWN, e.button.name)
+      is GamepadButtonUp -> postMessage(MSG_BUTTON_UP, e.button.name)
+    }
   }
 
   private fun handleKeyDown(e: KeyboardEvent) {

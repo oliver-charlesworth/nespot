@@ -28,6 +28,9 @@ fun liveCapture(rom: Rom, snapshotPattern: SnapshotPattern) =
 fun uiGhostCapture(rom: Rom, ghost: Scenario) =
   captureWithUi(rom) { GhostHandler(ghost) }
 
+fun headlessGhostCapture(rom: Rom, ghost: Scenario) =
+  captureHeadless(rom, GhostHandler(ghost))
+
 private fun captureWithUi(
   rom: Rom,
   createHandler: (events: Queue<Event>) -> StepHandler
@@ -49,9 +52,9 @@ private fun captureWithUi(
   }
 }
 
-fun headlessGhostCapture(
+private fun captureHeadless(
   rom: Rom,
-  ghost: Scenario
+  handler: StepHandler
 ): Scenario {
   val captor = ScenarioCaptor(
     rom = rom,
@@ -61,7 +64,7 @@ fun headlessGhostCapture(
     audioSink = object : AudioSink {}
   )
 
-  return captor.capture(GhostHandler(ghost))
+  return captor.capture(handler)
 }
 
 private class LiveHandler(

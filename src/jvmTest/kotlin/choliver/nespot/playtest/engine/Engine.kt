@@ -16,9 +16,9 @@ class Engine(
   private val mode: Mode = modeFromEnv()
 ) {
   enum class Mode {
-    RECORD,
+    CAPTURE,
+    RECAPTURE,
     COMPARE,
-    RERECORD,
     REPLAY
   }
 
@@ -29,11 +29,11 @@ class Engine(
     val rom = Rom.parse(romFile.readBytes())
 
     when (mode) {
-      RECORD -> {
+      CAPTURE -> {
         val capture = liveCapture(rom, snapshotPattern)
         capture.serialiseTo(captureFile)
       }
-      RERECORD -> {
+      RECAPTURE -> {
         val original = deserialiseFrom(captureFile)
         val capture = headlessGhostCapture(rom, original)
         capture.serialiseTo(captureFile)

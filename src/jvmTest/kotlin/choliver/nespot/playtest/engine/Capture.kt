@@ -21,55 +21,37 @@ enum class SnapshotPattern {
   FINAL
 }
 
-fun liveCapture(rom: Rom, snapshotPattern: SnapshotPattern) =
-  captureWithUi(rom) { events -> liveHandler(snapshotPattern, events) }
+fun liveCapture(rom: Rom, snapshotPattern: SnapshotPattern) = withUi { screen, audio, events ->
+  ScenarioCaptor(rom, screen.sink, audio.sink)
+    .capture(liveInjector(snapshotPattern, events))
+}
 
-fun uiGhostCapture(rom: Rom, ghost: Scenario) =
-  captureWithUi(rom) { ghostHandler(ghost) }
+fun uiGhostCapture(rom: Rom, ghost: Scenario) = withUi { screen, audio, _ ->
+  ScenarioCaptor(rom, screen.sink, audio.sink)
+    .capture(ghostInjector(ghost))
+}
 
-fun headlessGhostCapture(rom: Rom, ghost: Scenario) =
-  captureHeadless(rom, ghostHandler(ghost))
+fun headlessGhostCapture(rom: Rom, ghost: Scenario) = ScenarioCaptor(
+  rom,
+  object : VideoSink { override val colorPackingMode = BGRA },
+  object : AudioSink {}
+).capture(ghostInjector(ghost))
 
-private fun captureWithUi(
-  rom: Rom,
-  createHandler: (events: Queue<Event>) -> ScenarioCaptor.(timestamp: Long) -> Unit
-): Scenario {
+private fun <R> withUi(block: (Screen, AudioPlayer, Queue<Event>) -> R): R {
   val events = LinkedBlockingQueue<Event>()
   Screen(onEvent = { events += it }).use { screen ->
     AudioPlayer().use { audio ->
-      val captor = ScenarioCaptor(
-        rom = rom,
-        videoSink = screen.sink,
-        audioSink = audio.sink
-      )
-
       screen.show()
       audio.start()
-
-      return captor.capture(createHandler(events))
+      return block(screen, audio, events)
     }
   }
 }
 
-private fun captureHeadless(
-  rom: Rom,
-  handler: ScenarioCaptor.(timestamp: Long) -> Unit
-): Scenario {
-  val captor = ScenarioCaptor(
-    rom = rom,
-    videoSink = object : VideoSink {
-      override val colorPackingMode = BGRA
-    },
-    audioSink = object : AudioSink {}
-  )
-
-  return captor.capture(handler)
-}
-
-private fun liveHandler(
+private fun liveInjector(
   snapshotPattern: SnapshotPattern,
   events: Queue<Event>
-): ScenarioCaptor.(Long) -> Unit = { timestamp ->
+): ScenarioCaptor.() -> Unit = {
   if (timestamp % SNAPSHOT_PERIOD == 0L && (timestamp > 0) && snapshotPattern == PERIODIC) {
     takeSnapshot()
   }
@@ -90,9 +72,9 @@ private fun liveHandler(
   }
 }
 
-private fun ghostHandler(ghost: Scenario): ScenarioCaptor.(Long) -> Unit {
+private fun ghostInjector(ghost: Scenario): ScenarioCaptor.() -> Unit {
   var idx = 0
-  return { timestamp ->
+  return {
     if (timestamp >= ghost.stimuli[idx].timestamp) {
       when (val s = ghost.stimuli[idx]) {
         is Stimulus.ButtonDown -> buttonDown(s.button)

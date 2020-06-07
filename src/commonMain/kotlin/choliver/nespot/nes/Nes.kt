@@ -17,9 +17,10 @@ class Nes(
   rom: Rom,
   videoSink: VideoSink = object : VideoSink {},
   audioSink: AudioSink = object : AudioSink {},
-  private val intercept: ((Memory) -> Memory)? = null
+  intercept: (Memory) -> Memory = { it }
 ) {
   private var steps = 0
+  private var extraCycles = 0
 
   private val cartridge = Cartridge.create(rom, getStepCount = { steps })
 
@@ -43,20 +44,23 @@ class Nes(
     ram = cpuRam,
     ppu = ppu,
     apu = apu,
-    joypads = joypads
+    joypads = joypads,
+    addExtraCycles = { extraCycles += it }
   )
 
   private val cpu = Cpu(
-    intercept?.invoke(cpuMapper) ?: cpuMapper,
+    intercept(cpuMapper),
     pollInterrupts = ::pollInterrupts
   )
 
   fun step(): Int {
-    val cycles = cpu.executeStep()
-    apu.advance(cycles)
-    ppu.advance(cycles)
     steps++
-    return cycles
+    extraCycles = 0
+    val cycles = cpu.executeStep()
+    val totalCycles = cycles + extraCycles
+    apu.advance(totalCycles)
+    ppu.advance(totalCycles)
+    return totalCycles
   }
 
   private fun pollInterrupts() = (if (apu.irq || cartridge.irq) INTERRUPT_IRQ else 0) or (if (ppu.vbl) INTERRUPT_NMI else 0)

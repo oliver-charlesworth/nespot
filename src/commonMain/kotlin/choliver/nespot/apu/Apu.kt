@@ -7,6 +7,7 @@ import choliver.nespot.common.Rational
 import choliver.nespot.common.isBitSet
 import choliver.nespot.memory.Memory
 import choliver.nespot.nes.AudioSink
+import kotlin.math.min
 
 // TODO - frame interrupt
 class Apu(
@@ -144,8 +145,13 @@ class Apu(
   }
 
   fun advance(numCycles: Int) {
-    channels.advance(numCycles)
-    maybeExtractSample(numCycles)
+    var cyclesRemaining = numCycles
+    while (cyclesRemaining > 0) {
+      val n = min(cyclesRemaining, cyclesPerSample.toInt())
+      channels.advance(n)
+      maybeExtractSample(n)
+      cyclesRemaining -= n
+    }
   }
 
   private fun maybeExtractSample(numCycles: Int) {

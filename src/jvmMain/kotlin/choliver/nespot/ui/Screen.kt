@@ -1,8 +1,6 @@
 package choliver.nespot.ui
 
-import choliver.nespot.SCREEN_HEIGHT
-import choliver.nespot.SCREEN_WIDTH
-import choliver.nespot.TILE_SIZE
+import choliver.nespot.*
 import choliver.nespot.nes.VideoSink
 import choliver.nespot.nes.VideoSink.ColorPackingMode.BGRA
 import choliver.nespot.ui.Event.*
@@ -100,8 +98,8 @@ class Screen(
       viewport = Rectangle2D(
         0.0,
         TILE_SIZE.toDouble(),
-        SCREEN_WIDTH.toDouble(),
-        (SCREEN_HEIGHT - 2 * TILE_SIZE).toDouble()
+        VISIBLE_WIDTH.toDouble(),
+        VISIBLE_HEIGHT.toDouble()
       )
     }
   }
@@ -138,22 +136,13 @@ class Screen(
 
   private fun configureForFullScreen() {
     val bounds = Screen.getPrimary().visualBounds
-
-    val ratioSource = (SCREEN_WIDTH.toDouble() / SCREEN_HEIGHT.toDouble()) * RATIO_STRETCH
-    val ratioTarget = bounds.width / bounds.height
+    val displayInfo = DisplayInfo(targetWidth = bounds.width, targetHeight = bounds.height)
 
     with(imageView) {
-      if (ratioSource > ratioTarget) {
-        x = 0.0
-        y = (bounds.height - (bounds.width / ratioSource)) / 2
-        fitWidth = bounds.width
-        fitHeight = bounds.width / ratioSource
-      } else {
-        x = (bounds.width - (bounds.height * ratioSource)) / 2
-        y = 0.0
-        fitWidth = bounds.height * ratioSource
-        fitHeight = bounds.height
-      }
+      x = displayInfo.marginHorizontal
+      y = displayInfo.marginVertical
+      fitWidth = displayInfo.resultWidth
+      fitHeight = displayInfo.resultHeight
     }
 
     stage.scene.cursor = Cursor.NONE
@@ -161,11 +150,13 @@ class Screen(
   }
 
   private fun configureForWindowed() {
+    val displayInfo = DisplayInfo(scale = SCALE)
+
     with(imageView) {
-      x = 0.0
-      y = 0.0
-      fitWidth = SCREEN_WIDTH * RATIO_STRETCH * SCALE
-      fitHeight = (SCREEN_HEIGHT - 2 * TILE_SIZE) * SCALE
+      x = displayInfo.marginHorizontal
+      y = displayInfo.marginVertical
+      fitWidth = displayInfo.resultWidth
+      fitHeight = displayInfo.resultHeight
     }
     with(stage) {
       sizeToScene()
@@ -190,6 +181,5 @@ class Screen(
 
   companion object {
     private const val SCALE = 4.0
-    private const val RATIO_STRETCH = (8.0 / 7.0)    // Evidence in forums, etc. that PAR is 8/7, and it looks good
   }
 }

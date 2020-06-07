@@ -10,7 +10,6 @@ import org.w3c.dom.Worker
 import org.w3c.dom.events.KeyboardEvent
 import kotlin.browser.document
 import kotlin.browser.window
-import kotlin.math.min
 
 class Ui(
   private val worker: Worker,
@@ -76,25 +75,27 @@ class Ui(
       backgroundColor = "black"
     }
 
-    val scale = min(
-      window.innerWidth.toDouble() / (VISIBLE_WIDTH * RATIO_STRETCH),
-      window.innerHeight.toDouble() / VISIBLE_HEIGHT
+    val displayInfo = DisplayInfo(
+      targetWidth = window.innerWidth.toDouble(),
+      targetHeight = window.innerHeight.toDouble()
     )
 
-    val margin = (window.innerWidth - (VISIBLE_WIDTH * scale * RATIO_STRETCH)) / 2
-
     with(screen.canvas) {
-      width = VISIBLE_WIDTH
-      height = VISIBLE_HEIGHT
+      width = displayInfo.sourceWidth.toInt()
+      height = displayInfo.sourceHeight.toInt()
       with(style) {
         display = "block"
-        marginLeft = "${margin}px"
-        marginRight = "${margin}px"
+        marginLeft = "${displayInfo.marginHorizontal}px"
+        marginRight = "${displayInfo.marginHorizontal}px"
+        marginTop = "${displayInfo.marginVertical}px"
+        marginBottom = "${displayInfo.marginVertical}px"
         padding = "0"
         transformOrigin = "0 0"
-        transform = "scale(${scale * RATIO_STRETCH}, ${scale})"
+        transform = "scale(${displayInfo.scaleHorizontal}, ${displayInfo.scaleVertical})"
       }
     }
+
+    console.log("configureDom", displayInfo)
   }
 }
 

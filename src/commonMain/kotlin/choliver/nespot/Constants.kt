@@ -12,6 +12,9 @@ const val SCREEN_WIDTH = 256
 const val SCREEN_HEIGHT = 240
 const val TILE_SIZE = 8
 const val DOTS_PER_CYCLE = 3
+const val VISIBLE_WIDTH = SCREEN_WIDTH
+const val VISIBLE_HEIGHT = (SCREEN_HEIGHT - 2 * TILE_SIZE)  // Crop top and bottom
+const val RATIO_STRETCH = (8.0 / 7.0)    // Evidence in forums, etc. that PAR is 8/7, and it looks good
 
 const val NAMETABLE_SIZE = 1024
 const val RAM_SIZE = 2048

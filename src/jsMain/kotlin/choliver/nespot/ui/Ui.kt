@@ -10,7 +10,6 @@ import org.w3c.dom.Worker
 import org.w3c.dom.events.KeyboardEvent
 import kotlin.browser.document
 import kotlin.browser.window
-import kotlin.math.min
 
 class Ui(
   private val worker: Worker,
@@ -23,8 +22,6 @@ class Ui(
     worker.onmessage = messageHandler(::handleMessage)
     document.onkeydown = ::handleKeyDown
     document.onkeyup = ::handleKeyUp
-    window.onresize = { configureDom() }
-    configureDom()
   }
 
   private fun handleMessage(type: String, payload: Any?) {
@@ -67,34 +64,6 @@ class Ui(
     window.requestAnimationFrame(::executeFrame)
     screen.redraw()
     postMessage(MSG_EMULATE_UNTIL, timeMs / 1000)
-  }
-
-  private fun configureDom() {
-    with(document.body!!.style) {
-      margin = "0"
-      padding = "0"
-      backgroundColor = "black"
-    }
-
-    val scale = min(
-      window.innerWidth.toDouble() / (VISIBLE_WIDTH * RATIO_STRETCH),
-      window.innerHeight.toDouble() / VISIBLE_HEIGHT
-    )
-
-    val margin = (window.innerWidth - (VISIBLE_WIDTH * scale * RATIO_STRETCH)) / 2
-
-    with(screen.canvas) {
-      width = VISIBLE_WIDTH
-      height = VISIBLE_HEIGHT
-      with(style) {
-        display = "block"
-        marginLeft = "${margin}px"
-        marginRight = "${margin}px"
-        padding = "0"
-        transformOrigin = "0 0"
-        transform = "scale(${scale * RATIO_STRETCH}, ${scale})"
-      }
-    }
   }
 }
 

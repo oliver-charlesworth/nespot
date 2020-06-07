@@ -2,7 +2,7 @@ package choliver.nespot.ppu
 
 import choliver.nespot.nes.VideoSink.ColorPackingMode
 
-fun createColorMap(mode: ColorPackingMode) = COLORS
+fun createColorMaps(mode: ColorPackingMode) = COLORS
   .chunked(3)
   .map(mode.convert)
   .map { it[3] + 256 * (it[2] + 256 * (it[1] + 256 * it[0])) }
@@ -11,7 +11,7 @@ fun createColorMap(mode: ColorPackingMode) = COLORS
 // TODO - can we do our own de-emphasis conversions?
 
 /**
- * Palette generated using [PalettePrint], with a PAL file from https://bisqwit.iki.fi/utils/nespalette.php.
+ * Palette generated using [PalettePrint], with a PAL file from [this generator](https://bisqwit.iki.fi/utils/nespalette.php).
  *
  * Settings:
  *   - Hue = 0.0
@@ -85,6 +85,7 @@ private val COLORS = listOf(
   169, 169, 169,
   0, 0, 0,
   0, 0, 0,
+  // -------------- //
   83, 49, 45,
   0, 6, 69,
   12, 0, 99,
@@ -149,6 +150,7 @@ private val COLORS = listOf(
   170, 115, 108,
   0, 0, 0,
   0, 0, 0,
+  // -------------- //
   40, 74, 30,
   0, 23, 64,
   0, 7, 87,
@@ -213,6 +215,7 @@ private val COLORS = listOf(
   100, 155, 82,
   0, 0, 0,
   0, 0, 0,
+  // -------------- //
   46, 46, 24,
   0, 6, 52,
   0, 0, 74,
@@ -277,6 +280,7 @@ private val COLORS = listOf(
   109, 110, 72,
   0, 0, 0,
   0, 0, 0,
+  // -------------- //
   54, 53, 106,
   0, 16, 122,
   6, 4, 155,
@@ -341,6 +345,7 @@ private val COLORS = listOf(
   122, 121, 206,
   0, 0, 5,
   0, 0, 5,
+  // -------------- //
   53, 37, 58,
   0, 4, 74,
   5, 0, 103,
@@ -405,6 +410,7 @@ private val COLORS = listOf(
   120, 94, 130,
   0, 0, 0,
   0, 0, 0,
+  // -------------- //
   33, 48, 50,
   0, 12, 72,
   0, 2, 94,
@@ -469,6 +475,7 @@ private val COLORS = listOf(
   87, 113, 117,
   0, 0, 0,
   0, 0, 0,
+  // -------------- //
   37, 37, 37,
   0, 3, 57,
   0, 0, 79,

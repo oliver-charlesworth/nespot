@@ -16,13 +16,12 @@ import choliver.nespot.ppu.State as PpuState
 
 
 // TODO - eliminate all the magic numbers here
-// TODO - colour emphasis
 class Renderer(
   private val memory: Memory,
   private val palette: Memory,
   private val oam: Memory,
   private val videoSink: VideoSink,
-  private val colors: List<Int> = createColorMap(videoSink.colorPackingMode)[0]
+  private val colorMaps: List<List<Int>> = createColorMaps(videoSink.colorPackingMode)
 ) {
   data class State(
     val paletteIndices: MutableList<Int> = MutableList(SCREEN_WIDTH) { 0 },
@@ -240,14 +239,21 @@ class Renderer(
   }
 
   fun commitToBuffer(ppu: PpuState) {
+    val map = colorMap(ppu)
     val mask = if (ppu.greyscale) 0x30 else 0x3F  // TODO - implement greyscale in Palette itself
     for (i in 0 until 32) {
       // Background colour is universal
-      colorLookup[i] = colors[palette[if (i % NUM_ENTRIES_PER_PALETTE == 0) 0 else i] and mask]
+      colorLookup[i] = map[palette[if (i % NUM_ENTRIES_PER_PALETTE == 0) 0 else i] and mask]
     }
 
     state.paletteIndices.forEach { videoSink.put(colorLookup[it]) }
   }
+
+  private fun colorMap(ppu: PpuState) = colorMaps[0 +
+    (if (ppu.redEmphasized) 1 else 0) +
+    (if (ppu.greenEmphasized) 2 else 0) +
+    (if (ppu.blueEmphasized) 4 else 0)
+  ]
 
   private fun maybeFlip(v: Int, flip: Boolean) = if (flip) (7 - v) else v
 

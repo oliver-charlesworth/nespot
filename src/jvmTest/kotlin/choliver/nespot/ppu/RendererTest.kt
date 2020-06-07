@@ -18,7 +18,7 @@ import org.junit.jupiter.params.provider.ValueSource
 
 
 class RendererTest {
-  private val colors = (0..63).toList()
+  private val colorMaps = (0 until 8 * 64).chunked(64)
   private val memory = mock<Memory>()
   private val palette = mock<Memory>()
   private val oam = mock<Memory>()
@@ -28,7 +28,7 @@ class RendererTest {
     palette = palette,
     oam = oam,
     videoSink = videoSink,
-    colors = colors
+    colorMaps = colorMaps
   )
 
   @Nested
@@ -788,47 +788,79 @@ class RendererTest {
       paletteEntries.forEachIndexed { idx, data ->
         whenever(palette[idx]) doReturn data
       }
+
+      repeat(32) {
+        paletteIndices[it] = it
+      }
     }
 
     @Test
     fun `maps colours accounting for UBG`() {
-      repeat(32) {
-        paletteIndices[it] = it
-      }
-
       commit()
 
-      inOrder(videoSink) {
-        for (i in 0 until 32) {
-          verify(videoSink, calls(1)).put(colors[paletteEntries[if (i % 4 == 0) 0 else i]]) // UBG logic
-        }
-      }
+      assertSink { colorMaps[0][paletteEntry(it)] }
     }
 
     @Test
     fun `maps greyscale colours`() {
-      repeat(32) {
-        paletteIndices[it] = it
-      }
+      commit(greyscale = true)
 
-      commit(true)
+      assertSink { colorMaps[0][paletteEntry(it) and 0x30] }
+    }
 
-      inOrder(videoSink) {
-        for (i in 0 until 32) {
-          verify(videoSink, calls(1)).put(colors[paletteEntries[if (i % 4 == 0) 0 else i] and 0x30])  // UBG logic + greyscale
-        }
-      }
+    @Test
+    fun `maps with red emphasized`() {
+      commit(redEmphasized = true)
+
+      assertSink { colorMaps[1][paletteEntry(it)] }
+    }
+
+    @Test
+    fun `maps with green emphasized`() {
+      commit(greenEmphasized = true)
+
+      assertSink { colorMaps[2][paletteEntry(it)] }
+    }
+
+    @Test
+    fun `maps with blue emphasized`() {
+      commit(blueEmphasized = true)
+
+      assertSink { colorMaps[4][paletteEntry(it)] }
+    }
+
+    @Test
+    fun `maps with all emphasized`() {
+      commit(redEmphasized = true, greenEmphasized = true, blueEmphasized = true)
+
+      assertSink { colorMaps[7][paletteEntry(it)] }
     }
 
     private fun commit(
+      redEmphasized: Boolean = false,
+      greenEmphasized: Boolean = false,
+      blueEmphasized: Boolean = false,
       greyscale: Boolean = false
     ) {
       val state = State(
         scanline = Y_SCANLINE,
+        redEmphasized = redEmphasized,
+        greenEmphasized = greenEmphasized,
+        blueEmphasized = blueEmphasized,
         greyscale = greyscale
       )
       renderer.commitToBuffer(state)
     }
+
+    private fun assertSink(expected: (Int) -> Int) {
+      inOrder(videoSink) {
+        for (i in 0 until 32) {
+          verify(videoSink, calls(1)).put(expected(i))
+        }
+      }
+    }
+
+    private fun paletteEntry(i: Int) = paletteEntries[if (i % 4 == 0) 0 else i]  // UBG logic
   }
 
   private fun assertBuffer(expected: (Int) -> Int) {

@@ -9,7 +9,12 @@ fun main() {
     .map { it.toInt() }
     .map { if (it >= 0) it else (it + 256) }
     .chunked(3)
-    .joinToString(",\n") { "  ${it[0]}, ${it[1]}, ${it[2]}" }
+    .chunked(64)
+    .joinToString(",\n  // -------------- //\n") {
+      it.joinToString(",\n") { it2 ->
+        "  ${it2[0]}, ${it2[1]}, ${it2[2]}"
+      }
+    }
 
   println(str)
 }

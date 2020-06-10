@@ -4,7 +4,7 @@ import choliver.nespot.common.Address
 import choliver.nespot.cpu.Opcode
 import choliver.nespot.nes.Joypads
 
-sealed class Command {
+internal sealed class Command {
   object Script : Command()
   object Nop : Command()
   object RunMacro : Command()

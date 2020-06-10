@@ -53,10 +53,6 @@ class Ui(
     }
   }
 
-  private fun postMessage(type: String, payload: Any?) {
-    worker.postMessage(arrayOf(type, payload))
-  }
-
   // Every browser frame, we draw the latest completed emulator output, and schedule the emulator to catch up.
   // The emulator generates frames asynchronously, so we don't necessarily draw every emulator frame.
   // It also generates audio asynchronously - we schedule every audio chunk to be played.
@@ -64,6 +60,10 @@ class Ui(
     window.requestAnimationFrame(::executeFrame)
     screen.redraw()
     postMessage(MSG_EMULATE_UNTIL, timeMs / 1000)
+  }
+
+  private fun postMessage(type: String, payload: Any?) {
+    worker.postMessage(arrayOf(type, payload))
   }
 }
 

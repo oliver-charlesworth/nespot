@@ -5,6 +5,7 @@ import choliver.nespot.common.addr
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_IRQ
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_NMI
 import choliver.nespot.cpu.Cpu.Companion.VECTOR_RESET
+import choliver.nespot.cpu.Cpu.NextStep
 import choliver.nespot.cpu.Opcode.*
 import choliver.nespot.cpu.Opcode.JSR
 import choliver.nespot.cpu.Operand.Absolute
@@ -14,7 +15,7 @@ import choliver.nespot.debugger.CallStackManager.FrameType.*
 import choliver.nespot.nes.Nes
 import java.util.*
 
-class CallStackManager(
+internal class CallStackManager(
   private val nes: Nes.Diagnostics
 ) {
   enum class FrameType {
@@ -41,7 +42,29 @@ class CallStackManager(
   private var nextFrameIdx = 0
   private var valid = false // Becomes valid once S initialised
 
-  fun preInstruction() {
+  fun preStep(step: NextStep) {
+    when (step) {
+      NextStep.INSTRUCTION -> preInstruction()
+
+      NextStep.RESET -> {
+        nextFrameIdx = 0
+        valid = false
+        map.clear()
+        stack.clear()
+        pushFrame(RESET, peekVector(VECTOR_RESET))
+      }
+
+      NextStep.NMI -> {
+        pushFrame(NMI, peekVector(VECTOR_NMI))  // TODO - check for stack overflow
+      }
+
+      NextStep.IRQ -> {
+        pushFrame(IRQ, peekVector(VECTOR_IRQ)) // TODO - check for stack overflow
+      }
+    }
+  }
+
+  private fun preInstruction() {
     val decoded = nes.cpu.decodeAt(nes.cpu.regs.pc)
 
     when (decoded.instruction.opcode) {
@@ -103,22 +126,6 @@ class CallStackManager(
 
       else -> {}
     }
-  }
-
-  fun preReset() {
-    nextFrameIdx = 0
-    valid = false
-    map.clear()
-    stack.clear()
-    pushFrame(RESET, peekVector(VECTOR_RESET))
-  }
-
-  fun preNmi() {
-    pushFrame(NMI, peekVector(VECTOR_NMI))  // TODO - check for stack overflow
-  }
-
-  fun preIrq() {
-    pushFrame(IRQ, peekVector(VECTOR_IRQ)) // TODO - check for stack overflow
   }
 
   fun postInstruction() {

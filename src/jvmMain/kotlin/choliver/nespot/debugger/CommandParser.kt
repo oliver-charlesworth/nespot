@@ -8,7 +8,7 @@ import choliver.nespot.debugger.Command.Execute.*
 import choliver.nespot.nes.Joypads
 import java.io.InputStream
 
-class CommandParser(
+internal class CommandParser(
   stdin: InputStream,
   private val ignoreBlanks: Boolean = false
 ) {

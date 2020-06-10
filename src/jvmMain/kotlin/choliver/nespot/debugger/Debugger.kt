@@ -6,11 +6,7 @@ import choliver.nespot.VRAM_SIZE
 import choliver.nespot.cartridge.Rom
 import choliver.nespot.common.Address
 import choliver.nespot.common.Data
-import choliver.nespot.common.format16
-import choliver.nespot.common.format8
 import choliver.nespot.cpu.Cpu.NextStep
-import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
-import choliver.nespot.debugger.CallStackManager.FrameType.NMI
 import choliver.nespot.debugger.Command.*
 import choliver.nespot.debugger.Command.CreatePoint.Break
 import choliver.nespot.debugger.Command.CreatePoint.Watch
@@ -18,16 +14,12 @@ import choliver.nespot.debugger.Command.DeletePoint.All
 import choliver.nespot.debugger.Command.DeletePoint.ByNum
 import choliver.nespot.debugger.Command.Event.*
 import choliver.nespot.debugger.Command.Execute.*
-import choliver.nespot.debugger.PointManager.Point.Breakpoint
-import choliver.nespot.debugger.PointManager.Point.Watchpoint
+import choliver.nespot.debugger.PointManager.Point
 import choliver.nespot.memory.Memory
 import choliver.nespot.nes.Nes
 import choliver.nespot.ui.KeyAction
 import choliver.nespot.ui.KeyAction.Joypad
 import choliver.nespot.ui.Screen
-import com.fasterxml.jackson.databind.MapperFeature
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.File
 import java.io.InputStream
 import java.io.PrintStream
@@ -37,13 +29,9 @@ import choliver.nespot.ui.Event as RunnerEvent
 class Debugger(
   rom: ByteArray,
   private val stdin: InputStream,
-  private val stdout: PrintStream,
+  stdout: PrintStream,
   private val script: String = ""
 ) {
-  private data class Stats(
-    val numInstructions: Int
-  )
-
   private val events = LinkedBlockingQueue<RunnerEvent>()
   private val screen = Screen(onEvent = { events += it })
   private val stores = mutableListOf<Pair<Address, Data>>() // TODO - this is very global
@@ -72,6 +60,9 @@ class Debugger(
   private var nextDisplayNum = 1
   private val displays = mutableMapOf<Int, Address>()
 
+  private val printer = Printer(stdout, diag)
+
+
   fun start() {
     event(Reset)
     consume(CommandParser(stdin), true)
@@ -80,7 +71,7 @@ class Debugger(
   private fun consume(parser: CommandParser, enablePrompts: Boolean) {
     while (true) {
       if (enablePrompts) {
-        stdout.print("[${diag.cpu.regs.pc.format16()}]: ")
+        printer.printPrompt()
       }
 
       if (!handleCommand(parser.next())) {
@@ -106,7 +97,7 @@ class Debugger(
       is Button -> button(cmd)
       is ShowScreen -> showScreen()
       is Quit -> return false
-      is Error -> stdout.println(cmd.msg)
+      is Error -> printer.printParseError(cmd.msg)
       is Nop -> Unit
     }
     return true
@@ -128,7 +119,6 @@ class Debugger(
     }
   }
 
-  // TODO - this recursion is weird - can we combine this + stdin with flatMap magic?
   private fun script() {
     script.byteInputStream().use { stream ->
       consume(CommandParser(stream, ignoreBlanks = true), enablePrompts = false)
@@ -193,38 +183,29 @@ class Debugger(
       }
     }
 
-    displayDisplays()
+    printer.printDisplays(displays)
   }
 
   private fun createPoint(cmd: CreatePoint) {
     when (cmd) {
-      is Break -> {
-        val point = points.addBreakpoint(when (cmd) {
-          is Break.AtOffset -> nextPc(cmd.offset)
-          is Break.At -> cmd.pc
-        })
-        stdout.println("Breakpoint #${point.num}: ${point.pc.format16()} -> ${instAt(point.pc)}")
-      }
-      is Watch -> {
-        val point = points.addWatchpoint(cmd.addr)
-        stdout.println("Watchpoint #${point.num}: ${point.addr.format16()}")
-      }
-    }
+      is Break -> points.addBreakpoint(when (cmd) {
+        is Break.AtOffset -> nextPc(cmd.offset)
+        is Break.At -> cmd.pc
+      })
+      is Watch -> points.addWatchpoint(cmd.addr)
+    }.also { printer.printPointCreated(it) }
   }
 
   private fun deletePoint(cmd: DeletePoint) {
     when (cmd) {
       is ByNum -> {
-        when (val removed = points.remove(cmd.num)) {
-          is Breakpoint -> stdout.println("Deleted breakpoint #${removed.num}: ${removed.pc.format16()} -> ${instAt(removed.pc)}")
-          is Watchpoint -> stdout.println("Deleted watchpoint #${removed.num}: ${removed.addr.format16()}")
-          null -> stdout.println("No such breakpoint or watchpoint")
-        }
+        val point = points.remove(cmd.num)
+        printer.printPointDeleted(point)
       }
 
       is All -> {
         points.removeAll()
-        stdout.println("Deleted all breakpoints & watchpoints")
+        printer.printPointDeletedAll()
       }
     }
   }
@@ -235,66 +216,17 @@ class Debugger(
 
   private fun info(cmd: Info) {
     when (cmd) {
-      is Info.Stats -> displayStats()
-
-      is Info.Reg -> stdout.println(diag.cpu.regs)
-
-      is Info.Break -> if (points.breakpoints.isEmpty()) {
-        stdout.println("No breakpoints")
-      } else {
-        println("Num  Address  Instruction")
-        points.breakpoints.forEach { (_, v) -> stdout.println("%-4d ${v.pc.format16()}   ${instAt(v.pc)}".format(v.num)) }
-      }
-
-      is Info.Watch -> if (points.watchpoints.isEmpty()) {
-        stdout.println("No watchpoints")
-      } else {
-        println("Num  Address")
-        points.watchpoints.forEach { (_, v) -> stdout.println("%-4d ${v.addr.format16()}".format(v.num)) }
-      }
-
-      is Info.Display -> if (displays.isEmpty()) {
-        stdout.println("No displays")
-      } else {
-        println("Num  Address")
-        displays.forEach { (k, v) -> stdout.println("%-4d ${v.format16()}".format(k)) }
-      }
-
-      is Info.Backtrace -> {
-        stack.frames.forEachIndexed { idx, frame ->
-          stdout.println("#%-4d ${frame.current.format16()}  <${frame.start.format16()}>  %-20s%s".format(
-            idx,
-            instAt(frame.current),
-            when (frame.type) {
-              NMI, IRQ -> " (${frame.type.name})"
-              else -> ""
-            }
-          ))
-        }
-      }
-
-      is Info.CpuRam -> displayDump((0 until RAM_SIZE).map { diag.peek(it) })
-
-      // TODO - should this be before or after nametable mapping?
-      is Info.PpuRam -> displayDump((0 until VRAM_SIZE).map { diag.peekV(it + BASE_VRAM) })
-
-      is Info.PpuState -> {
-        val mapper = jacksonObjectMapper()
-          .enable(SerializationFeature.INDENT_OUTPUT)
-          .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
-        stdout.println(mapper.writeValueAsString(diag.ppu.state))
-      }
-
-      is Info.Print -> stdout.println(diag.peek(cmd.addr).format8())
-
-      is Info.InspectInst -> {
-        var pc = cmd.pc
-        repeat(cmd.num) {
-          val decoded = diag.cpu.decodeAt(pc)
-          stdout.println("${pc.format16()}: ${decoded.instruction}")
-          pc = decoded.nextPc
-        }
-      }
+      is Info.Stats -> printer.printStats(stats)
+      is Info.Reg -> printer.printRegs()
+      is Info.Break -> printer.printBreakpointTable(points)
+      is Info.Watch -> printer.printWatchpointTable(points)
+      is Info.Display -> printer.printDisplayTable(displays)
+      is Info.Backtrace -> printer.printBacktrace(stack)
+      is Info.CpuRam -> printer.printDataDump((0 until RAM_SIZE).map { diag.peek(it) })
+      is Info.PpuRam -> printer.printDataDump((0 until VRAM_SIZE).map { diag.peekV(it + BASE_VRAM) }) // TODO - should this be before or after nametable mapping?
+      is Info.PpuState -> printer.printPpuState()
+      is Info.Print -> printer.printAtAddress(cmd.addr)
+      is Info.InspectInst -> printer.printInstContext(cmd.pc, cmd.num)
     }
   }
 
@@ -317,29 +249,18 @@ class Debugger(
   private fun step(): Boolean {
     val thisStep = diag.cpu.nextStep // nextStep might be modified
 
-    when (thisStep) {
-      NextStep.INSTRUCTION -> {
-        maybeTraceInstruction()
-        stack.preInstruction()
-      }
-      NextStep.RESET -> {
-        maybeTraceInterrupt("RESET")
-        stack.preReset()
-      }
-      NextStep.NMI -> {
-        maybeTraceInterrupt("NMI")
-        stack.preNmi()
-      }
-      NextStep.IRQ -> {
-        maybeTraceInterrupt("IRQ")
-        stack.preIrq()
-      }
+    stack.preStep(thisStep)
+
+    if (isVerbose) {
+      printer.printStep(thisStep)
     }
 
     stores.clear()
     nes.step()
 
-    maybeTraceStores()
+    if (isVerbose) {
+      printer.printStores(stores)
+    }
 
     if (thisStep == NextStep.INSTRUCTION) {
       stack.postInstruction()
@@ -349,81 +270,19 @@ class Debugger(
     return isWatchpointHit() && isBreakpointHit()
   }
 
-  private fun maybeTraceInstruction() {
-    if (isVerbose) {
-      stdout.println("${diag.cpu.regs.pc.format16()}: ${instAt(diag.cpu.regs.pc)}")
-    }
-  }
+  private fun isWatchpointHit() = anyHit(stores.map { points.watchpoints[it.first] }.firstOrNull { it != null })
 
-  private fun maybeTraceInterrupt(name: String) {
-    if (isVerbose) {
-      stdout.println("${name} triggered")
-    }
-  }
+  private fun isBreakpointHit() = anyHit(points.breakpoints[diag.cpu.regs.pc])
 
-  private fun maybeTraceStores() {
-    if (isVerbose) {
-      stores.forEach { (addr, data) ->
-        stdout.println("    ${addr.format16()} <- ${data.format8()}")
-      }
-    }
-  }
-
-  private fun isWatchpointHit() =
-    when (val wp = stores.map { points.watchpoints[it.first] }.firstOrNull { it != null }) {
-      null -> true
-      else -> {
-        stdout.println("Hit watchpoint #${wp.num}: ${wp.addr.format16()}")
-        false
-      }
-    }
-
-  private fun isBreakpointHit() = when (val bp = points.breakpoints[diag.cpu.regs.pc]) {
+  private fun anyHit(point: Point?) = when (point) {
     null -> true
-    else -> {
-      stdout.println("Hit breakpoint #${bp.num}")
-      false
-    }
+    else -> false.also { printer.printPointHit(point) }
   }
 
   private fun nextPc(offset: Int = 1) =
     (0 until offset).fold(diag.cpu.regs.pc) { pc, _ -> diag.cpu.decodeAt(pc).nextPc }
 
   private fun instAt(pc: Address) = diag.cpu.decodeAt(pc).instruction
-
-  private fun displayDisplays() {
-    displays.forEach { (k, v) ->
-      stdout.println("${k}: ${v.format16()} = ${diag.peek(v).format8()}")
-    }
-  }
-
-  private fun displayStats() {
-    stdout.println("Num instructions executed: ${stats.numInstructions}")
-  }
-
-  private fun displayDump(data: List<Data>) {
-    val numPerRow = 32
-    data.chunked(numPerRow)
-      .forEachIndexed { i, row ->
-        val hex = row
-          .chunked(16)
-          .joinToString("  ") { half ->
-            half
-              .chunked(2)
-              .joinToString(" ") { "%02x%02x".format(it[0], it[1]) }
-          }
-
-        val chars = row
-          .chunked(16)
-          .joinToString(" ") { half ->
-            half
-              .map { if (it in 32..126) it.toChar() else '.' }
-              .joinToString("")
-          }
-
-        stdout.println("${(i * numPerRow).format16()}:  ${hex}  ${chars}")
-      }
-  }
 
   private fun showScreen() {
     screen.show()

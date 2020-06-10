@@ -4,7 +4,7 @@ import choliver.nespot.common.Address
 import choliver.nespot.debugger.PointManager.Point.Breakpoint
 import choliver.nespot.debugger.PointManager.Point.Watchpoint
 
-class PointManager {
+internal class PointManager {
   sealed class Point(open val num: Int) {
     data class Breakpoint(override val num: Int, val pc: Address) : Point(num)
     data class Watchpoint(override val num: Int, val addr: Address) : Point(num)

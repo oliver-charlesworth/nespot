@@ -4,11 +4,7 @@ import choliver.nespot.common.*
 import choliver.nespot.cpu.AddressMode.*
 import choliver.nespot.cpu.Opcode.BRK
 import choliver.nespot.cpu.Opcode.NOP
-import choliver.nespot.cpu.Operand.*
-import choliver.nespot.cpu.Operand.IndexSource.X
-import choliver.nespot.cpu.Operand.IndexSource.Y
 import choliver.nespot.memory.Memory
-
 
 class InstructionDecoder(private val memory: Memory) {
   @MutableForPerfReasons
@@ -18,12 +14,6 @@ class InstructionDecoder(private val memory: Memory) {
     var addr: Address = 0x0000,
     var nextPc: Address = 0x0000,
     var numCycles: Int = 0
-  )
-
-  data class DecodedInstruction(
-    val instruction: Instruction,
-    val nextPc: Address,
-    val numCycles: Int
   )
 
   fun decode(decoded: Decoded, pc: Address, x: Data, y: Data) {
@@ -100,37 +90,6 @@ class InstructionDecoder(private val memory: Memory) {
     decoded.addr = addr.addr()
     decoded.nextPc = pc + pcInc + (if (found.op == BRK) 1 else 0)  // Special case
     decoded.numCycles = found.enc.numCycles + (if (found.enc.extraCycleForPageCrossing && pageCrossing) 1 else 0)
-  }
-
-  /** Basically a debug mode. */
-  fun decodeInstruction(pc: Address): DecodedInstruction {
-    val decoded = Decoded()
-    decode(decoded, pc, 0, 0)
-
-    fun operand8() = memory[pc + 1]
-    fun operand16() = addr(lo = memory[pc + 1], hi = memory[pc + 2])
-
-    val operand = when (decoded.addressMode) {
-      ACCUMULATOR -> Accumulator
-      IMMEDIATE -> Immediate(operand8())
-      IMPLIED -> Implied
-      INDIRECT -> Indirect(operand16())
-      RELATIVE -> Relative(operand8())
-      ABSOLUTE -> Absolute(operand16())
-      ABSOLUTE_X -> AbsoluteIndexed(operand16(), X)
-      ABSOLUTE_Y -> AbsoluteIndexed(operand16(), Y)
-      ZERO_PAGE -> ZeroPage(operand8())
-      ZERO_PAGE_X -> ZeroPageIndexed(operand8(), X)
-      ZERO_PAGE_Y -> ZeroPageIndexed(operand8(), Y)
-      INDEXED_INDIRECT -> IndexedIndirect(operand8())
-      INDIRECT_INDEXED -> IndirectIndexed(operand8())
-    }
-
-    return DecodedInstruction(
-      instruction = Instruction(decoded.opcode, operand),
-      nextPc = decoded.nextPc,
-      numCycles = decoded.numCycles
-    )
   }
 
   private fun load16(addr: Address) = addr(

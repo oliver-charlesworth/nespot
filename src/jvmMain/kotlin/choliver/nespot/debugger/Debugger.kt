@@ -167,7 +167,7 @@ class Debugger(
       }
 
       // Prevent UntilOpcode(currentOpcode) from doing nothing
-      is UntilOpcode -> onePlusUntil { instAt(diag.cpu.regs.pc).opcode == cmd.op }
+      is UntilOpcode -> onePlusUntil { diag.currentInstruction().opcode == cmd.op }
 
       // One more so that the interrupt actually occurs
       is UntilNmi -> untilPlusOne { diag.cpu.nextStep == NextStep.NMI }
@@ -283,8 +283,6 @@ class Debugger(
 
   private fun nextPc(offset: Int = 1) =
     (0 until offset).fold(diag.cpu.regs.pc) { pc, _ -> diag.cpu.decodeAt(pc).nextPc }
-
-  private fun instAt(pc: Address) = diag.cpu.decodeAt(pc).instruction
 
   private fun showScreen() {
     screen.show()

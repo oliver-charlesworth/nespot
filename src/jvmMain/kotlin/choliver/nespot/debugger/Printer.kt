@@ -66,7 +66,7 @@ internal class Printer(
       stdout.println("No breakpoints")
     } else {
       stdout.println("Num  Address  Instruction")
-      points.breakpoints.forEach { (_, v) -> stdout.println("%-4d ${v.pc.format16()}   ${instAt(v.pc)}".format(v.num)) }
+      points.breakpoints.forEach { (_, v) -> stdout.println("%-4d ${v.pc.format16()}   ${diag.instructionAt(v.pc)}".format(v.num)) }
     }
   }
 
@@ -92,7 +92,7 @@ internal class Printer(
     stack.frames.forEachIndexed { idx, frame ->
       stdout.println("#%-4d ${frame.current.format16()}  <${frame.start.format16()}>  %-20s%s".format(
         idx,
-        instAt(frame.current),
+        diag.instructionAt(frame.current),
         when (frame.type) {
           NMI, IRQ -> " (${frame.type.name})"
           else -> ""
@@ -115,7 +115,7 @@ internal class Printer(
   fun printInstContext(base: Address, num: Int) {
     var pc = base
     repeat(num) {
-      val decoded = diag.cpu.decodeAt(pc)
+      val decoded = diag.decodeInstruction(pc)
       stdout.println("${pc.format16()}: ${decoded.instruction}")
       pc = decoded.nextPc
     }
@@ -135,7 +135,7 @@ internal class Printer(
 
   fun printStep(step: NextStep) {
     when (step) {
-      INSTRUCTION -> stdout.println("${diag.cpu.regs.pc.format16()}: ${instAt(diag.cpu.regs.pc)}")
+      INSTRUCTION -> stdout.println("${diag.cpu.regs.pc.format16()}: ${diag.currentInstruction()}")
       else -> stdout.println("${step.name} triggered")
     }
   }
@@ -160,9 +160,8 @@ internal class Printer(
   }
 
   private fun Point.format() = when (this) {
-    is Breakpoint -> "breakpoint #${num}: ${pc.format16()} -> ${instAt(pc)}"
+    is Breakpoint -> "breakpoint #${num}: ${pc.format16()} -> ${diag.instructionAt(pc)}"
     is Watchpoint -> "watchpoint #${num}: ${addr.format16()}"
   }
 
-  private fun instAt(pc: Address) = diag.cpu.decodeAt(pc).instruction
 }

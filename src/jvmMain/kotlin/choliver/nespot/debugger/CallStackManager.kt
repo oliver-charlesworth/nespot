@@ -65,9 +65,9 @@ internal class CallStackManager(
   }
 
   private fun preInstruction() {
-    val decoded = nes.cpu.decodeAt(nes.cpu.regs.pc)
+    val decoded = nes.currentInstruction()
 
-    when (decoded.instruction.opcode) {
+    when (decoded.opcode) {
       TXS -> if (valid) {
         unsupported("overwriting stack pointer")
       } else {
@@ -97,7 +97,7 @@ internal class CallStackManager(
         }
       )
 
-      JSR -> pushFrame(FrameType.JSR, (decoded.instruction.operand as Absolute).addr)
+      JSR -> pushFrame(FrameType.JSR, (decoded.operand as Absolute).addr)
 
       RTS -> popAndHandle(
         onUserData = { unsupported("RTS for manually constructed frame") },

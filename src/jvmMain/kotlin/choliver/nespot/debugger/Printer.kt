@@ -5,6 +5,9 @@ import choliver.nespot.common.Data
 import choliver.nespot.common.format16
 import choliver.nespot.common.format8
 import choliver.nespot.cpu.Cpu.NextStep
+import choliver.nespot.cpu.Cpu.NextStep.INSTRUCTION
+import choliver.nespot.debugger.CallStackManager.FrameType.IRQ
+import choliver.nespot.debugger.CallStackManager.FrameType.NMI
 import choliver.nespot.debugger.PointManager.Point
 import choliver.nespot.debugger.PointManager.Point.Breakpoint
 import choliver.nespot.debugger.PointManager.Point.Watchpoint
@@ -91,13 +94,12 @@ internal class Printer(
         idx,
         instAt(frame.current),
         when (frame.type) {
-          CallStackManager.FrameType.NMI, CallStackManager.FrameType.IRQ -> " (${frame.type.name})"
+          NMI, IRQ -> " (${frame.type.name})"
           else -> ""
         }
       ))
     }
   }
-
 
   fun printPpuState() {
     val mapper = jacksonObjectMapper()
@@ -133,35 +135,33 @@ internal class Printer(
 
   fun printStep(step: NextStep) {
     when (step) {
-      NextStep.INSTRUCTION -> stdout.println("${diag.cpu.regs.pc.format16()}: ${instAt(diag.cpu.regs.pc)}")
+      INSTRUCTION -> stdout.println("${diag.cpu.regs.pc.format16()}: ${instAt(diag.cpu.regs.pc)}")
       else -> stdout.println("${step.name} triggered")
     }
   }
 
   fun printPointHit(point: Point) {
-    when (point) {
-      is Breakpoint -> stdout.println("Hit breakpoint #${point.num}: ${instAt(point.pc)}")
-      is Watchpoint -> stdout.println("Hit watchpoint #${point.num}: ${point.addr.format16()}")
-    }
+    stdout.println("Hit ${point.format()}")
   }
 
   fun printPointCreated(point: Point) {
-    when (point) {
-      is Breakpoint -> stdout.println("Breakpoint #${point.num}: ${point.pc.format16()} -> ${instAt(point.pc)}")
-      is Watchpoint -> stdout.println("Watchpoint #${point.num}: ${point.addr.format16()} ")
-    }
+    stdout.println("Created ${point.format()}")
   }
 
   fun printPointDeleted(point: Point?) {
     when (point) {
-      is Breakpoint -> stdout.println("Deleted breakpoint #${point.num}: ${point.pc.format16()} -> ${instAt(point.pc)}")
-      is Watchpoint -> stdout.println("Watchpoint #${point.num}: ${point.addr.format16()} ")
       null -> stdout.println("No such breakpoint or watchpoint")
+      else -> stdout.println("Deleted ${point.format()}")
     }
   }
 
   fun printPointDeletedAll() {
     stdout.println("Deleted all breakpoints & watchpoints")
+  }
+
+  private fun Point.format() = when (this) {
+    is Breakpoint -> "breakpoint #${num}: ${pc.format16()} -> ${instAt(pc)}"
+    is Watchpoint -> "watchpoint #${num}: ${addr.format16()}"
   }
 
   private fun instAt(pc: Address) = diag.cpu.decodeAt(pc).instruction

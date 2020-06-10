@@ -215,18 +215,20 @@ class Debugger(
   }
 
   private fun info(cmd: Info) {
-    when (cmd) {
-      is Info.Stats -> printer.printStats(stats)
-      is Info.Reg -> printer.printRegs()
-      is Info.Break -> printer.printBreakpointTable(points)
-      is Info.Watch -> printer.printWatchpointTable(points)
-      is Info.Display -> printer.printDisplayTable(displays)
-      is Info.Backtrace -> printer.printBacktrace(stack)
-      is Info.CpuRam -> printer.printDataDump((0 until RAM_SIZE).map { diag.peek(it) })
-      is Info.PpuRam -> printer.printDataDump((0 until VRAM_SIZE).map { diag.peekV(it + BASE_VRAM) }) // TODO - should this be before or after nametable mapping?
-      is Info.PpuState -> printer.printPpuState()
-      is Info.Print -> printer.printAtAddress(cmd.addr)
-      is Info.InspectInst -> printer.printInstContext(cmd.pc, cmd.num)
+    with(printer) {
+      when (cmd) {
+        is Info.Stats -> printStats(stats)
+        is Info.Reg -> printRegs()
+        is Info.Break -> printBreakpointTable(points)
+        is Info.Watch -> printWatchpointTable(points)
+        is Info.Display -> printDisplayTable(displays)
+        is Info.Backtrace -> printBacktrace(stack)
+        is Info.CpuRam -> printDataDump((0 until RAM_SIZE).map { diag.peek(it) })
+        is Info.PpuRam -> printDataDump((0 until VRAM_SIZE).map { diag.peekV(it + BASE_VRAM) }) // TODO - should this be before or after nametable mapping?
+        is Info.PpuState -> printPpuState()
+        is Info.Print -> printAtAddress(cmd.addr)
+        is Info.InspectInst -> printInstContext(cmd.pc, cmd.num)
+      }
     }
   }
 

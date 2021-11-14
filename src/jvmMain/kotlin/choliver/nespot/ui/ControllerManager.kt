@@ -110,6 +110,6 @@ class ControllerManager(
   }
 
   companion object {
-    private const val SAMPLE_PERIOD_MS = 1L
+    private const val SAMPLE_PERIOD_MS = 10L
   }
 }

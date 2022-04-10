@@ -13,6 +13,8 @@ class InteractiveRunner(
   rom: Rom,
   private val fullScreen: Boolean
 ) {
+  @Volatile
+  private var whichController = 1
   private val events = LinkedBlockingQueue<Event>()
   private var closed = false
   private val screen = Screen(onEvent = { events += it })
@@ -49,15 +51,17 @@ class InteractiveRunner(
 
   private fun consumeEvent() {
     when (val e = events.poll()) {
-      is ControllerButtonDown -> nes.joypads.down(1, e.button)
-      is ControllerButtonUp -> nes.joypads.up(1, e.button)
+      is ControllerButtonDown -> nes.joypads.down(whichController, e.button)
+      is ControllerButtonUp -> nes.joypads.up(whichController, e.button)
       is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
-        is Joypad -> nes.joypads.down(1, action.button)
+        is SetController1 -> whichController = 1
+        is SetController2 -> whichController = 2
+        is Joypad -> nes.joypads.down(whichController, action.button)
         is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
         is Reset -> nes.diagnostics.cpu.nextStep = RESET
       }
       is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
-        is Joypad -> nes.joypads.up(1, action.button)
+        is Joypad -> nes.joypads.up(whichController, action.button)
       }
       is Close -> closed = true
       is Error -> {

@@ -5,12 +5,16 @@ import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCode.*
 
 sealed class KeyAction {
+  object SetController1 : KeyAction()
+  object SetController2 : KeyAction()
   object ToggleFullScreen : KeyAction()
   object Reset : KeyAction()
   data class Joypad(val button: Button) : KeyAction()
 
   companion object {
     fun fromKeyCode(code: KeyCode) = when (code) {
+      DIGIT1 -> SetController1
+      DIGIT2 -> SetController2
       F -> ToggleFullScreen
       R -> Reset
       Z -> Joypad(Button.A)

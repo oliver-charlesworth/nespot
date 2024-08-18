@@ -53,15 +53,19 @@ class InteractiveRunner(
     when (val e = events.poll()) {
       is ControllerButtonDown -> nes.joypads.down(whichController, e.button)
       is ControllerButtonUp -> nes.joypads.up(whichController, e.button)
-      is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
-        is SetController1 -> whichController = 1
-        is SetController2 -> whichController = 2
-        is Joypad -> nes.joypads.down(whichController, action.button)
-        is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
-        is Reset -> nes.diagnostics.cpu.nextStep = RESET
+      is KeyDown -> {
+        when (val action = KeyAction.fromKeyCode(e.code)) {
+          is SetController1 -> whichController = 1
+          is SetController2 -> whichController = 2
+          is Joypad -> nes.joypads.down(whichController, action.button)
+          is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
+          is Reset -> nes.diagnostics.cpu.nextStep = RESET
+          else -> Unit
+        }
       }
       is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
         is Joypad -> nes.joypads.up(whichController, action.button)
+        else -> Unit
       }
       is Close -> closed = true
       is Error -> {

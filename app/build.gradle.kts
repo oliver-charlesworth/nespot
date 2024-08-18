@@ -8,7 +8,7 @@ dependencies {
 }
 
 application {
-  mainClassName = "choliver.nespot.ui.CliKt"
+  mainClass = "choliver.nespot.ui.CliKt"
 }
 
 (tasks.run) {

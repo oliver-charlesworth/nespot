@@ -9,7 +9,6 @@ import choliver.nespot.mappers.Mmc1Mapper.Companion.BASE_SR
 import choliver.nespot.mappers.Mmc1Mapper.Companion.CHR_BANK_SIZE
 import choliver.nespot.mappers.Mmc1Mapper.Companion.CHR_RAM_SIZE
 import choliver.nespot.mappers.Mmc1Mapper.Companion.PRG_BANK_SIZE
-import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Nested
@@ -17,6 +16,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.RETURNS_DEEP_STUBS
+import org.mockito.kotlin.*
 
 class Mmc1MapperTest {
   private val cartridge = mock<Cartridge>(defaultAnswer = RETURNS_DEEP_STUBS)

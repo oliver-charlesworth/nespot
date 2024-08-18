@@ -8,7 +8,7 @@ data class Instruction(
   val opcode: Opcode,
   val operand: Operand = Implied
 ) {
-  override fun toString() = "${opcode.name.toLowerCase()}${formatOperand()}"
+  override fun toString() = "${opcode.name.lowercase()}${formatOperand()}"
 
   private fun formatOperand() = when (operand) {
     is Implied -> ""

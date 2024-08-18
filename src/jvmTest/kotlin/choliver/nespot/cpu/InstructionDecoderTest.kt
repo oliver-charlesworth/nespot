@@ -8,12 +8,12 @@ import choliver.nespot.cpu.Operand.*
 import choliver.nespot.cpu.Operand.IndexSource.X
 import choliver.nespot.cpu.Operand.IndexSource.Y
 import choliver.nespot.memory.Memory
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 class InstructionDecoderTest {
   private val memory = mock<Memory>()

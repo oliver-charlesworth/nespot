@@ -5,11 +5,11 @@ import choliver.nespot.cartridge.Rom
 import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
 import choliver.nespot.mappers.CnRomMapper.Companion.BASE_BANK_SELECT
 import choliver.nespot.mappers.CnRomMapper.Companion.CHR_BANK_SIZE
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import org.junit.jupiter.api.Test
-import org.mockito.Answers.RETURNS_DEEP_STUBS
+import org.mockito.Mockito.RETURNS_DEEP_STUBS
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 
 class CnRomMapperTest {
   private val cartridge = mock<Cartridge>(defaultAnswer = RETURNS_DEEP_STUBS)

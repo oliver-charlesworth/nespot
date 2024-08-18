@@ -170,7 +170,7 @@ internal class CommandParser(
   )
 
   private inline fun <reified E : Enum<E>> String.toEnumOrNull() = try {
-    enumValueOf<E>(this.toUpperCase())
+    enumValueOf<E>(this.uppercase())
   } catch (_: IllegalArgumentException) {
     null
   }

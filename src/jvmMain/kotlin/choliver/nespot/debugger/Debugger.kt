@@ -110,9 +110,11 @@ class Debugger(
       when (e) {
         is RunnerEvent.KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> nes.joypads.down(1, action.button)
+          else -> Unit
         }
         is RunnerEvent.KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
           is Joypad -> nes.joypads.up(1, action.button)
+          else -> Unit
         }
         else -> Unit
       }

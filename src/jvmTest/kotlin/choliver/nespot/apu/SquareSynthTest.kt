@@ -12,7 +12,7 @@ class SquareSynthTest {
   }
 
   @Test
-  fun `12,5% duty cycle`() {
+  fun `12,5pc duty cycle`() {
     synth.dutyCycle = 0
     val seq = synth.take(16)
 
@@ -20,7 +20,7 @@ class SquareSynthTest {
   }
 
   @Test
-  fun `25% duty cycle`() {
+  fun `25pc duty cycle`() {
     synth.dutyCycle = 1
     val seq = synth.take(16)
 
@@ -28,7 +28,7 @@ class SquareSynthTest {
   }
 
   @Test
-  fun `50% duty cycle`() {
+  fun `50pc duty cycle`() {
     synth.dutyCycle = 2
     val seq = synth.take(16)
 
@@ -36,7 +36,7 @@ class SquareSynthTest {
   }
 
   @Test
-  fun `25% negated duty cycle`() {
+  fun `25pc negated duty cycle`() {
     synth.dutyCycle = 3
     val seq = synth.take(16)
 

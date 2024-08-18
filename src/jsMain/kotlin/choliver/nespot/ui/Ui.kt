@@ -8,8 +8,8 @@ import org.khronos.webgl.Float32Array
 import org.khronos.webgl.Uint8ClampedArray
 import org.w3c.dom.Worker
 import org.w3c.dom.events.KeyboardEvent
-import kotlin.browser.document
-import kotlin.browser.window
+import kotlinx.browser.document
+import kotlinx.browser.window
 
 class Ui(
   private val worker: Worker,
@@ -44,12 +44,14 @@ class Ui(
     when (val action = KeyAction.fromKeyCode(e.code)) {
       is ToggleFullScreen -> screen.fullScreen = !screen.fullScreen
       is Joypad -> postMessage(MSG_BUTTON_DOWN, action.button.name)
+      else -> Unit
     }
   }
 
   private fun handleKeyUp(e: KeyboardEvent) {
     when (val action = KeyAction.fromKeyCode(e.code)) {
       is Joypad -> postMessage(MSG_BUTTON_UP, action.button.name)
+      else -> Unit
     }
   }
 

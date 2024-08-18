@@ -2,9 +2,9 @@ package choliver.nespot.ui
 
 import choliver.nespot.nes.Joypads.Button
 
-sealed class KeyAction {
-  object ToggleFullScreen : KeyAction()
-  data class Joypad(val button: Button) : KeyAction()
+sealed interface KeyAction {
+  data object ToggleFullScreen : KeyAction
+  data class Joypad(val button: Button) : KeyAction
 
   companion object {
     fun fromKeyCode(code: String) = when (code) {

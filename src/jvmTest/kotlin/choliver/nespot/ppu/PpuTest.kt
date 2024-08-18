@@ -16,13 +16,14 @@ import choliver.nespot.ppu.Ppu.Companion.REG_PPUCTRL2
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUDATA
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSCROLL
 import choliver.nespot.ppu.Ppu.Companion.REG_PPUSTATUS
-import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import org.mockito.kotlin.*
+import org.mockito.kotlin.verify
 import kotlin.math.ceil
 
 class PpuTest {
@@ -523,7 +524,7 @@ class PpuTest {
       reset(renderer)
 
       advanceDots(126)
-      verifyZeroInteractions(renderer)
+      verifyNoInteractions(renderer)
 
       advanceDots(3)
       inOrder(renderer) {
@@ -547,7 +548,7 @@ class PpuTest {
       reset(renderer)
 
       advanceScanlines(SCANLINES_PER_FRAME - SCREEN_HEIGHT - 1)
-      verifyZeroInteractions(renderer)
+      verifyNoInteractions(renderer)
     }
 
     @Test
@@ -557,7 +558,7 @@ class PpuTest {
       reset(renderer)
 
       advanceDots(252)
-      verifyZeroInteractions(renderer)
+      verifyNoInteractions(renderer)
 
       advanceDots(6)
       verify(renderer).loadAndRenderBackground(any())
@@ -565,7 +566,7 @@ class PpuTest {
 
       advanceDots(63)
       verify(renderer).loadSprites(any())
-      verifyZeroInteractions(videoSink)
+      verifyNoInteractions(videoSink)
     }
   }
 

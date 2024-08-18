@@ -71,7 +71,7 @@ class Engine(
     private const val TOLERANCE = 1   // PNG has lsb-level rounding errors
 
     private fun modeFromEnv() =
-      valueOf(System.getenv("ENGINE_MODE")?.toUpperCase() ?: COMPARE.toString())
+      valueOf(System.getenv("ENGINE_MODE")?.uppercase() ?: COMPARE.toString())
   }
 }
 

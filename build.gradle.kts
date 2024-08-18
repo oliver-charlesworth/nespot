@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   base
-  kotlin("jvm") version "1.3.72" apply false
-  kotlin("multiplatform") version "1.3.72"
+  kotlin("jvm") version "2.0.10" apply false
+  kotlin("multiplatform") version "2.0.10"
 }
 
 allprojects {
@@ -17,8 +17,7 @@ allprojects {
 
   // We don't need checkParameterIsNotNull (etc.) as we don't interact with Java code
   tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-      jvmTarget = "1.8"
+    compilerOptions {
       freeCompilerArgs = listOf("-Xno-param-assertions", "-Xno-call-assertions", "-Xno-receiver-assertions")
     }
   }
@@ -33,7 +32,10 @@ allprojects {
 
 kotlin {
   jvm()
-  js().browser()
+  js {
+    browser()
+    binaries.executable()
+  }
 
   sourceSets {
     val commonMain by getting {
@@ -45,12 +47,12 @@ kotlin {
     jvm().compilations["main"].defaultSourceSet {
       dependencies {
         implementation(kotlin("stdlib-jdk8"))
-        implementation("org.openjfx:javafx-base:14:mac")
-        implementation("org.openjfx:javafx-graphics:14:mac")
+        implementation("org.openjfx:javafx-base:19.0.2.1:mac")
+        implementation("org.openjfx:javafx-graphics:19.0.2.1:mac")
         implementation("com.github.ajalt:clikt:2.6.0")
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.11.0")
-        implementation("net.java.jinput:jinput:2.0.9")
-        runtimeOnly("net.java.jinput:jinput:2.0.9:natives-all")
+        implementation("net.java.jinput:jinput:2.0.10")
+        runtimeOnly("net.java.jinput:jinput:2.0.10:natives-all")
       }
     }
 
@@ -58,9 +60,7 @@ kotlin {
       dependencies {
         implementation("org.junit.jupiter:junit-jupiter:5.5.2")
         implementation("org.hamcrest:hamcrest-library:2.2")
-        implementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
-        // byte-buddy 1.9.10 (pulled in by Mockito) behaves badly with Java 13 - see https://github.com/mockk/mockk/issues/397
-        implementation("net.bytebuddy:byte-buddy:1.10.6")
+        implementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
       }
     }
 

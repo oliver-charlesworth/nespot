@@ -72,6 +72,7 @@ class InteractiveRunner(
         e.cause.printStackTrace(System.err)
         closed = true
       }
+      null -> Unit
     }
   }
 

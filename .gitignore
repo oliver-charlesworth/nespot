@@ -9,6 +9,9 @@ out/
 .gradle/
 build/
 
+# Kotlin
+.kotlin/
+
 # NESpot
 backups/
 roms/

@@ -1,8 +1,8 @@
 package choliver.nespot.apu
 
-import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.*
 
 class ChannelTest {
   private val synth = mock<Synth>()

@@ -9,13 +9,13 @@ import choliver.nespot.common.isBitSet
 import choliver.nespot.memory.Memory
 import choliver.nespot.nes.VideoSink
 import choliver.nespot.ppu.Ppu.Companion.BASE_NAMETABLES
-import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-
+import org.mockito.kotlin.*
+import org.mockito.kotlin.verify
 
 class RendererTest {
   private val colorMaps = (0 until 8 * 64).chunked(64)
@@ -451,7 +451,7 @@ class RendererTest {
     fun `performs no loads if sprite rendering disabled`() {
       load(sprEnabled = false)
 
-      verifyZeroInteractions(memory)
+      verifyNoInteractions(memory)
     }
 
     private fun load(sprEnabled: Boolean = true) {

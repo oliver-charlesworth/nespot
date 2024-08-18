@@ -10,8 +10,13 @@ import net.java.games.input.ControllerEnvironment
 import net.java.games.input.Event
 import java.io.Closeable
 import java.io.File
+import java.nio.file.Path
 import java.util.*
 import kotlin.concurrent.timerTask
+import kotlin.io.path.createTempDirectory
+import kotlin.io.path.div
+import kotlin.io.path.outputStream
+import kotlin.io.path.pathString
 import net.java.games.input.Component.Identifier.Button as JInputButton
 
 
@@ -25,21 +30,21 @@ class ControllerManager(
   private val timer = Timer()
 
   init {
-    val dir = createTempDir()
-    dir.deleteOnExit()
+    val dir = createTempDirectory()
+    dir.toFile().deleteOnExit()
 
-    copyFile("/libjinput-osx.jnilib", File(dir, "libjinput-osx.dylib"))
+    copyFile("/libjinput-osx.jnilib", dir / "libjinput-osx.dylib")
     // Not actually 64-bit, but JInput thinks it should be called this
-    copyFile("/libjinput-arm.so", File(dir, "libjinput-linux64.so"))
+    copyFile("/libjinput-arm.so", dir / "libjinput-linux64.so")
 
     System.setProperty("jinput.loglevel", "OFF")
-    System.setProperty("net.java.games.input.librarypath", dir.absolutePath)
+    System.setProperty("net.java.games.input.librarypath", dir.pathString)
     controllers = ControllerEnvironment.getDefaultEnvironment().controllers
   }
 
-  private fun copyFile(src: String, target: File) {
+  private fun copyFile(src: String, target: Path) {
     target.outputStream().use {
-      this.javaClass.getResourceAsStream(src).copyTo(it)
+      this.javaClass.getResourceAsStream(src)!!.copyTo(it)
     }
   }
 

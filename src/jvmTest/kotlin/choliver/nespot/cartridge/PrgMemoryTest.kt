@@ -6,10 +6,10 @@ import choliver.nespot.PRG_RAM_SIZE
 import choliver.nespot.cartridge.BankMappingChecker.Companion.takesBytes
 import choliver.nespot.common.Address
 import choliver.nespot.common.Data
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 
 class PrgMemoryTest {
   @Test

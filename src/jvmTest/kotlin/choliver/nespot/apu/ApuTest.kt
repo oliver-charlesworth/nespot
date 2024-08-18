@@ -3,10 +3,10 @@ package choliver.nespot.apu
 import choliver.nespot.apu.FrameSequencer.Mode.FIVE_STEP
 import choliver.nespot.common.Rational
 import choliver.nespot.nes.AudioSink
-import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.*
 
 
 class ApuTest {

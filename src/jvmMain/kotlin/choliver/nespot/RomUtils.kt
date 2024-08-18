@@ -9,7 +9,7 @@ fun Rom.printInfo() {
   println("Trainer size:  ${trainerData.size}")
   println("PRG-RAM:       ${if (prgRam) "yes" else "no"}")
   println("Mapper #:      ${mapper}")
-  println("Mirroring:     ${mirroring.name.toLowerCase()}")
+  println("Mirroring:     ${mirroring.name.lowercase()}")
   println("NES 2.0:       ${if (nes2) "yes" else "no"}")
   println("TV system:     ${tvSystem.name}")
   println("PRG + CHR:     ${(prgData + chrData).sha1()}")

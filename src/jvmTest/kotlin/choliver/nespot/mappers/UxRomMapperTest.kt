@@ -6,12 +6,12 @@ import choliver.nespot.cartridge.Rom.Mirroring.VERTICAL
 import choliver.nespot.mappers.UxRomMapper.Companion.BASE_BANK_SELECT
 import choliver.nespot.mappers.UxRomMapper.Companion.CHR_RAM_SIZE
 import choliver.nespot.mappers.UxRomMapper.Companion.PRG_BANK_SIZE
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.Answers.RETURNS_DEEP_STUBS
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 
 class UxRomMapperTest {
   private val cartridge = mock<Cartridge>(defaultAnswer = RETURNS_DEEP_STUBS)

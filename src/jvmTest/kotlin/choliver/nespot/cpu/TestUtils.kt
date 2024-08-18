@@ -10,8 +10,8 @@ import choliver.nespot.cpu.Operand.*
 import choliver.nespot.cpu.Operand.IndexSource.X
 import choliver.nespot.cpu.Operand.IndexSource.Y
 import choliver.nespot.memory.Memory
-import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.mockito.kotlin.*
 
 private data class Case(
   val operand: (value: Data) -> Operand,

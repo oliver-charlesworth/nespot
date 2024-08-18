@@ -57,7 +57,7 @@ class Cartridge(private val mapper: Mapper) {
     }
 
     private fun validateMagicNumber(rom: Rom) {
-      if (rom.magic.toList() != listOf('N'.toByte(), 'E'.toByte(), 'S'.toByte(), 0x1A.toByte())) {
+      if (rom.magic.toList() != listOf('N'.code.toByte(), 'E'.code.toByte(), 'S'.code.toByte(), 0x1A.toByte())) {
         throw IllegalArgumentException("Invalid magic number ${rom.magic.toList()}")
       }
     }

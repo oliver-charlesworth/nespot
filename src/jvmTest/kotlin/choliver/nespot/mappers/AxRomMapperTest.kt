@@ -7,12 +7,12 @@ import choliver.nespot.cartridge.Rom.Mirroring.FIXED_UPPER
 import choliver.nespot.mappers.AxRomMapper.Companion.BASE_BANK_SELECT
 import choliver.nespot.mappers.AxRomMapper.Companion.CHR_RAM_SIZE
 import choliver.nespot.mappers.AxRomMapper.Companion.PRG_BANK_SIZE
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.Answers.RETURNS_DEEP_STUBS
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 
 class AxRomMapperTest {
   private val cartridge = mock<Cartridge>(defaultAnswer = RETURNS_DEEP_STUBS)

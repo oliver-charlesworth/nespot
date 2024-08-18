@@ -7,10 +7,10 @@ import choliver.nespot.cartridge.BankMappingChecker.Companion.takesBytes
 import choliver.nespot.cartridge.Rom.Mirroring.*
 import choliver.nespot.common.Address
 import choliver.nespot.common.Data
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 
 class ChrMemoryTest {
   // TODO - test for non-linear mappings (not sure why this is useful, though)

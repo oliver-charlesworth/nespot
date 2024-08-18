@@ -58,9 +58,11 @@ private fun liveInjector(
   when (val e = events.poll()) {
     is KeyDown -> when (val action = KeyAction.fromKeyCode(e.code)) {
       is Joypad -> buttonDown(action.button)
+      else -> Unit
     }
     is KeyUp -> when (val action = KeyAction.fromKeyCode(e.code)) {
       is Joypad -> buttonUp(action.button)
+      else -> Unit
     }
     is Close -> {
       if (snapshotPattern == FINAL) {
@@ -69,6 +71,7 @@ private fun liveInjector(
       close()
     }
     is Error -> throw RuntimeException()
+    else -> Unit
   }
 }
 

@@ -32,7 +32,10 @@ allprojects {
 
 kotlin {
   jvm()
-  js().browser()
+  js {
+    browser()
+    binaries.executable()
+  }
 
   sourceSets {
     val commonMain by getting {
